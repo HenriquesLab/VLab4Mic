@@ -1,0 +1,31 @@
+# examples: https://github.com/pytest-dev/pytest/blob/main/.pre-commit-config.yaml
+repos:
+- repo: https://github.com/kynan/nbstripout
+  rev: 0.7.1
+  hooks:
+    - id: nbstripout
+- repo: https://github.com/python-poetry/poetry
+  rev: 1.8.2  
+  hooks:
+  -   id: poetry-check
+  -   id: poetry-lock
+  -   id: poetry-export
+      args: ["--dev", "-f", "requirements.txt", "-o", "requirements.txt"]
+  -   id: poetry-install
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: "v0.4.3"
+  hooks:
+    - id: ruff
+      types_or: [ python, pyi, jupyter ]
+      args: ["--fix"]
+    - id: ruff-format
+      types_or: [ python, pyi, jupyter ]
+- repo: local
+  hooks:
+    - id: update-version
+      name: Update version in pyproject.toml
+      entry: python3 __update_version__.py
+      language: python
+      always_run: true
+      pass_filenames: false
+      additional_dependencies: [toml]
