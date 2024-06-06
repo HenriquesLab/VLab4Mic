@@ -26,14 +26,14 @@
 *.rpm
 
 # Ignore version control files and directories
-.git/
-.svn/
-.hg/
-.bzr/
+.git/*
+.svn/*
+.hg/*
+.bzr/*
 
 # Ignore IDE and editor files and directories
-.vscode/
-.idea/
+.vscode/*
+.idea/*
 *.sublime-project
 *.sublime-workspace
 *.swp
@@ -42,17 +42,18 @@
 *.tmp
 
 # Ignore Python-specific files and directories
-__pycache__/
+__pycache__/*
 *.py[cod]
 *$py.class
-*.egg-info/
-dist/
-build/
+*.egg-info/*
+dist/*
+build/*
 *.egg
 *.whl
+poetry.lock
 
 # Ignore Node.js and npm files and directories
-node_modules/
+node_modules/*
 package-lock.json
 yarn.lock
 
@@ -91,10 +92,10 @@ output/
 *.output
 
 # Ignore virtual environments
-venv/
-.venv/
-env/
-.env/
+venv/*
+.venv/*
+env/*
+.env/*
 
 # Ignore local configuration files
 local_settings.py
@@ -103,14 +104,15 @@ local_settings.py
 
 # Ignore test and coverage files
 .coverage
-.tox/
-.pytest_cache/
+.tox/*
+.pytest_cache/*
 nosetests.xml
 coverage.xml
 *.cover
 *.py,cover
 htmlcov/
+.ruff_cache/*
 
 # Ignore documentation build files
-docs/_build/
-doc/_build/
+docs/_build/*
+doc/_build/*
