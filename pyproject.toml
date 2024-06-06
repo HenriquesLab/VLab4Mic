@@ -6,13 +6,24 @@ build-backend = "poetry.core.masonry.api"
 name = "supra_molecular_simulator"
 version = "2024.06.06"
 description = ""
-authors = [ "Damian Martinez <jdmartinez@igc.gulbenkian.pt>", "Bruno Saraiva <bruno.msaraiva2@gmail.com>", "Ricardo Henriques <ricardo@henriqueslab.org>",]
+authors = [ "Damián Martinez <jdmartinez@igc.gulbenkian.pt>", "Bruno Saraiva <bruno.msaraiva2@gmail.com>", "Ricardo Henriques <ricardo@henriqueslab.org>",]
 readme = "README.md"
 [[tool.poetry.packages]]
 include = "supra_molecular_simulator"
 
 [tool.poetry.dependencies]
 python = "^3.11"
+numpy = "^1.26.4"
+matplotlib = "^3.9.0"
+scipy = "^1.13.1"
+biopython = "^1.83"
+plotly = "^5.22.0"
+trimesh = "^4.4.0"
+ipympl = "^0.9.4"
+pyyaml = "^6.0.1"
+tifffile = "^2024.5.22"
+tqdm = "^4.66.4"
+scikit-image = "^0.23.2"
 
 [tool.poetry.dependencies.easy-gui-jupyter]
 git = "https://github.com/HenriquesLab/easy-gui-jupyter.git"
