@@ -1,13 +1,13 @@
-.PHONY: help install lint format test docs all
+.PHONY: help install lint format test docs download-suggested-structures
 
 help:
 	@echo "Available commands:"
-	@echo "  install                Install dependencies using Poetry"
-	@echo "  lint                   Run linters using pre-commit"
-	@echo "  format                 Run formatters using pre-commit"
-	@echo "  test                   Run tests using pytest"
-	@echo "  docs                   Generate documentation using pdoc"
-	@echo "  all                    Run install, lint, test, and generate-docs"
+	@echo "  install                			Install dependencies using Poetry"
+	@echo "  lint                   			Run linters using pre-commit"
+	@echo "  format                 			Run formatters using pre-commit"
+	@echo "  test                   			Run tests using pytest"
+	@echo "  docs                   			Generate documentation using pdoc"
+	@echo "  download-structures				Download suggested structures from the web"
 
 install:
 	poetry install
@@ -24,6 +24,7 @@ test:
 docs:
 	poetry run lazydocs --overview-file="README.md" supra_molecular_simulator
 
-all: install lint test docs
+download-structures:
+	poetry run download-suggested-structures
 
-.DEFAULT_GOAL := all
+.DEFAULT_GOAL := help
