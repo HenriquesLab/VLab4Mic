@@ -1,3 +1,13 @@
+# Directories
+__pycache__/
+.venv/
+.ruff_cache/
+dist/
+build/
+data/
+*.egg-info/
+
+# Files
 .DS_Store
 __pycache__
 poetry.lock

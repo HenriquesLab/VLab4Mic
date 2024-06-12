@@ -116,3 +116,6 @@ htmlcov/
 # Ignore documentation build files
 docs/_build/*
 doc/_build/*
+
+# Ignore data directory
+data/*

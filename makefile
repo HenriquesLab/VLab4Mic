@@ -1,13 +1,15 @@
-.PHONY: help install lint format test docs download-suggested-structures
+.PHONY: help install lint format pytest mypy mypy-types docs download-structures
 
 help:
 	@echo "Available commands:"
-	@echo "  install                			Install dependencies using Poetry"
-	@echo "  lint                   			Run linters using pre-commit"
-	@echo "  format                 			Run formatters using pre-commit"
-	@echo "  test                   			Run tests using pytest"
-	@echo "  docs                   			Generate documentation using pdoc"
-	@echo "  download-structures				Download suggested structures from the web"
+	@echo "  install                    Install dependencies using Poetry"
+	@echo "  lint                       Run linters using pre-commit"
+	@echo "  format                     Run formatters using pre-commit"
+	@echo "  pytest                     Run tests using pytest"
+	@echo "  mypy                       Run type-checking using mypy"
+	@echo "  mypy-types                 Install missing types using mypy"
+	@echo "  docs                       Generate documentation using lazydocs"
+	@echo "  download-structures        Run supra_molecular_simulator.download:download_suggested_structures"
 
 install:
 	poetry install
@@ -18,13 +20,20 @@ lint:
 format:
 	pre-commit run ruff-format --all-files
 
-test:
+pytest:
 	poetry run pytest
 
+mypy:
+	poetry run mypy --ignore-missing-imports supra_molecular_simulator
+
+mypy-types:
+	poetry run mypy --install-types
+
 docs:
-	poetry run lazydocs --overview-file="README.md" supra_molecular_simulator
+	rm -rf docs
+	poetry run lazydocs --overview-file="README.md" ./
 
 download-structures:
-	poetry run download-suggested-structures
+	poetry run download-structures
 
 .DEFAULT_GOAL := help
