@@ -31,7 +31,7 @@ mypy-types:
 
 docs:
 	rm -rf docs
-	poetry run lazydocs --overview-file="README.md" ./
+	poetry run lazydocs --overview-file="README.md" src
 
 download-structures:
 	poetry run download-structures
