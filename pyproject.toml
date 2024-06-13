@@ -9,7 +9,8 @@ description = ""
 authors = [ "Damián Martinez <jdmartinez@igc.gulbenkian.pt>", "Bruno Saraiva <bruno.msaraiva2@gmail.com>", "Ricardo Henriques <ricardo@henriqueslab.org>",]
 readme = "README.md"
 [[tool.poetry.packages]]
-include = "src"
+include = "supra_molecular_simulator"
+from = "src"
 
 [tool.poetry.dependencies]
 python = "^3.11"
