@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "supra_molecular_simulator"
-version = "2024.06.13"
+version = "2024.06.14"
 description = ""
 authors = [ "Damián Martinez <jdmartinez@igc.gulbenkian.pt>", "Bruno Saraiva <bruno.msaraiva2@gmail.com>", "Ricardo Henriques <ricardo@henriqueslab.org>",]
 readme = "README.md"

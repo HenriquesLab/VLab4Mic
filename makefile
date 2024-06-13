@@ -24,7 +24,7 @@ pytest:
 	poetry run pytest
 
 mypy:
-	poetry run mypy --ignore-missing-imports supra_molecular_simulator
+	poetry run mypy --ignore-missing-imports src
 
 mypy-types:
 	poetry run mypy --install-types

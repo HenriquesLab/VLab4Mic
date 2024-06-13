@@ -9,6 +9,7 @@ data/
 
 # Files
 .DS_Store
+.coverage
 __pycache__
 poetry.lock
 output.txt
