@@ -13,7 +13,7 @@
 
 ---
 
-<a href="../supra_molecular_simulator/download.py#L9"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../supra_molecular_simulator/download.py#L24"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `download_suggested_structures`
 
@@ -37,7 +37,7 @@ Downloads PDB *.cif.gz files for the suggested structures in the given path.
 
 ---
 
-<a href="../supra_molecular_simulator/download.py#L59"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
+<a href="../supra_molecular_simulator/download.py#L55"><img align="right" style="float:right;" src="https://img.shields.io/badge/-source-cccccc?style=flat-square"></a>
 
 ## <kbd>function</kbd> `download_file`
 
