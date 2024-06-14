@@ -1,8 +1,8 @@
-id:
-title:
-pixelsize: # in scale units
-scale: # in meters
-noise_model:
+id: #(string)
+title: #(string)
+pixelsize: #(float) in scale units
+scale: #(float)in meters
+noise_model: #(dictionary)
   baselevel:
     bl: 0
   binomial:
@@ -15,7 +15,7 @@ noise_model:
     sigma: 0
   poisson:
     mock: null
-noise_order:
+noise_order: #(list; string)
   - binomial
   - gamma
   - baselevel
