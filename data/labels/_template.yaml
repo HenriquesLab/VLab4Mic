@@ -2,4 +2,4 @@ id:
 title:
 label_type: # Direct; Indirect
 target_type:  # Sequence; Site-specific; Residue; 
-fluorophore_type: # 
+fluorophore_type: # Organic-dye; Fluorescent-protein
