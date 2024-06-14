@@ -1,0 +1,8 @@
+id: # (string)
+title: # (string)
+source: # (string): generate; import
+scale: # (float): in meters
+unitary: # (Logical): True; False
+shape: # (list): pixels in x,y,z
+voxelsize: # (list): in units if "scale"
+
