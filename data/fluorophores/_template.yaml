@@ -1,2 +1,4 @@
 id:
 title:
+emission: # constant; blinking
+
