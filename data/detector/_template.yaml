@@ -1,6 +1,6 @@
 id:
 title:
-pixelsize: 0.015
+pixelsize: # in scale units
 scale: # in meters
 noise_model:
   baselevel:

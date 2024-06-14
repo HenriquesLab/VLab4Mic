@@ -1,0 +1,5 @@
+id:
+title: # modality description
+psf: # id of yaml file
+detector: # id of yaml file
+filters: # 
