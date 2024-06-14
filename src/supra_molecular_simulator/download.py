@@ -35,6 +35,9 @@ def download_suggested_structures(data_path: str = "data") -> None:
     structures_path = Path(data_path) / "structures"
 
     for filename in structures_path.glob("*.yaml"):
+        if filename.stem == "_template":
+            continue
+
         cifs_filename = filename.with_suffix(".cif.gz")
 
         with open(filename, "r") as f:
