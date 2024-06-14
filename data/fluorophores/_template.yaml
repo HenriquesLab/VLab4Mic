@@ -1,4 +1,4 @@
 id:
 title:
 emission: # constant; blinking
-
+yield: # base number of photons per second

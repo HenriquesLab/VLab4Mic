@@ -1,0 +1,24 @@
+id:
+title:
+pixelsize: 0.015
+scale: # in meters
+noise_model:
+  baselevel:
+    bl: 0
+  binomial:
+    p: 1
+  conversion:
+    adu: 1
+  gamma:
+    g: 1
+  gaussian:
+    sigma: 0
+  poisson:
+    mock: null
+noise_order:
+  - binomial
+  - gamma
+  - baselevel
+  - gaussian
+  - conversion
+
