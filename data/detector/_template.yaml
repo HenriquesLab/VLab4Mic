@@ -2,6 +2,8 @@ id: #(string)
 title: #(string)
 pixelsize: #(float) in scale units
 scale: #(float)in meters
+bits_pixel: 
+image_size:
 noise_model: #(dictionary)
   baselevel:
     bl: 0
