@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "supra_molecular_simulator"
-version = "2024.06.14"
+version = "2024.09.27"
 description = ""
 authors = [ "Damián Martinez <jdmartinez@igc.gulbenkian.pt>", "Bruno Saraiva <bruno.msaraiva2@gmail.com>", "Ricardo Henriques <ricardo@henriqueslab.org>",]
 readme = "README.md"
@@ -26,6 +26,7 @@ tifffile = "^2024.5.22"
 tqdm = "^4.66.4"
 scikit-image = "^0.23.2"
 requests = "^2.32.3"
+ipykernel = "^6.29.5"
 
 [tool.poetry.scripts]
 download-structures = "supra_molecular_simulator.download:download_suggested_structures"
@@ -48,3 +49,6 @@ pytest = "^8.2.0"
 pytest-xdist = "^3.6.1"
 nbmake = "^1.5.3"
 mypy = "^1.10.0"
+
+[tool.ruff]
+select = ["E501"]  # Ensure long-line rules are enabled
