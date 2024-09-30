@@ -5,11 +5,15 @@ import os
 
 def load_structure(structure_id: str = None, config_dir=None):
     """
-    Reads a structure configuration file for structure_id and creates its object
-    according to the ID. Downloads the file if necesary
+    Initialise a BioPython object for the PDB/CIF ID
+    and retreive available information about specific labelling.
+    Assumes configuration files for structure and labels exist
+    in the configuration directory provided.
+    Downloads the file if necesary.
 
     Args:
-        structure_config: path of structrue configuration file
+        structure_id:  (string) 4 letter ID of structure
+        config_dir: (string) absolute path for configuration files 
     Returns:
         Molecularstructure object
     """
