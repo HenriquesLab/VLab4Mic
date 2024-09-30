@@ -603,3 +603,26 @@ class MolecularReplicates(MolecularStructureParser):
             if mode == "scaling":
                 normals = normals_by_scaling(self.label_targets[target]["coordinates"])
                 self.label_targets[target]["normals"] = normals
+
+
+def build_structure_cif(cif_file: str, struct_title: str = "", cif_id: str = ""):
+    """
+    Load and parse CIF file and build structure object.
+    This generates the minimal object containing all atoms and 
+    associated infomration parsed ready to be accessed when labelling
+    and displaying structure.
+
+    Input:
+        (string): absolute path of CIF
+    Output:
+        (MolecularReplicates) Structure object
+    """
+    structure_dictionary = {
+                    "file":  cif_file,
+                    "title": struct_title,
+                    "format": "CIF",
+                    "ID": cif_id,
+    }
+    Molecularstructure = MolecularReplicates(structure_dictionary)
+    Molecularstructure.build_structure()
+    return Molecularstructure
