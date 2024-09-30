@@ -6,7 +6,7 @@ from Bio.PDB.MMCIF2Dict import MMCIF2Dict
 import matplotlib.pyplot as plt
 
 from ..utils.transform import cif_builder  # Verified
-from ..utils.visualisation.plots import draw1nomral_segment, add_ax_scatter, draw_nomral_segments  # verified
+from ..utils.visualisation.matplotlib_plots import draw1nomral_segment, add_ax_scatter, draw_nomral_segments  # verified
 
 from .labels import Label
 # from ..generate.labels import Label # Unverified

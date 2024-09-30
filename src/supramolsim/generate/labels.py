@@ -5,7 +5,7 @@ import copy
 
 # from simsmlm.utils.visualisation.plots import add_ax_scatter
 
-from ..utils.visualisation.plots import add_ax_scatter, draw1nomral_segment
+from ..utils.visualisation.matplotlib_plots import add_ax_scatter, draw1nomral_segment
 from ..utils.data_format.visualisation import format_coordinates
 
 
