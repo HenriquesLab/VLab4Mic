@@ -9,7 +9,6 @@ from ..utils.transform import cif_builder  # Verified
 from ..utils.visualisation.matplotlib_plots import draw1nomral_segment, add_ax_scatter, draw_nomral_segments  # verified
 
 from .labels import Label
-# from ..generate.labels import Label # Unverified
 
 from ..utils.data_format.visualisation import format_coordinates, set_colorplot  # verified
 
@@ -605,9 +604,9 @@ class MolecularReplicates(MolecularStructureParser):
                 self.label_targets[target]["normals"] = normals
 
 
-def build_structure_cif(cif_file: str, struct_title: str = "", cif_id: str = ""):
+def build_structure_cif(cif_file: str, struct_title: str = "", cif_id: str = "", format_type="CIF"):
     """
-    Load and parse CIF file and build structure object.
+    Load and parse PDB/CIF file and build structure object.
     This generates the minimal object containing all atoms and 
     associated infomration parsed ready to be accessed when labelling
     and displaying structure.
@@ -620,7 +619,7 @@ def build_structure_cif(cif_file: str, struct_title: str = "", cif_id: str = "")
     structure_dictionary = {
                     "file":  cif_file,
                     "title": struct_title,
-                    "format": "CIF",
+                    "format": format_type,
                     "ID": cif_id,
     }
     Molecularstructure = MolecularReplicates(structure_dictionary)
