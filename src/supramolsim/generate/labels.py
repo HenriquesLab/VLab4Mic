@@ -82,7 +82,7 @@ class Label():
 
     def set_emitters(self, emitters):  # TODO: test
         if (np.shape(emitters))[0] < 1:
-            print(f'input need at least 1 points')
+            print('input need at least 1 points')
         else:
             self.params["emitters_coords"] = emitters
 
