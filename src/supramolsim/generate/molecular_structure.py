@@ -121,7 +121,7 @@ class MolecularStructureParser:
                     sequence += peptide.get_sequence()
                 seq_chains_dict[chain.get_id()] = str(sequence)
         self.chains_dict = seq_chains_dict
-        nchains = len(list(seq_chains_dict.keys()))
+        # nchains = len(list(seq_chains_dict.keys()))
         # print(f"file contains {nchains} chains")
 
     def generate_assemmbly_operations(self):
