@@ -13,7 +13,7 @@ def load_structure(structure_id: str = None, config_dir=None):
 
     Args:
         structure_id:  (string) 4 letter ID of structure
-        config_dir: (string) absolute path for configuration files 
+        config_dir: (string) absolute path for configuration files
     Returns:
         Molecularstructure object
     """
@@ -27,9 +27,11 @@ def load_structure(structure_id: str = None, config_dir=None):
         cif_name = structure_id + ".cif"
         cif_file = os.path.join(structure_dir, cif_name)
         # build structure
-        structure = build_structure_cif(cif_file=cif_file,
-                                        struct_title=structure_params["title"],
-                                        cif_id=structure_id)
+        structure = build_structure_cif(
+            cif_file=cif_file,
+            struct_title=structure_params["title"],
+            cif_id=structure_id,
+        )
         print("Structure Loaded!")
         if "labels" not in structure_params.keys():
             print("Structure has no predefined labels")

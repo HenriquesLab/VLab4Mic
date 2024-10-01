@@ -6,15 +6,23 @@ from Bio.PDB.MMCIF2Dict import MMCIF2Dict
 import matplotlib.pyplot as plt
 
 from ..utils.transform import cif_builder  # Verified
-from ..utils.visualisation.matplotlib_plots import draw1nomral_segment, add_ax_scatter, draw_nomral_segments  # verified
+from ..utils.visualisation.matplotlib_plots import (
+    draw1nomral_segment,
+    add_ax_scatter,
+    draw_nomral_segments,
+)  # verified
 
 from .labels import Label
 
-from ..utils.data_format.visualisation import format_coordinates, set_colorplot  # verified
+from ..utils.data_format.visualisation import (
+    format_coordinates,
+    set_colorplot,
+)  # verified
 
 from ..utils.data_format.structural_format import builder_format  # verified
 
 from ..utils.transform.normals import normals_by_scaling  # verified
+
 
 class MolecularStructureParser:
     def __init__(self):
@@ -45,7 +53,6 @@ class MolecularStructureParser:
         temp_ = self.plotting_params["assemblyatoms"]
         self.plotting_params = dict()
         self.plotting_params["assemblyatoms"] = temp_
-
 
     def initialise_parsers(self, dictionary: dict):
         """
@@ -83,7 +90,6 @@ class MolecularStructureParser:
         if self.assembly_refpt is None:
             self.generate_assembly_reference_point()
 
-
     def generate_MMCIF_dictionary(self):
         # generate the dictionary with all field parsed from CIF file
         self.CIFdictionary = MMCIF2Dict(self.source_file)
@@ -98,9 +104,9 @@ class MolecularStructureParser:
             for chain in chains:
                 for residue in chain:
                     for atom in residue:
-                        coordinates.append(
-                            atom.get_vector().get_array()
-                        )  # get array is a method for the class vector of biopython.  np.array(atom.get_vector()) does not return the coordinates from the vector
+                        coordinates.append(atom.get_vector().get_array())
+        # get array is a method for the class vector of biopython.
+        # np.array(atom.get_vector()) does not return the coordinates from the vector
         return np.array(coordinates)
 
     def generate_chains_sequences(self):
@@ -132,7 +138,7 @@ class MolecularStructureParser:
             self.generate_MMCIF_dictionary()
         # get to know how many transformations there are
         transformation_ids = self.CIFdictionary["_pdbx_struct_oper_list.id"]
-        # generate a list, each element of the list is a single pair of matrix-vector needed to transform data
+        # each element of the list is pair of matrix-vector needed to transform data
         # iterate over each of the transformations
         assembly_transformations = []
         for tr in range(len(transformation_ids)):
@@ -168,7 +174,8 @@ class MolecularStructureParser:
         if len(transformation_ids) > 1:
             self.assymetric_defined = True
             # print(
-            #    "This model is defined with more than one symmetric transformation. Will consider the assembly as assymetric defined"
+            #    "This model is defined with more than one symmetric transformation.
+            # Will consider the assembly as assymetric defined"
             # )
         else:
             # when no assembly unit exist, there is only 1 transform expected
@@ -189,7 +196,8 @@ class MolecularStructureParser:
             self.generate_assemmbly_operations()
         if self.assymetric_defined:
             # print(
-            #    "Strcture is defined by assymetric units. Generating symmetry partners with the following transformations."
+            #    "Strcture is defined by assymetric units.
+            # Generating symmetry partners with the following transformations."
             # )
             # hardcoded: use only transforms with integers as id
             assemblyatoms = cif_builder.sym_transforms_numeric_only(
@@ -212,9 +220,9 @@ class MolecularStructureParser:
             vect = self._central_axis_from_rotations()
             self.set_axis_with_vector(vect)
         else:
-            #print(
+            # print(
             #    "Strcture is not defined by assymetric units. Using only atoms in file"
-            #)
+            # )
             if self.store_atoms_assembly:
                 # print("Storing assembly atoms")
                 self.assembly_refpt = np.mean(allatoms_defined, axis=0)
@@ -231,9 +239,7 @@ class MolecularStructureParser:
     def _get_assemblyatoms(self):
         return self.assembly_atoms["coordinates"]
 
-    def set_axis_from_point(
-        self, axis_defining_point
-    ):
+    def set_axis_from_point(self, axis_defining_point):
         direction = axis_defining_point - self.assembly_refpt
         self.axis = dict(pivot=self.assembly_refpt, direction=direction)
 
@@ -253,7 +259,7 @@ class MolecularStructureParser:
         eigenvalues, eigenvectors = np.linalg.eig(average)
         central_axis = eigenvectors[
             :, np.argmax(np.isclose(eigenvalues, 1.0))
-        ]  # because the central axis is the eigenvector that corresponds to the eigenvalue = 1
+        ]  # central axis is the eigenvector that corresponds to the eigenvalue = 1
         return central_axis
 
     # Parsing atoms
@@ -276,7 +282,9 @@ class MolecularStructureParser:
                                     myatoms.append(atom.get_coord())
         return np.array(myatoms)
 
-    def _get_site_specific(self, chainnames: list, resnames: list, atomnames: list, position: int):
+    def _get_site_specific(
+        self, chainnames: list, resnames: list, atomnames: list, position: int
+    ):
         """
         Parse the structure generated and return desired atoms coordinates
         defined with atom name, residue id and chain id
@@ -295,16 +303,25 @@ class MolecularStructureParser:
                         pos = pos + 1
                         # this conditional checks if the residue is
                         # defined in resname list
-                        print(f"resname {pos}: {residue.get_resname()}, segid: {residue.get_segid()}")
+                        print(
+                            f"resname {pos}: {residue.get_resname()}, "
+                            f"segid: {residue.get_segid()}"
+                        )
                         if residue.resname.strip() in resnames and position == pos:
                             for atom in residue:
                                 if atom.name.strip() in atomnames:
                                     myatoms.append(atom.get_coord())
-                                    print(f"site speficic found: {pos}, {residue.resname.strip()}, {atom.name.strip()} ")
+                                    print(
+                                        f"site speficic found: {pos}, "
+                                        f"{residue.resname.strip()}, "
+                                        f"{atom.name.strip()} "
+                                    )
         print(np.array(myatoms))
         return np.array(myatoms)
 
-    def get_atom_res_chains_assembly(self, residues: list, atoms: list, position: int = None):
+    def get_atom_res_chains_assembly(
+        self, residues: list, atoms: list, position: int = None
+    ):
         """
         Parse the structure return desired atoms coordinates
         defined with atom name, residue id and chain id.
@@ -323,7 +340,9 @@ class MolecularStructureParser:
         if position is None:
             atom_res_chain = self._get_atom_res_chain(list_of_chains, residues, atoms)
         else:
-            atom_res_chain = self._get_site_specific(list_of_chains, residues, atoms, position)
+            atom_res_chain = self._get_site_specific(
+                list_of_chains, residues, atoms, position
+            )
         # atom_res_chain only considers a signle asymmetric unit
         # if the CIF defines an assembly, the asymmetric partners
         # or atom_res_chain are generated as well
@@ -336,7 +355,6 @@ class MolecularStructureParser:
         else:
             return atom_res_chain
 
-
     def gen_targets_by_atoms(self, labelobj: Label):
         """
         Generate target locations for the labelling
@@ -347,18 +365,20 @@ class MolecularStructureParser:
         label_name = labelobj.get_name()
         fluorophore = labelobj.get_fluorophore()
         labeling_efficiency = labelobj.get_efficiency()
-        colour = set_colorplot(
-            self.plotting_params
-        )
+        colour = set_colorplot(self.plotting_params)
         parsed = self.get_atom_res_chains_assembly(
-            labelobj.params["residues"], labelobj.params["atoms"], labelobj.params["position"]
+            labelobj.params["residues"],
+            labelobj.params["atoms"],
+            labelobj.params["position"],
         )
-        #label_dictionary = dict(
+        # label_dictionary = dict(
         #    coordinates=parsed,
         #    labeling_efficiency=labeling_efficiency,
         #    fluorophore=fluorophore,
-        #)
-        self.label_targets[label_name] = self._wrapup_label_dictionary(parsed, labeling_efficiency, fluorophore)
+        # )
+        self.label_targets[label_name] = self._wrapup_label_dictionary(
+            parsed, labeling_efficiency, fluorophore
+        )
         label_plotting_params = dict(
             plotsize=20, plotalpha=1, plotmarker="o", plotcolour=colour
         )
@@ -366,9 +386,7 @@ class MolecularStructureParser:
 
     # Parsing secuences
 
-    def gen_targets_by_sequence(
-        self, labelobject: Label
-    ):
+    def gen_targets_by_sequence(self, labelobject: Label):
         """
         Generate target locations for the labelling
         defined as Binding labeling.
@@ -381,7 +399,7 @@ class MolecularStructureParser:
 
         :param labelobj: instance of the class Label
         """
-        #  this funciton considers only the first appearance of the epitope in every chain
+        #  only the first appearance of the epitope in every chain is retreived
         #  if a chain has more than one epitope, only the first one is returned
         target_seq = labelobject.params["target_sequence"]
         method = labelobject.params["summary_method"]
@@ -409,9 +427,7 @@ class MolecularStructureParser:
                     for residue, i in zip(chain, range(len(sequence))):
                         if i >= start and i <= end:
                             for atom in residue:
-                                coords_chain.append(
-                                    atom.get_vector().get_array()
-                                )  # get array is a method for the class vector of biopython.  np.array(atom.get_vector()) does not return the coordinates from the vector
+                                coords_chain.append(atom.get_vector().get_array())
                     coords_chain = np.array(coords_chain)
                     epitopes_list.append(coords_chain)
         # print(len(epitopes_list))
@@ -419,38 +435,44 @@ class MolecularStructureParser:
         summarised_epitopes = cif_builder.summarize_epitope_atoms(
             epitopes_list, method=method
         )
-        colour = set_colorplot(
-            self.plotting_params
-        )
+        colour = set_colorplot(self.plotting_params)
         if self.assymetric_defined:
             print("Generating symmetry partners for epitopes parsed")
             epitopes_locations_assembly = cif_builder.sym_transforms_numeric_only(
-                self.assembly_operations, summarised_epitopes, show_transforms_used=False
+                self.assembly_operations,
+                summarised_epitopes,
+                show_transforms_used=False,
             )
-            self.label_targets[label_name] = self._wrapup_label_dictionary(epitopes_locations_assembly, labeling_efficiency, fluorophore)
+            self.label_targets[label_name] = self._wrapup_label_dictionary(
+                epitopes_locations_assembly, labeling_efficiency, fluorophore
+            )
             label_plotting_params = dict(
                 plotsize=20, plotalpha=1, plotmarker="o", plotcolour=colour
             )
             self.plotting_params[label_name] = label_plotting_params
         else:
-            self.label_targets[label_name] = self._wrapup_label_dictionary(summarised_epitopes, labeling_efficiency, fluorophore)
+            self.label_targets[label_name] = self._wrapup_label_dictionary(
+                summarised_epitopes, labeling_efficiency, fluorophore
+            )
             label_plotting_params = dict(
                 plotsize=20, plotalpha=1, plotmarker="o", plotcolour=colour
             )
             self.plotting_params[label_name] = label_plotting_params
 
-    def _wrapup_label_dictionary(self, coordinates, labeling_efficiency, fluorophore, normals=None):
+    def _wrapup_label_dictionary(
+        self, coordinates, labeling_efficiency, fluorophore, normals=None
+    ):
         label_dictionary = dict(
             coordinates=coordinates,  # this makes the difference
             labeling_efficiency=labeling_efficiency,
             fluorophore=fluorophore,
-            normals=normals
+            normals=normals,
         )
         return label_dictionary
 
     # generate targets from label info
     def gen_Targets(self, labelobj: Label):
-        # this method is able to discern the type of label object and call the generator for it
+        # call the generator depending on the target type
         if labelobj.get_target_type() == "Atom_residue":
             self.gen_targets_by_atoms(labelobj)
         elif labelobj.get_target_type() == "Sequence":
@@ -480,24 +502,25 @@ class MolecularStructureParser:
         view_init=[0, 0, 0],
         axesoff=True,
         show_axis=True,
-        with_normals=False
+        with_normals=False,
     ):
         if labelnames is None:
             fig = plt.figure()
             ax = fig.add_subplot(111, projection="3d")
             for trgt in list(self.label_targets.keys()):
                 if with_normals:
-                    draw_nomral_segments([self.get_target_normals(trgt),
-                                        self.get_target_coords(trgt)],
-                                        ax,
-                                        colors=["grey", self.get_target_colour(trgt)])
+                    draw_nomral_segments(
+                        [self.get_target_normals(trgt), self.get_target_coords(trgt)],
+                        ax,
+                        colors=["grey", self.get_target_colour(trgt)],
+                    )
                 else:
                     add_ax_scatter(
                         ax,
                         format_coordinates(
                             self.get_target_coords(trgt), **self.plotting_params[trgt]
                         ),
-                )
+                    )
         if with_assembly_atoms:
             print(f"Showing {assembly_fraction*100}% of the total atoms")
             atoms_subset = cif_builder.array_coords_subset(
@@ -561,19 +584,19 @@ class MolecularStructureParser:
         targets = dict()
         for target_name, value in self.label_targets.items():
             targets[target_name] = dict(
-                coordinates=value["coordinates"],
-                normals=value["normals"]
+                coordinates=value["coordinates"], normals=value["normals"]
             )
-        instance_builder = builder_format(targets, self.assembly_refpt, self.scale, self.axis,self.identifier)
+        instance_builder = builder_format(
+            targets, self.assembly_refpt, self.scale, self.axis, self.identifier
+        )
         if write:
             if savingdir is None:
                 savingdir = os.getcwd()
             filename = savingdir + "/instance_builder_" + str(self.identifier) + ".yaml"
-            with open(filename, 'w') as file:
+            with open(filename, "w") as file:
                 print(f"Builder saved in: {filename}")
                 yaml.dump(instance_builder, file)
         return instance_builder
-
 
 
 class MolecularReplicates(MolecularStructureParser):
@@ -596,7 +619,9 @@ class MolecularReplicates(MolecularStructureParser):
         if target is None:
             for target_name, value in self.label_targets.items():
                 if mode == "scaling":
-                    normals = normals_by_scaling(self.label_targets[target_name]["coordinates"])
+                    normals = normals_by_scaling(
+                        self.label_targets[target_name]["coordinates"]
+                    )
                     self.label_targets[target_name]["normals"] = normals
         else:
             if mode == "scaling":
@@ -604,10 +629,12 @@ class MolecularReplicates(MolecularStructureParser):
                 self.label_targets[target]["normals"] = normals
 
 
-def build_structure_cif(cif_file: str, struct_title: str = "", cif_id: str = "", format_type="CIF"):
+def build_structure_cif(
+    cif_file: str, struct_title: str = "", cif_id: str = "", format_type="CIF"
+):
     """
     Load and parse PDB/CIF file and build structure object.
-    This generates the minimal object containing all atoms and 
+    This generates the minimal object containing all atoms and
     associated infomration parsed ready to be accessed when labelling
     and displaying structure.
 
@@ -617,10 +644,10 @@ def build_structure_cif(cif_file: str, struct_title: str = "", cif_id: str = "",
         (MolecularReplicates) Structure object
     """
     structure_dictionary = {
-                    "file":  cif_file,
-                    "title": struct_title,
-                    "format": format_type,
-                    "ID": cif_id,
+        "file": cif_file,
+        "title": struct_title,
+        "format": format_type,
+        "ID": cif_id,
     }
     Molecularstructure = MolecularReplicates(structure_dictionary)
     Molecularstructure.build_structure()

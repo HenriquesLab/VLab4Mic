@@ -9,7 +9,7 @@ from ..utils.visualisation.matplotlib_plots import add_ax_scatter, draw1nomral_s
 from ..utils.data_format.visualisation import format_coordinates
 
 
-class Label():
+class Label:
     def __init__(self):
         self.params = {}
         self.params["label_name"] = None
@@ -51,23 +51,21 @@ class Label():
 
     def get_label_type(self):
         return self.params["label_type"]
-    
+
     def get_target_type(self):
         return self.params["target_type"]
 
     def get_plotcolour(self):
         return self.params["plotcolour"]
-    
+
     def get_fluorophore(self):
         return self.params["fluorophore"]
-    
+
     def get_efficiency(self):
         return self.params["labeling_efficiency"]
 
     def get_param(self, param: str):
         return self.params[param]
-
-
 
     def generate_linker(self):
         if self.params["length"] > 0:
@@ -82,7 +80,7 @@ class Label():
 
     def set_emitters(self, emitters):  # TODO: test
         if (np.shape(emitters))[0] < 1:
-            print('input need at least 1 points')
+            print("input need at least 1 points")
         else:
             self.params["emitters_coords"] = emitters
 
@@ -98,7 +96,9 @@ class Label():
             labeling_entity = np.vstack([pivots, labeling_emitters])
         return labeling_entity
 
-    def export_as_file(self, filename="customlabel.yaml", write_dir=""):  #TODO: consider using get_notNone_params method
+    def export_as_file(
+        self, filename="customlabel.yaml", write_dir=""
+    ):  # TODO: consider using get_notNone_params method
         writing_dir = write_dir + filename
         print(f"Writing file in: {writing_dir}")
         # define parameters to write
@@ -114,24 +114,33 @@ class Label():
             coordinates=coordinates,
             target_sequence=self.get_param("target_sequence"),
             plotcolour=None,
-            fluorophore=self.get_param("fluorophore")
+            fluorophore=self.get_param("fluorophore"),
         )
         yaml_dict = dict(
-            labels=[label_params, ]
+            labels=[
+                label_params,
+            ]
         )
-        with open(writing_dir, 'w') as file:
+        with open(writing_dir, "w") as file:
             yaml.dump(yaml_dict, file)
 
-    def plot_emitters(self, view_init=[0,0,0], axesoff=True, show_axis=True):  # TODO: test
+    def plot_emitters(
+        self, view_init=[0, 0, 0], axesoff=True, show_axis=True
+    ):  # TODO: test
         if self.params["emitters_coords"] is None:
-            print(f"Label type is {self.params['label_type']} and does not contain emitter coordinates. To include them manually use method set_emitters.")
+            print(
+                f"Label type is {self.params['label_type']} and does not contain "
+                "emitter coordinates. To include them manually use method set_emitters"
+            )
         else:
             fig = plt.figure()
-            ax = fig.add_subplot(111, projection='3d')
+            ax = fig.add_subplot(111, projection="3d")
             add_ax_scatter(ax, format_coordinates(self.params["emitters_coords"]))
             ax.view_init(elev=view_init[0], azim=view_init[1], roll=view_init[2])
             if show_axis:
-                draw1nomral_segment(self.params["axis"], ax, lenght=150, colors=['g', 'y'])
+                draw1nomral_segment(
+                    self.params["axis"], ax, lenght=150, colors=["g", "y"]
+                )
             ax = plt.gca()
             emitters = self.params["emitters_coords"]
             minimum = np.min(emitters)
@@ -141,10 +150,12 @@ class Label():
             ax.set_zlim(minimum, maximum)
             if axesoff:
                 ax.set_axis_off()
-            ax.set_box_aspect([ub - lb for lb, ub in (getattr(ax, f'get_{a}lim')() for a in 'xyz')])
+            ax.set_box_aspect(
+                [ub - lb for lb, ub in (getattr(ax, f"get_{a}lim")() for a in "xyz")]
+            )
             fig.show
 
     def get_notNone_params(self):
         for key, value in self.params.items():
             if value is not None:
-                print(f'{key}: {value}')
+                print(f"{key}: {value}")
