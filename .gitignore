@@ -6,6 +6,7 @@ dist/
 build/
 data/
 *.egg-info/
+tests/
 
 # Files
 .DS_Store
