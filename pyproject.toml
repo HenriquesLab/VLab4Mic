@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "supramolsim"
-version = "2024.09.27"
+version = "2024.10.01"
 description = ""
 authors = [ "Damián Martinez <jdmartinez@igc.gulbenkian.pt>", "Bruno Saraiva <bruno.msaraiva2@gmail.com>", "Ricardo Henriques <ricardo@henriqueslab.org>",]
 readme = "README.md"
@@ -49,6 +49,3 @@ pytest = "^8.2.0"
 pytest-xdist = "^3.6.1"
 nbmake = "^1.5.3"
 mypy = "^1.10.0"
-
-[tool.ruff]
-select = ["E501"]  # Ensure long-line rules are enabled
