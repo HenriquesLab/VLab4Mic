@@ -6,7 +6,7 @@ dist/
 build/
 data/
 *.egg-info/
-tests/
+src/supramolsim/configuration
 
 # Files
 .DS_Store
