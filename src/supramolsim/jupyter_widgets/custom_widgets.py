@@ -1,5 +1,6 @@
 import easy_gui_jupyter
 import supramolsim
+from ..utils import data_format
 from ..workflows import *
 import matplotlib.pyplot as plt
 from IPython.display import clear_output
@@ -106,7 +107,7 @@ def select_structure():
             structure = build_structure_cif(
                 cif_file=filepath, struct_title=filename, cif_id=filename
             )
-            structure_param = struct_params_format()
+            structure_param = data_format.structural_format.struct_params_format()
             print("Structure Loaded!")
             structure_gui["View"].disabled = False
             structure_gui["Fraction"].disabled = False
