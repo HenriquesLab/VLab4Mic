@@ -14,3 +14,6 @@ def test_load_structure(structure_id):
         structure_id, configuration_path
     )
     assert structure.assembly_refpt.shape == (3,)
+
+
+# test user-input file
