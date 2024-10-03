@@ -1,4 +1,5 @@
 import easy_gui_jupyter
+import ipywidgets as widgets
 import supramolsim
 from ..utils import data_format
 from ..workflows import *
@@ -194,3 +195,250 @@ def select_structure():
         structure_gui["Fileupload"].on_click(activate_upload)
         display(structure_gui["Demos"], structure_gui["Fileupload"])
         # structure_gui.show()
+
+
+def create_structural_model():
+    global labels_list, current_labels, particle, particle_created, structure
+    # ensure that structure has no labels associated
+    labels_gui = easy_gui_jupyter.EasyGUI("Labels")
+    if configuration_path is None:
+        print("No configuration_path has been loaded")
+    else:
+        particle_created = False
+        current_labels = dict()
+        generic_labels = []
+        fluorophores_list = []
+        fluorophores_dir = os.path.join(configuration_path[0], "fluorophores")
+        labels_dir = os.path.join(configuration_path[0], "labels")
+        for fluoid in os.listdir(fluorophores_dir):
+            if os.path.splitext(fluoid)[-1] == ".yaml" and "_template" not in fluoid:
+                fluorophores_list.append(os.path.splitext(fluoid)[0])
+        for file in os.listdir(labels_dir):
+            if os.path.splitext(file)[-1] == ".yaml" and "_template" not in file:
+                lablname = os.path.splitext(file)[0]
+                if lablname.split("_")[0] == "Generic":
+                    generic_labels.append(lablname)
+
+        def build_label(b):
+            label_id = labels_gui["label_dropdown"].value
+            if label_id == "<None>":
+                print("Invalid label, no label added")
+            else:
+                fluorophore_id = labels_gui["fluo_dropdown"].value
+                lab_eff = labels_gui["Labelling_efficiency"].value
+                tmp_label = data_format.structural_format.label_builder_format(
+                    label_id, fluorophore_id, lab_eff
+                )
+                unique_name = label_id + "_conjugated_" + fluorophore_id
+                if unique_name in current_labels.keys():
+                    print("label already exist")
+                else:
+                    current_labels[unique_name] = tmp_label
+                    print(f"label added: {unique_name}")
+
+        def build_generic_label(b):
+            label_id = labels_gui["generic_label_dropdown"].value
+            fluorophore_id = labels_gui["generc_fluo_dropdown"].value
+            lab_eff = labels_gui["generic_Labelling_efficiency"].value
+            tmp_label = data_format.structural_format.label_builder_format(
+                label_id, fluorophore_id, lab_eff
+            )
+            unique_name = label_id + "_conjugated_" + fluorophore_id
+            if unique_name in current_labels.keys():
+                print("label already exist")
+            else:
+                current_labels[unique_name] = tmp_label
+                print(f"label added: {unique_name}")
+
+        def clear(b):
+            current_labels.clear()
+
+        def show(b):
+            global current_labels
+            for lab in current_labels.keys():
+                print(lab)
+
+        def label_struct(b):
+            global particle, configuration_path, particle_created, nlabels
+            particle_created = True
+            labels_list = []
+            if len(current_labels.keys()) > 0:
+                nlabels = len(current_labels)
+                for keys, values in current_labels.items():
+                    labels_list.append(values)
+                # print(labels_list)
+                particle = supramolsim.particle_from_structure(
+                    structure, labels_list, configuration_path[0]
+                )
+                print("Structure has been labelled")
+            else:
+                print("No label has been added")
+
+        labels_gui.add_label("Structure specific labels")
+        if structure is not None:
+            labels_gui.add_dropdown("label_dropdown", options=structure_param["labels"])
+            labels_gui.add_dropdown("fluo_dropdown", options=fluorophores_list)
+            labels_gui.add_float_slider(
+                "Labelling_efficiency",
+                value=1,
+                min=0,
+                max=1,
+                step=0.01,
+                description="Labelling efficiency",
+            )
+            labels_gui.add_button("Add", description="Add specific label")
+            labels_gui["Add"].on_click(build_label)
+
+        labels_gui.add_label("Generic labels")
+        labels_gui.add_dropdown("generic_label_dropdown", options=generic_labels)
+        labels_gui.add_dropdown("generc_fluo_dropdown", options=fluorophores_list)
+        labels_gui.add_float_slider(
+            "generic_Labelling_efficiency",
+            value=1,
+            min=0,
+            max=1,
+            step=0.01,
+            description="Labelling efficiency",
+        )
+        labels_gui.add_button("Add_generic", description="Add generic label")
+        labels_gui["Add_generic"].on_click(build_generic_label)
+
+        labels_gui.add_button("Clear", description="Clear Labels")
+        labels_gui.add_button("Show", description="Display current labels")
+        labels_gui.add_label(
+            "After adding labels, create a labelled model of your structure"
+        )
+        labels_gui.add_button("Label", description="Label structure")
+        labels_gui["Clear"].on_click(clear)
+        labels_gui["Show"].on_click(show)
+        labels_gui["Label"].on_click(label_struct)
+        if structure is None:
+            print("No structure has been loaded")
+        else:
+            structure._clear_labels()
+            labels_gui.show()
+
+
+def refine_structural_model():
+    global particle, particle_created, plot_exists
+    structural_model_gui = easy_gui_jupyter.EasyGUI("StructuralModel")
+
+    def show_model(b):
+        global particle, particle_created, plot_exists
+        plt.clf()
+        clear_output()
+        emitter_plotsize = structural_model_gui["emitterplotsize"].value
+        source_size = structural_model_gui["sourceplotsize"].value
+        structural_model_gui.show()
+        if particle_created:
+            # fig = plt.figure()
+            fig, axs = plt.subplots(1, 3, subplot_kw={"projection": "3d"})
+            particle.gen_axis_plot(
+                with_sources=structural_model_gui["WTarget"].value,
+                source_plotsize=source_size,
+                axesoff=structural_model_gui["Axes"].value,
+                view_init=[0, 0, 0],
+                axis_object=axs[0],
+                emitter_plotsize=emitter_plotsize,
+            )
+            particle.gen_axis_plot(
+                with_sources=structural_model_gui["WTarget"].value,
+                source_plotsize=source_size,
+                axesoff=structural_model_gui["Axes"].value,
+                view_init=[30, 0, 0],
+                axis_object=axs[1],
+                emitter_plotsize=emitter_plotsize,
+            )
+            particle.gen_axis_plot(
+                with_sources=structural_model_gui["WTarget"].value,
+                source_plotsize=source_size,
+                axesoff=structural_model_gui["Axes"].value,
+                view_init=[90, 0, 0],
+                axis_object=axs[2],
+                emitter_plotsize=emitter_plotsize,
+            )
+            plt.subplots_adjust(wspace=0.5)
+            plt.show()
+        else:
+            print(
+                "You have not created a labelled structure. "
+                "Make sure you select 'Label structure' button on previous cell"
+            )
+
+    def add_defects(b):
+        global particle, nlabels
+        if nlabels == 1:
+            particle.add_defects(
+                eps1=structural_model_gui["eps1"].value,
+                xmer_neigh_distance=structural_model_gui["xmer_neigh_distance"].value,
+                deg_dissasembly=structural_model_gui["Defect"].value,
+            )
+            # particle.generate_instance()
+            # print("Defects added")
+            message = "Defects added"
+        else:
+            # print("Defect modelling is currently unsupported for more than one label")
+            message = (
+                "Defect modelling is currently unsupported for more than one label"
+            )
+        structural_model_gui.save_settings()
+        show_model(b)
+        print(message)
+
+    def relabel(b):
+        particle.generate_instance()
+        show_model(b)
+
+    structural_model_gui.add_button("Show", description="Show current model")
+    structural_model_gui.add_label("Visualisation parameters")
+    structural_model_gui.add_float_slider(
+        "emitterplotsize", value=24, min=0, max=50, step=1, description="Emitter size"
+    )
+    structural_model_gui.add_float_slider(
+        "sourceplotsize", value=1, min=0, max=50, step=1, description="Target size"
+    )
+    structural_model_gui.add_checkbox(
+        "WTarget", description="With target site", value=True
+    )
+    structural_model_gui.add_checkbox("Axes", description="Hide Axes", value=True)
+    structural_model_gui.add_button(
+        "Relabel", description="Recalculate labelled particle and show"
+    )
+    structural_model_gui.add_label("Model defects parameters (optional):")
+    structural_model_gui._widgets["eps1"] = widgets.BoundedIntText(
+        value=300,
+        min=0,
+        max=100000,
+        description="Short distance cluster",
+        layout=structural_model_gui._layout,
+        style=structural_model_gui._style,
+        remember_value=True,
+    )
+    structural_model_gui._widgets["xmer_neigh_distance"] = widgets.BoundedIntText(
+        value=600,
+        min=0,
+        max=100000,
+        description="Long distance cluster",
+        layout=structural_model_gui._layout,
+        style=structural_model_gui._style,
+        remember_value=True,
+    )
+    structural_model_gui._widgets["Defect"] = widgets.BoundedFloatText(
+        value=0.5,
+        min=0,
+        max=1,
+        description="percentage of defect",
+        layout=structural_model_gui._layout,
+        style=structural_model_gui._style,
+        remember_value=True,
+    )
+    structural_model_gui.add_button(
+        "Defects", description="Model defects and show model"
+    )
+    structural_model_gui["Show"].on_click(show_model)
+    structural_model_gui["Defects"].on_click(add_defects)
+    structural_model_gui["Relabel"].on_click(relabel)
+    if particle:
+        structural_model_gui.show()
+    else:
+        print("No particle has been created")

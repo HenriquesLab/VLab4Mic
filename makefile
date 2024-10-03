@@ -21,7 +21,7 @@ format:
 	pre-commit run ruff-format --all-files
 
 pytest:
-	poetry run pytest
+	poetry run pytest --cov=supramolsim
 
 mypy:
 	poetry run mypy --ignore-missing-imports src

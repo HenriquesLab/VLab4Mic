@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "supramolsim"
-version = "2024.10.02"
+version = "2024.10.03"
 description = ""
 authors = [ "Damián Martinez <jdmartinez@igc.gulbenkian.pt>", "Bruno Saraiva <bruno.msaraiva2@gmail.com>", "Ricardo Henriques <ricardo@henriqueslab.org>",]
 readme = "README.md"
@@ -27,6 +27,8 @@ tqdm = "^4.66.4"
 scikit-image = "^0.23.2"
 requests = "^2.32.3"
 ipykernel = "^6.29.5"
+scikit-learn = "^1.5.0"
+pytest-cov = "^5.0.0"
 
 [tool.poetry.scripts]
 download-structures = "supramolsim.download:download_suggested_structures"

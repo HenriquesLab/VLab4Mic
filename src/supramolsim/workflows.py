@@ -1,5 +1,8 @@
 from .generate.molecular_structure import build_structure_cif
 from .utils.io.yaml_functions import load_yaml
+from .generate.molecular_structure import MolecularReplicates
+from .generate import labelled_instance as labinstance
+from .generate.labels import construct_label
 import os
 
 
@@ -39,3 +42,42 @@ def load_structure(structure_id: str = None, config_dir=None):
         return structure, structure_params
     else:
         print("No configuration directory exists")
+
+
+def particle_from_structure(
+    structure: MolecularReplicates, labels=list, config_dir=None
+):
+    """
+    Create a label object from each pair of label and fluorophore configuration files
+    and this label it to create targets on the structure object.
+
+    Args:
+        structure: (MolecularReplicates) Object that represent the parsed CIF
+        labels: (list) list of dictionaries. Each dictionary
+        contains its label ID and Fluorophore ID
+    Returns:
+        particle: (LabelledInstance)
+    """
+    if config_dir is not None:
+        label_params_list = []
+        label_config_dir = os.path.join(config_dir, "labels")
+        for label in labels:
+            label_name = label["label_id"] + ".yaml"
+            label_config_path = os.path.join(label_config_dir, label_name)
+            label_object, label_params = construct_label(
+                label_config_path,
+                label["fluorophore_id"],
+                lab_eff=label["labelling_efficiency"],
+            )
+            label_params_list.append(label_params)
+            # print(f"Label type is: {label_params["label_type"]}")
+            structure.add_label(label_object)
+            # print(label_params)
+            if label_params["label_type"] == "BindingLabel":
+                print("Label is indirect label")
+                structure.assign_normals2targets()  # default is with scaling
+        inst_builder = structure.create_instance_builder()
+        particle = labinstance.create_particle(
+            source_builder=inst_builder, label_params_list=label_params_list
+        )
+        return particle

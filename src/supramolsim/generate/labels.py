@@ -3,10 +3,9 @@ import numpy as np
 import yaml
 import copy
 
-# from simsmlm.utils.visualisation.plots import add_ax_scatter
-
 from ..utils.visualisation.matplotlib_plots import add_ax_scatter, draw1nomral_segment
 from ..utils.data_format.visualisation import format_coordinates
+from ..utils.io.yaml_functions import load_yaml
 
 
 class Label:
@@ -159,3 +158,26 @@ class Label:
         for key, value in self.params.items():
             if value is not None:
                 print(f"{key}: {value}")
+
+
+def construct_label(label_config_path: str, fluorophore_id: str, lab_eff: float = None):
+    """
+    Construct an object of class Label.
+
+    Args:
+        label_id: (string) ID of Label configuration file
+        fluorophore_id: (string) ID of fluorophore configuration file
+    Output:
+        label: (Label) Object of class Label()
+        label_params: (dictionary)
+        fluorophore_params: (dictionary)
+    """
+    label_params = load_yaml(label_config_path)
+    # Build label
+    label_params["fluorophore"] = fluorophore_id
+    if lab_eff is not None:
+        label_params["labeling_efficiency"] = lab_eff
+    label = Label()
+    label.set_params(**label_params)
+    label.set_fluorophore(fluorophore_id)
+    return label, label_params
