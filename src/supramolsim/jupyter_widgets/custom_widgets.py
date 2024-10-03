@@ -194,3 +194,126 @@ def select_structure():
         structure_gui["Fileupload"].on_click(activate_upload)
         display(structure_gui["Demos"], structure_gui["Fileupload"])
         # structure_gui.show()
+
+
+def create_structural_model():
+    global labels_list, current_labels, particle, particle_created, structure
+    # ensure that structure has no labels associated
+    labels_gui = easy_gui_jupyter.EasyGUI("Labels")
+    if configuration_path is None:
+        print("No configuration_path has been loaded")
+    else:
+        particle_created = False
+        current_labels = dict()
+        generic_labels = []
+        fluorophores_list = []
+        fluorophores_dir = os.path.join(configuration_path[0], "fluorophores")
+        labels_dir = os.path.join(configuration_path[0], "labels")
+        for fluoid in os.listdir(fluorophores_dir):
+            if os.path.splitext(fluoid)[-1] == ".yaml" and "_template" not in fluoid:
+                fluorophores_list.append(os.path.splitext(fluoid)[0])
+        for file in os.listdir(labels_dir):
+            if os.path.splitext(file)[-1] == ".yaml" and "_template" not in file:
+                lablname = os.path.splitext(file)[0]
+                if lablname.split("_")[0] == "Generic":
+                    generic_labels.append(lablname)
+
+        def build_label(b):
+            label_id = labels_gui["label_dropdown"].value
+            if label_id == "<None>":
+                print("Invalid label, no label added")
+            else:
+                fluorophore_id = labels_gui["fluo_dropdown"].value
+                lab_eff = labels_gui["Labelling_efficiency"].value
+                tmp_label = data_format.structural_format.label_builder_format(
+                    label_id, fluorophore_id, lab_eff
+                )
+                unique_name = label_id + "_conjugated_" + fluorophore_id
+                if unique_name in current_labels.keys():
+                    print("label already exist")
+                else:
+                    current_labels[unique_name] = tmp_label
+                    print(f"label added: {unique_name}")
+
+        def build_generic_label(b):
+            label_id = labels_gui["generic_label_dropdown"].value
+            fluorophore_id = labels_gui["generc_fluo_dropdown"].value
+            lab_eff = labels_gui["generic_Labelling_efficiency"].value
+            tmp_label = data_format.structural_format.label_builder_format(
+                label_id, fluorophore_id, lab_eff
+            )
+            unique_name = label_id + "_conjugated_" + fluorophore_id
+            if unique_name in current_labels.keys():
+                print("label already exist")
+            else:
+                current_labels[unique_name] = tmp_label
+                print(f"label added: {unique_name}")
+
+        def clear(b):
+            current_labels.clear()
+
+        def show(b):
+            global current_labels
+            for lab in current_labels.keys():
+                print(lab)
+
+        def label_struct(b):
+            global particle, configuration_path, particle_created, nlabels
+            particle_created = True
+            labels_list = []
+            if len(current_labels.keys()) > 0:
+                nlabels = len(current_labels)
+                for keys, values in current_labels.items():
+                    labels_list.append(values)
+                # print(labels_list)
+                particle = supramolsim.add_labels(
+                    structure, labels_list, configuration_path[0]
+                )
+                print("Structure has been labelled")
+                # print(structure.label_targets)
+            else:
+                print("No label has been added")
+
+        labels_gui.add_label("Structure specific labels")
+        if structure is not None:
+            labels_gui.add_dropdown("label_dropdown", options=structure_param["labels"])
+            labels_gui.add_dropdown("fluo_dropdown", options=fluorophores_list)
+            labels_gui.add_float_slider(
+                "Labelling_efficiency",
+                value=1,
+                min=0,
+                max=1,
+                step=0.01,
+                description="Labelling efficiency",
+            )
+            labels_gui.add_button("Add", description="Add specific label")
+            labels_gui["Add"].on_click(build_label)
+
+        labels_gui.add_label("Generic labels")
+        labels_gui.add_dropdown("generic_label_dropdown", options=generic_labels)
+        labels_gui.add_dropdown("generc_fluo_dropdown", options=fluorophores_list)
+        labels_gui.add_float_slider(
+            "generic_Labelling_efficiency",
+            value=1,
+            min=0,
+            max=1,
+            step=0.01,
+            description="Labelling efficiency",
+        )
+        labels_gui.add_button("Add_generic", description="Add generic label")
+        labels_gui["Add_generic"].on_click(build_generic_label)
+
+        labels_gui.add_button("Clear", description="Clear Labels")
+        labels_gui.add_button("Show", description="Display current labels")
+        labels_gui.add_label(
+            "After adding labels, create a labelled model of your structure"
+        )
+        labels_gui.add_button("Label", description="Label structure")
+        labels_gui["Clear"].on_click(clear)
+        labels_gui["Show"].on_click(show)
+        labels_gui["Label"].on_click(label_struct)
+        if structure is None:
+            print("No structure has been loaded")
+        else:
+            structure._clear_labels()
+            labels_gui.show()
