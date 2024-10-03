@@ -35,6 +35,7 @@ class LabeledInstance:
         self.defects_params = dict()
         self.defects_target_normals = None
         self.fluo2labels = []
+        self.status = dict(source=False, labels=False)
 
     def set_params(self, **kwargs):
         """
@@ -82,6 +83,7 @@ class LabeledInstance:
         self._set_source_scale(scale)
         self._set_source_axis(axis)
         self._set_source_info(info)
+        self.status["source"] = True
 
     def _get_source_target_normals(self, target_name):
         if self.source["targets"][target_name]["normals"] is None:
@@ -175,6 +177,7 @@ class LabeledInstance:
             fluorophore=fluorophore,
         )
         self.labels[label_name] = label_params
+        self.status["labels"] = True
 
     def _get_labels(self):
         return self.labels
@@ -298,8 +301,11 @@ class LabeledInstance:
         return instance_constructor
 
     def generate_instance(self):
-        constructor = self._generate_instance_constructor()
-        self.add_emitters_n_refpoint(**constructor)
+        if self.status["source"] and self.status["labels"]:
+            constructor = self._generate_instance_constructor()
+            self.add_emitters_n_refpoint(**constructor)
+        else:
+            print("Missing source or Label info")
 
     def add_defects(
         self,
@@ -614,3 +620,36 @@ class LabeledInstance:
                 for lb, ub in (getattr(axis_object, f"get_{a}lim")() for a in "xyz")
             ]
         )
+
+
+def create_particle(source_builder=None, label_params_list=None):
+    particle = LabeledInstance()
+    if source_builder is not None:
+        particle.load_source(**source_builder)  # define the source
+    if label_params_list is not None:
+        particle = add_label_params_to_particle(particle, label_params_list)
+    particle.generate_instance()
+    return particle
+
+
+def add_label_params_to_particle(particle: LabeledInstance, label_params):
+    """
+    Add source parameters to an initialised particle containing Target sites.
+
+    """
+    targets = dict()
+    for lab in label_params:
+        # print(lab)
+        fluorophore = lab["fluorophore"]
+        coordinates = None
+        if "coordinates" in lab.keys():
+            # print(lab["coordinates"])
+            coordinates = np.array(lab["coordinates"])
+            # print(coordinates, type(coordinates))
+        targets[fluorophore] = coordinates
+        particle.load_label(
+            targets=targets,
+            label_name=lab["label_name"],
+            labellig_efficiency=lab["labeling_efficiency"],
+        )
+    return particle
