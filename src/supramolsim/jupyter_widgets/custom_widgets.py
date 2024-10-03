@@ -1,4 +1,5 @@
 import easy_gui_jupyter
+import ipywidgets as widgets
 import supramolsim
 from ..utils import data_format
 from ..workflows import *
@@ -266,11 +267,10 @@ def create_structural_model():
                 for keys, values in current_labels.items():
                     labels_list.append(values)
                 # print(labels_list)
-                particle = supramolsim.add_labels(
+                particle = supramolsim.particle_from_structure(
                     structure, labels_list, configuration_path[0]
                 )
                 print("Structure has been labelled")
-                # print(structure.label_targets)
             else:
                 print("No label has been added")
 
@@ -317,3 +317,128 @@ def create_structural_model():
         else:
             structure._clear_labels()
             labels_gui.show()
+
+
+def refine_structural_model():
+    global particle, particle_created, plot_exists
+    structural_model_gui = easy_gui_jupyter.EasyGUI("StructuralModel")
+
+    def show_model(b):
+        global particle, particle_created, plot_exists
+        plt.clf()
+        clear_output()
+        emitter_plotsize = structural_model_gui["emitterplotsize"].value
+        source_size = structural_model_gui["sourceplotsize"].value
+        structural_model_gui.show()
+        if particle_created:
+            # fig = plt.figure()
+            fig, axs = plt.subplots(1, 3, subplot_kw={"projection": "3d"})
+            particle.gen_axis_plot(
+                with_sources=structural_model_gui["WTarget"].value,
+                source_plotsize=source_size,
+                axesoff=structural_model_gui["Axes"].value,
+                view_init=[0, 0, 0],
+                axis_object=axs[0],
+                emitter_plotsize=emitter_plotsize,
+            )
+            particle.gen_axis_plot(
+                with_sources=structural_model_gui["WTarget"].value,
+                source_plotsize=source_size,
+                axesoff=structural_model_gui["Axes"].value,
+                view_init=[30, 0, 0],
+                axis_object=axs[1],
+                emitter_plotsize=emitter_plotsize,
+            )
+            particle.gen_axis_plot(
+                with_sources=structural_model_gui["WTarget"].value,
+                source_plotsize=source_size,
+                axesoff=structural_model_gui["Axes"].value,
+                view_init=[90, 0, 0],
+                axis_object=axs[2],
+                emitter_plotsize=emitter_plotsize,
+            )
+            plt.subplots_adjust(wspace=0.5)
+            plt.show()
+        else:
+            print(
+                "You have not created a labelled structure. "
+                "Make sure you select 'Label structure' button on previous cell"
+            )
+
+    def add_defects(b):
+        global particle, nlabels
+        if nlabels == 1:
+            particle.add_defects(
+                eps1=structural_model_gui["eps1"].value,
+                xmer_neigh_distance=structural_model_gui["xmer_neigh_distance"].value,
+                deg_dissasembly=structural_model_gui["Defect"].value,
+            )
+            # particle.generate_instance()
+            # print("Defects added")
+            message = "Defects added"
+        else:
+            # print("Defect modelling is currently unsupported for more than one label")
+            message = (
+                "Defect modelling is currently unsupported for more than one label"
+            )
+        structural_model_gui.save_settings()
+        show_model(b)
+        print(message)
+
+    def relabel(b):
+        particle.generate_instance()
+        show_model(b)
+
+    structural_model_gui.add_button("Show", description="Show current model")
+    structural_model_gui.add_label("Visualisation parameters")
+    structural_model_gui.add_float_slider(
+        "emitterplotsize", value=24, min=0, max=50, step=1, description="Emitter size"
+    )
+    structural_model_gui.add_float_slider(
+        "sourceplotsize", value=1, min=0, max=50, step=1, description="Target size"
+    )
+    structural_model_gui.add_checkbox(
+        "WTarget", description="With target site", value=True
+    )
+    structural_model_gui.add_checkbox("Axes", description="Hide Axes", value=True)
+    structural_model_gui.add_button(
+        "Relabel", description="Recalculate labelled particle and show"
+    )
+    structural_model_gui.add_label("Model defects parameters (optional):")
+    structural_model_gui._widgets["eps1"] = widgets.BoundedIntText(
+        value=300,
+        min=0,
+        max=100000,
+        description="Short distance cluster",
+        layout=structural_model_gui._layout,
+        style=structural_model_gui._style,
+        remember_value=True,
+    )
+    structural_model_gui._widgets["xmer_neigh_distance"] = widgets.BoundedIntText(
+        value=600,
+        min=0,
+        max=100000,
+        description="Long distance cluster",
+        layout=structural_model_gui._layout,
+        style=structural_model_gui._style,
+        remember_value=True,
+    )
+    structural_model_gui._widgets["Defect"] = widgets.BoundedFloatText(
+        value=0.5,
+        min=0,
+        max=1,
+        description="percentage of defect",
+        layout=structural_model_gui._layout,
+        style=structural_model_gui._style,
+        remember_value=True,
+    )
+    structural_model_gui.add_button(
+        "Defects", description="Model defects and show model"
+    )
+    structural_model_gui["Show"].on_click(show_model)
+    structural_model_gui["Defects"].on_click(add_defects)
+    structural_model_gui["Relabel"].on_click(relabel)
+    if particle:
+        structural_model_gui.show()
+    else:
+        print("No particle has been created")
