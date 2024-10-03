@@ -3,6 +3,7 @@ from .utils.io.yaml_functions import load_yaml
 from .generate.molecular_structure import MolecularReplicates
 from .generate import labelled_instance as labinstance
 from .generate.labels import construct_label
+from .generate.coordinates_field import create_min_field
 import os
 
 
@@ -81,3 +82,15 @@ def particle_from_structure(
             source_builder=inst_builder, label_params_list=label_params_list
         )
         return particle
+
+
+def field_from_particle(
+    particle: labinstance.LabeledInstance, field_config: str = None
+):
+    coordinates_field = create_min_field()
+    if field_config is not None:
+        print("Creating field from parameter files")
+        coordinates_field.init_from_file(field_config)
+    coordinates_field.create_molecules_from_InstanceObject(particle)
+    coordinates_field.construct_static_field()
+    return coordinates_field.export_field(), coordinates_field
