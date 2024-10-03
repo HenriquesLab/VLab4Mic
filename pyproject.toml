@@ -27,6 +27,7 @@ tqdm = "^4.66.4"
 scikit-image = "^0.23.2"
 requests = "^2.32.3"
 ipykernel = "^6.29.5"
+scikit-learn = "^1.5.0"
 
 [tool.poetry.scripts]
 download-structures = "supramolsim.download:download_suggested_structures"
