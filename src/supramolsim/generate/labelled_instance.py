@@ -11,6 +11,7 @@ from ..utils.transform.points_transforms import (
 from ..utils.data_format.visualisation import format_coordinates, set_colorplot
 from ..utils.visualisation.matplotlib_plots import add_ax_scatter, draw1nomral_segment
 from ..utils.transform.cif_builder import create_instance_label
+from ..utils.transform.defects import xmersubset_byclustering
 
 
 class LabeledInstance:
