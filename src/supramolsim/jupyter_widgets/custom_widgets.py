@@ -1,6 +1,7 @@
 import easy_gui_jupyter
 import ipywidgets as widgets
 import supramolsim
+import supramolsim.generate.coordinates_field as field
 from ..utils import data_format
 from ..workflows import *
 import matplotlib.pyplot as plt
@@ -442,3 +443,34 @@ def refine_structural_model():
         structural_model_gui.show()
     else:
         print("No particle has been created")
+
+
+def create_field():
+    global particle_field, exported_field, particle, field_gui, coordinates_field
+    field_gui = easy_gui_jupyter.EasyGUI("field")
+
+    def createmin(b):
+        global coordinates_field, exported_field
+        random_pl = True
+        coordinates_field = field.create_min_field(random_placing=random_pl)
+        exported_field = coordinates_field.export_field()
+        field_gui["show"].disabled = False
+
+    def showfield(b):
+        plt.clf()
+        global coordinates_field
+        coordinates_field.show_field(view_init=[90, 0, 0])
+
+    field_gui.add_button("minimal", description="Create minimal field (random)")
+    field_gui.add_button("show", description="Show field", disabled=True)
+    field_gui["minimal"].on_click(createmin)
+    field_gui["show"].on_click(showfield)
+
+    if particle is None:
+        print("There is no particle initalised")
+        field_gui.show()
+    else:
+        print("Using existing structural model")
+        field_gui["show"].disabled = False
+        display(field_gui["show"])
+        exported_field, coordinates_field = field_from_particle(particle)
