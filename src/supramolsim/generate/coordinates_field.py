@@ -518,3 +518,12 @@ class Field:
             field_sizes=field_sizes,
         )
         return export_field
+
+
+def create_min_field(nparticles=1, random_placing=False):
+    print("Initialising default field")
+    coordinates_field = Field()
+    coordinates_field.create_minimal_field(
+        nmolecules=nparticles, random_placing=random_placing
+    )
+    return coordinates_field
