@@ -98,7 +98,7 @@ def field_from_particle(
     return coordinates_field.export_field(), coordinates_field
 
 
-def imaging_system_from_field(
+def create_imaging_system(
     exported_field=None, modalities_id_list: list = None, config_dir=None, **kwargs
 ):
     """
