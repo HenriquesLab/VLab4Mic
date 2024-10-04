@@ -4,6 +4,8 @@ from .generate.molecular_structure import MolecularReplicates
 from .generate import labelled_instance as labinstance
 from .generate.labels import construct_label
 from .generate.coordinates_field import create_min_field
+from .generate.imaging import Imager
+from .utils.data_format.configuration_format import compile_modality_parameters
 import os
 
 
@@ -94,3 +96,40 @@ def field_from_particle(
     coordinates_field.create_molecules_from_InstanceObject(particle)
     coordinates_field.construct_static_field()
     return coordinates_field.export_field(), coordinates_field
+
+
+def imaging_system_from_field(
+    exported_field=None, modalities_id_list: list = None, config_dir=None, **kwargs
+):
+    """
+    Reads the configuration files for the specified imaging modalities and
+    creates the imager object
+
+    args:
+        particle: LabeledInstance
+        modalities_list: (list) List of modalities ID
+    returns:
+        imager (Optics Object) Object containing modalities and structural model
+    """
+
+    if config_dir is not None:
+        if exported_field is None:
+            # minimal field
+            coordinates_field = create_min_field()
+            exported_field = coordinates_field.export_field()
+            image_generator = Imager()
+            image_generator.import_field(**exported_field)
+        else:
+            image_generator = Imager()
+            image_generator.import_field(**exported_field)
+        fluo_emission = dict()
+        for fluo in exported_field["field_emitters"].keys():
+            fluo_dir = os.path.join(config_dir, "fluorophores", fluo)
+            fluopath = fluo_dir + ".yaml"
+            image_generator.set_fluorophores_from_file(fluopath)
+            fluoprams = load_yaml(fluopath)
+            fluo_emission[fluo] = fluoprams["emission"]
+        for mod in modalities_id_list:
+            modality = compile_modality_parameters(mod, config_dir, fluo_emission)
+            image_generator.set_imaging_modality(**modality)
+        return image_generator
