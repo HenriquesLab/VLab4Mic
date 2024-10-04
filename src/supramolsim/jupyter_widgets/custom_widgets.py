@@ -7,6 +7,8 @@ from ..workflows import *
 import matplotlib.pyplot as plt
 from IPython.display import clear_output
 import os
+from IPython.utils import io
+import numpy as np
 
 global structure, particle, configuration_path, coordinates_field, exported_field
 particle = None
@@ -474,3 +476,131 @@ def create_field():
         field_gui["show"].disabled = False
         display(field_gui["show"])
         exported_field, coordinates_field = field_from_particle(particle)
+
+
+def set_image_modalities():
+    global \
+        selected_mods, \
+        imager_created, \
+        modality_info, \
+        temp_imager, \
+        configuration_path, \
+        exported_field
+    imager_created = False
+    imaging_gui = easy_gui_jupyter.EasyGUI("imaging")
+    if configuration_path is None:
+        print("No configuration path set")
+    else:
+        modalities_dir = os.path.join(configuration_path[0], "modalities")
+        modalities_list = []
+        selected_mods = []
+        modality_info = {}
+
+        for mods in os.listdir(modalities_dir):
+            if os.path.splitext(mods)[-1] == ".yaml" and "_template" not in mods:
+                modalities_list.append(os.path.splitext(mods)[0])
+
+        for mod in modalities_list:
+            mod_info = data_format.configuration_format.compile_modality_parameters(
+                mod, configuration_path[0]
+            )
+            modality_info[mod] = mod_info
+
+        # create mock imager to show a pre-visualisation of PSF and noise model
+        with io.capture_output() as captured:
+            temp_imager = create_imaging_system(
+                modalities_id_list=modalities_list, config_dir=configuration_path[0]
+            )
+
+        def add_mod(b):
+            global selected_mods
+            selected_mods.append(imaging_gui["modalities_dropdown"].value)
+            print(f"{selected_mods[-1]} modality added")
+
+        def clear(b):
+            global selected_mods
+            selected_mods.clear()
+
+        def create_imager(b):
+            global imager_created, selected_mods, exported_field, imaging_system
+            if exported_field is not None:
+                if len(selected_mods) == 0:
+                    print("No modalites had been added")
+                else:
+                    with io.capture_output() as captured:
+                        imaging_system = create_imaging_system(
+                            exported_field, selected_mods, configuration_path[0]
+                        )
+                    imager_created = True
+                    print("Imaging system created")
+                imaging_gui["Show"].disabled = False
+            else:
+                print("No field info")
+
+        def preview(b):
+            def get_info(imaging_gui):
+                def preview_info(Modality):
+                    global modality_info
+                    # print(Modality)
+                    # print(modality_info[Modality])
+                    pixelsize = modality_info[Modality]["detector"]["pixelsize"]
+                    pixelsize_nm = pixelsize * 1000
+                    psf_sd = np.array(modality_info[Modality]["psf_params"]["std_devs"])
+                    psf_voxel = np.array(
+                        modality_info[Modality]["psf_params"]["voxelsize"]
+                    )
+                    psf_sd_metric = np.multiply(psf_voxel, psf_sd)
+                    print(f"Detector pixelsize (nm): {pixelsize_nm}")
+                    print(f"PSF sd (nm): {psf_sd_metric}")
+                    # show PSF
+                    fig, axs = plt.subplots()
+                    modality_preview = temp_imager.modalities[Modality]["psf"][
+                        "psf_stack"
+                    ]
+                    psf_shapes = modality_preview.shape
+                    stack_max = np.max(modality_preview)
+                    axs.imshow(
+                        modality_preview[:, :, int(psf_shapes[2] / 2)],
+                        cmap="gray",
+                        interpolation="none",
+                        vmin=0,
+                        vmax=stack_max,
+                    )
+
+                widgets.interact(
+                    preview_info, Modality=imaging_gui["modalities_dropdown"]
+                )
+
+            global imaging_system
+            get_info(imaging_gui)
+
+        def showfov(b):
+            global imaging_system
+            imaging_system.show_field()
+
+        imaging_gui.add_label("Select modalities")
+        imaging_gui.add_dropdown("modalities_dropdown", options=modalities_list)
+        imaging_gui.add_button("Add", description="Add modality")
+        imaging_gui.add_button("Clear", description="Clear selection")
+        if exported_field is None:
+            disable_button = True
+        else:
+            disable_button = False
+        imaging_gui.add_button(
+            "Create", description="Create imaging system", disabled=disable_button
+        )
+        imaging_gui.add_button("Show", description="Show field of view", disabled=True)
+        imaging_gui.add_int_slider(
+            "PSF_nslice", min=0, max=400, continuous_update=False
+        )
+        imaging_gui["Add"].on_click(add_mod)
+        imaging_gui["Clear"].on_click(clear)
+        imaging_gui["Create"].on_click(create_imager)
+        imaging_gui["Show"].on_click(showfov)
+        preview(True)
+        display(
+            imaging_gui["Add"],
+            imaging_gui["Clear"],
+            imaging_gui["Create"],
+            imaging_gui["Show"],
+        )
