@@ -90,3 +90,22 @@ def define_emission_behaviour(mod_emission, fluo_emissions):
                 emission = "constant"
 
     return emission
+
+
+def format_modality_acquisition_params(
+    exp_time=0.001,
+    noise=True,
+    save=True,
+    nframes=10,
+    channels=[
+        "ch0",
+    ],
+    **kwargs,
+):
+    """
+    Create expected format for acquisition parameters
+    """
+    mod_acquisition_params = dict(
+        exp_time=exp_time, noise=noise, save=save, nframes=nframes, channels=channels
+    )
+    return mod_acquisition_params
