@@ -1,0 +1,5 @@
+id: Confocal_demo #(string)
+title: Confocal modality #(string) modality description
+psf: Confocal_PSF # (string) id of yaml file
+emission_type: constant 
+detector: PMT_confocal #(string) id of yaml file

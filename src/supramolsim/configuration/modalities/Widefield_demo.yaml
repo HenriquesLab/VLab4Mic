@@ -1,0 +1,5 @@
+id: Widefield_demo
+title: Imaging modality for Widefield
+psf: WF_640 # (string) id of yaml file
+detector: Camera_demo #(string) id of yaml file
+emission_type: constant 
