@@ -1,5 +1,0 @@
-id: #(string)
-title: #(string) modality description
-psf: # (string) id of yaml file
-detector: #(string) id of yaml file
-filters: #(string)
