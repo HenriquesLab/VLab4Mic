@@ -634,7 +634,7 @@ def set_acq_params():
             channels = [
                 "ch0",
             ]
-        acq_params_per_mod[mod_id] = dict(
+        acq_params_per_mod[mod_id] = format_modality_acquisition_params(
             exp_time=exp_time,
             noise=noise,
             save=save,
@@ -737,3 +737,37 @@ def set_acq_params():
     acquisition_gui["Clear"].on_click(clear)
     display(acquisition_gui["Set"], acquisition_gui["Frames"])
     preview_mod(True)
+
+
+def run_simulation():
+    experiment_gui = easy_gui_jupyter.EasyGUI("experiment")
+
+    def run_simulation(b):
+        sav_dir = experiment_gui["saving_directory"].value
+        exp_name = experiment_gui["experiment_name"].value
+        print(len(acq_params_per_mod.keys()))
+        if len(acq_params_per_mod.keys()) == 0:
+            generate_multi_imaging_modalities(
+                image_generator=imaging_system,
+                experiment_name=exp_name,
+                savingdir=sav_dir,
+                acquisition_param=None,
+            )
+        else:
+            generate_multi_imaging_modalities(
+                image_generator=imaging_system,
+                experiment_name=exp_name,
+                savingdir=sav_dir,
+                acquisition_param=acq_params_per_mod,
+            )
+        experiment_gui.save_settings()
+
+    experiment_gui.add_label("Set experiment name")
+    experiment_gui.add_textarea(
+        "experiment_name", value="Exp_name", remember_value=True
+    )
+    experiment_gui.add_label("Set saving directory")
+    experiment_gui.add_textarea("saving_directory", remember_value=True)
+    experiment_gui.add_button("Acquire", description="Run Simulation")
+    experiment_gui["Acquire"].on_click(run_simulation)
+    experiment_gui.show()
