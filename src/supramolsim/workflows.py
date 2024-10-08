@@ -5,8 +5,12 @@ from .generate import labelled_instance as labinstance
 from .generate.labels import construct_label
 from .generate.coordinates_field import create_min_field
 from .generate.imaging import Imager
-from .utils.data_format.configuration_format import compile_modality_parameters
+from .utils.data_format.configuration_format import (
+    compile_modality_parameters,
+    format_modality_acquisition_params,
+)
 import os
+import copy
 
 
 def load_structure(structure_id: str = None, config_dir=None):
@@ -133,3 +137,39 @@ def create_imaging_system(
             modality = compile_modality_parameters(mod, config_dir, fluo_emission)
             image_generator.set_imaging_modality(**modality)
         return image_generator
+
+
+# generate several modalities results
+def generate_multi_imaging_modalities(
+    image_generator,
+    experiment_name="multi_imaging_modalities",
+    savingdir=None,
+    acquisition_param: dict = None,
+    **kwargs,
+):
+    # kwargs will contain as keys the names of the modalities,
+    # which shall correspond to the modality name
+    # in the yaml file. each modality will have specific parameters for aquisitions
+    # there must be a default imaging parameter for all, like 10 frames for each
+    image_generator.set_experiment_name(experiment_name)
+    if acquisition_param is None:
+        print("No acquisition parameters defined. Using default on all modalities")
+        for mod in image_generator.modalities.keys():
+            # should verify that the path exist
+            if savingdir is not None:
+                image_generator.set_writing_directory(savingdir)
+                acq_params = format_modality_acquisition_params()
+            timeseries, calibration_beads = image_generator.generate_imaging(
+                modality=mod, **acq_params
+            )
+    else:
+        acquisition_parameters = copy.copy(acquisition_param)
+        for mod, acq_params in acquisition_parameters.items():
+            print(mod, acq_params)
+            if savingdir is not None:
+                image_generator.set_writing_directory(savingdir)
+            for chan in acq_params["channels"]:
+                print(f"imaging channel: {chan}")
+                timeseries, calibration_beads = image_generator.generate_imaging(
+                    modality=mod, channel=chan, **acq_params
+                )

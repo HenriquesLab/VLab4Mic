@@ -7,10 +7,8 @@ import yaml
 from ..utils.io.yaml_functions import load_yaml
 
 # from .psf.image_psf import load_psf
-
 from ..utils.transform.datatype import *
 
-# from ..kinetics.blinking import binary_trace, blinking_2states_1bleach_bulk
 from ..utils.transform import image_convolution as conv
 from .psfs import elliptical_gaussian_3sigmas
 
