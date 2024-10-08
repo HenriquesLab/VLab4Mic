@@ -616,7 +616,6 @@ def set_acq_params():
     for chann in imaging_system.modalities[anymod]["filters"].keys():
         print(chann)
         imager_channels.append(chann)
-        # print(f"using all channels: {channels}")
     nchannels = len(imager_channels)
 
     def set_params(b):
@@ -711,7 +710,6 @@ def set_acq_params():
     acquisition_gui.add_dropdown("modalities_dropdown", options=selected_mods)
     acquisition_gui.add_checkbox("Noise", description="Use Noise", value=True)
     acquisition_gui.add_checkbox("Channels", description="Use all channels", value=True)
-    # acquisition_gui.add_float_text("Exposure",  description="exposure")
     ## bounded int Text
     acquisition_gui._widgets["Frames"] = widgets.BoundedIntText(
         value=1,
