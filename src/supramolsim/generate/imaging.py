@@ -14,8 +14,8 @@ from ..utils.transform.datatype import *
 from ..utils.transform import image_convolution as conv
 from .psfs import elliptical_gaussian_3sigmas
 
-# from ..io.text import write_txt
-# from ..io.tiff import write_tif
+from ..utils.io.text import write_txt
+from ..utils.io.tiff import write_tif
 from ..utils.data_format.visualisation import format_coordinates
 from ..utils.visualisation.matplotlib_plots import add_ax_scatter
 from ..utils.transform.noise import add_image_noise
