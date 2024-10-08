@@ -1,11 +1,15 @@
 import easy_gui_jupyter
 import ipywidgets as widgets
 import supramolsim
+import supramolsim.generate.coordinates_field as field
 from ..utils import data_format
 from ..workflows import *
 import matplotlib.pyplot as plt
 from IPython.display import clear_output
 import os
+from IPython.utils import io
+import numpy as np
+import mpl_toolkits.axes_grid1 as axes_grid1
 
 global structure, particle, configuration_path, coordinates_field, exported_field
 particle = None
@@ -442,3 +446,328 @@ def refine_structural_model():
         structural_model_gui.show()
     else:
         print("No particle has been created")
+
+
+def create_field():
+    global particle_field, exported_field, particle, field_gui, coordinates_field
+    field_gui = easy_gui_jupyter.EasyGUI("field")
+
+    def createmin(b):
+        global coordinates_field, exported_field
+        random_pl = True
+        coordinates_field = field.create_min_field(random_placing=random_pl)
+        exported_field = coordinates_field.export_field()
+        field_gui["show"].disabled = False
+
+    def showfield(b):
+        plt.clf()
+        global coordinates_field
+        coordinates_field.show_field(view_init=[90, 0, 0])
+
+    field_gui.add_button("minimal", description="Create minimal field (random)")
+    field_gui.add_button("show", description="Show field", disabled=True)
+    field_gui["minimal"].on_click(createmin)
+    field_gui["show"].on_click(showfield)
+
+    if particle is None:
+        print("There is no particle initalised")
+        field_gui.show()
+    else:
+        print("Using existing structural model")
+        field_gui["show"].disabled = False
+        display(field_gui["show"])
+        exported_field, coordinates_field = field_from_particle(particle)
+
+
+def set_image_modalities():
+    global \
+        selected_mods, \
+        imager_created, \
+        modality_info, \
+        temp_imager, \
+        configuration_path, \
+        exported_field
+    imager_created = False
+    imaging_gui = easy_gui_jupyter.EasyGUI("imaging")
+    if configuration_path is None:
+        print("No configuration path set")
+    else:
+        modalities_dir = os.path.join(configuration_path[0], "modalities")
+        modalities_list = []
+        selected_mods = []
+        modality_info = {}
+
+        for mods in os.listdir(modalities_dir):
+            if os.path.splitext(mods)[-1] == ".yaml" and "_template" not in mods:
+                modalities_list.append(os.path.splitext(mods)[0])
+
+        for mod in modalities_list:
+            mod_info = data_format.configuration_format.compile_modality_parameters(
+                mod, configuration_path[0]
+            )
+            modality_info[mod] = mod_info
+
+        # create mock imager to show a pre-visualisation of PSF and noise model
+        with io.capture_output() as captured:
+            temp_imager = create_imaging_system(
+                modalities_id_list=modalities_list, config_dir=configuration_path[0]
+            )
+
+        def add_mod(b):
+            global selected_mods
+            selected_mods.append(imaging_gui["modalities_dropdown"].value)
+            print(f"{selected_mods[-1]} modality added")
+
+        def clear(b):
+            global selected_mods
+            selected_mods.clear()
+
+        def create_imager(b):
+            global imager_created, selected_mods, exported_field, imaging_system
+            if exported_field is not None:
+                if len(selected_mods) == 0:
+                    print("No modalites had been added")
+                else:
+                    with io.capture_output() as captured:
+                        imaging_system = create_imaging_system(
+                            exported_field, selected_mods, configuration_path[0]
+                        )
+                    imager_created = True
+                    print("Imaging system created")
+                imaging_gui["Show"].disabled = False
+            else:
+                print("No field info")
+
+        def preview(b):
+            def get_info(imaging_gui):
+                def preview_info(Modality):
+                    global modality_info
+                    # print(Modality)
+                    # print(modality_info[Modality])
+                    pixelsize = modality_info[Modality]["detector"]["pixelsize"]
+                    pixelsize_nm = pixelsize * 1000
+                    psf_sd = np.array(modality_info[Modality]["psf_params"]["std_devs"])
+                    psf_voxel = np.array(
+                        modality_info[Modality]["psf_params"]["voxelsize"]
+                    )
+                    psf_sd_metric = np.multiply(psf_voxel, psf_sd)
+                    print(f"Detector pixelsize (nm): {pixelsize_nm}")
+                    print(f"PSF sd (nm): {psf_sd_metric}")
+                    # show PSF
+                    fig, axs = plt.subplots()
+                    modality_preview = temp_imager.modalities[Modality]["psf"][
+                        "psf_stack"
+                    ]
+                    psf_shapes = modality_preview.shape
+                    stack_max = np.max(modality_preview)
+                    axs.imshow(
+                        modality_preview[:, :, int(psf_shapes[2] / 2)],
+                        cmap="gray",
+                        interpolation="none",
+                        vmin=0,
+                        vmax=stack_max,
+                    )
+
+                widgets.interact(
+                    preview_info, Modality=imaging_gui["modalities_dropdown"]
+                )
+
+            global imaging_system
+            get_info(imaging_gui)
+
+        def showfov(b):
+            global imaging_system
+            imaging_system.show_field()
+
+        imaging_gui.add_label("Select modalities")
+        imaging_gui.add_dropdown("modalities_dropdown", options=modalities_list)
+        imaging_gui.add_button("Add", description="Add modality")
+        imaging_gui.add_button("Clear", description="Clear selection")
+        if exported_field is None:
+            disable_button = True
+        else:
+            disable_button = False
+        imaging_gui.add_button(
+            "Create", description="Create imaging system", disabled=disable_button
+        )
+        imaging_gui.add_button("Show", description="Show field of view", disabled=True)
+        imaging_gui.add_int_slider(
+            "PSF_nslice", min=0, max=400, continuous_update=False
+        )
+        imaging_gui["Add"].on_click(add_mod)
+        imaging_gui["Clear"].on_click(clear)
+        imaging_gui["Create"].on_click(create_imager)
+        imaging_gui["Show"].on_click(showfov)
+        preview(True)
+        display(
+            imaging_gui["Add"],
+            imaging_gui["Clear"],
+            imaging_gui["Create"],
+            imaging_gui["Show"],
+        )
+
+
+def set_acq_params():
+    global selected_mods, acq_params_per_mod, nchannels, imager_channels
+    acquisition_gui = easy_gui_jupyter.EasyGUI("acquisition_params")
+    acq_params_per_mod = dict()
+    imager_channels = []
+    anymod = list(imaging_system.modalities.keys())[0]
+    for chann in imaging_system.modalities[anymod]["filters"].keys():
+        print(chann)
+        imager_channels.append(chann)
+    nchannels = len(imager_channels)
+
+    def set_params(b):
+        mod_id = acquisition_gui["modalities_dropdown"].value
+        exp_time = acquisition_gui["Exposure"].value
+        noise = acquisition_gui["Noise"].value
+        save = True
+        nframes = acquisition_gui["Frames"].value
+        if acquisition_gui["Channels"].value:
+            global imaging_system
+            channels = []
+            for chann in imaging_system.modalities[mod_id]["filters"].keys():
+                channels.append(chann)
+            print(f"using all channels: {channels}")
+        else:
+            channels = [
+                "ch0",
+            ]
+        acq_params_per_mod[mod_id] = format_modality_acquisition_params(
+            exp_time=exp_time,
+            noise=noise,
+            save=save,
+            nframes=nframes,
+            channels=channels,
+        )
+        print(f"Acquisition parameters added for {mod_id}")
+        print(acq_params_per_mod[mod_id])
+        acquisition_gui.save_settings()
+
+    def preview_mod(b):
+        preview_image = None
+
+        def get_preview(imaging_system, acq_gui):
+            global nchannels, channels
+
+            def preview_exposure(Modality, Exposure, Noise):
+                global preview_image
+                fig = plt.figure()
+                grid = axes_grid1.AxesGrid(
+                    fig,
+                    111,
+                    nrows_ncols=(1, nchannels),
+                    axes_pad=1,
+                    cbar_location="right",
+                    cbar_mode="each",
+                    cbar_size="10%",
+                    cbar_pad="20%",
+                )
+                i = 0
+                for single_channel in imager_channels:
+                    single_mod_acq_params = dict(
+                        exp_time=Exposure,
+                        noise=Noise,
+                        save=False,
+                        nframes=1,
+                        channel=single_channel,
+                    )
+                    with io.capture_output() as captured:
+                        timeseries, calibration_beads = imaging_system.generate_imaging(
+                            modality=Modality, **single_mod_acq_params
+                        )
+                        min_val = np.min(timeseries[0])
+                        max_val = np.max(timeseries[0])
+                    preview_image = grid[i].imshow(
+                        timeseries[0],
+                        cmap="gray",
+                        interpolation="none",
+                        vmin=min_val,
+                        vmax=max_val,
+                    )
+                    grid[i].set_title("preview: " + single_channel)
+                    grid.cbar_axes[i].colorbar(preview_image)
+                    i = i + 1
+
+            widgets.interact(
+                preview_exposure,
+                Modality=acq_gui["modalities_dropdown"],
+                Exposure=acq_gui["Exposure"],
+                Noise=acq_gui["Noise"],
+            )
+
+        global imaging_system
+        # global selected_mods
+        get_preview(imaging_system, acquisition_gui)
+
+    def clear(b):
+        acq_params_per_mod.clear()
+        print("Acquisition parameters cleared")
+        acquisition_gui.save_settings()
+
+    acquisition_gui.add_label("Set acquisition parameters")
+    acquisition_gui.add_dropdown("modalities_dropdown", options=selected_mods)
+    acquisition_gui.add_checkbox("Noise", description="Use Noise", value=True)
+    acquisition_gui.add_checkbox("Channels", description="Use all channels", value=True)
+    ## bounded int Text
+    acquisition_gui._widgets["Frames"] = widgets.BoundedIntText(
+        value=1,
+        min=1,
+        max=100000,
+        description="Frames (not used for preview)",
+        layout=acquisition_gui._layout,
+        style=acquisition_gui._style,
+        remember_value=True,
+    )
+    acquisition_gui._widgets["Exposure"] = widgets.BoundedFloatText(
+        value=0.005,
+        min=0.000000,
+        step=0.0001,
+        description="exposure (sec)",
+        layout=acquisition_gui._layout,
+        style=acquisition_gui._style,
+        remember_value=True,
+    )
+    acquisition_gui.add_button("Set", description="Add params")
+    acquisition_gui.add_button("Preview", description="Preview (Expermiental feature)")
+    acquisition_gui.add_button("Clear", description="Clear params")
+    acquisition_gui["Preview"].on_click(preview_mod)
+    acquisition_gui["Set"].on_click(set_params)
+    acquisition_gui["Clear"].on_click(clear)
+    display(acquisition_gui["Set"], acquisition_gui["Frames"])
+    preview_mod(True)
+
+
+def run_simulation():
+    experiment_gui = easy_gui_jupyter.EasyGUI("experiment")
+
+    def run_simulation(b):
+        sav_dir = experiment_gui["saving_directory"].value
+        exp_name = experiment_gui["experiment_name"].value
+        print(len(acq_params_per_mod.keys()))
+        if len(acq_params_per_mod.keys()) == 0:
+            generate_multi_imaging_modalities(
+                image_generator=imaging_system,
+                experiment_name=exp_name,
+                savingdir=sav_dir,
+                acquisition_param=None,
+            )
+        else:
+            generate_multi_imaging_modalities(
+                image_generator=imaging_system,
+                experiment_name=exp_name,
+                savingdir=sav_dir,
+                acquisition_param=acq_params_per_mod,
+            )
+        experiment_gui.save_settings()
+
+    experiment_gui.add_label("Set experiment name")
+    experiment_gui.add_textarea(
+        "experiment_name", value="Exp_name", remember_value=True
+    )
+    experiment_gui.add_label("Set saving directory")
+    experiment_gui.add_textarea("saving_directory", remember_value=True)
+    experiment_gui.add_button("Acquire", description="Run Simulation")
+    experiment_gui["Acquire"].on_click(run_simulation)
+    experiment_gui.show()
