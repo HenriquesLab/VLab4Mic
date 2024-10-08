@@ -9,6 +9,7 @@ from IPython.display import clear_output
 import os
 from IPython.utils import io
 import numpy as np
+import mpl_toolkits.axes_grid1 as axes_grid1
 
 global structure, particle, configuration_path, coordinates_field, exported_field
 particle = None
@@ -604,3 +605,137 @@ def set_image_modalities():
             imaging_gui["Create"],
             imaging_gui["Show"],
         )
+
+
+def set_acq_params():
+    global selected_mods, acq_params_per_mod, nchannels, imager_channels
+    acquisition_gui = easy_gui_jupyter.EasyGUI("acquisition_params")
+    acq_params_per_mod = dict()
+    imager_channels = []
+    anymod = list(imaging_system.modalities.keys())[0]
+    for chann in imaging_system.modalities[anymod]["filters"].keys():
+        print(chann)
+        imager_channels.append(chann)
+        # print(f"using all channels: {channels}")
+    nchannels = len(imager_channels)
+
+    def set_params(b):
+        mod_id = acquisition_gui["modalities_dropdown"].value
+        exp_time = acquisition_gui["Exposure"].value
+        noise = acquisition_gui["Noise"].value
+        save = True
+        nframes = acquisition_gui["Frames"].value
+        if acquisition_gui["Channels"].value:
+            global imaging_system
+            channels = []
+            for chann in imaging_system.modalities[mod_id]["filters"].keys():
+                channels.append(chann)
+            print(f"using all channels: {channels}")
+        else:
+            channels = [
+                "ch0",
+            ]
+        acq_params_per_mod[mod_id] = dict(
+            exp_time=exp_time,
+            noise=noise,
+            save=save,
+            nframes=nframes,
+            channels=channels,
+        )
+        print(f"Acquisition parameters added for {mod_id}")
+        print(acq_params_per_mod[mod_id])
+        acquisition_gui.save_settings()
+
+    def preview_mod(b):
+        preview_image = None
+
+        def get_preview(imaging_system, acq_gui):
+            global nchannels, channels
+
+            def preview_exposure(Modality, Exposure, Noise):
+                global preview_image
+                fig = plt.figure()
+                grid = axes_grid1.AxesGrid(
+                    fig,
+                    111,
+                    nrows_ncols=(1, nchannels),
+                    axes_pad=1,
+                    cbar_location="right",
+                    cbar_mode="each",
+                    cbar_size="10%",
+                    cbar_pad="20%",
+                )
+                i = 0
+                for single_channel in imager_channels:
+                    single_mod_acq_params = dict(
+                        exp_time=Exposure,
+                        noise=Noise,
+                        save=False,
+                        nframes=1,
+                        channel=single_channel,
+                    )
+                    with io.capture_output() as captured:
+                        timeseries, calibration_beads = imaging_system.generate_imaging(
+                            modality=Modality, **single_mod_acq_params
+                        )
+                        min_val = np.min(timeseries[0])
+                        max_val = np.max(timeseries[0])
+                    preview_image = grid[i].imshow(
+                        timeseries[0],
+                        cmap="gray",
+                        interpolation="none",
+                        vmin=min_val,
+                        vmax=max_val,
+                    )
+                    grid[i].set_title("preview: " + single_channel)
+                    grid.cbar_axes[i].colorbar(preview_image)
+                    i = i + 1
+
+            widgets.interact(
+                preview_exposure,
+                Modality=acq_gui["modalities_dropdown"],
+                Exposure=acq_gui["Exposure"],
+                Noise=acq_gui["Noise"],
+            )
+
+        global imaging_system
+        # global selected_mods
+        get_preview(imaging_system, acquisition_gui)
+
+    def clear(b):
+        acq_params_per_mod.clear()
+        print("Acquisition parameters cleared")
+        acquisition_gui.save_settings()
+
+    acquisition_gui.add_label("Set acquisition parameters")
+    acquisition_gui.add_dropdown("modalities_dropdown", options=selected_mods)
+    acquisition_gui.add_checkbox("Noise", description="Use Noise", value=True)
+    acquisition_gui.add_checkbox("Channels", description="Use all channels", value=True)
+    # acquisition_gui.add_float_text("Exposure",  description="exposure")
+    ## bounded int Text
+    acquisition_gui._widgets["Frames"] = widgets.BoundedIntText(
+        value=1,
+        min=1,
+        max=100000,
+        description="Frames (not used for preview)",
+        layout=acquisition_gui._layout,
+        style=acquisition_gui._style,
+        remember_value=True,
+    )
+    acquisition_gui._widgets["Exposure"] = widgets.BoundedFloatText(
+        value=0.005,
+        min=0.000000,
+        step=0.0001,
+        description="exposure (sec)",
+        layout=acquisition_gui._layout,
+        style=acquisition_gui._style,
+        remember_value=True,
+    )
+    acquisition_gui.add_button("Set", description="Add params")
+    acquisition_gui.add_button("Preview", description="Preview (Expermiental feature)")
+    acquisition_gui.add_button("Clear", description="Clear params")
+    acquisition_gui["Preview"].on_click(preview_mod)
+    acquisition_gui["Set"].on_click(set_params)
+    acquisition_gui["Clear"].on_click(clear)
+    display(acquisition_gui["Set"], acquisition_gui["Frames"])
+    preview_mod(True)
