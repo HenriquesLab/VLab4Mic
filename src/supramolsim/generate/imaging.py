@@ -8,18 +8,17 @@ from ..utils.io.yaml_functions import load_yaml
 
 # from .psf.image_psf import load_psf
 
+from ..utils.transform.datatype import *
 
-# from .utils import inCube, generate_coordinate_textline, dictionary2string
 # from ..kinetics.blinking import binary_trace, blinking_2states_1bleach_bulk
-# from ..render.transform import image_convolution as conv
+from ..utils.transform import image_convolution as conv
 from .psfs import elliptical_gaussian_3sigmas
 
 # from ..io.text import write_txt
 # from ..io.tiff import write_tif
 from ..utils.data_format.visualisation import format_coordinates
 from ..utils.visualisation.matplotlib_plots import add_ax_scatter
-# from ..utils.visualisation.plots import add_ax_scatter
-# from .transform.noise import add_image_noise
+from ..utils.transform.noise import add_image_noise
 
 
 class Imager:
