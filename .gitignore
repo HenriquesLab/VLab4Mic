@@ -16,3 +16,4 @@ poetry.lock
 output.txt
 dist
 *.gz
+*.cif
