@@ -76,8 +76,8 @@ def select_structure():
                     demo_structures.append(id_title)
 
         def select_structure(b):
+            global structure, structure_param, struct_ready, structure_id
             structure_id = structures_info_list[structure_gui["struct_dropdown"].value]
-            global structure, structure_param, struct_ready
             # structure_id = structure_gui["struct_dropdown"].value
             structure, structure_param = supramolsim.load_structure(
                 structure_id, configuration_path[0]
@@ -208,7 +208,8 @@ def create_structural_model():
         particle, \
         particle_created, \
         structure, \
-        structure_params
+        structure_params, \
+        structure_id
     # ensure that structure has no labels associated
     labels_gui = easy_gui_jupyter.EasyGUI("Labels")
     if configuration_path is None:
@@ -229,8 +230,7 @@ def create_structural_model():
                 lablname = os.path.splitext(file)[0]
                 if lablname.split("_")[0] == "Generic":
                     generic_labels.append(lablname)
-                else:
-                    lablname.split("_")[0] == structure_params["id"]
+                elif lablname.split("_")[0] == structure_id:
                     structure_labels.append(lablname)
 
         def build_label(b):
@@ -301,7 +301,9 @@ def create_structural_model():
                 step=0.01,
                 description="Labelling efficiency",
             )
-            labels_gui.add_button("Add", description="Add specific label")
+            labels_gui.add_button(
+                "Add", description="Add specific label", disabled=(not structure_labels)
+            )
             labels_gui["Add"].on_click(build_label)
 
         labels_gui.add_label("Generic labels")
