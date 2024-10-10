@@ -49,7 +49,7 @@ def set_directory():
 
 
 def select_structure():
-    global structure, structure_param, configuration_path, nostructure, active_widgets
+    global structure, structure_params, configuration_path, nostructure, active_widgets
     active_widgets = dict()
     nostructure = True
     demo_structures = []
@@ -76,8 +76,8 @@ def select_structure():
                     demo_structures.append(id_title)
 
         def select_structure(b):
+            global structure, structure_param, struct_ready, structure_id
             structure_id = structures_info_list[structure_gui["struct_dropdown"].value]
-            global structure, structure_param, struct_ready
             # structure_id = structure_gui["struct_dropdown"].value
             structure, structure_param = supramolsim.load_structure(
                 structure_id, configuration_path[0]
@@ -106,13 +106,13 @@ def select_structure():
             )
 
         def upload_file(b):
-            global structure, structure_param
+            global structure, structure_params
             filepath = structure_gui["File"].selected
             filename = structure_gui["File"].selected_filename
             structure = build_structure_cif(
                 cif_file=filepath, struct_title=filename, cif_id=filename
             )
-            structure_param = data_format.structural_format.struct_params_format()
+            structure_params = data_format.structural_format.struct_params_format()
             print("Structure Loaded!")
             structure_gui["View"].disabled = False
             structure_gui["Fraction"].disabled = False
@@ -202,7 +202,14 @@ def select_structure():
 
 
 def create_structural_model():
-    global labels_list, current_labels, particle, particle_created, structure
+    global \
+        labels_list, \
+        current_labels, \
+        particle, \
+        particle_created, \
+        structure, \
+        structure_params, \
+        structure_id
     # ensure that structure has no labels associated
     labels_gui = easy_gui_jupyter.EasyGUI("Labels")
     if configuration_path is None:
@@ -211,6 +218,7 @@ def create_structural_model():
         particle_created = False
         current_labels = dict()
         generic_labels = []
+        structure_labels = []
         fluorophores_list = []
         fluorophores_dir = os.path.join(configuration_path[0], "fluorophores")
         labels_dir = os.path.join(configuration_path[0], "labels")
@@ -222,6 +230,8 @@ def create_structural_model():
                 lablname = os.path.splitext(file)[0]
                 if lablname.split("_")[0] == "Generic":
                     generic_labels.append(lablname)
+                elif lablname.split("_")[0] == structure_id:
+                    structure_labels.append(lablname)
 
         def build_label(b):
             label_id = labels_gui["label_dropdown"].value
@@ -281,6 +291,7 @@ def create_structural_model():
         labels_gui.add_label("Structure specific labels")
         if structure is not None:
             labels_gui.add_dropdown("label_dropdown", options=structure_param["labels"])
+            labels_gui.add_dropdown("label_dropdown", options=structure_labels)
             labels_gui.add_dropdown("fluo_dropdown", options=fluorophores_list)
             labels_gui.add_float_slider(
                 "Labelling_efficiency",
@@ -290,7 +301,9 @@ def create_structural_model():
                 step=0.01,
                 description="Labelling efficiency",
             )
-            labels_gui.add_button("Add", description="Add specific label")
+            labels_gui.add_button(
+                "Add", description="Add specific label", disabled=(not structure_labels)
+            )
             labels_gui["Add"].on_click(build_label)
 
         labels_gui.add_label("Generic labels")

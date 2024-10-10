@@ -1,0 +1,18 @@
+id: WF_640
+title: 3D Gaussian PSF for Widefield
+stack_source: generate
+scale: 1.0e-09 # (float): in meters
+unitary: true # (Logical): True; False
+shape: # (list): pixels in x,y,z
+  - 150
+  - 150
+  - 150
+voxelsize: # (list): in units of "scale"
+  - 10    ## temporary fix cause if this value and detector pxsize are not multiples the division is wrong
+  - 10
+  - 10
+depth: 10
+std_devs: 
+  - 9.4
+  - 9.4
+  - 33.1

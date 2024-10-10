@@ -1,0 +1,28 @@
+id: Camera_demo #(string)
+title: Demo parameters for a EM-CCD detector #(string)
+pixelsize: 0.1 #(float) in scale units
+scale: 1.0e-06 #(float)in meters
+bits_pixel: 32
+image_size:
+  - 50
+  - 50
+noise_model: #(dictionary)
+  baselevel:
+    bl: 400
+  binomial:
+    p: 0.9
+  conversion:
+    adu: 1
+  gamma:
+    g: 1
+  gaussian:
+    sigma: 3
+  poisson:
+    mock: null
+noise_order: #(list; string)
+  - binomial
+  - gamma
+  - baselevel
+  - gaussian
+  - conversion
+

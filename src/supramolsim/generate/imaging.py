@@ -95,8 +95,6 @@ class Imager:
         self._calculate_roi_ranges()
         self._adjust_modalities_imsizes()
 
-        # TODO: modify modalities imsizes
-
     def get_roi_params(self, parameter: str):
         return copy.copy(self.roi_params[parameter])
 
@@ -759,7 +757,8 @@ class Imager:
         # FOCUS
         roi_ranges = self.get_roi_params("ranges")
         z_focus = self.get_roi_params("focus_plane")
-        factor = 1000  # TODO: calculate this factor
+        visualisation_scale = 1e-9  # needed for meshgrid
+        factor = self.get_roi_params("scale") / visualisation_scale
         xrang = np.array(roi_ranges[0]) * factor
         yrang = np.array(roi_ranges[1]) * factor
         plot_scale = self.get_roi_params("scale") / factor

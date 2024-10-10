@@ -1,9 +1,11 @@
-id: #(string)
-title: #(string)
-pixelsize: #(float) in scale units
-scale: #(float)in meters
-bits_pixel: 
+id: PMT_STED #(string)
+title: Demo parameters for a detector #(string)
+pixelsize: 0.04 #(float) in scale units
+scale: 1.0e-06 #(float)in meters
+bits_pixel: 32
 image_size:
+  - 50
+  - 50
 noise_model: #(dictionary)
   baselevel:
     bl: 0

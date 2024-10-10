@@ -6,7 +6,7 @@ dist/
 build/
 data/
 *.egg-info/
-src/supramolsim/configuration
+src/supramolsim/configuration/*/*template*
 
 # Files
 .DS_Store
@@ -16,3 +16,4 @@ poetry.lock
 output.txt
 dist
 *.gz
+*.cif

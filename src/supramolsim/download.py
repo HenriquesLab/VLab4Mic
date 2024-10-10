@@ -26,7 +26,7 @@ headers = {
 
 def download_suggested_structures(data_path: str = "data") -> None:
     """
-    Downloads PDB *.cif.gz files for the suggested structures in the given path.
+    Downloads PDB *.cif files for the suggested structures in the given path.
 
     Args:
         data_path: The path to the data directory. Defaults to "data".
@@ -41,7 +41,7 @@ def download_suggested_structures(data_path: str = "data") -> None:
         if filename.stem == "_template":
             continue
 
-        cifs_filename = filename.with_suffix(".cif.gz")
+        cifs_filename = filename.with_suffix(".cif")
 
         with open(filename, "r") as f:
             data = yaml.load(f, Loader=yaml.FullLoader)
@@ -54,8 +54,8 @@ def download_suggested_structures(data_path: str = "data") -> None:
             continue
 
         print(f"Downloading {title} - [{cifs_filename}]...")
-        url = f"https://files.rcsb.org/download/{id}.cif.gz"
-        download_file(url, filename.with_suffix(".cif.gz"))
+        url = f"https://files.rcsb.org/download/{id}.cif"
+        download_file(url, filename.with_suffix(".cif"))
 
 
 def download_file(url: str, fname: str, chunk_size: int = 1024) -> None:
@@ -90,3 +90,29 @@ def download_file(url: str, fname: str, chunk_size: int = 1024) -> None:
         for data in resp.iter_content(chunk_size=chunk_size):
             size = file.write(data)
             bar.update(size)
+
+
+def verify_structure(structureid: str, structure_dir: str) -> None:
+    """
+    Checks if .cif exist alreadly. Otherwise, download it.
+    Downloads PDB *.cif files for the suggested structures in the given path.
+
+    Args:
+        data_path: The path to the data directory. Defaults to "data".
+
+    Returns:
+        None
+    """
+
+    # get CIF path
+    cif_name = structureid + ".cif"
+    cif_file = os.path.join(structure_dir, cif_name)
+    cif_file_path = Path(cif_file)
+    if cif_file_path.exists():
+        print(f"{structureid} already exists. Skipping...")
+        return cif_file_path
+    else:
+        print(f"Downloading {structureid}...")
+        url = f"https://files.rcsb.org/download/{structureid}.cif"
+        download_file(url, cif_file_path)
+        return cif_file_path

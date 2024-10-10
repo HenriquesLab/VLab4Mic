@@ -9,6 +9,7 @@ from .utils.data_format.configuration_format import (
     compile_modality_parameters,
     format_modality_acquisition_params,
 )
+from .download import verify_structure
 import os
 import copy
 
@@ -34,8 +35,7 @@ def load_structure(structure_id: str = None, config_dir=None):
         structure_configuration = os.path.join(structure_dir, config_file)
         structure_params = load_yaml(structure_configuration)
         # get CIF path
-        cif_name = structure_id + ".cif"
-        cif_file = os.path.join(structure_dir, cif_name)
+        cif_file = verify_structure(structure_id, structure_dir)
         # build structure
         structure = build_structure_cif(
             cif_file=cif_file,
