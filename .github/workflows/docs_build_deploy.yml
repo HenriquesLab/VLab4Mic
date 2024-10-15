@@ -1,0 +1,50 @@
+name: (self-hosted) Build and Deploy docs
+on:
+    release:
+      types: [published]
+  
+    # creates a button
+    workflow_dispatch:
+      inputs:
+        logLevel:
+          description: "Log level"
+          required: true
+          default: "warning"
+          type: choice
+          options:
+            - info
+            - warning
+            - debug
+
+jobs:
+  build_package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.9
+      - name: Build package
+        run: |
+          make install-all
+          make docs
+      - uses: actions/upload-artifact@v4
+        with:
+          path: ./docs/*
+
+  deploy_doc:
+    needs: build_doc
+    # only run if main branch
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: "${{ steps.deployment.outputs.page_url }}"
+    steps:
+    - id: deployment
+      uses: actions/deploy-pages@v4
