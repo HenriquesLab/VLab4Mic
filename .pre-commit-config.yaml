@@ -18,12 +18,3 @@ repos:
       args: [--fix, --select=E501]
     - id: ruff-format
       types_or: [ python, pyi, jupyter ]
-- repo: local
-  hooks:
-    - id: update-version
-      name: Update version in pyproject.toml
-      entry: python3 __update_version__.py
-      language: python
-      always_run: true
-      pass_filenames: false
-      additional_dependencies: [toml]
