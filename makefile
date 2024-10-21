@@ -2,17 +2,30 @@
 
 help:
 	@echo "Available commands:"
-	@echo "  install                    Install dependencies using Poetry"
+	@echo "  install                    Install source code in environment"
+	@echo "  install-editable           Install source code in environment in editable mode"
+	@echo "  install-all                Install source code in environment and all dependencies"
+	@echo "  install-editable-all       Install source code in environment and all dependencies in editable mode"
 	@echo "  lint                       Run linters using pre-commit"
 	@echo "  format                     Run formatters using pre-commit"
 	@echo "  pytest                     Run tests using pytest"
 	@echo "  mypy                       Run type-checking using mypy"
 	@echo "  mypy-types                 Install missing types using mypy"
-	@echo "  docs                       Generate documentation using lazydocs"
-	@echo "  download-structures        Run supra_molecular_simulator.download:download_suggested_structures"
+	@echo "  docs                       Generate documentation using pdoc"
+	@echo "  download-structures        Run supramolsim.download:download_suggested_structures"
+	@echo "  package                    Builds python package"
 
 install:
-	poetry install
+	pip install .
+
+install-editable:
+	pip install --editable .
+
+install-all:
+	pip install ".[dev, test]"
+
+install-editable-all:
+	pip install --editable ".[dev, test]"
 
 lint:
 	pre-commit run ruff --all-files
@@ -21,19 +34,22 @@ format:
 	pre-commit run ruff-format --all-files
 
 pytest:
-	poetry run pytest --cov=supramolsim
+	pytest --cov=supramolsim
 
 mypy:
-	poetry run mypy --ignore-missing-imports src
+	mypy --ignore-missing-imports src
 
 mypy-types:
-	poetry run mypy --install-types
+	mypy --install-types
 
 docs:
 	rm -rf docs
-	poetry run lazydocs --remove-package-prefix --overview-file="README.md" src
+	pdoc src/supramolsim -o docs
 
 download-structures:
-	poetry run download-structures
+	download-structures
 
 .DEFAULT_GOAL := help
+
+package:
+	python -m build

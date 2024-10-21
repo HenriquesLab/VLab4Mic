@@ -1,0 +1,21 @@
+name: (self-hosted) Build and Test on Windows
+
+on: workflow_dispatch
+
+jobs:
+  build_package:
+    runs-on: [self-hosted, Windows]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.9
+      - name: Build package
+        run: |
+          make install-all
+          make package
+      - uses: actions/upload-artifact@v4
+        with:
+          path: ./dist/*

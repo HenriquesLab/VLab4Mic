@@ -1,0 +1,49 @@
+name: Test - Oncall
+# does a quick test
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      # only run if src or tests changes
+      # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#onpushpull_requestpull_request_targetpathspaths-ignore
+      - "src/**"
+      - "tests/**"
+      - "setup.cfg"
+      - "pyproject.toml"
+  pull_request:
+    branches: ["main"]
+
+  # creates a button
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: "Log level"
+        required: true
+        default: "warning"
+        type: choice
+        options:
+          - info
+          - warning
+          - debug
+
+jobs:
+  test_on_ubuntu_container:
+    runs-on: [self-hosted, Ubuntu]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: |
+            3.9
+            3.10
+            3.11
+            3.12
+      - name: Run Nox Quick-Tests
+        run: |
+          make install-all
+          make pytest
+        env:
+          LOG_LEVEL: ${{ github.event.inputs.logLevel }}
