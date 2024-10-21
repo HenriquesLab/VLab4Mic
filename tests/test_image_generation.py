@@ -54,3 +54,14 @@ def test_multi_imaging_system(configuration_directory):
         exported_field, selected_mods, configuration_path
     )
     assert imaging_system.get_absoulte_reference_point().shape == (1, 3)
+
+
+def test_image_from_field(configuration_directory, gt_structural_model_field):
+    configuration_path = configuration_directory
+    selected_mods = [
+        "STED_demo",
+    ]
+    imaging_system = workflows.create_imaging_system(
+        gt_structural_model_field, selected_mods, configuration_path
+    )
+    assert imaging_system.get_absoulte_reference_point().shape == (1, 3)
