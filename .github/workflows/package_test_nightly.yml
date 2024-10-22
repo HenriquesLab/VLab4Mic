@@ -53,8 +53,8 @@ jobs:
             3.12
       - name: Run Tests
         run: |
-          make install-all
-          make pytest
+          pip install -e .[all]
+          python -m pytest
 
   test_on_macos:
     runs-on: [self-hosted, macOS, ARM64]
@@ -68,5 +68,5 @@ jobs:
             3.10
       - name: Run tests
         run: |
-          make install-all
-          make pytest
+          pip install -e .[all]
+          python -m pytest
