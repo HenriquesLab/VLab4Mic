@@ -8,8 +8,8 @@ structure_list = [
 
 
 @pytest.mark.parametrize("structure_id", structure_list)
-def test_load_structure(structure_id):
-    configuration_path = "data/"
+def test_load_structure(structure_id, configuration_directory):
+    configuration_path = configuration_directory
     structure, structure_param = workflows.load_structure(
         structure_id, configuration_path
     )
