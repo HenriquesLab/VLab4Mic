@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from typing import List, Dict
 import numpy as np
 import supramolsim
@@ -16,7 +16,7 @@ class ExperimentParametrisation:
     selected_mods: Dict[str, int] = field(default_factory=dict)
     defect_eps: Dict[str, int] = field(default_factory=dict)
     sweep_pars: Dict[str, int] = field(default_factory=dict)
-    sav_dir = ""
+    output_directory: str = ""
 
     def __post_init__(self):
         pck_dir = os.path.dirname(os.path.abspath(supramolsim.__file__))
@@ -50,3 +50,27 @@ class ExperimentParametrisation:
                 )
         else:
             print("No parameters set")
+
+
+def create_experiment_parametrisation(
+    structure_and_labels: dict,
+    modalities_acquisition: dict,
+    defects_params: dict,
+    params2sweep: dict,
+    savging: dict,
+):
+    generator = ExperimentParametrisation()
+    # Structural parameters
+    generator.structure_id = structure_and_labels["structure_id"]
+    generator.structure_label = structure_and_labels["structure_label"]
+    generator.fluorophore_id = structure_and_labels["fluorophore_id"]
+    for mod, acquisition in modalities_acquisition.items():
+        generator.selected_mods[mod] = acquisition
+    for key, val in defects_params.items():
+        generator.defect_eps[key] = val
+    for parametername, pars in params2sweep.items():
+        generator.sweep_pars[parametername] = pars
+    # writing
+    generator.experiment_id = savging["experiment_id"]
+    generator.output_directory = savging["output_directory"]
+    return generator
