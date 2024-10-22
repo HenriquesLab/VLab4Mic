@@ -34,6 +34,7 @@ class LabeledInstance:
         self.radial_hindance = None
         self.defects = False
         self.defects_params = dict()
+        # Contains the subset of epitopes after defect calculation
         self.defects_target_normals = None
         self.fluo2labels = []
         self.status = dict(source=False, labels=False)
