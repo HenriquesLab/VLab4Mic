@@ -2,7 +2,7 @@ from dataclasses import dataclass, field, fields
 from typing import List, Dict
 import numpy as np
 import supramolsim
-from supramolsim.workflows import *
+from .workflows import load_structure, create_imaging_system
 import os
 
 
@@ -34,7 +34,7 @@ class ExperimentParametrisation:
 
     def _build_imager(self):
         if self.selected_mods:
-            mods_list = list(selected_mods.keys())
+            mods_list = list(self.selected_mods.keys())
             self.imager = create_imaging_system(
                 modalities_id_list=mods_list, config_dir=self.configuration_path
             )
@@ -50,6 +50,11 @@ class ExperimentParametrisation:
                 )
         else:
             print("No parameters set")
+
+    def build(self):
+        self._build_imager()
+        self._build_structure()
+        self._param_linspaces()
 
 
 def create_experiment_parametrisation(
@@ -73,4 +78,5 @@ def create_experiment_parametrisation(
     # writing
     generator.experiment_id = savging["experiment_id"]
     generator.output_directory = savging["output_directory"]
+    generator.build()
     return generator
