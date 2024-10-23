@@ -12,6 +12,13 @@ from .utils.data_format.configuration_format import (
 from .download import verify_structure
 import os
 import copy
+import itertools
+import matplotlib.pyplot as plt
+from IPython.utils import io
+from tqdm import tqdm
+import numpy as np
+from .utils.transform.datatype import truncate
+from .utils.data_format.structural_format import label_builder_format
 
 
 def load_structure(structure_id: str = None, config_dir=None):
@@ -145,6 +152,7 @@ def generate_multi_imaging_modalities(
     experiment_name="multi_imaging_modalities",
     savingdir=None,
     acquisition_param: dict = None,
+    write=False,
     **kwargs,
 ):
     # kwargs will contain as keys the names of the modalities,
@@ -158,7 +166,7 @@ def generate_multi_imaging_modalities(
             # should verify that the path exist
             if savingdir is not None:
                 image_generator.set_writing_directory(savingdir)
-                acq_params = format_modality_acquisition_params()
+                acq_params = format_modality_acquisition_params(save=write)
             timeseries, calibration_beads = image_generator.generate_imaging(
                 modality=mod, **acq_params
             )
@@ -173,3 +181,67 @@ def generate_multi_imaging_modalities(
                 timeseries, calibration_beads = image_generator.generate_imaging(
                     modality=mod, channel=chan, **acq_params
                 )
+
+
+def param_sweep_generator(
+    linspaces_dict,
+    structure,
+    imager,
+    structure_label,
+    fluorophore_id,
+    configuration_path,
+    defects_eps,
+    exp_name,
+    output_dir,
+    write=False,
+):
+    linspace_list = [linspaces_dict["labelling_efficiency"], linspaces_dict["defects"]]
+    total_lengths = [len(i) for i in linspace_list]
+    total_len = np.prod(np.array(total_lengths))
+    for combination in tqdm(itertools.product(*linspace_list), total=total_len):
+        with io.capture_output() as captured:
+            labeff = combination[0]
+            defect = combination[1]
+            iteration_name = (
+                exp_name
+                + "LEff_"
+                + str(truncate(labeff, 3))
+                + "_Defect_"
+                + str(truncate(defect, 3))
+            )
+            # print(f"eff: {labeff}, defect: {defect}")
+            labels_list = []
+            labels_list.append(
+                label_builder_format(
+                    label_id=structure_label,
+                    fluorophore_id=fluorophore_id,
+                    labelling_efficiency=labeff,
+                )
+            )
+            particle = particle_from_structure(
+                structure, labels_list, configuration_path
+            )
+            particle.add_defects(
+                eps1=defects_eps["eps1"],
+                xmer_neigh_distance=defects_eps["eps2"],
+                deg_dissasembly=defect,
+            )
+            if write:
+                particle.show_instance(with_sources=True)
+                fig_name = iteration_name + ".png"
+                name_path = os.path.join(output_dir, fig_name)
+                plt.savefig(name_path)
+                plt.close()
+            exported_field, fieldobject = field_from_particle(
+                particle, field_config=None
+            )
+            imager.import_field(**exported_field)
+            # test_imager.show_field()
+
+            generate_multi_imaging_modalities(
+                image_generator=imager,
+                experiment_name=iteration_name,
+                savingdir=output_dir,
+                write=write,
+            )
+    return fieldobject, imager
