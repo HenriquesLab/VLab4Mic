@@ -383,6 +383,7 @@ class Imager:
             emitters = self.get_emitters_in_ROI(fluo)
             n_emitters = emitters.shape[0]
             if n_emitters < 1:
+                no_emitters = True
                 # if no emitter is in range, an image with noise should be generated
                 emitters = np.array(
                     [
@@ -397,6 +398,7 @@ class Imager:
                 )
 
             else:
+                no_emitters = False
                 # adjust the absolute XY positions to the ROI dimentions
                 emitters[:, 0] = emitters[:, 0] - self.roi_params["ranges"][0][0]
                 emitters[:, 1] = emitters[:, 1] - self.roi_params["ranges"][1][0]
@@ -411,7 +413,7 @@ class Imager:
             emitters_to_export = field_data["field_coordinates"]
             if save:
                 self.write_ground_truth_positions(
-                    emitters_to_export, "x [nm],y [nm],z [nm]", gt_notes
+                    emitters_to_export, "x [nm],y [nm],z [nm]", gt_notes, no_emitters
                 )
             convolution_type = self.modalities[modality]["psf"]["convolution_type"]
             psf_size = psf_data["psf_array"].shape
@@ -459,17 +461,22 @@ class Imager:
             self._save_timeseries_with_beads(timeseries, beadstack, writing_notes_fluo)
         return timeseries, beadstack
 
-    def write_ground_truth_positions(self, emitters, header=None, notes=""):
+    def write_ground_truth_positions(
+        self, emitters, header=None, notes="", no_emitters=False
+    ):
         # first, create the list of lines
         textlines = []
         # header = "x [nm],y [nm],z [nm]"
         textlines.append(header)
-        for i in range(emitters.shape[0]):
-            string_ = generate_coordinate_textline(
-                emitters[i, 0], emitters[i, 1], emitters[i, 2]
-            )
-            textlines.append(string_)
-        self.write_text(textlines, notes)
+        if no_emitters:
+            self.write_text(textlines, notes)
+        else:
+            for i in range(emitters.shape[0]):
+                string_ = generate_coordinate_textline(
+                    emitters[i, 0], emitters[i, 1], emitters[i, 2]
+                )
+                textlines.append(string_)
+            self.write_text(textlines, notes)
 
     def _crop_negative(self, stack):
         if stack is None:
