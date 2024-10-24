@@ -7,6 +7,7 @@ from .workflows import (
     create_imaging_system,
     particle_from_structure,
     field_from_particle,
+    generate_multi_imaging_modalities,
 )
 from .utils.data_format.structural_format import label_builder_format
 import os
@@ -32,7 +33,11 @@ class ExperimentParametrisation:
         self.configuration_path = local_dir
         # keep track of objects created
         self.objects_created = dict(
-            structure=False, particle=False, coordinate_field=False, imager=False
+            structure=False,
+            particle=False,
+            coordinate_field=False,
+            imager=False,
+            output_reference=False,
         )
 
     def _build_structure(self, keep=True):
@@ -118,13 +123,31 @@ class ExperimentParametrisation:
         self._build_structure()
         self._param_linspaces()
 
-    def gen_reference(self):
+    def gen_reference(self, write=False, keep=False):
         reference_pars = dict()
         for param_name, param_settings in self.sweep_pars.items():
             # print(param_name, param_settings)
             reference_pars[param_name] = param_settings["ideal"]
         print(reference_pars)
-        # generate
+        # generate particle
+        tmp_particle = self._build_particle(
+            lab_eff=reference_pars["labelling_efficiency"], keep=True
+        )
+        # use particle to create new field
+        tmp_exported_field = self._build_coordinate_field()
+        self.imager.import_field(**tmp_exported_field)
+        #
+        output_name = "REFERENCE_"
+        _reference = generate_multi_imaging_modalities(
+            image_generator=self.imager,
+            experiment_name=output_name,
+            savingdir=self.output_directory,
+            write=write,
+        )
+        if keep:
+            self.experiment_reference = _reference
+            self.objects_created["output_reference"] = True
+        return _reference
 
 
 def create_experiment_parametrisation(
