@@ -1,4 +1,3 @@
-from supramolsim.workflows import param_sweep_generator
 from supramolsim.experiments import create_experiment_parametrisation
 
 
@@ -19,17 +18,28 @@ def test_experiment_parameterised():
     )
     savging = dict(experiment_id="SupraMolSim_experiment", output_directory="")
     experiment_generator = create_experiment_parametrisation(
-        structure_and_labels, selected_mods, defects_eps_d, sweep_pars, savging
+        structure_and_labels=structure_and_labels,
+        modalities_acquisition=selected_mods,
+        defects_params=defects_eps_d,
+        savging=savging,
+        params2sweep=sweep_pars,
     )
-    param_sweep_generator(
-        linspaces_dict=experiment_generator.sweep_linspaces,
-        structure=experiment_generator.structure,
-        imager=experiment_generator.imager,
-        structure_label=experiment_generator.structure_label,
-        fluorophore_id=experiment_generator.fluorophore_id,
-        configuration_path=experiment_generator.configuration_path,
-        defects_eps=experiment_generator.defect_eps,
-        exp_name=experiment_generator.experiment_id,
-        output_dir=experiment_generator.output_directory,
-        write=False,
+
+
+def test_experiment_runsimulation():
+    selected_mods = dict(
+        STED_demo=None,
+        Confocal_demo=None,
     )
+    structure_and_labels = dict(
+        structure_id="2RCJ",
+        structure_label="Generic_NHS_ester",
+        fluorophore_id="AF647",
+    )
+    savging = dict(experiment_id="SupraMolSim_experiment", output_directory="")
+    experiment_generator = create_experiment_parametrisation(
+        structure_and_labels=structure_and_labels,
+        modalities_acquisition=selected_mods,
+        savging=savging,
+    )
+    experiment_generator.run_simulation()
