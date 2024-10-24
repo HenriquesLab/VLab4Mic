@@ -23,13 +23,17 @@ class ExperimentParametrisation:
     selected_mods: Dict[str, int] = field(default_factory=dict)
     defect_eps: Dict[str, int] = field(default_factory=dict)
     sweep_pars: Dict[str, int] = field(default_factory=dict)
-    object_exist: Dict[str, int] = field(default_factory=dict)
+    objects_created: Dict[str, int] = field(default_factory=dict)
     output_directory: str = ""
 
     def __post_init__(self):
         pck_dir = os.path.dirname(os.path.abspath(supramolsim.__file__))
         local_dir = os.path.join(pck_dir, "configuration")
         self.configuration_path = local_dir
+        # keep track of objects created
+        self.objects_created = dict(
+            structure=False, particle=False, coordinate_field=False, imager=False
+        )
 
     def _build_structure(self, keep=True):
         if self.structure_id:
@@ -37,6 +41,7 @@ class ExperimentParametrisation:
                 self.structure_id, self.configuration_path
             )
             self.structure = struct
+            self.objects_created["structure"] = True
         else:
             print("No structure ID")
 
@@ -74,6 +79,7 @@ class ExperimentParametrisation:
             )
         if keep:
             self.particle = particle
+            self.objects_created["particle"] = True
         return particle
 
     def _build_coordinate_field(self, use_self_particle=True, keep=False):
@@ -93,6 +99,7 @@ class ExperimentParametrisation:
             self.imager = create_imaging_system(
                 modalities_id_list=mods_list, config_dir=self.configuration_path
             )
+            self.objects_created["imager"] = True
         else:
             print("No modalities")
 
