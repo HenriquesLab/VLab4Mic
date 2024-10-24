@@ -2,7 +2,12 @@ from dataclasses import dataclass, field, fields
 from typing import List, Dict
 import numpy as np
 import supramolsim
-from .workflows import load_structure, create_imaging_system, particle_from_structure
+from .workflows import (
+    load_structure,
+    create_imaging_system,
+    particle_from_structure,
+    field_from_particle,
+)
 from .utils.data_format.structural_format import label_builder_format
 import os
 
@@ -14,9 +19,11 @@ class ExperimentParametrisation:
     configuration_path: str = ""
     structure_label: str = ""
     fluorophore_id: str = ""
+    coordinate_field_id: str = None
     selected_mods: Dict[str, int] = field(default_factory=dict)
     defect_eps: Dict[str, int] = field(default_factory=dict)
     sweep_pars: Dict[str, int] = field(default_factory=dict)
+    object_exist: Dict[str, int] = field(default_factory=dict)
     output_directory: str = ""
 
     def __post_init__(self):
@@ -65,10 +72,20 @@ class ExperimentParametrisation:
                 xmer_neigh_distance=self.defect_eps["eps2"],
                 deg_dissasembly=defect,
             )
+        if keep:
+            self.particle = particle
         return particle
 
-    def _build_coordinate_field(self, keep=False):
-        pass
+    def _build_coordinate_field(self, use_self_particle=True, keep=False):
+        if use_self_particle and self.particle:
+            exported_field, fieldobject = field_from_particle(
+                self.particle, field_config=self.coordinate_field_id
+            )
+        else:
+            pass
+        if keep:
+            self.exported_coordinate_field = exported_field
+        return exported_field
 
     def _build_imager(self):
         if self.selected_mods:
