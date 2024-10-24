@@ -150,7 +150,8 @@ class ExperimentParametrisation:
         return _reference
 
     def run_simulation(self, name="NONAME", acq_params=None, save=False):
-        # verify objects_created are all True before
+        # imager will run regardless, since by default
+        # has a minimal coordinate field
         simulation_output = generate_multi_imaging_modalities(
             image_generator=self.imager,
             experiment_name=name,
@@ -164,8 +165,8 @@ class ExperimentParametrisation:
 def create_experiment_parametrisation(
     structure_and_labels: dict,
     modalities_acquisition: dict,
-    defects_params: dict,
     savging: dict,
+    defects_params: dict = None,
     params2sweep: dict = None,
 ):
     generator = ExperimentParametrisation()
@@ -175,8 +176,9 @@ def create_experiment_parametrisation(
     generator.fluorophore_id = structure_and_labels["fluorophore_id"]
     for mod, acquisition in modalities_acquisition.items():
         generator.selected_mods[mod] = acquisition
-    for key, val in defects_params.items():
-        generator.defect_eps[key] = val
+    if defects_params:
+        for key, val in defects_params.items():
+            generator.defect_eps[key] = val
     if params2sweep:
         for parametername, pars in params2sweep.items():
             generator.sweep_pars[parametername] = pars
