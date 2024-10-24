@@ -2,7 +2,8 @@ from dataclasses import dataclass, field, fields
 from typing import List, Dict
 import numpy as np
 import supramolsim
-from .workflows import load_structure, create_imaging_system
+from .workflows import load_structure, create_imaging_system, particle_from_structure
+from .utils.data_format.structural_format import label_builder_format
 import os
 
 
@@ -23,7 +24,7 @@ class ExperimentParametrisation:
         local_dir = os.path.join(pck_dir, "configuration")
         self.configuration_path = local_dir
 
-    def _build_structure(self):
+    def _build_structure(self, keep=True):
         if self.structure_id:
             struct, struct_param = load_structure(
                 self.structure_id, self.configuration_path
@@ -31,6 +32,33 @@ class ExperimentParametrisation:
             self.structure = struct
         else:
             print("No structure ID")
+
+    def _build_label(self, lab_eff=1, keep=False):
+        """
+        Create a list with one dictionary with
+        the set up info for creating a label.
+        It assumes there is only one label store in
+        the attrubute "structure_label" and one in
+        "fluorophore_id".
+        """
+        labels_list = []
+        labels_list.append(
+            label_builder_format(
+                label_id=self.structure_label,
+                fluorophore_id=self.fluorophore_id,
+                labelling_efficiency=lab_eff,
+            )
+        )
+        if keep:
+            pass
+        else:
+            return labels_list
+
+    def _build_particle(self, keep=False):
+        pass
+
+    def _build_coordinate_field(self, keep=False):
+        pass
 
     def _build_imager(self):
         if self.selected_mods:
@@ -55,6 +83,14 @@ class ExperimentParametrisation:
         self._build_imager()
         self._build_structure()
         self._param_linspaces()
+
+    def gen_reference(self):
+        reference_pars = dict()
+        for param_name, param_settings in self.sweep_pars.items():
+            # print(param_name, param_settings)
+            reference_pars[param_name] = param_settings["ideal"]
+        print(reference_pars)
+        # generate
 
 
 def create_experiment_parametrisation(
