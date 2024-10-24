@@ -33,7 +33,7 @@ class ExperimentParametrisation:
         else:
             print("No structure ID")
 
-    def _build_label(self, lab_eff=1, keep=False):
+    def _build_label(self, lab_eff=1, keep=False, **kwargs):
         """
         Create a list with one dictionary with
         the set up info for creating a label.
@@ -54,8 +54,18 @@ class ExperimentParametrisation:
         else:
             return labels_list
 
-    def _build_particle(self, keep=False):
-        pass
+    def _build_particle(self, lab_eff=1.0, defect=0.0, keep=False):
+        labels_list = self._build_label(lab_eff=lab_eff)
+        particle = particle_from_structure(
+            self.structure, labels_list, self.configuration_path
+        )
+        if self.defect_eps:
+            particle.add_defects(
+                eps1=self.defect_eps["eps1"],
+                xmer_neigh_distance=self.defect_eps["eps2"],
+                deg_dissasembly=defect,
+            )
+        return particle
 
     def _build_coordinate_field(self, keep=False):
         pass
