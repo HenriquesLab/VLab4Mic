@@ -149,13 +149,24 @@ class ExperimentParametrisation:
             self.objects_created["output_reference"] = True
         return _reference
 
+    def run_simulation(self, name="NONAME", acq_params=None, save=False):
+        # verify objects_created are all True before
+        simulation_output = generate_multi_imaging_modalities(
+            image_generator=self.imager,
+            experiment_name=name,
+            savingdir=self.output_directory,
+            write=save,
+            acquisition_param=acq_params,
+        )
+        return simulation_output
+
 
 def create_experiment_parametrisation(
     structure_and_labels: dict,
     modalities_acquisition: dict,
     defects_params: dict,
-    params2sweep: dict,
     savging: dict,
+    params2sweep: dict = None,
 ):
     generator = ExperimentParametrisation()
     # Structural parameters
@@ -166,8 +177,9 @@ def create_experiment_parametrisation(
         generator.selected_mods[mod] = acquisition
     for key, val in defects_params.items():
         generator.defect_eps[key] = val
-    for parametername, pars in params2sweep.items():
-        generator.sweep_pars[parametername] = pars
+    if params2sweep:
+        for parametername, pars in params2sweep.items():
+            generator.sweep_pars[parametername] = pars
     # writing
     generator.experiment_id = savging["experiment_id"]
     generator.output_directory = savging["output_directory"]
