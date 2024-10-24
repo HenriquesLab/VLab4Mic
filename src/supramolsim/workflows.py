@@ -160,6 +160,7 @@ def generate_multi_imaging_modalities(
     # in the yaml file. each modality will have specific parameters for aquisitions
     # there must be a default imaging parameter for all, like 10 frames for each
     image_generator.set_experiment_name(experiment_name)
+    outputs = dict()
     if acquisition_param is None:
         print("No acquisition parameters defined. Using default on all modalities")
         for mod in image_generator.modalities.keys():
@@ -170,6 +171,7 @@ def generate_multi_imaging_modalities(
             timeseries, calibration_beads = image_generator.generate_imaging(
                 modality=mod, **acq_params
             )
+            outputs[mod] = timeseries
     else:
         acquisition_parameters = copy.copy(acquisition_param)
         for mod, acq_params in acquisition_parameters.items():
@@ -181,6 +183,7 @@ def generate_multi_imaging_modalities(
                 timeseries, calibration_beads = image_generator.generate_imaging(
                     modality=mod, channel=chan, **acq_params
                 )
+            outputs[mod] = timeseries
 
 
 def param_sweep_generator(
