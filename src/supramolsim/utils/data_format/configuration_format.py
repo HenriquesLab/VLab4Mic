@@ -95,7 +95,7 @@ def define_emission_behaviour(mod_emission, fluo_emissions):
 def format_modality_acquisition_params(
     exp_time=0.001,
     noise=True,
-    save=True,
+    save=False,
     nframes=10,
     channels=[
         "ch0",
