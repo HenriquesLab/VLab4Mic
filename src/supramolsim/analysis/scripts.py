@@ -67,3 +67,12 @@ def parameter_sweep_reps(
             # end of replicate
             iteration_params.append(dict(labelling_effiency=labeff, defect=defect))
     return sweep_outputs, iteration_params, reference
+
+
+def _reformat_img_stack(img, subregion=False, **kwargs):
+    single_img = img[0]
+    if subregion:
+        single_img = single_img[
+            subregion[0] : subregion[1], subregion[0] : subregion[1]
+        ]
+    return single_img
