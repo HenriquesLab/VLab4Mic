@@ -79,7 +79,7 @@ def _reformat_img_stack(img, subregion=False, **kwargs):
 
 
 def analyse_sweep_reps_vectors(
-    img_outputs, img_params, reference, analysys_case_params, **kwargs
+    img_outputs, img_params, reference, analysis_case_params, **kwargs
 ):
     conditions = list(reference.keys())
     references = dict()
@@ -92,7 +92,7 @@ def analyse_sweep_reps_vectors(
         measurement_per_combination = []
         sd_measurement_per_combination = []
         reference_img = _reformat_img_stack(
-            reference[case], **analysys_case_params[case]
+            reference[case], **analysis_case_params[case]
         )
         references[case] = reference_img
         # print(reference_img.shape)
@@ -104,10 +104,10 @@ def analyse_sweep_reps_vectors(
                 item_vector = []
                 # print(simu_replica.keys(), i, case)
                 case_iteration = _reformat_img_stack(
-                    simu_replica[case], **analysys_case_params[case]
+                    simu_replica[case], **analysis_case_params[case]
                 )
                 rep_measurement = img_compare(
-                    reference_img, case_iteration, **analysys_case_params[case]
+                    reference_img, case_iteration, **analysis_case_params[case]
                 )
                 item_vector.append(case)
                 item_vector.append(img_params[i]["labelling_effiency"])
