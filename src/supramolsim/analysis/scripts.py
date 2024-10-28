@@ -76,3 +76,65 @@ def _reformat_img_stack(img, subregion=False, **kwargs):
             subregion[0] : subregion[1], subregion[0] : subregion[1]
         ]
     return single_img
+
+
+def analyse_sweep_reps_vectors(
+    img_outputs, img_params, reference, analysys_case_params, **kwargs
+):
+    conditions = list(reference.keys())
+    references = dict()
+    queries = dict()
+    measurement_vectors = list()
+    for case in conditions:
+        item_vector = []
+        queries[case] = []
+        data_pivot = []
+        measurement_per_combination = []
+        sd_measurement_per_combination = []
+        reference_img = _reformat_img_stack(
+            reference[case], **analysys_case_params[case]
+        )
+        references[case] = reference_img
+        # print(reference_img.shape)
+        for i in range(len(img_params)):
+            sweep_case_measurements = []
+            case_iteration_replicas = []
+            r = 0
+            for simu_replica in img_outputs[i]:
+                item_vector = []
+                # print(simu_replica.keys(), i, case)
+                case_iteration = _reformat_img_stack(
+                    simu_replica[case], **analysys_case_params[case]
+                )
+                rep_measurement = img_compare(
+                    reference_img, case_iteration, **analysys_case_params[case]
+                )
+                item_vector.append(case)
+                item_vector.append(img_params[i]["labelling_effiency"])
+                item_vector.append(img_params[i]["defect"])
+                item_vector.append(rep_measurement)
+                item_vector.append(r)
+                # print(item_vector)
+                measurement_vectors.append(item_vector)
+                sweep_case_measurements.append(rep_measurement)
+                case_iteration_replicas.append(case_iteration)
+                r = r + 1
+            queries[case].append(dict(im=case_iteration_replicas, params=img_params[i]))
+            measurement_per_combination.append(np.mean(sweep_case_measurements))
+            sd_measurement_per_combination.append(np.std(sweep_case_measurements))
+        measurement_array = np.array(measurement_vectors)
+        print(measurement_array)
+        data_frame = pd.DataFrame(
+            data={
+                "Labelling efficiency": np.array(
+                    measurement_array[:, 1], dtype=np.float32
+                ),
+                "Fracitonal defect": np.array(
+                    measurement_array[:, 2], dtype=np.float32
+                ),
+                "Condition": measurement_array[:, 0],
+                "Metric": np.array(measurement_array[:, 3], dtype=np.float32),
+                "replica": measurement_array[:, 4],
+            }
+        )
+    return data_frame, references, queries
