@@ -65,7 +65,7 @@ def parameter_sweep_reps(
                 iteration_output_reps.append(iteration_output)
             sweep_outputs.append(iteration_output_reps)
             # end of replicate
-            iteration_params.append(dict(labelling_effiency=labeff, defect=defect))
+            iteration_params.append(dict(labelling_efficiency=labeff, defect=defect))
     return sweep_outputs, iteration_params, reference
 
 
@@ -110,7 +110,7 @@ def analyse_sweep_reps_vectors(
                     reference_img, case_iteration, **analysis_case_params[case]
                 )
                 item_vector.append(case)
-                item_vector.append(img_params[i]["labelling_effiency"])
+                item_vector.append(img_params[i]["labelling_efficiency"])
                 item_vector.append(img_params[i]["defect"])
                 item_vector.append(rep_measurement)
                 item_vector.append(r)
@@ -123,7 +123,6 @@ def analyse_sweep_reps_vectors(
             measurement_per_combination.append(np.mean(sweep_case_measurements))
             sd_measurement_per_combination.append(np.std(sweep_case_measurements))
         measurement_array = np.array(measurement_vectors)
-        print(measurement_array)
         data_frame = pd.DataFrame(
             data={
                 "Labelling efficiency": np.array(
