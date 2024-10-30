@@ -26,7 +26,7 @@ def parameter_sweep_reps(
     out_dir = Experiment.output_directory
     # prepare combination of parameters
     linspaces_dict = Experiment.sweep_linspaces
-    linspace_list = [linspaces_dict["labelling_efficiency"], linspaces_dict["defects"]]
+    linspace_list = [linspaces_dict[param_name] for param_name in linspaces_dict.keys()]
     total_lengths = [len(i) for i in linspace_list]
     total_len = np.prod(np.array(total_lengths))
     # iterate over parameter combination
@@ -65,6 +65,7 @@ def parameter_sweep_reps(
                 iteration_output_reps.append(iteration_output)
             sweep_outputs.append(iteration_output_reps)
             # end of replicate
+            # dictionary keys to use sweep_parameters keys
             iteration_params.append(dict(labelling_efficiency=labeff, defect=defect))
     return sweep_outputs, iteration_params, reference
 
