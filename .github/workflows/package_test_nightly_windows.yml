@@ -2,8 +2,8 @@ name: Test - Nightly
 # does a massive check, every night
 
 on:
-  #schedule:
-  #  - cron: "3 24 * * *"
+  schedule:
+    - cron: "3 24 * * *"
 
   # creates a button
   workflow_dispatch:

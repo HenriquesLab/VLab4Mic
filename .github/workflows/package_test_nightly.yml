@@ -38,24 +38,6 @@ jobs:
           make install-all
           make pytest
 
-  test_on_windows:
-    runs-on: [self-hosted, Windows, X64]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v5
-        with:
-          python-version: |
-            3.9
-            3.10
-            3.11
-            3.12
-      - name: Run Tests
-        run: |
-          pip install -e .[all]
-          python -m pytest
-
   test_on_macos:
     runs-on: [self-hosted, macOS, ARM64]
     steps:
