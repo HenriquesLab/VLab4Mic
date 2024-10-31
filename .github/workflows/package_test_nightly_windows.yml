@@ -1,9 +1,9 @@
-name: Test - Nightly
+name: Test - Nightly - Win
 # does a massive check, every night
 
 on:
   schedule:
-    - cron: "3 24 * * *"
+    - cron: "3 23 * * *"
 
   # creates a button
   workflow_dispatch:
