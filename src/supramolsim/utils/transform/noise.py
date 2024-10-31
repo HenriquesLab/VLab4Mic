@@ -14,10 +14,12 @@ def add_gaussian_noise(imagestack, sigma):
     return noisy
 
 
-def add_binomial_noise(imagestack, p=1):
+def add_binomial_noise(imagestack, p=1.0):
     # print(f"adding binomial noise: p = {p}")
-    int_imagestack = np.floor(imagestack).astype("int64")
-    return np.random.binomial(int_imagestack, p)
+    # int_imagestack = np.floor(imagestack).astype("int64")
+    imagestack = np.floor(imagestack).astype(np.uint32)
+    imstack_binom = np.random.binomial(imagestack, p)
+    return imstack_binom
 
 
 def add_gamma_noise(imagestack, g=1.0):
@@ -26,23 +28,23 @@ def add_gamma_noise(imagestack, g=1.0):
     return amplified
 
 
-def add_conversion_factor(imagestack, adu=1):
+def add_conversion_factor(imagestack, adu: int = 1):
     """
     Emulates the digitalisation process for generating
     pixel values as integers
     """
     # print(f"Using conversion factor: ADU = {adu}")
-    adu_stack = np.floor(imagestack / adu).astype("int64")
+    adu_stack = np.floor(imagestack / adu).astype(np.uint32)
     return adu_stack
 
 
-def add_integer_baselevel(imagestack, bl=0):
+def add_integer_baselevel(imagestack, bl: int = 0):
     """
     Adds a constant value as integer.
     As the input data should be integers as well it is
     explicitly casted as integer
     """
-    stack_with_bl = (imagestack.astype("int64")) + bl
+    stack_with_bl = (imagestack.astype(np.uint32)) + bl
     return stack_with_bl
 
 
