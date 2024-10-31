@@ -17,7 +17,7 @@ def add_gaussian_noise(imagestack, sigma):
 def add_binomial_noise(imagestack, p=1.0):
     # print(f"adding binomial noise: p = {p}")
     # int_imagestack = np.floor(imagestack).astype("int64")
-    imagestack = np.floor(imagestack).astype(np.uint32)
+    imagestack = np.floor(imagestack).astype(np.int32)
     imstack_binom = np.random.binomial(imagestack, p)
     return imstack_binom
 
@@ -34,7 +34,7 @@ def add_conversion_factor(imagestack, adu: int = 1):
     pixel values as integers
     """
     # print(f"Using conversion factor: ADU = {adu}")
-    adu_stack = np.floor(imagestack / adu).astype(np.uint32)
+    adu_stack = np.floor(imagestack / adu).astype(np.int32)
     return adu_stack
 
 
@@ -44,7 +44,7 @@ def add_integer_baselevel(imagestack, bl: int = 0):
     As the input data should be integers as well it is
     explicitly casted as integer
     """
-    stack_with_bl = (imagestack.astype(np.uint32)) + bl
+    stack_with_bl = (imagestack.astype(np.int32)) + bl
     return stack_with_bl
 
 
