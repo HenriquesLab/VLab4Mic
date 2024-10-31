@@ -7,6 +7,7 @@ build/
 data/
 *.egg-info/
 src/supramolsim/configuration/*/*template*
+src/supramolsim/analysis/_*
 
 # Files
 .DS_Store
