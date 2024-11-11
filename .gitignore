@@ -18,3 +18,4 @@ output.txt
 dist
 *.gz
 *.cif
+*_ignore_*
