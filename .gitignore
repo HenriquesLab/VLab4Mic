@@ -7,7 +7,6 @@ build/
 data/
 *.egg-info/
 src/supramolsim/configuration/*/*template*
-src/supramolsim/analysis/_*
 
 # Files
 .DS_Store
@@ -18,3 +17,4 @@ output.txt
 dist
 *.gz
 *.cif
+*_ignore_*
