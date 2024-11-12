@@ -17,6 +17,33 @@ def parameter_sweep_reps(
     repetitions=1,
     **kwargs,
 ):
+    """
+    Runs a parameter sweep with multiple repetitions
+    for each parameter combination.
+
+    Args:
+        Experiment (ExperimentParametrisation):
+            The experiment to run parameter sweeps on
+        sweep_parameters (dict):
+            Dictionary containing parameter names and their sweep ranges
+        write (bool, optional):
+            Whether to save outputs to disk. Defaults to False.
+        repetitions (int, optional):
+            Number of repetitions per parameter combination. Defaults to 1.
+        **kwargs:
+            Additional keyword arguments
+
+    Returns:
+        tuple: Contains:
+            - sweep_outputs (list):
+                List of simulation outputs for each parameter combination
+                and repetition
+            - iteration_params (list):
+                List of parameter dictionaries used for each iteration
+            - reference (dict):
+                Reference images generated for the experiment
+
+    """
     sweep_outputs = []
     # setup sweep parameters
     for parametername, pars in sweep_parameters.items():
@@ -26,7 +53,7 @@ def parameter_sweep_reps(
     out_dir = Experiment.output_directory
     # prepare combination of parameters
     linspaces_dict = Experiment.sweep_linspaces
-    linspace_list = [linspaces_dict[param_name] for param_name in linspaces_dict.keys()]
+    linspace_list = [linspaces_dict[p_name] for p_name in linspaces_dict.keys()]
     total_lengths = [len(i) for i in linspace_list]
     total_len = np.prod(np.array(total_lengths))
     # iterate over parameter combination
@@ -79,62 +106,84 @@ def _reformat_img_stack(img, subregion=False, **kwargs):
     return single_img
 
 
-def analyse_sweep_reps_vectors(
-    img_outputs, img_params, reference, analysis_case_params, **kwargs
-):
+def analyse_sweep(img_outputs, img_params, reference, analysis_case_params, **kwargs):
+    """
+    Analyzes parameter sweep results by comparing simulated images to references.
+
+    This function processes the outputs of a parameter sweep simulation,
+    comparing each simulated image to corresponding reference images
+    using specified metrics. It organizes the results into a structured
+    format for analysis.
+
+    Args:
+        img_outputs (list):
+            List of simulation image outputs
+            for each parameter combination and repetition
+        img_params (list):
+            List of parameter dictionaries used for each iteration
+        reference (dict):
+            Dictionary of reference images for each experimental condition
+        analysis_case_params (dict):
+            Parameters for analyzing each experimental condition/case
+        **kwargs:
+            Additional keyword arguments
+
+    Returns:
+        tuple: Contains:
+            - data_frame (pd.DataFrame):
+                DataFrame containing analysis results with columns for parameters,
+              conditions,
+                metrics and replica numbers
+            - queries (dict):
+                Dictionary organizing the analyzed images by parameter combination
+                and replica
+            - references (dict):
+                Dictionary of processed reference images for each condition
+    """
     conditions = list(reference.keys())
     references = dict()
-    queries = dict()
     measurement_vectors = list()
+    param_names = list(img_params[0].keys())
+    n_param_names = len(param_names)
+    queries = dict()
     for case in conditions:
-        item_vector = []
-        queries[case] = []
-        data_pivot = []
-        measurement_per_combination = []
-        sd_measurement_per_combination = []
         reference_img = _reformat_img_stack(
             reference[case], **analysis_case_params[case]
         )
         references[case] = reference_img
-        # print(reference_img.shape)
-        for i in range(len(img_params)):
-            sweep_case_measurements = []
-            case_iteration_replicas = []
-            r = 0
-            for simu_replica in img_outputs[i]:
+    for i in range(len(img_params)):
+        param_values = [truncate(v, 6) for k, v in img_params[i].items()]
+        combination_name = str(param_values)
+        queries[combination_name] = dict()
+        rep = 0
+        for img_rep in img_outputs[i]:
+            queries[combination_name][rep] = dict()
+            for case in conditions:
                 item_vector = []
-                # print(simu_replica.keys(), i, case)
                 case_iteration = _reformat_img_stack(
-                    simu_replica[case], **analysis_case_params[case]
+                    img_rep[case], **analysis_case_params[case]
                 )
                 rep_measurement = img_compare(
-                    reference_img, case_iteration, **analysis_case_params[case]
+                    references[case], case_iteration, **analysis_case_params[case]
                 )
+                #
                 item_vector.append(case)
                 item_vector.append(img_params[i]["labelling_efficiency"])
                 item_vector.append(img_params[i]["defect"])
                 item_vector.append(rep_measurement)
-                item_vector.append(r)
-                # print(item_vector)
+                item_vector.append(rep)
+                #
                 measurement_vectors.append(item_vector)
-                sweep_case_measurements.append(rep_measurement)
-                case_iteration_replicas.append(case_iteration)
-                r = r + 1
-            queries[case].append(dict(im=case_iteration_replicas, params=img_params[i]))
-            measurement_per_combination.append(np.mean(sweep_case_measurements))
-            sd_measurement_per_combination.append(np.std(sweep_case_measurements))
-        measurement_array = np.array(measurement_vectors)
-        data_frame = pd.DataFrame(
-            data={
-                "Labelling efficiency": np.array(
-                    measurement_array[:, 1], dtype=np.float32
-                ),
-                "Fracitonal defect": np.array(
-                    measurement_array[:, 2], dtype=np.float32
-                ),
-                "Condition": measurement_array[:, 0],
-                "Metric": np.array(measurement_array[:, 3], dtype=np.float32),
-                "replica": measurement_array[:, 4],
-            }
-        )
-    return data_frame, references, queries
+                queries[combination_name][rep][case] = case_iteration
+            rep = rep + 1
+    measurement_array = np.array(measurement_vectors)
+    data_frame = pd.DataFrame(
+        data={
+            "Labelling efficiency": np.array(measurement_array[:, 1], dtype=np.float32),
+            "Fracitonal defect": np.array(measurement_array[:, 2], dtype=np.float32),
+            "Condition": measurement_array[:, 0],
+            "Metric": np.array(measurement_array[:, 3], dtype=np.float32),
+            "replica": measurement_array[:, 4],
+        }
+    )
+    return data_frame, queries, references
