@@ -87,6 +87,7 @@ def select_structure():
             structure_gui["Elevation"].disabled = False
             structure_gui["Azimuthal"].disabled = False
             structure_gui["Roll"].disabled = False
+            structure_gui["hidegrid"].disabled = False
 
         def view_structure(b):
             plt.clf()
@@ -101,24 +102,27 @@ def select_structure():
             el = structure_gui["Elevation"].value
             az = structure_gui["Azimuthal"].value
             rll = structure_gui["Roll"].value
+            axes_off = structure_gui["hidegrid"].value
             structure.show_assembly_atoms(
-                assembly_fraction=fraction, view_init=[el, az, rll]
+                assembly_fraction=fraction, view_init=[el, az, rll], axesoff=axes_off
             )
 
         def upload_file(b):
-            global structure, structure_params
+            global structure, structure_param, structure_id
             filepath = structure_gui["File"].selected
             filename = structure_gui["File"].selected_filename
             structure = build_structure_cif(
                 cif_file=filepath, struct_title=filename, cif_id=filename
             )
-            structure_params = data_format.structural_format.struct_params_format()
+            structure_param = data_format.structural_format.struct_params_format()
             print("Structure Loaded!")
             structure_gui["View"].disabled = False
             structure_gui["Fraction"].disabled = False
             structure_gui["Elevation"].disabled = False
             structure_gui["Azimuthal"].disabled = False
             structure_gui["Roll"].disabled = False
+            structure_gui["hidegrid"].disabled = False
+            structure_id = filename.split(".")[0]
 
         def activate_demos(b):
             global active_widgets
@@ -128,6 +132,7 @@ def select_structure():
             active_widgets["Select"] = None
             active_widgets["Fraction"] = None
             active_widgets["View"] = None
+            active_widgets["hidegrid"] = None
             for widgetname in active_widgets.keys():
                 display(structure_gui[widgetname])
 
@@ -139,6 +144,7 @@ def select_structure():
             active_widgets["Upload"] = None
             active_widgets["Fraction"] = None
             active_widgets["View"] = None
+            active_widgets["hidegrid"] = None
             for widgetname in active_widgets.keys():
                 display(structure_gui[widgetname])
 
@@ -192,6 +198,9 @@ def select_structure():
             description="Roll",
             disabled=nostructure,
         )
+        structure_gui.add_checkbox(
+            "hidegrid", description="Hide plot grids", value=True, disabled=nostructure
+        )
         structure_gui["Select"].on_click(select_structure)
         structure_gui["View"].on_click(view_structure)
         structure_gui["Upload"].on_click(upload_file)
@@ -208,7 +217,7 @@ def create_structural_model():
         particle, \
         particle_created, \
         structure, \
-        structure_params, \
+        structure_param, \
         structure_id
     # ensure that structure has no labels associated
     labels_gui = easy_gui_jupyter.EasyGUI("Labels")

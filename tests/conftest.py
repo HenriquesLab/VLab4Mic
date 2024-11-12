@@ -1,5 +1,6 @@
 import supramolsim
 from supramolsim import workflows, data_format
+from supramolsim.experiments import create_experiment_parametrisation
 import pytest
 import os
 
@@ -42,3 +43,28 @@ def gt_structural_model_field(configuration_directory):
     )
     exported_field, coordinates_field = workflows.field_from_particle(particle)
     return exported_field
+
+
+@pytest.fixture(scope="module")
+def experiment_7r5k_base():
+    selected_mods = dict(
+        STED_demo=None,
+        Confocal_demo=None,
+    )
+    structure_and_labels = dict(
+        structure_id="7R5K",
+        structure_label="7R5K_Nup96_Cterminal_direct",
+        fluorophore_id="AF647",
+    )
+    defects_eps_d = dict(eps1=300, eps2=600)
+    savging = dict(
+        experiment_id="SupraMolSim_experiment", output_directory="", save=True
+    )
+    Experiment_generator = create_experiment_parametrisation(
+        structure_and_labels=structure_and_labels,
+        modalities_acquisition=selected_mods,
+        savging=savging,
+        defects_params=defects_eps_d,
+        use_locals=True,
+    )
+    return Experiment_generator

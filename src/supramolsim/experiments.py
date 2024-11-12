@@ -174,6 +174,7 @@ class ExperimentParametrisation:
                 experiment_name=name,
                 savingdir=self.output_directory,
                 write=save,
+                # acq_params is a value in selected mods
                 acquisition_param=acq_params,
             )
             return simulation_output
