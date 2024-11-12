@@ -1,6 +1,6 @@
 from supramolsim.analysis.scripts import (
     parameter_sweep_reps,
-    analyse_sweep_reps_vectors,
+    analyse_sweep,
 )
 
 
@@ -43,7 +43,7 @@ def test_sweep_analysis(experiment_7r5k_base):
         Confocal_demo=dict(metric="ssim", subregion=False),
     )
     conditions = len(list(sweep_analyse_pars.keys()))
-    data_frame, references, qries = analyse_sweep_reps_vectors(
+    data_frame, references, qries = analyse_sweep(
         sweep_out, sweep_out_pars, ref_out, sweep_analyse_pars
     )
     assert len(data_frame["Metric"]) == total_combinations * replicas * conditions
