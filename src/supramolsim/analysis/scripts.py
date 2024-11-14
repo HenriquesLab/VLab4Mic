@@ -97,13 +97,28 @@ def parameter_sweep_reps(
     return sweep_outputs, iteration_params, reference
 
 
-def _reformat_img_stack(img, subregion=False, **kwargs):
-    single_img = img[0]
-    if subregion:
-        single_img = single_img[
-            subregion[0] : subregion[1], subregion[0] : subregion[1]
-        ]
-    return single_img
+def _reformat_img_stack(img, use_first=True, **kwargs):
+    if use_first:
+        if len(img.shape) == 3:
+            print("input is stack")
+            single_img = img[0]
+        else:
+            print("input is image")
+            single_img = img
+        formated_im = _crop_image(single_img, **kwargs)
+        return formated_im
+    else:
+        pass
+
+
+def _crop_image(img, subregion=False, **kwargs):
+    if len(img.shape) == 2:
+        single_img = img
+        if subregion:
+            single_img = single_img[
+                subregion[0] : subregion[1], subregion[0] : subregion[1]
+            ]
+        return single_img
 
 
 def analyse_sweep(img_outputs, img_params, reference, analysis_case_params, **kwargs):
