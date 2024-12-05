@@ -75,7 +75,6 @@ class jupyter_gui:
             )
 
         def upload_file(b):
-            global structure, structure_param, structure_id
             filepath = structure_gui["File"].selected
             filename = structure_gui["File"].selected_filename
             structure = build_structure_cif(
@@ -426,16 +425,12 @@ class jupyter_gui:
     def create_field(self):
         field_gui = easy_gui_jupyter.EasyGUI("field")
 
-        # self.my_experiment._build_coordinate_field()
-
         def createmin(b):
             random_pl = True
             use = field_gui["use_particle"].value
             self.my_experiment._build_coordinate_field(
                 use_self_particle=use, keep=True, random_placing=random_pl
             )
-            # coordinates_field = field.create_min_field(random_placing=random_pl)
-            # exported_field = coordinates_field.export_field()
             field_gui["show"].disabled = False
 
         def custom(b):
@@ -467,11 +462,3 @@ class jupyter_gui:
         field_gui["minimal"].on_click(createmin)
         field_gui["show"].on_click(showfield)
         field_gui.show()
-
-        # if self.my_experiment.particle is None:
-        #    print("There is no particle initalised")
-        #    field_gui.show()
-        # else:
-        #    print("Particle model exists")
-        #    field_gui["show"].disabled = False
-        #    display(field_gui["show"])

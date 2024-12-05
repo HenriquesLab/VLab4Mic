@@ -36,7 +36,7 @@ class ExperimentParametrisation:
             structure=False,
             particle=False,
             exported_coordinate_field=False,
-            coorinate_field=False,
+            coordinate_field=False,
             imager=False,
             output_reference=False,
         )
