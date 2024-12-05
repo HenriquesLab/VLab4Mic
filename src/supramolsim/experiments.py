@@ -89,11 +89,13 @@ class ExperimentParametrisation:
                 self.objects_created["particle"] = True
             return particle
 
-    def _build_coordinate_field(self, use_self_particle=True, keep=False, **kwargs):
+    def _build_coordinate_field(
+        self, use_self_particle=True, keep=False, coordinate_field_path=None, **kwargs
+    ):
         if use_self_particle and self.generators_status("particle"):
             print("creating field from existing particle")
             exported_field, fieldobject = field_from_particle(
-                self.particle, field_config=self.coordinate_field_id, **kwargs
+                self.particle, field_config=coordinate_field_path, **kwargs
             )
             if keep:
                 self.exported_coordinate_field = exported_field

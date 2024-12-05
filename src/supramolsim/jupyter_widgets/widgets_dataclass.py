@@ -433,9 +433,17 @@ class jupyter_gui:
             )
             field_gui["show"].disabled = False
 
-        def custom(b):
-            # coordinates_field = field.create_min_field(random_placing=random_pl)
-            # exported_field = coordinates_field.export_field()
+        def upload_custom(b):
+            display(field_gui["File"], field_gui["load_custom"])
+
+        def create_custom(b):
+            path_to_custom_field = field_gui["File"].selected
+            use = field_gui["use_particle"].value
+            self.my_experiment._build_coordinate_field(
+                use_self_particle=use,
+                keep=True,
+                coordinate_field_path=path_to_custom_field,
+            )
             field_gui["show"].disabled = False
 
         def showfield(b):
@@ -445,6 +453,13 @@ class jupyter_gui:
         field_gui.add_button("minimal", description="Create minimal field (random)")
         field_gui.add_button("custom", description="Use custom field params")
         field_gui.add_button("show", description="Show field", disabled=True)
+        field_gui.add_button("load_custom", description="Load custom field")
+        field_gui.add_file_upload(
+            "File",
+            description="Upload custom field",
+            accept="*.yaml",
+            save_settings=False,
+        )
         if self.my_experiment.particle is None:
             print("There is no particle initalised")
             use_p_disabled = True
@@ -461,4 +476,12 @@ class jupyter_gui:
         )
         field_gui["minimal"].on_click(createmin)
         field_gui["show"].on_click(showfield)
-        field_gui.show()
+        field_gui["custom"].on_click(upload_custom)
+        field_gui["load_custom"].on_click(create_custom)
+        # field_gui.show()
+        display(
+            field_gui["minimal"],
+            field_gui["custom"],
+            field_gui["show"],
+            field_gui["use_particle"],
+        )
