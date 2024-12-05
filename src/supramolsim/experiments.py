@@ -36,6 +36,7 @@ class ExperimentParametrisation:
             structure=False,
             particle=False,
             exported_coordinate_field=False,
+            coorinate_field=False,
             imager=False,
             output_reference=False,
         )
@@ -90,14 +91,18 @@ class ExperimentParametrisation:
 
     def _build_coordinate_field(self, use_self_particle=True, keep=False):
         if use_self_particle and self.generators_status("particle"):
+            print("creating field from existing particle")
             exported_field, fieldobject = field_from_particle(
                 self.particle, field_config=self.coordinate_field_id
             )
             if keep:
                 self.exported_coordinate_field = exported_field
-                self.objects_created["exported_coordinate_field"] = exported_field
+                self.objects_created["exported_coordinate_field"] = True
+                self.coordinate_field = fieldobject
+                self.objects_created["coordinate_field"] = True
             return exported_field
         else:
+            print("else")
             pass
 
     def _build_imager(self, use_local_field=False):

@@ -247,6 +247,7 @@ class jupyter_gui:
                     self.my_experiment.configuration_path,
                 )
                 self.my_experiment.particle = particle
+                self.my_experiment.objects_created["particle"] = True
                 print("Structure has been labelled")
             else:
                 print("No label has been added")
@@ -425,8 +426,9 @@ class jupyter_gui:
     def create_field(self):
         field_gui = easy_gui_jupyter.EasyGUI("field")
 
+        # self.my_experiment._build_coordinate_field()
+
         def createmin(b):
-            global coordinates_field, exported_field
             random_pl = True
             coordinates_field = field.create_min_field(random_placing=random_pl)
             exported_field = coordinates_field.export_field()
@@ -434,8 +436,7 @@ class jupyter_gui:
 
         def showfield(b):
             plt.clf()
-            global coordinates_field
-            coordinates_field.show_field(view_init=[90, 0, 0])
+            self.my_experiment.coordinate_field.show_field(view_init=[90, 0, 0])
 
         field_gui.add_button("minimal", description="Create minimal field (random)")
         field_gui.add_button("show", description="Show field", disabled=True)
@@ -448,5 +449,5 @@ class jupyter_gui:
         else:
             print("Using existing structural model")
             field_gui["show"].disabled = False
+            self.my_experiment._build_coordinate_field(keep=True)
             display(field_gui["show"])
-            exported_field = self.my_experiment._build_coordinate_field()
