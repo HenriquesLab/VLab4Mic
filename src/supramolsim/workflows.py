@@ -98,9 +98,11 @@ def particle_from_structure(
 
 
 def field_from_particle(
-    particle: labinstance.LabeledInstance, field_config: str = None
+    particle: labinstance.LabeledInstance,
+    field_config: str = None,
+    random_placing=False,
 ):
-    coordinates_field = create_min_field()
+    coordinates_field = create_min_field(random_placing=random_placing)
     if field_config is not None:
         print("Creating field from parameter files")
         coordinates_field.init_from_file(field_config)

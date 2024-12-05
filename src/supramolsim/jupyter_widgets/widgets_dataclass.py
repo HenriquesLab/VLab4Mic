@@ -430,8 +430,17 @@ class jupyter_gui:
 
         def createmin(b):
             random_pl = True
-            coordinates_field = field.create_min_field(random_placing=random_pl)
-            exported_field = coordinates_field.export_field()
+            use = field_gui["use_particle"].value
+            self.my_experiment._build_coordinate_field(
+                use_self_particle=use, keep=True, random_placing=random_pl
+            )
+            # coordinates_field = field.create_min_field(random_placing=random_pl)
+            # exported_field = coordinates_field.export_field()
+            field_gui["show"].disabled = False
+
+        def custom(b):
+            # coordinates_field = field.create_min_field(random_placing=random_pl)
+            # exported_field = coordinates_field.export_field()
             field_gui["show"].disabled = False
 
         def showfield(b):
@@ -439,15 +448,30 @@ class jupyter_gui:
             self.my_experiment.coordinate_field.show_field(view_init=[90, 0, 0])
 
         field_gui.add_button("minimal", description="Create minimal field (random)")
+        field_gui.add_button("custom", description="Use custom field params")
         field_gui.add_button("show", description="Show field", disabled=True)
-        field_gui["minimal"].on_click(createmin)
-        field_gui["show"].on_click(showfield)
-
         if self.my_experiment.particle is None:
             print("There is no particle initalised")
-            field_gui.show()
+            use_p_disabled = True
+            is_particle = False
         else:
-            print("Using existing structural model")
-            field_gui["show"].disabled = False
-            self.my_experiment._build_coordinate_field(keep=True)
-            display(field_gui["show"])
+            print("Particle model exists")
+            use_p_disabled = False
+            is_particle = True
+        field_gui.add_checkbox(
+            "use_particle",
+            description="Use existing particle",
+            value=is_particle,
+            disabled=use_p_disabled,
+        )
+        field_gui["minimal"].on_click(createmin)
+        field_gui["show"].on_click(showfield)
+        field_gui.show()
+
+        # if self.my_experiment.particle is None:
+        #    print("There is no particle initalised")
+        #    field_gui.show()
+        # else:
+        #    print("Particle model exists")
+        #    field_gui["show"].disabled = False
+        #    display(field_gui["show"])
