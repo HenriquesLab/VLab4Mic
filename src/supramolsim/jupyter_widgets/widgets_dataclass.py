@@ -532,14 +532,19 @@ class jupyter_gui:
             selected_mods.clear()
 
         def create_imager(b):
+            mods_dict = dict()
+            for mod in selected_mods:
+                mods_dict[mod] = None
+            self.my_experiment.selected_mods = mods_dict
+            exported_field = self.my_experiment.objects_created[
+                "exported_coordinate_field"
+            ]
             if exported_field is not None:
                 if len(selected_mods) == 0:
                     print("No modalites had been added")
                 else:
-                    with io.capture_output() as captured:
-                        imaging_system = create_imaging_system(
-                            exported_field, selected_mods, configuration_path[0]
-                        )
+                    # with io.capture_output() as captured:
+                    self.my_experiment._build_imager(use_local_field=True)
                     imager_created = True
                     print("Imaging system created")
                 imaging_gui["Show"].disabled = False
@@ -582,7 +587,7 @@ class jupyter_gui:
             get_info(imaging_gui)
 
         def showfov(b):
-            imaging_system.show_field()
+            self.my_experiment.imager.show_field()
 
         imaging_gui.add_label("Select modalities")
         imaging_gui.add_dropdown("modalities_dropdown", options=modalities_list)
