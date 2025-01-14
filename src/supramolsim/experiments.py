@@ -110,6 +110,7 @@ class ExperimentParametrisation:
 
     def _build_imager(self, use_local_field=False):
         if self.selected_mods:
+            print(f"Using selected mods: {self.selected_mods}")
             mods_list = list(self.selected_mods.keys())
             if use_local_field and self.generators_status("exported_coordinate_field"):
                 self.imager = create_imaging_system(
