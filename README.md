@@ -9,7 +9,18 @@ Current features include:
 - Direct and indirect labelling of PDB structures
 - Modelling structural defects
 - Structure detection as Image Generation for common microscopy modalities
+- Parameter sweeps 
 - And more!
 
+## Codeless Jupyter Notebooks
 
+## Installation
+
+## Wiki
+
+## Contributing
+
+## Licence
+
+## Issues
 
