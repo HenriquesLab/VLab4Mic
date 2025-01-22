@@ -14,13 +14,15 @@ Current features include:
 
 ## Codeless Jupyter Notebooks
 
-General workflow notebooks:
+[General workflow notebooks](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/basic_demo.ipynb)
 
 Analysis notebooks: 
 
 ## Installation
 
 SupraMolSim is compatible with Python 3.9, 3.10, 3.11 and 3.12 in MacOS, Windows and Linux.
+It is advisable to create a separate environment to use SupraMolSim
+
 
 To install latest development version:
 
@@ -28,11 +30,11 @@ To install latest development version:
 pip install git+https://github.com/HenriquesLab/SupraMolecularSimulator.git
 ```
 
-To install from built wheel
--   Download the wheel from
--   Move to the folder containing the wheel and run 
+To install from source distribution
+-   Download the distribution from [here](https://github.com/HenriquesLab/SupraMolecularSimulator/dist/)
+-   Locate the folder containing the wheel and run 
 ```shell
-pip install ./supramolsim_wheel.whl
+pip install DIST_FILE_NAME.whl
 ```
 
 
