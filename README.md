@@ -37,6 +37,7 @@ conda activate MYENV
 
 
 2.- Install SupraMolSim:
+
 (Option 1)
 Install SupraMolSim by simply running:
 ```shell
@@ -123,7 +124,10 @@ workflow.
 ```shell
 jupyter lab
 ```
-### 3.- This command will open Jupyter Lab interfase in your web browser. In here, locate the folder containing SupraMolSim notebooks. You can download them from [here](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/)
+This command will open Jupyter Lab interfase in your web browser. In here, locate the folder containing SupraMolSim notebooks. You can download them from [here](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/)
+
+### 3.- Select the notebook and start using SupraMolSim!
+If you have any doubt during the use of the notebook refer to the [code documentation](https://github.com/HenriquesLab/SupraMolecularSimulator/) or rise an [issue](https://github.com/HenriquesLab/SupraMolecularSimulator/issues/).
 
 # Contributing
 
