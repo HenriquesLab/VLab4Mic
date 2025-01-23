@@ -12,13 +12,13 @@ Current features include:
 - Parameter sweeps 
 - And more!
 
-## Codeless Jupyter Notebooks
+# Codeless Jupyter Notebooks
 
 [General workflow notebooks](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/basic_demo.ipynb)
 
 Analysis notebooks: 
 
-## Installation
+# Installation
 
 SupraMolSim is compatible with Python 3.9, 3.10, 3.11 and 3.12 in MacOS, Windows and Linux.
 It is advisable to create a separate environment to use SupraMolSim
@@ -38,7 +38,7 @@ pip install DIST_FILE_NAME.whl
 ```
 
 
-## Tutorial
+# Tutorial
 
 SupraMolSim, at its core, is designed as a collection of independent modules, each focused on a specific task within a typicall imaging experiment,
 from choosing a macromolecule of interest, deciding between strategies to label it, to simulating the detection of a virtual sample across imaging modalities.
@@ -68,22 +68,39 @@ We provide example configuration data for:
 You can use SupraMolSim library through a jupyter notebook, with a graphical user interphase, or with a python stript according to your coding exprience.
 
 
+### SupraMolSim Modules
+- Atomic Structure parser
+- Label design
+- Labelled particle generator
+- Virtual sample generator (Particle field)
+- Virtual Microscope
+- Experiment designer
+- Analysis
+
+### Integrated Workflows
+- Load and parse an atomic model
+- Create a labelled particle (multilabelling supported)
+- Introduce particle defects
+- Design a virtual sample
+- Build your virtual microscope
+- Generate multi-modal images of your virtual sample
+- Use parameter sweeps acrross the workflow
 
 
+# How to use SupraMolSim
 
-
-
-### Codeless SupraMolSim functionalities through graphical user interphase
+## Codeless SupraMolSim functionalities through graphical user interphase
 
 Getting Started
 
 
-### Codemuch SupraMolSim scripts
+## Codemuch SupraMolSim scripts
 
 
-## Contributing
+# Contributing
 
-## Licence
+# Licence
 
-## Issues
+# Issues
+Shoud you encounter any problem, do not hesitate on [letting us know](https://github.com/HenriquesLab/SupraMolecularSimulator/issues/). Don't forget to incude a detail description.
 
