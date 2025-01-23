@@ -21,24 +21,45 @@ Analysis notebooks:
 # Installation
 
 SupraMolSim is compatible with Python 3.9, 3.10, 3.11 and 3.12 in MacOS, Windows and Linux.
-It is advisable to create a separate environment to use SupraMolSim
+It is advisable to create a new Conda environment to use SupraMolSim. To create a new python environment using Conda, refer to the official [website] (https://docs.anaconda.com/miniconda/)
+
+1.- Create new environment
+Run the following command (replace MYENV with your desired name for the environment):
+
+```bash
+conda create --name MYENV python=3.11
+```
+
+Then activate it by running:
+```bash
+conda activate MYENV
+```
 
 
-To install latest development version:
+2.- Install SupraMolSim:
+(Option 1)
+Install SupraMolSim by simply running:
+```shell
+pip install SupraMolecularSimulator[jupyter]
+```
+You can remove "[jupyter]" from the command if your environment already has jupyter installed
 
+
+(Option 2) To install the lastest release, run the following command:
 ```shell
 pip install git+https://github.com/HenriquesLab/SupraMolecularSimulator.git
 ```
 
+(Option 3)
 To install from source distribution
 -   Download the distribution from [here](https://github.com/HenriquesLab/SupraMolecularSimulator/dist/)
--   Locate the folder containing the wheel and run 
+-   In your terminal, move to the directory containing the wheel and run 
 ```shell
 pip install DIST_FILE_NAME.whl
 ```
 
 
-# Tutorial
+# Wiki Tutorial
 
 SupraMolSim, at its core, is designed as a collection of independent modules, each focused on a specific task within a typicall imaging experiment,
 from choosing a macromolecule of interest, deciding between strategies to label it, to simulating the detection of a virtual sample across imaging modalities.
@@ -89,13 +110,20 @@ You can use SupraMolSim library through a jupyter notebook, with a graphical use
 
 # How to use SupraMolSim
 
-## Codeless SupraMolSim functionalities through graphical user interphase
+SupraMolSim is a python library that can be used directly through our workflows and analysis module.
+For a detail use see see our [script](https://github.com/HenriquesLab/SupraMolecularSimulator/)
 
-Getting Started
+## Codeless Jupyter Notebooks
+However, part of experimental design requires a close examination of the models and parameters.
+We provide codeless jupyter notebooks that requires no coding experience and allows to preview each step of the 
+workflow.
 
-
-## Codemuch SupraMolSim scripts
-
+### 1.- Following the installation instructions, activate your python environment where you installed SupraMolSim.
+### 2.- Lauch Jupyter Lab by running this command:
+```shell
+jupyter lab
+```
+### 3.- This command will open Jupyter Lab interfase in your web browser. In here, locate the folder containing SupraMolSim notebooks. You can download them from [here](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/)
 
 # Contributing
 
