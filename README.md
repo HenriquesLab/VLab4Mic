@@ -38,8 +38,48 @@ pip install DIST_FILE_NAME.whl
 ```
 
 
-## Wiki
-Detailed instructions on how to use SupraMolSim can be found at.
+## Tutorial
+
+SupraMolSim, at its core, is designed as a collection of independent modules, each focused on a specific task within a typicall imaging experiment,
+from choosing a macromolecule of interest, deciding between strategies to label it, to simulating the detection of a virtual sample across imaging modalities.
+
+Notheless, integrative modules connect these functionalities into a complex workflow that allow us to branch the simulation and analysis.
+
+We provide example configuration data for:
+-   Models:
+    -   Nuclear Pore Complex
+    -   Immunoglobulin M
+-   Labelling strategies
+    -   Antibody labelling of Nup96
+    -   NHS-ester direct labelling
+-   Imaging modalities
+    -   Widefield
+    -   Confocal
+    -   AiryScan
+    -   STED
+    -   Single Molecule Localisation Microscopy
+-   Parameters
+    -   Labelling efficiency
+    -   Particle defects
+    -   Particle orientation
+-   Image metrics
+    - SSIM
+
+You can use SupraMolSim library through a jupyter notebook, with a graphical user interphase, or with a python stript according to your coding exprience.
+
+
+
+
+
+
+
+### Codeless SupraMolSim functionalities through graphical user interphase
+
+Getting Started
+
+
+### Codemuch SupraMolSim scripts
+
 
 ## Contributing
 
