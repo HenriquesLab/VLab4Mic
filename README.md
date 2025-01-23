@@ -80,12 +80,7 @@ We provide example configuration data for:
     -   AiryScan
     -   STED
     -   Single Molecule Localisation Microscopy
--   Parameters
-    -   Labelling efficiency
-    -   Particle defects
-    -   Particle orientation
--   Image metrics
-    - SSIM
+And further parameters for analysis workflows
 
 You can use SupraMolSim library through a jupyter notebook, with a graphical user interphase, or with a python stript according to your coding exprience.
 
