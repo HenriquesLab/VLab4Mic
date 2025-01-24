@@ -32,27 +32,12 @@ conda activate MYENV
 
 2.- Install SupraMolSim:
 
-(Option 1)
-Install SupraMolSim by simply running:
-```shell
-pip install SupraMolecularSimulator[jupyter]
-```
-You can remove "[jupyter]" from the command if your environment already has jupyter installed
-
-
-(Option 2) To install the lastest release, run the following command:
+Currently, you can only access SupraMolSim if
+you have access to the repository. If this is your case, run the following command:
 ```shell
 pip install git+https://github.com/HenriquesLab/SupraMolecularSimulator.git
 ```
-
-(Option 3)
-To install from source distribution
--   Download the distribution from [here](https://github.com/HenriquesLab/SupraMolecularSimulator/dist/)
--   In your terminal, move to the directory containing the wheel and run 
-```shell
-pip install DIST_FILE_NAME.whl
-```
-
+Soon you'll be able to acces it in a goolge colab! Stay tuned!
 
 # Wiki Tutorial
 
