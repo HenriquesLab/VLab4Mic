@@ -12,12 +12,6 @@ Current features include:
 - Parameter sweeps 
 - And more!
 
-# Codeless Jupyter Notebooks
-
-[General workflow notebooks](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/basic_demo.ipynb)
-
-Analysis notebooks: 
-
 # Installation
 
 SupraMolSim is compatible with Python 3.9, 3.10, 3.11 and 3.12 in MacOS, Windows and Linux.
@@ -121,6 +115,7 @@ workflow.
 jupyter lab
 ```
 This command will open Jupyter Lab interfase in your web browser. In here, locate the folder containing SupraMolSim notebooks. You can download them from [here](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/)
+
 
 ### 3.- Select the notebook and start using SupraMolSim!
 If you have any doubt during the use of the notebook refer to the [code documentation](https://github.com/HenriquesLab/SupraMolecularSimulator/) or rise an [issue](https://github.com/HenriquesLab/SupraMolecularSimulator/issues/).
