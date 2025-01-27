@@ -204,12 +204,12 @@ def generate_multi_imaging_modalities(
     # there must be a default imaging parameter for all, like 10 frames for each
     image_generator.set_experiment_name(experiment_name)
     outputs = dict()
-    savingdir = savingdir + os.sep
     if acquisition_param is None:
         print("No acquisition parameters defined. Using default on all modalities")
         for mod in image_generator.modalities.keys():
             # should verify that the path exist
             if savingdir is not None:
+                savingdir = savingdir + os.sep
                 image_generator.set_writing_directory(savingdir)
                 acq_params = format_modality_acquisition_params(save=write)
             timeseries, calibration_beads = image_generator.generate_imaging(
@@ -221,6 +221,7 @@ def generate_multi_imaging_modalities(
         for mod, acq_params in acquisition_parameters.items():
             print(mod, acq_params)
             if savingdir is not None:
+                savingdir = savingdir + os.sep
                 image_generator.set_writing_directory(savingdir)
             for chan in acq_params["channels"]:
                 print(f"imaging channel: {chan}")
