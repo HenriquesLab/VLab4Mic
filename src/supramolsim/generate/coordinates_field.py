@@ -195,7 +195,7 @@ class Field:
         maxabs_posx = dimension_sizes[0]
         maxabs_posy = dimension_sizes[1]
         maxabs_posz = dimension_sizes[2]
-        print(f"Max values: {maxabs_posx},{maxabs_posy}, {maxabs_posz}")
+        # print(f"Max values: {maxabs_posx},{maxabs_posy}, {maxabs_posz}")
         # sample the first point
         x = np.random.uniform(0, maxabs_posx, size=1)
         y = np.random.uniform(0, maxabs_posy, size=1)
@@ -220,7 +220,7 @@ class Field:
             if is_available:
                 print(new)
                 selected_positions.append(new)
-        print(f"end flag : {flag}")
+        # print(f"end flag : {flag}")
         self.set_molecule_param("absolute_positions", selected_positions)
         self.absolute_pos = selected_positions
 
