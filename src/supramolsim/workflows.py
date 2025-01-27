@@ -25,9 +25,10 @@ def load_structure(structure_id: str = None, config_dir=None):
     """
     Initialise a BioPython object for the PDB/CIF ID
     and retreive available information about specific labelling.
-    Assumes configuration files for structure and labels exist
-    in the configuration directory provided.
-    Downloads the file if necesary.
+    This function require your configuration directory
+    to contain a structure configuration file (yaml).
+    It automatically downloads the CIF file of the structure if
+    it does not exist locally.
 
     Args:
         structure_id:  (string) 4 letter ID of structure
@@ -62,15 +63,20 @@ def particle_from_structure(
     structure: MolecularReplicates, labels=list, config_dir=None
 ):
     """
-    Create a label object from each pair of label and fluorophore configuration files
-    and this label it to create targets on the structure object.
+    Create a labelled particle.
+    First, build each label as label objects from the configuration
+    directory.
+    Each label is added to the structure object; this action
+    generates a set of targets corresponding to that label.
+    A labelled particle is initialised from these targets and
+    their associated labels.
 
     Args:
         structure: (MolecularReplicates) Object that represent the parsed CIF
         labels: (list) list of dictionaries. Each dictionary
         contains its label ID and Fluorophore ID
     Returns:
-        particle: (LabelledInstance)
+        particle object: (LabelledInstance)
     """
     if config_dir is not None:
         label_params_list = []
@@ -100,6 +106,24 @@ def particle_from_structure(
 def field_from_particle(
     particle: labinstance.LabeledInstance, field_config: str = None
 ):
+    """
+    Create a particle field from input particle object.
+
+    A minimal field is initialised, bu default it defines a single particle
+    at the middle of a square area of 1x1 micrometers. If a field
+    configuration file is provided, the initialised field is adjusted from
+    this configuration file.
+    According to the definition of the field, one or more particle copies
+    are positioned within the field.
+    The exact positions of the emitters within this field is exported.
+
+    Args:
+        particle: (MolecularReplicates) Object that represent the parsed CIF
+        field_config: (list) list of dictionaries. Each dictionary
+    Returns:
+        exported_field:
+        coordinates_field:
+    """
     coordinates_field = create_min_field()
     if field_config is not None:
         print("Creating field from parameter files")
@@ -113,14 +137,20 @@ def create_imaging_system(
     exported_field=None, modalities_id_list: list = None, config_dir=None, **kwargs
 ):
     """
-    Reads the configuration files for the specified imaging modalities and
-    creates the imager object
+    Create an imaging system object.
+
+    Reads the configuration files for the specified imaging modalities
+    in modalities_id_list and initialises the imager object.
 
     args:
-        particle: LabeledInstance
-        modalities_list: (list) List of modalities ID
+        exported_field: output dictionary from the export_field method
+        if the coordinate field
+        modalities_id_list: (list) List of modalities IDs. The IDs must match
+        the name of their configuration file
+        config_dir: Configuration directory
     returns:
-        imager (Optics Object) Object containing modalities and structural model
+        imager (Imaging Object): Instance of Imaging class initialised with
+        the input modalities
     """
 
     if config_dir is not None:
@@ -155,6 +185,19 @@ def generate_multi_imaging_modalities(
     write=False,
     **kwargs,
 ):
+    """
+    Generate imaging ouputs for each modality from the image generator.
+
+    args:
+        image_generator: Instance of Imaging class
+        experiment_name: Name to add to each output file
+        savingdir: Output directory
+        acquisition_param: dictionary conatining aquisition parameters for
+        each modality.
+        write: If True, all output images will be writen at the savingdir
+    returns:
+        outputs: dictionary of image outputs per modality. If write is True, the
+    """
     # kwargs will contain as keys the names of the modalities,
     # which shall correspond to the modality name
     # in the yaml file. each modality will have specific parameters for aquisitions
@@ -166,6 +209,7 @@ def generate_multi_imaging_modalities(
         for mod in image_generator.modalities.keys():
             # should verify that the path exist
             if savingdir is not None:
+                savingdir = savingdir + os.sep
                 image_generator.set_writing_directory(savingdir)
                 acq_params = format_modality_acquisition_params(save=write)
             timeseries, calibration_beads = image_generator.generate_imaging(
@@ -177,6 +221,7 @@ def generate_multi_imaging_modalities(
         for mod, acq_params in acquisition_parameters.items():
             print(mod, acq_params)
             if savingdir is not None:
+                savingdir = savingdir + os.sep
                 image_generator.set_writing_directory(savingdir)
             for chan in acq_params["channels"]:
                 print(f"imaging channel: {chan}")

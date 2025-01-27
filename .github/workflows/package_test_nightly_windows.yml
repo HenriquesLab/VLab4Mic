@@ -1,4 +1,4 @@
-name: Test - Nightly
+name: Test - Nightly - Win
 # does a massive check, every night
 
 on:
@@ -20,8 +20,8 @@ on:
 
 jobs:
 
-  test_on_ubuntu_container:
-    runs-on: [self-hosted, Ubuntu, Docker]
+  test_on_windows:
+    runs-on: [self-hosted, Windows, X64]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -35,20 +35,6 @@ jobs:
             3.12
       - name: Run Tests
         run: |
-          make install-all
-          make pytest
-
-  test_on_macos:
-    runs-on: [self-hosted, macOS, ARM64]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v5
-        with:
-          python-version: |
-            3.10
-      - name: Run tests
-        run: |
           pip install -e .[dev,test]
           python -m pytest
+

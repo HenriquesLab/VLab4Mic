@@ -17,7 +17,7 @@ from ..utils.visualisation.matplotlib_plots import add_ax_scatter
 class Field:
     def __init__(self):
         self.params = {}
-        self.params["dimension_sizes"] = [1000.0, 1000.0, 100.0]
+        self.params["dimension_sizes"] = [1000.0, 1000.0, 10.0]
         self.params["scale"] = 1e-9
         self.params["relative_reference_point"] = [0.5, 0.5, 0.01]
         self.params["absolute_reference_point"] = None
@@ -158,8 +158,8 @@ class Field:
         Sets the molecule parameter "absolute positions"
         """
         npositions = self.get_molecule_param("nMolecules")
-        print(f"Total positions: {npositions}")
-        # this can only work after the size of fiel has been established
+        # print(f"Total positions: {npositions}")
+        # this can only work after the size of field has been established
         if self.molecules_params["minimal_distance"] is not None:
             self._random_pos_minimal_dist(npositions)
         else:
@@ -195,7 +195,7 @@ class Field:
         maxabs_posx = dimension_sizes[0]
         maxabs_posy = dimension_sizes[1]
         maxabs_posz = dimension_sizes[2]
-        print(f"Max values: {maxabs_posx},{maxabs_posy}, {maxabs_posz}")
+        # print(f"Max values: {maxabs_posx},{maxabs_posy}, {maxabs_posz}")
         # sample the first point
         x = np.random.uniform(0, maxabs_posx, size=1)
         y = np.random.uniform(0, maxabs_posy, size=1)
@@ -212,15 +212,15 @@ class Field:
             is_available = 1
             for pos in range(len(selected_positions)):
                 # verify is the next point is within the minimum distance
-                print(np.linalg.norm(new - selected_positions[pos]))
+                # print(np.linalg.norm(new - selected_positions[pos]))
                 if np.linalg.norm(new - selected_positions[pos]) < minimal_distance:
-                    print("rejected")
+                    # print("rejected")
                     is_available = 0
                     break
             if is_available:
-                print(new)
+                # print(new)
                 selected_positions.append(new)
-        print(f"end flag : {flag}")
+        # print(f"end flag : {flag}")
         self.set_molecule_param("absolute_positions", selected_positions)
         self.absolute_pos = selected_positions
 
@@ -274,6 +274,7 @@ class Field:
             molecules.append(copy.deepcopy(particle_copy))
             print(molecules[r])
         self.molecules = molecules
+        self.relabel_molecules()
 
     def create_molecules_from_files(self, cif_file, structure_id, label_file):
         """
@@ -339,7 +340,7 @@ class Field:
         if len(self.molecules) > 1:
             for mol in self.molecules:
                 mol.generate_instance()
-                mol.show_instance()
+                # mol.show_instance()
                 mol.scale_coordinates_system(self.get_field_param("scale"))
 
     def relocate_molecules(self):
@@ -520,9 +521,12 @@ class Field:
         return export_field
 
 
-def create_min_field(nparticles=1, random_placing=False):
+def create_min_field(nparticles=1, random_placing=False, molecule_pars=None):
     print("Initialising default field")
     coordinates_field = Field()
+    if molecule_pars:
+        for key, value in molecule_pars.items():
+            coordinates_field.molecules_params[key] = value
     coordinates_field.create_minimal_field(
         nmolecules=nparticles, random_placing=random_placing
     )
