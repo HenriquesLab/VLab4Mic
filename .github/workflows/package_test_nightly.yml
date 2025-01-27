@@ -50,5 +50,5 @@ jobs:
             3.10
       - name: Run tests
         run: |
-          pip install -e .[all]
+          pip install -e .[dev,test]
           python -m pytest
