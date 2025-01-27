@@ -158,7 +158,7 @@ class Field:
         Sets the molecule parameter "absolute positions"
         """
         npositions = self.get_molecule_param("nMolecules")
-        print(f"Total positions: {npositions}")
+        # print(f"Total positions: {npositions}")
         # this can only work after the size of field has been established
         if self.molecules_params["minimal_distance"] is not None:
             self._random_pos_minimal_dist(npositions)
@@ -212,13 +212,13 @@ class Field:
             is_available = 1
             for pos in range(len(selected_positions)):
                 # verify is the next point is within the minimum distance
-                print(np.linalg.norm(new - selected_positions[pos]))
+                # print(np.linalg.norm(new - selected_positions[pos]))
                 if np.linalg.norm(new - selected_positions[pos]) < minimal_distance:
-                    print("rejected")
+                    # print("rejected")
                     is_available = 0
                     break
             if is_available:
-                print(new)
+                # print(new)
                 selected_positions.append(new)
         # print(f"end flag : {flag}")
         self.set_molecule_param("absolute_positions", selected_positions)
