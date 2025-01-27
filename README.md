@@ -107,7 +107,9 @@ If you have any doubt during the use of the notebook refer to the [code document
 
 # Contributing
 
+
 # Licence
+Distributed under the terms of the [MIT license](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/LICENSE.txt), SupraMolSim is free and open source software
 
 # Issues
 Shoud you encounter any problem, do not hesitate on [letting us know](https://github.com/HenriquesLab/SupraMolecularSimulator/issues/). Don't forget to incude a detail description.
