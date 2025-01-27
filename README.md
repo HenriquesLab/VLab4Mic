@@ -15,7 +15,7 @@ Current features include:
 # Installation
 
 SupraMolSim is compatible with Python 3.9, 3.10, 3.11 and 3.12 in MacOS, Windows and Linux.
-It is advisable to create a new Conda environment to use SupraMolSim. To create a new python environment using Conda, refer to the official [website] (https://docs.anaconda.com/miniconda/)
+It is advisable to create a new Conda environment to use SupraMolSim. To create a new python environment using Conda, refer to the official [website](https://docs.anaconda.com/miniconda/)
 
 1.- Create new environment
 Run the following command (replace MYENV with your desired name for the environment):
@@ -106,7 +106,7 @@ This command will open a  Jupyter in your web browser. In here, locate the folde
 If you have any doubt during the use of the notebook refer to the [code documentation](https://github.com/HenriquesLab/SupraMolecularSimulator/) or rise an [issue](https://github.com/HenriquesLab/SupraMolecularSimulator/issues/).
 
 # Contributing
-
+Contributions are very welcome. Please read our [Contribution Guidelines](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/CONTRIBUTING.md) to know how to proceed.
 
 # Licence
 Distributed under the terms of the [MIT license](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/LICENSE.txt), SupraMolSim is free and open source software
