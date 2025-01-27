@@ -124,10 +124,14 @@ def field_from_particle(
         exported_field:
         coordinates_field:
     """
-    coordinates_field = create_min_field()
     if field_config is not None:
         print("Creating field from parameter files")
-        coordinates_field.init_from_file(field_config)
+        # coordinates_field.init_from_file(field_config)
+        ## if not file, use as dictionary
+        coordinates_field = create_min_field(**field_config)
+        #coordinates_field.init_from_file(field_config)
+    else:
+        coordinates_field = create_min_field()
     coordinates_field.create_molecules_from_InstanceObject(particle)
     coordinates_field.construct_static_field()
     return coordinates_field.export_field(), coordinates_field
@@ -220,6 +224,8 @@ def generate_multi_imaging_modalities(
         acquisition_parameters = copy.copy(acquisition_param)
         for mod, acq_params in acquisition_parameters.items():
             print(mod, acq_params)
+            if acq_params is None:
+                acq_params = format_modality_acquisition_params(save=write)
             if savingdir is not None:
                 savingdir = savingdir + os.sep
                 image_generator.set_writing_directory(savingdir)
