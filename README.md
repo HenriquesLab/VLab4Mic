@@ -97,9 +97,9 @@ workflow.
 ### 1.- Following the installation instructions, activate your python environment where you installed SupraMolSim.
 ### 2.- Lauch Jupyter Lab by running this command:
 ```shell
-jupyter lab
+jupyter notebook
 ```
-This command will open Jupyter Lab interfase in your web browser. In here, locate the folder containing SupraMolSim notebooks. You can download them from [here](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/)
+This command will open a  Jupyter in your web browser. In here, locate the folder containing SupraMolSim notebooks. You can download them from [here](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/)
 
 
 ### 3.- Select the notebook and start using SupraMolSim!
