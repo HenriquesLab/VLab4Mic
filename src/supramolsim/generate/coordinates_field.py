@@ -274,6 +274,7 @@ class Field:
             molecules.append(copy.deepcopy(particle_copy))
             print(molecules[r])
         self.molecules = molecules
+        self.relabel_molecules()
 
     def create_molecules_from_files(self, cif_file, structure_id, label_file):
         """
@@ -339,7 +340,7 @@ class Field:
         if len(self.molecules) > 1:
             for mol in self.molecules:
                 mol.generate_instance()
-                mol.show_instance()
+                # mol.show_instance()
                 mol.scale_coordinates_system(self.get_field_param("scale"))
 
     def relocate_molecules(self):
