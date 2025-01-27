@@ -168,6 +168,8 @@ class ExperimentParametrisation:
     def run_simulation(self, name="NONAME", acq_params=None, save=False):
         # imager will run regardless, since by default
         # has a minimal coordinate field
+        if self.experiment_id:
+            name = self.experiment_id
         if self.generators_status("imager"):
             simulation_output = generate_multi_imaging_modalities(
                 image_generator=self.imager,
