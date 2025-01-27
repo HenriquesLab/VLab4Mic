@@ -17,7 +17,7 @@ from ..utils.visualisation.matplotlib_plots import add_ax_scatter
 class Field:
     def __init__(self):
         self.params = {}
-        self.params["dimension_sizes"] = [1000.0, 1000.0, 100.0]
+        self.params["dimension_sizes"] = [1000.0, 1000.0, 10.0]
         self.params["scale"] = 1e-9
         self.params["relative_reference_point"] = [0.5, 0.5, 0.01]
         self.params["absolute_reference_point"] = None
