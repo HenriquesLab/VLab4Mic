@@ -110,7 +110,7 @@ class ExperimentParametrisation:
                     config_dir=self.configuration_path,
                 )
             else:
-                print("Local field missing or unused")
+                print("Local field missing or unused. Creating imager without particles")
                 self.imager = create_imaging_system(
                     modalities_id_list=mods_list, config_dir=self.configuration_path
                 )
@@ -168,6 +168,11 @@ class ExperimentParametrisation:
     def run_simulation(self, name="NONAME", acq_params=None, save=False):
         # imager will run regardless, since by default
         # has a minimal coordinate field
+        if acq_params is None:
+            try:
+                acq_params=self.selected_mods
+            except:
+                print("Running acquisitions with defaults")
         if self.experiment_id:
             name = self.experiment_id
         if self.generators_status("imager"):
