@@ -159,7 +159,7 @@ class Field:
         """
         npositions = self.get_molecule_param("nMolecules")
         print(f"Total positions: {npositions}")
-        # this can only work after the size of fiel has been established
+        # this can only work after the size of field has been established
         if self.molecules_params["minimal_distance"] is not None:
             self._random_pos_minimal_dist(npositions)
         else:
@@ -521,9 +521,12 @@ class Field:
         return export_field
 
 
-def create_min_field(nparticles=1, random_placing=False):
+def create_min_field(nparticles=1, random_placing=False, molecule_pars=None):
     print("Initialising default field")
     coordinates_field = Field()
+    if molecule_pars:
+        for key, value in molecule_pars.items():
+            coordinates_field.molecules_params[key] = value
     coordinates_field.create_minimal_field(
         nmolecules=nparticles, random_placing=random_placing
     )
