@@ -10,6 +10,7 @@ from .workflows import (
     generate_multi_imaging_modalities,
 )
 from .utils.data_format.structural_format import label_builder_format
+from .utils.data_format import configuration_format
 import os
 
 
@@ -110,7 +111,7 @@ class ExperimentParametrisation:
                     config_dir=self.configuration_path,
                 )
             else:
-                print("Local field missing or unused")
+                print("Local field missing or unused. Creating imager without particles")
                 self.imager = create_imaging_system(
                     modalities_id_list=mods_list, config_dir=self.configuration_path
                 )
@@ -168,6 +169,8 @@ class ExperimentParametrisation:
     def run_simulation(self, name="NONAME", acq_params=None, save=False):
         # imager will run regardless, since by default
         # has a minimal coordinate field
+        if acq_params is None:
+            acq_params=self.selected_mods
         if self.experiment_id:
             name = self.experiment_id
         if self.generators_status("imager"):
@@ -187,6 +190,7 @@ class ExperimentParametrisation:
 def create_experiment_parametrisation(
     structure_and_labels: dict = None,
     modalities_acquisition: dict = None,
+    field_params: dict = None,
     savging: dict = None,
     defects_params: dict = None,
     params2sweep: dict = None,
@@ -200,7 +204,13 @@ def create_experiment_parametrisation(
         generator.fluorophore_id = structure_and_labels["fluorophore_id"]
     if modalities_acquisition:
         for mod, acquisition in modalities_acquisition.items():
-            generator.selected_mods[mod] = acquisition
+            if acquisition is None:
+                generator.selected_mods[mod] = configuration_format.format_modality_acquisition_params()
+            else:
+                generator.selected_mods[mod] = acquisition
+    if field_params:
+        #for field_param, value in field_params.items():
+        generator.coordinate_field_id=field_params
     if defects_params:
         for key, val in defects_params.items():
             generator.defect_eps[key] = val
