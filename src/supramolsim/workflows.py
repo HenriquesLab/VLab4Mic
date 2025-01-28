@@ -213,6 +213,7 @@ def generate_multi_imaging_modalities(
         for mod in image_generator.modalities.keys():
             # should verify that the path exist
             if savingdir is not None:
+                write=True
                 savingdir = savingdir + os.sep
                 image_generator.set_writing_directory(savingdir)
                 acq_params = format_modality_acquisition_params(save=write)
@@ -227,6 +228,7 @@ def generate_multi_imaging_modalities(
             if acq_params is None:
                 acq_params = format_modality_acquisition_params(save=write)
             if savingdir is not None:
+                write=True
                 savingdir = savingdir + os.sep
                 image_generator.set_writing_directory(savingdir)
             for chan in acq_params["channels"]:
