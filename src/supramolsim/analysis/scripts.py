@@ -178,7 +178,8 @@ def analyse_sweep(img_outputs, img_params, reference, analysis_case_params, **kw
         references[case] = reference_img
     for i in range(len(img_params)):
         param_values = [truncate(v, 6) for k, v in img_params[i].items()]
-        combination_name = str(param_values)
+        combination_pars = [str(val) for val in param_values]
+        combination_name = ",".join(combination_pars)
         queries[combination_name] = dict()
         rep = 0
         for img_rep in img_outputs[i]:
