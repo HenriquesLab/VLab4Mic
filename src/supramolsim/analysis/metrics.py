@@ -7,7 +7,7 @@ def img_compare(ref, query, metric="ssim", force_match=False, **kwargs):
         ref, query = resize_images_interpolation(ref, query)
     if metric == "ssim":
         similarity = ssim(ref, query, data_range=query.max() - query.min())
-        return similarity
+    return similarity, ref, query
 
 
 def resize_images_interpolation(img1, img2, interpolation_order=3):
