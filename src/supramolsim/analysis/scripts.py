@@ -54,7 +54,7 @@ def parameter_sweep_reps(
     if reference_parameters:
         reference = Experiment.gen_reference(**reference_parameters)
     else:
-        Experiment.gen_reference()
+        reference = Experiment.gen_reference()
     out_dir = Experiment.output_directory
     # prepare combination of parameters
     linspaces_dict = Experiment.sweep_linspaces
@@ -128,7 +128,6 @@ def _crop_image(img, subregion=False, normalise=True, **kwargs):
             single_img = single_img[
                 subregion[0] : subregion[1], subregion[0] : subregion[1]
             ]
-
         return single_img
 
 
