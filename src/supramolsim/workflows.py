@@ -213,10 +213,9 @@ def generate_multi_imaging_modalities(
         for mod in image_generator.modalities.keys():
             # should verify that the path exist
             if savingdir is not None:
-                write=True
                 savingdir = savingdir + os.sep
                 image_generator.set_writing_directory(savingdir)
-                acq_params = format_modality_acquisition_params(save=write)
+            acq_params = format_modality_acquisition_params(save=write)
             timeseries, calibration_beads = image_generator.generate_imaging(
                 modality=mod, **acq_params
             )
@@ -228,7 +227,6 @@ def generate_multi_imaging_modalities(
             if acq_params is None:
                 acq_params = format_modality_acquisition_params(save=write)
             if savingdir is not None:
-                write=True
                 savingdir = savingdir + os.sep
                 image_generator.set_writing_directory(savingdir)
             for chan in acq_params["channels"]:
