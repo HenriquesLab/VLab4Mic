@@ -16,6 +16,7 @@ def parameter_sweep_reps(
     sweep_parameters,
     write=False,
     repetitions=1,
+    reference_parameters = None,
     **kwargs,
 ):
     """
@@ -50,7 +51,10 @@ def parameter_sweep_reps(
     for parametername, pars in sweep_parameters.items():
         Experiment.sweep_pars[parametername] = pars
     Experiment._param_linspaces()
-    reference = Experiment.gen_reference()
+    if reference_parameters:
+        reference = Experiment.gen_reference(**reference_parameters)
+    else:
+        Experiment.gen_reference()
     out_dir = Experiment.output_directory
     # prepare combination of parameters
     linspaces_dict = Experiment.sweep_linspaces
