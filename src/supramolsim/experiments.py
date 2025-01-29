@@ -140,8 +140,20 @@ class ExperimentParametrisation:
         self._build_imager(use_local_field=use_locals)
         self._param_linspaces()
 
-    def gen_reference(self, write=False, keep=False):
+    def gen_reference(self, write=False, keep=False, ref_acq_pars=None, modality_wise=True):
+        """
+        Calculate a reference image of the virtual sample by using the ideal
+        parameters for each of the parameters to sweep. Requires the 
+        dictionary of the params2sweep
+
+
+        If modality_wise is true (default), a reference is calculated for each modality
+        with that modality's parameters. Otherwhise, it will use a the Reference modality 
+        configuration to generate an idealised image as reference.
+        """
         reference_pars = dict()
+        output_name = "REFERENCE_"
+        # get ideal parameters for virtual sample
         for param_name, param_settings in self.sweep_pars.items():
             # print(param_name, param_settings)
             reference_pars[param_name] = param_settings["ideal"]
@@ -152,15 +164,33 @@ class ExperimentParametrisation:
         )
         # use particle to create new field
         tmp_exported_field = self._build_coordinate_field()
-        self.imager.import_field(**tmp_exported_field)
+        # create ideal image modality
+        if modality_wise:
+            self.imager.import_field(**tmp_exported_field)
+            _reference = generate_multi_imaging_modalities(
+                image_generator=self.imager,
+                experiment_name=output_name,
+                savingdir=self.output_directory,
+                write=write,
+            )
+        else:
+            reference_imager = create_imaging_system(
+                modalities_id_list=["Reference"], 
+                config_dir=self.configuration_path
+            )
+            reference_imager.import_field(**tmp_exported_field)
+            # make a copy 
+            _reference = dict()
+            for mod_name in list(self.imager.modalities.keys()):
+                _reference_iteration = generate_multi_imaging_modalities(
+                    image_generator=reference_imager,
+                    experiment_name=output_name,
+                    acquisition_param=ref_acq_pars,
+                    savingdir=self.output_directory,
+                    write=write,
+                )
+                _reference[mod_name] = _reference_iteration["Reference"]
         #
-        output_name = "REFERENCE_"
-        _reference = generate_multi_imaging_modalities(
-            image_generator=self.imager,
-            experiment_name=output_name,
-            savingdir=self.output_directory,
-            write=write,
-        )
         if keep:
             self.experiment_reference = _reference
             self.objects_created["output_reference"] = True
