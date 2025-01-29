@@ -188,7 +188,7 @@ def analyse_sweep(img_outputs, img_params, reference, analysis_case_params, **kw
                 case_iteration = _reformat_img_stack(
                     img_rep[case], **analysis_case_params[case]
                 )
-                rep_measurement = img_compare(
+                rep_measurement, ref_used, qry_used = img_compare(
                     references[case], case_iteration, **analysis_case_params[case]
                 )
                 #
@@ -199,7 +199,7 @@ def analyse_sweep(img_outputs, img_params, reference, analysis_case_params, **kw
                 item_vector.append(rep)
                 #
                 measurement_vectors.append(item_vector)
-                queries[combination_name][rep][case] = case_iteration
+                queries[combination_name][rep][case] = [qry_used, case_iteration]
             rep = rep + 1
     measurement_array = np.array(measurement_vectors)
     data_frame = pd.DataFrame(
