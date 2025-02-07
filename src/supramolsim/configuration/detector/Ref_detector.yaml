@@ -1,0 +1,28 @@
+id: Ref_detector #(string)
+title: Reference detector #(string)
+pixelsize: 0.005 #(float) in scale units
+scale: 1.0e-06 #(float)in meters
+bits_pixel: 32
+image_size:
+  - 50
+  - 50
+noise_model: #(dictionary)
+  baselevel:
+    bl: 0
+  binomial:
+    p: 1
+  conversion:
+    adu: 1
+  gamma:
+    g: 10
+  gaussian:
+    sigma: 0
+  poisson:
+    mock: null
+noise_order: #(list; string)
+  - binomial
+  - gamma
+  - baselevel
+  - gaussian
+  - conversion
+

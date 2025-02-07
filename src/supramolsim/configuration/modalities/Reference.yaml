@@ -1,0 +1,5 @@
+id: Reference
+title: An ideal modality
+psf: Ref_psf # (string) id of yaml file
+detector: Ref_detector #(string) id of yaml file
+emission_type: constant 

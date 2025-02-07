@@ -16,6 +16,7 @@ def parameter_sweep_reps(
     sweep_parameters,
     write=False,
     repetitions=1,
+    reference_parameters = None,
     **kwargs,
 ):
     """
@@ -50,7 +51,10 @@ def parameter_sweep_reps(
     for parametername, pars in sweep_parameters.items():
         Experiment.sweep_pars[parametername] = pars
     Experiment._param_linspaces()
-    reference = Experiment.gen_reference()
+    if reference_parameters:
+        reference = Experiment.gen_reference(**reference_parameters)
+    else:
+        reference = Experiment.gen_reference()
     out_dir = Experiment.output_directory
     # prepare combination of parameters
     linspaces_dict = Experiment.sweep_linspaces
@@ -124,7 +128,6 @@ def _crop_image(img, subregion=False, normalise=True, **kwargs):
             single_img = single_img[
                 subregion[0] : subregion[1], subregion[0] : subregion[1]
             ]
-
         return single_img
 
 
@@ -175,7 +178,8 @@ def analyse_sweep(img_outputs, img_params, reference, analysis_case_params, **kw
         references[case] = reference_img
     for i in range(len(img_params)):
         param_values = [truncate(v, 6) for k, v in img_params[i].items()]
-        combination_name = str(param_values)
+        combination_pars = [str(val) for val in param_values]
+        combination_name = ",".join(combination_pars)
         queries[combination_name] = dict()
         rep = 0
         for img_rep in img_outputs[i]:
@@ -185,7 +189,7 @@ def analyse_sweep(img_outputs, img_params, reference, analysis_case_params, **kw
                 case_iteration = _reformat_img_stack(
                     img_rep[case], **analysis_case_params[case]
                 )
-                rep_measurement = img_compare(
+                rep_measurement, ref_used, qry_used = img_compare(
                     references[case], case_iteration, **analysis_case_params[case]
                 )
                 #
@@ -196,7 +200,7 @@ def analyse_sweep(img_outputs, img_params, reference, analysis_case_params, **kw
                 item_vector.append(rep)
                 #
                 measurement_vectors.append(item_vector)
-                queries[combination_name][rep][case] = case_iteration
+                queries[combination_name][rep][case] = [qry_used, case_iteration]
             rep = rep + 1
     measurement_array = np.array(measurement_vectors)
     data_frame = pd.DataFrame(

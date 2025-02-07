@@ -83,10 +83,12 @@ def show_references(references):
         i = i + 1
 
 
-def show_example(queries, params, condition="STED_demo", replica_number=1):
+def show_example_test(queries, params, condition="STED_demo", replica_number=1, query_variant=0):    #
     param_values = [truncate(p, 6) for p in params]
     print(param_values)
-    combination_name = str(param_values)
+    combination_pars = [str(val) for val in param_values]
+    print(combination_pars)
+    combination_name = ",".join(combination_pars)
     print(combination_name)
-    plt.imshow(queries[combination_name][replica_number][condition], cmap="grey")
+    plt.imshow(queries[combination_name][replica_number][condition][query_variant], cmap="grey")
     plt.title(combination_name)
