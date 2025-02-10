@@ -10,33 +10,29 @@ def img_compare(ref, query, metric="ssim", force_match=False, **kwargs):
     return similarity, ref, query
 
 
-def resize_images_interpolation(img1, img2, interpolation_order=3):
+def _padding(img1, img2):
+    # check if padding needed
+    return img1, img2
+
+
+def resize_images_interpolation(img1, img2, px_size_im1=1, px_size_im2=1, interpolation_order=3):
     """
     Resize the smaller image to match the dimensions of the larger image using cubic interpolation.
     
     Args:
         img1 (numpy array): First image.
         img2 (numpy array): Second image.
+        px_size_im1 (float): pixel size of image 1
+        px_size_im2 (float): pixel size of image 2
     
     Returns:
         tuple: Resized images.
     """
-    # Determine which image is smaller
-    if img1.shape[0] * img1.shape[1] > img2.shape[0] * img2.shape[1]:
-        larger_img = img1
-        smaller_img = img2
-    else:
-        larger_img = img2
-        smaller_img = img1
-    
-    # Calculate the zoom factors
-    zoom_factors = (larger_img.shape[0] / smaller_img.shape[0], larger_img.shape[1] / smaller_img.shape[1])
+    pixel_size_ratio = px_size_im2 / px_size_im1
     
     # Resize the smaller image using cubic interpolation
-    resized_smaller_img = zoom(smaller_img, zoom_factors, order=interpolation_order)
+    resized_smaller_img = zoom(img2, pixel_size_ratio, order=interpolation_order)
     
-    # Ensure both images are now the same size
-    if larger_img is img1:
-        return larger_img, resized_smaller_img
-    else:
-        return resized_smaller_img, larger_img
+    # check if paddin needed
+    return _padding(img1, img2)
+    
