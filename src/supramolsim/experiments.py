@@ -10,6 +10,7 @@ from .workflows import (
     generate_multi_imaging_modalities,
 )
 from .utils.data_format.structural_format import label_builder_format
+from .utils.data_format import configuration_format
 import os
 
 
@@ -25,7 +26,7 @@ class ExperimentParametrisation:
     defect_eps: Dict[str, int] = field(default_factory=dict)
     sweep_pars: Dict[str, int] = field(default_factory=dict)
     objects_created: Dict[str, int] = field(default_factory=dict)
-    output_directory: str = ""
+    output_directory: str = None
 
     def __post_init__(self):
         pck_dir = os.path.dirname(os.path.abspath(supramolsim.__file__))
@@ -119,7 +120,7 @@ class ExperimentParametrisation:
                     config_dir=self.configuration_path,
                 )
             else:
-                print("Local field missing or unused")
+                print("Local field missing or unused. Creating imager without particles")
                 self.imager = create_imaging_system(
                     modalities_id_list=mods_list, config_dir=self.configuration_path
                 )
@@ -148,8 +149,20 @@ class ExperimentParametrisation:
         self._build_imager(use_local_field=use_locals)
         self._param_linspaces()
 
-    def gen_reference(self, write=False, keep=False):
+    def gen_reference(self, write=False, keep=False, ref_acq_pars=None, modality_wise=False):
+        """
+        Calculate a reference image of the virtual sample by using the ideal
+        parameters for each of the parameters to sweep. Requires the 
+        dictionary of the params2sweep
+
+
+        If modality_wise is true (default), a reference is calculated for each modality
+        with that modality's parameters. Otherwhise, it will use a the Reference modality 
+        configuration to generate an idealised image as reference.
+        """
         reference_pars = dict()
+        output_name = "REFERENCE_"
+        # get ideal parameters for virtual sample
         for param_name, param_settings in self.sweep_pars.items():
             # print(param_name, param_settings)
             reference_pars[param_name] = param_settings["ideal"]
@@ -160,23 +173,51 @@ class ExperimentParametrisation:
         )
         # use particle to create new field
         tmp_exported_field = self._build_coordinate_field()
-        self.imager.import_field(**tmp_exported_field)
+        # create ideal image modality
+        if modality_wise:
+            self.imager.import_field(**tmp_exported_field)
+            _reference = generate_multi_imaging_modalities(
+                image_generator=self.imager,
+                experiment_name=output_name,
+                savingdir=self.output_directory,
+                write=write,
+            )
+        else:
+            reference_imager = create_imaging_system(
+                modalities_id_list=["Reference"], 
+                config_dir=self.configuration_path
+            )
+            reference_imager.import_field(**tmp_exported_field)
+            # make a copy 
+            _reference = dict()
+            _reference_parameters = dict()
+            for mod_name in list(self.imager.modalities.keys()):
+                _reference_iteration = generate_multi_imaging_modalities(
+                    image_generator=reference_imager,
+                    experiment_name=output_name,
+                    acquisition_param=ref_acq_pars,
+                    savingdir=self.output_directory,
+                    write=write,
+                )
+                _reference[mod_name] = _reference_iteration["Reference"]
+                imager_scale = reference_imager.roi_params["scale"]
+                scalefactor = np.ceil(imager_scale / 1e-9)  # resulting pixel size in nanometers
+                _reference_parameters[mod_name] = dict(
+                    ref_pixelsize=reference_imager.modalities["Reference"]["detector"]["pixelsize"]*scalefactor 
+                )
         #
-        output_name = "REFERENCE_"
-        _reference = generate_multi_imaging_modalities(
-            image_generator=self.imager,
-            experiment_name=output_name,
-            savingdir=self.output_directory,
-            write=write,
-        )
         if keep:
             self.experiment_reference = _reference
             self.objects_created["output_reference"] = True
-        return _reference
+        return _reference, _reference_parameters
 
     def run_simulation(self, name="NONAME", acq_params=None, save=False):
         # imager will run regardless, since by default
         # has a minimal coordinate field
+        if acq_params is None:
+            acq_params=self.selected_mods
+        if self.experiment_id:
+            name = self.experiment_id
         if self.generators_status("imager"):
             simulation_output = generate_multi_imaging_modalities(
                 image_generator=self.imager,
@@ -194,6 +235,7 @@ class ExperimentParametrisation:
 def create_experiment_parametrisation(
     structure_and_labels: dict = None,
     modalities_acquisition: dict = None,
+    field_params: dict = None,
     savging: dict = None,
     defects_params: dict = None,
     params2sweep: dict = None,
@@ -207,7 +249,13 @@ def create_experiment_parametrisation(
         generator.fluorophore_id = structure_and_labels["fluorophore_id"]
     if modalities_acquisition:
         for mod, acquisition in modalities_acquisition.items():
-            generator.selected_mods[mod] = acquisition
+            if acquisition is None:
+                generator.selected_mods[mod] = configuration_format.format_modality_acquisition_params()
+            else:
+                generator.selected_mods[mod] = acquisition
+    if field_params:
+        #for field_param, value in field_params.items():
+        generator.coordinate_field_id=field_params
     if defects_params:
         for key, val in defects_params.items():
             generator.defect_eps[key] = val

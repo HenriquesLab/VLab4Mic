@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import os
 import pandas as pd
 from .metrics import img_compare
+from sklearn import preprocessing as pre
 
 
 def parameter_sweep_reps(
@@ -15,6 +16,7 @@ def parameter_sweep_reps(
     sweep_parameters,
     write=False,
     repetitions=1,
+    reference_parameters = None,
     **kwargs,
 ):
     """
@@ -49,7 +51,10 @@ def parameter_sweep_reps(
     for parametername, pars in sweep_parameters.items():
         Experiment.sweep_pars[parametername] = pars
     Experiment._param_linspaces()
-    reference = Experiment.gen_reference()
+    if reference_parameters:
+        reference, reference_pars = Experiment.gen_reference(**reference_parameters)
+    else:
+        reference, reference_pars = Experiment.gen_reference()
     out_dir = Experiment.output_directory
     # prepare combination of parameters
     linspaces_dict = Experiment.sweep_linspaces
@@ -94,16 +99,36 @@ def parameter_sweep_reps(
             # end of replicate
             # dictionary keys to use sweep_parameters keys
             iteration_params.append(dict(labelling_efficiency=labeff, defect=defect))
-    return sweep_outputs, iteration_params, reference
+    return sweep_outputs, iteration_params, reference, reference_pars
 
 
-def _reformat_img_stack(img, subregion=False, **kwargs):
-    single_img = img[0]
-    if subregion:
-        single_img = single_img[
-            subregion[0] : subregion[1], subregion[0] : subregion[1]
-        ]
-    return single_img
+def _reformat_img_stack(img, use_first=True, **kwargs):
+    if use_first:
+        if len(img.shape) == 3:
+            # print("input is stack")
+            single_img = img[0]
+        else:
+            # print("input is image")
+            single_img = img
+        formated_im = _crop_image(single_img, **kwargs)
+        return formated_im
+    else:
+        pass
+
+
+def _crop_image(img, subregion=False, normalise=True, **kwargs):
+    if len(img.shape) == 2:
+        single_img = img
+        if normalise:
+            # single_img = pre.MinMaxScaler().fit_transform(single_img)
+            single_img = (single_img - single_img.min()) / (
+                single_img.max() - single_img.min()
+            )
+        if subregion:
+            single_img = single_img[
+                subregion[0] : subregion[1], subregion[0] : subregion[1]
+            ]
+        return single_img
 
 
 def analyse_sweep(img_outputs, img_params, reference, analysis_case_params, **kwargs):
@@ -150,10 +175,12 @@ def analyse_sweep(img_outputs, img_params, reference, analysis_case_params, **kw
         reference_img = _reformat_img_stack(
             reference[case], **analysis_case_params[case]
         )
+        reference_pixelsize = analysis_case_params[case]["ref_pixelsize"]
         references[case] = reference_img
     for i in range(len(img_params)):
         param_values = [truncate(v, 6) for k, v in img_params[i].items()]
-        combination_name = str(param_values)
+        combination_pars = [str(val) for val in param_values]
+        combination_name = ",".join(combination_pars)
         queries[combination_name] = dict()
         rep = 0
         for img_rep in img_outputs[i]:
@@ -163,7 +190,7 @@ def analyse_sweep(img_outputs, img_params, reference, analysis_case_params, **kw
                 case_iteration = _reformat_img_stack(
                     img_rep[case], **analysis_case_params[case]
                 )
-                rep_measurement = img_compare(
+                rep_measurement, ref_used, qry_used = img_compare(
                     references[case], case_iteration, **analysis_case_params[case]
                 )
                 #
@@ -174,13 +201,13 @@ def analyse_sweep(img_outputs, img_params, reference, analysis_case_params, **kw
                 item_vector.append(rep)
                 #
                 measurement_vectors.append(item_vector)
-                queries[combination_name][rep][case] = case_iteration
+                queries[combination_name][rep][case] = [qry_used, case_iteration]
             rep = rep + 1
     measurement_array = np.array(measurement_vectors)
     data_frame = pd.DataFrame(
         data={
-            "Labelling efficiency": np.array(measurement_array[:, 1], dtype=np.float32),
-            "Fracitonal defect": np.array(measurement_array[:, 2], dtype=np.float32),
+            "Labelling_efficiency": np.array(measurement_array[:, 1], dtype=np.float32),
+            "Fractional_defect": np.array(measurement_array[:, 2], dtype=np.float32),
             "Condition": measurement_array[:, 0],
             "Metric": np.array(measurement_array[:, 3], dtype=np.float32),
             "replica": measurement_array[:, 4],

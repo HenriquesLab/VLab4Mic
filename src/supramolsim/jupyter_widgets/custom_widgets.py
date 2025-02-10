@@ -481,6 +481,20 @@ def create_field():
         exported_field = coordinates_field.export_field()
         field_gui["show"].disabled = False
 
+    def createmin_particles(b):
+        global coordinates_field, exported_field
+        random_pl = True
+        nparticles = field_gui["nparticles"].value
+        min_distance = field_gui["mindist"].value
+        molecule_parameters = dict(minimal_distance=min_distance)
+        coordinates_field = field.create_min_field(nparticles=nparticles,
+                                                   random_placing=random_pl,
+                                                   molecule_pars=molecule_parameters)
+        coordinates_field.create_molecules_from_InstanceObject(particle)
+        coordinates_field.construct_static_field()
+        exported_field = coordinates_field.export_field()
+        field_gui["show"].disabled = False
+
     def showfield(b):
         plt.clf()
         global coordinates_field
@@ -488,17 +502,37 @@ def create_field():
 
     field_gui.add_button("minimal", description="Create minimal field (random)")
     field_gui.add_button("show", description="Show field", disabled=True)
+    field_gui.add_button("minimal_particles", description="Create field")
+    field_gui.add_int_slider(
+            "nparticles",
+            value=1,
+            min=1,
+            max=20,
+            step=1,
+            description="Number of Particles in field",
+            disabled=False,
+        )
+    field_gui._widgets["mindist"] = widgets.BoundedIntText(
+        value=100,
+        min=1,
+        max=1000,
+        description="Minimal distance",
+        layout=field_gui._layout,
+        style=field_gui._style
+    )
     field_gui["minimal"].on_click(createmin)
     field_gui["show"].on_click(showfield)
+    field_gui["minimal_particles"].on_click(createmin_particles)
 
     if particle is None:
         print("There is no particle initalised")
         field_gui.show()
     else:
         print("Using existing structural model")
-        field_gui["show"].disabled = False
-        display(field_gui["show"])
-        exported_field, coordinates_field = field_from_particle(particle)
+        display(field_gui["nparticles"],
+                field_gui["mindist"],
+                field_gui["minimal_particles"],
+                field_gui["show"])
 
 
 def set_image_modalities():
