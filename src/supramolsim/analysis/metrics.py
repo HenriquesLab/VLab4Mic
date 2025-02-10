@@ -38,10 +38,8 @@ def _padding(img1, img2):
         tuple: Resized images by padding zeroes.
     """
     if img1.shape == img2.shape:
-        # print(f"Same shapes; {img1.shape}, {img2.shape}")
         return img1, img2
     else:
-        # print(f"Different shapes; {img1.shape}, {img2.shape}")
         height1, width1 = img1.shape
         height2, width2 = img2.shape
         max_width = max(width1, width2)
@@ -54,7 +52,7 @@ def _padding(img1, img2):
         padding2_top = (max_height - height2) // 2
         padding2_left = (max_width - width2) // 2
 
-        # Create padded arrays (with zero padding, representing black)
+        # Create padded arrays (with zero padding)
         img1_padded = np.zeros((max_height, max_width), dtype=np.float32)
         img2_padded = np.zeros((max_height, max_width), dtype=np.float32)
 
@@ -68,7 +66,6 @@ def _padding(img1, img2):
             padding2_left : padding2_left + width2,
         ] = img2
 
-        # print(f"new shapes; {img1_padded.shape}, {img2_padded.shape}")
         return img1_padded, img2_padded
 
 
@@ -89,10 +86,7 @@ def resize_images_interpolation(
         tuple: Resized images.
     """
     pixel_size_ratio = px_size_im2 / px_size_im1
-    # print(pixel_size_ratio)
 
-    # Resize the smaller image using cubic interpolation
     resized_img2 = zoom(img2, pixel_size_ratio, order=interpolation_order)
 
-    # check if paddin needed
     return _padding(img1, resized_img2)
