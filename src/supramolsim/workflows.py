@@ -45,9 +45,12 @@ def load_structure(structure_id: str = None, config_dir=None):
         # get CIF path
         cif_file = verify_structure(structure_id, structure_dir)
         # build structure
+        title = ""
+        if "title" in structure_params["model"]:
+            title = structure_params["model"]["title"]
         structure = build_structure_cif(
             cif_file=cif_file,
-            struct_title=structure_params["title"],
+            struct_title=title,
             cif_id=structure_id,
         )
         print("Structure Loaded!")
