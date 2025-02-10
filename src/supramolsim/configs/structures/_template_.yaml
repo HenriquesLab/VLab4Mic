@@ -1,0 +1,8 @@
+model:
+  id: 7R5K
+  format: cif
+  database: RCSB
+defects:
+  small_cluster: 300
+  big_cluster: 600
+  
