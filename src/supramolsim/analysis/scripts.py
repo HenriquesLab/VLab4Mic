@@ -52,9 +52,9 @@ def parameter_sweep_reps(
         Experiment.sweep_pars[parametername] = pars
     Experiment._param_linspaces()
     if reference_parameters:
-        reference = Experiment.gen_reference(**reference_parameters)
+        reference, reference_pars = Experiment.gen_reference(**reference_parameters)
     else:
-        reference = Experiment.gen_reference()
+        reference, reference_pars = Experiment.gen_reference()
     out_dir = Experiment.output_directory
     # prepare combination of parameters
     linspaces_dict = Experiment.sweep_linspaces
@@ -99,7 +99,7 @@ def parameter_sweep_reps(
             # end of replicate
             # dictionary keys to use sweep_parameters keys
             iteration_params.append(dict(labelling_efficiency=labeff, defect=defect))
-    return sweep_outputs, iteration_params, reference
+    return sweep_outputs, iteration_params, reference, reference_pars
 
 
 def _reformat_img_stack(img, use_first=True, **kwargs):
@@ -175,6 +175,7 @@ def analyse_sweep(img_outputs, img_params, reference, analysis_case_params, **kw
         reference_img = _reformat_img_stack(
             reference[case], **analysis_case_params[case]
         )
+        reference_pixelsize = analysis_case_params[case]["ref_pixelsize"]
         references[case] = reference_img
     for i in range(len(img_params)):
         param_values = [truncate(v, 6) for k, v in img_params[i].items()]

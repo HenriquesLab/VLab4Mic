@@ -2,6 +2,7 @@ from supramolsim.analysis.scripts import (
     parameter_sweep_reps,
     analyse_sweep,
 )
+import numpy as np
 
 
 def test_simple_param_sweep(experiment_7r5k_base):
@@ -15,7 +16,7 @@ def test_simple_param_sweep(experiment_7r5k_base):
         sweep_pars["defects"]["nintervals"]
         * sweep_pars["labelling_efficiency"]["nintervals"]
     )
-    sweep_out, sweep_out_pars, ref_out = parameter_sweep_reps(
+    sweep_out, sweep_out_pars, ref_out, ref_params = parameter_sweep_reps(
         Experiment=experiment_7r5k_base, sweep_parameters=sweep_pars, repetitions=3
     )
     assert len(sweep_out_pars) == total_combinations
@@ -33,17 +34,38 @@ def test_sweep_analysis(experiment_7r5k_base):
         * sweep_pars["labelling_efficiency"]["nintervals"]
     )
     replicas = 3
-    sweep_out, sweep_out_pars, ref_out = parameter_sweep_reps(
+    sweep_out, sweep_out_pars, ref_out, ref_params = parameter_sweep_reps(
         Experiment=experiment_7r5k_base,
         sweep_parameters=sweep_pars,
         repetitions=replicas,
     )
+    # get pixelsizes
+    imager_scale = experiment_7r5k_base.imager.roi_params["scale"]
+    scalefactor = np.ceil(imager_scale / 1e-9)
     sweep_analyse_pars = dict(
-        STED_demo=dict(metric="ssim", subregion=[20, 50]),
-        Confocal_demo=dict(metric="ssim", subregion=False),
+        STED_demo=dict(
+            metric="ssim",
+            subregion=False,
+            force_match=True,
+            modality_pixelsize=experiment_7r5k_base.imager.modalities["STED_demo"][
+                "detector"
+            ]["pixelsize"]
+            * scalefactor,
+            ref_pixelsize=ref_params["STED_demo"]["ref_pixelsize"],
+        ),
+        Confocal_demo=dict(
+            metric="ssim",
+            subregion=False,
+            force_match=True,
+            modality_pixelsize=experiment_7r5k_base.imager.modalities["Confocal_demo"][
+                "detector"
+            ]["pixelsize"]
+            * scalefactor,
+            ref_pixelsize=ref_params["Confocal_demo"]["ref_pixelsize"],
+        ),
     )
     conditions = len(list(sweep_analyse_pars.keys()))
-    data_frame, references, qries = analyse_sweep(
+    data_frame, qries, references = analyse_sweep(
         sweep_out, sweep_out_pars, ref_out, sweep_analyse_pars
     )
     assert len(data_frame["Metric"]) == total_combinations * replicas * conditions
