@@ -1,0 +1,5 @@
+name: AlexaFluor647
+emission:
+    type: constant
+    photons_second: 100000
+blinking_rates:
