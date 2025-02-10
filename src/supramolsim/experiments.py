@@ -37,6 +37,7 @@ class ExperimentParametrisation:
             structure=False,
             particle=False,
             exported_coordinate_field=False,
+            coordinate_field=False,
             imager=False,
             output_reference=False,
         )
@@ -89,20 +90,28 @@ class ExperimentParametrisation:
                 self.objects_created["particle"] = True
             return particle
 
-    def _build_coordinate_field(self, use_self_particle=True, keep=False):
+    def _build_coordinate_field(
+        self, use_self_particle=True, keep=False, coordinate_field_path=None, **kwargs
+    ):
         if use_self_particle and self.generators_status("particle"):
+            print("creating field from existing particle")
             exported_field, fieldobject = field_from_particle(
-                self.particle, field_config=self.coordinate_field_id
+                self.particle, field_config=coordinate_field_path, **kwargs
             )
             if keep:
                 self.exported_coordinate_field = exported_field
-                self.objects_created["exported_coordinate_field"] = exported_field
+                self.objects_created["exported_coordinate_field"] = True
+                self.coordinate_field = fieldobject
+                self.objects_created["coordinate_field"] = True
             return exported_field
         else:
+            # create minimal field
+            print("else")
             pass
 
     def _build_imager(self, use_local_field=False):
         if self.selected_mods:
+            print(f"Using selected mods: {self.selected_mods}")
             mods_list = list(self.selected_mods.keys())
             if use_local_field and self.generators_status("exported_coordinate_field"):
                 self.imager = create_imaging_system(

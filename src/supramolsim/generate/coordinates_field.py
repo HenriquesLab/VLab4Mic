@@ -130,7 +130,12 @@ class Field:
         self.molecules_params[parameter] = value
 
     def set_molecules_params(
-        self, nMolecules: int, random_positions, random_orientations, random_rotations
+        self,
+        nMolecules: int,
+        random_positions,
+        random_orientations,
+        random_rotations,
+        **kwargs,
     ):
         # self.change_number_of_molecules(nMolecules)
         self.set_molecule_param("nMolecules", nMolecules)
@@ -140,6 +145,8 @@ class Field:
             self.generate_random_orientations()
         if random_rotations:
             pass
+        for key, value in kwargs.items():
+            self.molecules_params[key] = value
 
     def show_params(self):
         print("Field parameters")
@@ -161,6 +168,7 @@ class Field:
         # print(f"Total positions: {npositions}")
         # this can only work after the size of field has been established
         if self.molecules_params["minimal_distance"] is not None:
+            print("distributing with minimal distance")
             self._random_pos_minimal_dist(npositions)
         else:
             print("Generating unconstrained random positions")
