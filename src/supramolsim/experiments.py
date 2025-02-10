@@ -140,7 +140,7 @@ class ExperimentParametrisation:
         self._build_imager(use_local_field=use_locals)
         self._param_linspaces()
 
-    def gen_reference(self, write=False, keep=False, ref_acq_pars=None, modality_wise=True):
+    def gen_reference(self, write=False, keep=False, ref_acq_pars=None, modality_wise=False):
         """
         Calculate a reference image of the virtual sample by using the ideal
         parameters for each of the parameters to sweep. Requires the 
