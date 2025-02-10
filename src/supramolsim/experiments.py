@@ -181,6 +181,7 @@ class ExperimentParametrisation:
             reference_imager.import_field(**tmp_exported_field)
             # make a copy 
             _reference = dict()
+            _reference_parameters = dict()
             for mod_name in list(self.imager.modalities.keys()):
                 _reference_iteration = generate_multi_imaging_modalities(
                     image_generator=reference_imager,
@@ -190,11 +191,16 @@ class ExperimentParametrisation:
                     write=write,
                 )
                 _reference[mod_name] = _reference_iteration["Reference"]
+                imager_scale = reference_imager.roi_params["scale"]
+                scalefactor = np.ceil(imager_scale / 1e-9)  # resulting pixel size in nanometers
+                _reference_parameters[mod_name] = dict(
+                    ref_pixelsize=reference_imager.modalities["Reference"]["detector"]["pixelsize"]*scalefactor 
+                )
         #
         if keep:
             self.experiment_reference = _reference
             self.objects_created["output_reference"] = True
-        return _reference
+        return _reference, _reference_parameters
 
     def run_simulation(self, name="NONAME", acq_params=None, save=False):
         # imager will run regardless, since by default
