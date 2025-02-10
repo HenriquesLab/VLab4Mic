@@ -80,8 +80,8 @@ def resize_images_interpolation(
     Pad images if needed after interpolating image 2
 
     Args:
-        img1 (numpy array): First image.
-        img2 (numpy array): Second image.
+        img1 (numpy array): Reference image
+        img2 (numpy array): Image to compare against reference
         px_size_im1 (float): pixel size of image 1
         px_size_im2 (float): pixel size of image 2
 
