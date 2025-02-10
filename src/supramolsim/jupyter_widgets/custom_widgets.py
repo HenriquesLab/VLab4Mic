@@ -232,16 +232,19 @@ def create_structural_model():
         structure_labels = []
         fluorophores_list = []
         fluorophores_dir = os.path.join(configuration_path[0], "fluorophores")
-        labels_dir = os.path.join(configuration_path[0], "labels")
+        labels_dir = os.path.join(configuration_path[0], "probes")
         for fluoid in os.listdir(fluorophores_dir):
             if os.path.splitext(fluoid)[-1] == ".yaml" and "_template" not in fluoid:
                 fluorophores_list.append(os.path.splitext(fluoid)[0])
         for file in os.listdir(labels_dir):
             if os.path.splitext(file)[-1] == ".yaml" and "_template" not in file:
+                label_config_path = os.path.join(labels_dir, file)
+                label_parmeters = supramolsim.load_yaml(label_config_path)
+                print(label_parmeters)
                 lablname = os.path.splitext(file)[0]
-                if lablname.split("_")[0] == "Generic":
+                if "Generic" in label_parmeters["known_targets"]:
                     generic_labels.append(lablname)
-                elif lablname.split("_")[0] == structure_id:
+                elif structure_id in label_parmeters["known_targets"]:
                     structure_labels.append(lablname)
 
         def build_label(b):
