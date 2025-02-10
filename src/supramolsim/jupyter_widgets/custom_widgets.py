@@ -23,7 +23,7 @@ def set_directory():
     config_gui = easy_gui_jupyter.EasyGUI("Config")
 
     pck_dir = os.path.dirname(os.path.abspath(supramolsim.__file__))
-    local_dir = os.path.join(pck_dir, "configuration")
+    local_dir = os.path.join(pck_dir, "configs")
 
     def clear(b):
         global configuration_path
@@ -69,9 +69,11 @@ def select_structure():
                     structure_params = supramolsim.load_yaml(
                         os.path.join(structure_dir, file)
                     )
-                    struct_id = structure_params["id"]
-                    strict_title = structure_params["title"]
-                    id_title = struct_id + ": " + strict_title
+                    struct_id = structure_params["model"]["ID"]
+                    struct_title = ""
+                    if "title" in structure_params["model"]:
+                        struct_title = structure_params["model"]["title"]
+                    id_title = struct_id + ": " + struct_title
                     structures_info_list[id_title] = struct_id
                     demo_structures.append(id_title)
 
