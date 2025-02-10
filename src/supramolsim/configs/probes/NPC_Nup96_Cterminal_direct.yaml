@@ -1,0 +1,25 @@
+label_name: Nup96_Cterminal_direct
+target:
+  type: Sequence
+  value: ELAVGSL
+known_targets:
+  - 7R5K
+model:
+  ID:
+  format:
+  database:
+binding:
+  efficiency: 1
+  orientation:
+  wobble_range:
+    theta:
+    phi:
+  distance:
+    to_target:
+    between_targets:
+conjugation_sites:
+  target:
+    type:
+    value:
+  efficiency:
+
