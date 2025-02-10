@@ -83,7 +83,7 @@ def particle_from_structure(
     """
     if config_dir is not None:
         label_params_list = []
-        label_config_dir = os.path.join(config_dir, "labels")
+        label_config_dir = os.path.join(config_dir, "probes")
         for label in labels:
             label_name = label["label_id"] + ".yaml"
             label_config_path = os.path.join(label_config_dir, label_name)
@@ -92,11 +92,12 @@ def particle_from_structure(
                 label["fluorophore_id"],
                 lab_eff=label["labelling_efficiency"],
             )
+            print(label_params)
             label_params_list.append(label_params)
             # print(f"Label type is: {label_params["label_type"]}")
             structure.add_label(label_object)
             # print(label_params)
-            if label_params["label_type"] == "BindingLabel":
+            if label_params["binding"]["distance"]["to_target"]:
                 print("Label is indirect label")
                 structure.assign_normals2targets()  # default is with scaling
         inst_builder = structure.create_instance_builder()
