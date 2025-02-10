@@ -38,14 +38,10 @@ def _padding(img1, img2):
 
         # Calculate the padding needed for both images
         padding1_top = (max_height - height1) // 2
-        padding1_bottom = max_height - height1 - padding1_top
         padding1_left = (max_width - width1) // 2
-        padding1_right = max_width - width1 - padding1_left
 
         padding2_top = (max_height - height2) // 2
-        padding2_bottom = max_height - height2 - padding2_top
         padding2_left = (max_width - width2) // 2
-        padding2_right = max_width - width2 - padding2_left
 
         # Create padded arrays (with zero padding, representing black)
         img1_padded = np.zeros((max_height, max_width), dtype=np.float32)
@@ -82,7 +78,7 @@ def resize_images_interpolation(
         tuple: Resized images.
     """
     pixel_size_ratio = px_size_im2 / px_size_im1
-    print(pixel_size_ratio)
+    # print(pixel_size_ratio)
 
     # Resize the smaller image using cubic interpolation
     resized_img2 = zoom(img2, pixel_size_ratio, order=interpolation_order)
