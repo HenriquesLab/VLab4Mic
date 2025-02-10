@@ -52,7 +52,7 @@ class Label:
         return self.params["label_type"]
 
     def get_target_type(self):
-        return self.params["target_type"]
+        return self.params["target"]["type"]
 
     def get_plotcolour(self):
         return self.params["plotcolour"]

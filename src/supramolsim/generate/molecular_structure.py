@@ -401,8 +401,10 @@ class MolecularStructureParser:
         """
         #  only the first appearance of the epitope in every chain is retreived
         #  if a chain has more than one epitope, only the first one is returned
-        target_seq = labelobject.params["target_sequence"]
-        method = labelobject.params["summary_method"]
+        target_seq = labelobject.params["target"]["value"]
+        method = "average"
+        if "method" in labelobject.params["target"]:
+            method = labelobject.params["target"]["method"]
         label_name = labelobject.get_name()
         fluorophore = labelobject.get_fluorophore()
         labeling_efficiency = labelobject.get_efficiency()
