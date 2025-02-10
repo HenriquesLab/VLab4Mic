@@ -5,7 +5,18 @@ import numpy as np
 
 def img_compare(ref, query, metric="ssim", force_match=False, **kwargs):
     if force_match:
-        ref, query = resize_images_interpolation(ref, query)
+        if 'ref_pixelsize' in kwargs and 'modality_pixelsize' in kwargs:
+            ref, query = resize_images_interpolation(
+                img1=ref,
+                img2=query,
+                px_size_im1=kwargs['ref_pixelsize'],
+                px_size_im2=kwargs['modality_pixelsize']
+            )
+        else:
+            ref, query = resize_images_interpolation(
+                img1=ref,
+                img2=query
+            )
     if metric == "ssim":
         similarity = ssim(ref, query, data_range=query.max() - query.min())
     return similarity, ref, query
