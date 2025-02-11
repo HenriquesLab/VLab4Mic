@@ -20,14 +20,21 @@ def compile_modality_parameters(
     psf_params = dict(
         stack_source = mod_pars["PSF"]["source"],
         scale = mod_pars["scale"],
-        shape=[150, 150, 150],
+        shape=[150, 150, 40],
         std_devs=[
             mod_pars["PSF"]["resolution"]["X"] / mod_pars["PSF"]["voxelsize"],
             mod_pars["PSF"]["resolution"]["Y"] / mod_pars["PSF"]["voxelsize"],
             mod_pars["PSF"]["resolution"]["Z"] / mod_pars["PSF"]["voxelsize"]
-            ]
+            ],
+        voxelsize=[
+            mod_pars["PSF"]["voxelsize"],
+            mod_pars["PSF"]["voxelsize"],
+            mod_pars["PSF"]["voxelsize"]
+        ],
+        depth=2
     )
     detector_params = dict(
+        scale=mod_pars["scale"],
         pixelsize = mod_pars["detector"]["pixelsize"],
         noise_model=dict(
                 binomial= {"p":mod_pars["detector"]["noise"]["binomial"]},
