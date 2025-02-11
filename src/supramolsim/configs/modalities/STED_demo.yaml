@@ -1,12 +1,12 @@
 name: STED_demo
-units: nanometers
+scale: 1.0e-09
 PSF:
   source: generate
   resolution:  # in nanometers, as standard deviations
     X: 20
     Y: 20
     Z: 20
-  voxel_size: 5
+  voxelsize: 5
 depth: 40  # in nanometers
 detector:
   FOV_size: # in nanometers. Default unless changed 

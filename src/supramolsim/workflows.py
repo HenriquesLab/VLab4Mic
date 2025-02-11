@@ -185,7 +185,7 @@ def create_imaging_system(
             )
             fluo_emission[fluo] = fluo_params["emission"]["type"]
         for mod in modalities_id_list:
-            modality = compile_modality_parameters(mod, config_dir)       
+            modality = compile_modality_parameters(mod, config_dir, fluo_emission)       
             image_generator.set_imaging_modality(**modality)
         return image_generator
 

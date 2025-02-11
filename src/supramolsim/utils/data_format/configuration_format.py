@@ -19,11 +19,12 @@ def compile_modality_parameters(
     mod_pars = load_yaml(modality_config_path)
     psf_params = dict(
         stack_source = mod_pars["PSF"]["source"],
+        scale = mod_pars["scale"],
         shape=[150, 150, 150],
         std_devs=[
-            mod_pars["PSF"]["resolution"]["X"] / mod_pars["PSF"]["voxel_size"],
-            mod_pars["PSF"]["resolution"]["Y"] / mod_pars["PSF"]["voxel_size"],
-            mod_pars["PSF"]["resolution"]["Z"] / mod_pars["PSF"]["voxel_size"]
+            mod_pars["PSF"]["resolution"]["X"] / mod_pars["PSF"]["voxelsize"],
+            mod_pars["PSF"]["resolution"]["Y"] / mod_pars["PSF"]["voxelsize"],
+            mod_pars["PSF"]["resolution"]["Z"] / mod_pars["PSF"]["voxelsize"]
             ]
     )
     detector_params = dict(
@@ -58,7 +59,7 @@ def compile_modality_parameters(
         return modality_params
     else:
         if (
-            "filters" not in modality_params.keys()
+            "filters" not in mod_pars.keys()
         ):  # each fluorophore will be assign and independent channel
             print("Creating channel for each fluorophore")
             ch = 0
@@ -73,12 +74,12 @@ def compile_modality_parameters(
                 filter_dictionary[channel_name] = fluorophores_in_chanel
                 ch += 1
         else:
-            filter_dictionary = modality_params["filters"]
+            filter_dictionary = mod_pars["filters"]
         # get emission type from fluorophore
-        emission_behaviour = define_emission_behaviour(mod_emission, fluo_emissions)
+        emission_behaviour = define_emission_behaviour("constant", fluo_emissions)
         print(f"emission for {str(modality_id)} set to {emission_behaviour}")
         # assign modality name
-        modality_name = modality_params["id"]
+        modality_name = mod_pars["name"]
         modality_params = dict(
             filters=filter_dictionary,
             psf_params=psf_params,
