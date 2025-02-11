@@ -92,7 +92,7 @@ def particle_from_structure(
                 label["fluorophore_id"],
                 lab_eff=label["labelling_efficiency"],
             )
-            print(label_params)
+            #print(label_params)
             label_params_list.append(label_params)
             # print(f"Label type is: {label_params["label_type"]}")
             structure.add_label(label_object)
