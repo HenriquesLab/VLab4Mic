@@ -1,0 +1,15 @@
+name:
+PSF:
+  source:
+  resolution:  # in nanometers, as standard deviations
+    X:
+    Y:
+    Z:
+  voxel_size:
+detector:
+  FOV_size: # in nanometers
+    X:
+    Y:
+  pixelsize: # in nanometers
+  noise:  # no value is only poisson noise. Expected order of values
+    # p (binomial), mean, standard deviation (gaussian), gain (gamma), mean, standard deviation (abaselevel), adu (conversion factor) 
