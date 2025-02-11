@@ -248,9 +248,9 @@ class Imager:
     def _set_modality_detector(
         self,
         modality,
-        image_size,  # decpreciated, image size will only be taken from ROI
-        pixelsize,
-        bits_pixel,
+        image_size=[],  # decpreciated, image size will only be taken from ROI
+        pixelsize=None,
+        bits_pixel=None,
         noise_model=None,
         noise_order=None,
         **kwargs,
