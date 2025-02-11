@@ -17,10 +17,18 @@ def compile_modality_parameters(
     mode_file = modality_id + ".yaml"
     modality_config_path = os.path.join(congifuration_directory, "modalities", mode_file)
     mod_pars = load_yaml(modality_config_path)
+    # approximate psf stack size
+    psfx_pixels = int(mod_pars["detector"]["FOV_size"]["X"] / mod_pars["PSF"]["resolution"]["X"])
+    psfy_pixels = int(mod_pars["detector"]["FOV_size"]["Y"] / mod_pars["PSF"]["resolution"]["Y"])
+    psfz_pixels = int(mod_pars["depth"] / mod_pars["PSF"]["resolution"]["Z"])
     psf_params = dict(
         stack_source = mod_pars["PSF"]["source"],
         scale = mod_pars["scale"],
-        shape=[150, 150, 40],
+        shape=[  # arbitrary 
+            2*psfx_pixels,
+            2*psfy_pixels,
+            4*psfz_pixels
+        ],
         std_devs=[
             mod_pars["PSF"]["resolution"]["X"] / mod_pars["PSF"]["voxelsize"],
             mod_pars["PSF"]["resolution"]["Y"] / mod_pars["PSF"]["voxelsize"],
@@ -31,11 +39,12 @@ def compile_modality_parameters(
             mod_pars["PSF"]["voxelsize"],
             mod_pars["PSF"]["voxelsize"]
         ],
-        depth=2
+        depth=int(mod_pars["depth"]/mod_pars["PSF"]["voxelsize"])
     )
+    factor_ = 1000  # to match detector params to imager, needs fix
     detector_params = dict(
-        scale=mod_pars["scale"],
-        pixelsize = mod_pars["detector"]["pixelsize"],
+        scale=1.0e-06,
+        pixelsize = mod_pars["detector"]["pixelsize"]/factor_,
         noise_model=dict(
                 binomial= {"p":mod_pars["detector"]["noise"]["binomial"]},
                 gamma={"g":1},
@@ -49,7 +58,8 @@ def compile_modality_parameters(
             "baselevel",
             "gaussian",
             "conversion"
-        ]
+        ],
+        bits_pixel=32
     )
     # get filters default should be one per channel
     if fluo_emissions is None:
