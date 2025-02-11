@@ -1,5 +1,5 @@
 from ..io.yaml_functions import load_yaml
-
+import os
 
 def compile_modality_parameters(
     modality_id: list, congifuration_directory, fluo_emissions=None
@@ -14,27 +14,40 @@ def compile_modality_parameters(
         modality_optical_pars: dictionary of parameters per modality
     """
     # load modality configuration file
-    modality_config_path = (
-        congifuration_directory + "/modalities/" + modality_id + ".yaml"
+    mode_file = modality_id + ".yaml"
+    modality_config_path = os.path.join(congifuration_directory, "modalities", mode_file)
+    mod_pars = load_yaml(modality_config_path)
+    psf_params = dict(
+        stack_source = mod_pars["PSF"]["source"],
+        shape=[150, 150, 150],
+        std_devs=[
+            mod_pars["PSF"]["resolution"]["X"] / mod_pars["PSF"]["voxel_size"],
+            mod_pars["PSF"]["resolution"]["Y"] / mod_pars["PSF"]["voxel_size"],
+            mod_pars["PSF"]["resolution"]["Z"] / mod_pars["PSF"]["voxel_size"]
+            ]
     )
-    modality_params = load_yaml(modality_config_path)
-    mod_emission = modality_params["emission_type"]
-    # print(modality_params)
-    # get PSF params
-    psf_id = modality_params["psf"]
-    psf_config_path = congifuration_directory + "/psfs/" + psf_id + ".yaml"
-    psf_params = load_yaml(psf_config_path)
-    # get detector params
-    detector_id = modality_params["detector"]
-    detector_config_path = (
-        congifuration_directory + "/detector/" + detector_id + ".yaml"
+    detector_params = dict(
+        pixelsize = mod_pars["detector"]["pixelsize"],
+        noise_model=dict(
+                binomial= {"p":mod_pars["detector"]["noise"]["binomial"]},
+                gamma={"g":1},
+                baselevel={"bl":0},
+                gaussian={"sigma":0},
+                conversion={"adu":1}
+        ),
+        noise_order= [
+            "binomial",
+            "gamma",
+            "baselevel",
+            "gaussian",
+            "conversion"
+        ]
     )
-    detector_params = load_yaml(detector_config_path)
     # get filters default should be one per channel
     if fluo_emissions is None:
         filter_dictionary = None
         emission_behaviour = None
-        modality_name = modality_params["id"]
+        modality_name = mod_pars["name"]
         modality_params = dict(
             filters=filter_dictionary,
             psf_params=psf_params,

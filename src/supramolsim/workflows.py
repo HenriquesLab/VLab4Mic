@@ -175,11 +175,17 @@ def create_imaging_system(
         for fluo in exported_field["field_emitters"].keys():
             fluo_dir = os.path.join(config_dir, "fluorophores", fluo)
             fluopath = fluo_dir + ".yaml"
-            image_generator.set_fluorophores_from_file(fluopath)
-            fluoprams = load_yaml(fluopath)
-            fluo_emission[fluo] = fluoprams["emission"]
+            #image_generator.set_fluorophores_from_file(fluopath)
+            fluo_params = load_yaml(fluopath)
+            image_generator.set_fluorophores_params(
+                identifier = fluo,
+                photon_yield = fluo_params["emission"]["photon_yield"],
+                emission = fluo_params["emission"]["type"],
+                blinking_rates = fluo_params["blinking_rates"]
+            )
+            fluo_emission[fluo] = fluo_params["emission"]["type"]
         for mod in modalities_id_list:
-            modality = compile_modality_parameters(mod, config_dir, fluo_emission)
+            modality = compile_modality_parameters(mod, config_dir)       
             image_generator.set_imaging_modality(**modality)
         return image_generator
 
