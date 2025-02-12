@@ -1,6 +1,7 @@
 from ..io.yaml_functions import load_yaml
 import os
 
+
 def compile_modality_parameters(
     modality_id: list, congifuration_directory, fluo_emissions=None
 ):
@@ -15,51 +16,45 @@ def compile_modality_parameters(
     """
     # load modality configuration file
     mode_file = modality_id + ".yaml"
-    modality_config_path = os.path.join(congifuration_directory, "modalities", mode_file)
+    modality_config_path = os.path.join(
+        congifuration_directory, "modalities", mode_file
+    )
     mod_pars = load_yaml(modality_config_path)
     # approximate psf stack size
     psfx_pixels = int(2.355 * mod_pars["PSF"]["resolution"]["X"])
     psfy_pixels = int(2.355 * mod_pars["PSF"]["resolution"]["Y"])
     psfz_pixels = int(2.355 * mod_pars["PSF"]["resolution"]["Z"])
     psf_params = dict(
-        stack_source = mod_pars["PSF"]["source"],
-        scale = mod_pars["scale"],
-        shape=[  # arbitrary, ideally should cover the shole PSF
-            150,
-            150,
-            150
-        ],
+        stack_source=mod_pars["PSF"]["source"],
+        scale=mod_pars["scale"],
+        shape=[150, 150, 150],  # arbitrary, ideally should cover the shole PSF
         std_devs=[
             mod_pars["PSF"]["resolution"]["X"] / mod_pars["PSF"]["voxelsize"],
             mod_pars["PSF"]["resolution"]["Y"] / mod_pars["PSF"]["voxelsize"],
-            mod_pars["PSF"]["resolution"]["Z"] / mod_pars["PSF"]["voxelsize"]
-            ],
+            mod_pars["PSF"]["resolution"]["Z"] / mod_pars["PSF"]["voxelsize"],
+        ],
         voxelsize=[
             mod_pars["PSF"]["voxelsize"],
             mod_pars["PSF"]["voxelsize"],
-            mod_pars["PSF"]["voxelsize"]
+            mod_pars["PSF"]["voxelsize"],
         ],
-        depth=int(mod_pars["depth"]/mod_pars["PSF"]["voxelsize"])
+        depth=int(mod_pars["depth"] / mod_pars["PSF"]["voxelsize"]),
     )
     factor_ = 1000  # to match detector params to imager, needs fix
     detector_params = dict(
         scale=1.0e-06,
-        pixelsize = mod_pars["detector"]["pixelsize"]/factor_,
+        pixelsize=mod_pars["detector"]["pixelsize"] / factor_,
         noise_model=dict(
-                binomial= {"p":mod_pars["detector"]["noise"]["binomial"]},
-                gamma={"g":1},
-                baselevel={"bl":0},
-                gaussian={"sigma":0},
-                conversion={"adu":1}
+            binomial={"p": mod_pars["detector"]["noise"]["binomial"]},
+            gamma={"g": mod_pars["detector"]["noise"]["gain"]},
+            baselevel={"bl": mod_pars["detector"]["noise"]["baselevel"]["mean"]},
+            gaussian={
+                "sigma": mod_pars["detector"]["noise"]["gaussian"]["standard_dev"]
+            },
+            conversion={"adu": mod_pars["detector"]["noise"]["ADU"]},
         ),
-        noise_order= [
-            "binomial",
-            "gamma",
-            "baselevel",
-            "gaussian",
-            "conversion"
-        ],
-        bits_pixel=32
+        noise_order=["binomial", "gamma", "baselevel", "gaussian", "conversion"],
+        bits_pixel=32,
     )
     # get filters default should be one per channel
     if fluo_emissions is None:
