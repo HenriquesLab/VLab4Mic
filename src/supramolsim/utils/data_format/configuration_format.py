@@ -20,7 +20,10 @@ def compile_modality_parameters(
     # approximate psf stack size
     psfx_pixels = int(mod_pars["detector"]["FOV_size"]["X"] / mod_pars["PSF"]["resolution"]["X"])
     psfy_pixels = int(mod_pars["detector"]["FOV_size"]["Y"] / mod_pars["PSF"]["resolution"]["Y"])
-    psfz_pixels = int(mod_pars["depth"] / mod_pars["PSF"]["resolution"]["Z"])
+    if mod_pars["depth"] < mod_pars["PSF"]["resolution"]["Z"]:
+        psfz_pixels = int(mod_pars["depth"] / mod_pars["PSF"]["resolution"]["Z"])
+    else:
+        psfz_pixels = int(mod_pars["PSF"]["resolution"]["Z"])
     psf_params = dict(
         stack_source = mod_pars["PSF"]["source"],
         scale = mod_pars["scale"],
