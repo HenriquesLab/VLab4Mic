@@ -18,19 +18,16 @@ def compile_modality_parameters(
     modality_config_path = os.path.join(congifuration_directory, "modalities", mode_file)
     mod_pars = load_yaml(modality_config_path)
     # approximate psf stack size
-    psfx_pixels = int(mod_pars["detector"]["FOV_size"]["X"] / mod_pars["PSF"]["resolution"]["X"])
-    psfy_pixels = int(mod_pars["detector"]["FOV_size"]["Y"] / mod_pars["PSF"]["resolution"]["Y"])
-    if mod_pars["depth"] < mod_pars["PSF"]["resolution"]["Z"]:
-        psfz_pixels = int(mod_pars["depth"] / mod_pars["PSF"]["resolution"]["Z"])
-    else:
-        psfz_pixels = int(mod_pars["PSF"]["resolution"]["Z"])
+    psfx_pixels = int(2.355 * mod_pars["PSF"]["resolution"]["X"])
+    psfy_pixels = int(2.355 * mod_pars["PSF"]["resolution"]["Y"])
+    psfz_pixels = int(2.355 * mod_pars["PSF"]["resolution"]["Z"])
     psf_params = dict(
         stack_source = mod_pars["PSF"]["source"],
         scale = mod_pars["scale"],
-        shape=[  # arbitrary 
-            2*psfx_pixels,
-            2*psfy_pixels,
-            4*psfz_pixels
+        shape=[  # arbitrary, ideally should cover the shole PSF
+            150,
+            150,
+            150
         ],
         std_devs=[
             mod_pars["PSF"]["resolution"]["X"] / mod_pars["PSF"]["voxelsize"],
