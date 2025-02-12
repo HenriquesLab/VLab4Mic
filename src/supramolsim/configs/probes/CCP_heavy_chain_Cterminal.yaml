@@ -1,0 +1,25 @@
+label_name: Clathrin heavy chain C terminal
+target:
+  type: Sequence
+  value: EQATETQ
+known_targets:
+  - 1XI5
+model:
+  ID:
+  format:
+  database:
+binding:
+  efficiency: 1
+  orientation:
+  wobble_range:
+    theta:
+    phi:
+  distance:
+    to_target:
+    between_targets:
+conjugation_sites:
+  target:
+    type:
+    value:
+  efficiency:
+
