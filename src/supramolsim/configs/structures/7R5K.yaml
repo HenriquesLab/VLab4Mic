@@ -2,6 +2,7 @@ model:
   ID: 7R5K
   format: CIF
   database: RCSB
+  title: Human nuclear pore complex (constricted)
 defects:
   small_cluster: 300
   big_cluster: 600
