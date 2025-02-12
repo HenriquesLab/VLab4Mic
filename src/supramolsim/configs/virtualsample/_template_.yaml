@@ -1,0 +1,9 @@
+volume_dimensions:
+  X:
+  Y:
+  Z:
+particles:
+  copies: 1 
+  positions: random
+  orientations: random
+  min_distance
