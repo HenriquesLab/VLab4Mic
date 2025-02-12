@@ -173,6 +173,14 @@ def construct_label(label_config_path: str, fluorophore_id: str, lab_eff: float 
         fluorophore_params: (dictionary)
     """
     label_params = load_yaml(label_config_path)
+    #id: Generic_NHS_ester
+    if label_params["target"]["type"] == "Atom_residue":
+        label_params["atoms"] = [label_params["target"]["value"]["atoms"], ]
+        label_params["residues"] = [label_params["target"]["value"]["residues"],]
+        try:
+            label_params["position"] = label_params["target"]["value"]["position"]
+        except:
+            label_params["position"] = None
     # Build label
     label_params["fluorophore"] = fluorophore_id
     if lab_eff is not None:
