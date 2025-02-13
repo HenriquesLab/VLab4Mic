@@ -160,7 +160,9 @@ class Label:
                 print(f"{key}: {value}")
 
 
-def construct_label(label_config_path: str, fluorophore_id: str, lab_eff: float = None, target_info=None):
+def construct_label(
+    label_config_path: str, fluorophore_id: str, lab_eff: float = None, target_info=None
+):
     """
     Construct an object of class Label.
 
@@ -178,8 +180,12 @@ def construct_label(label_config_path: str, fluorophore_id: str, lab_eff: float 
         label_params["target"]["type"] = target_info["type"]
         label_params["target"]["value"] = target_info["value"]
     if label_params["target"]["type"] == "Atom_residue":
-        label_params["atoms"] = [label_params["target"]["value"]["atoms"], ]
-        label_params["residues"] = [label_params["target"]["value"]["residues"],]
+        label_params["atoms"] = [
+            label_params["target"]["value"]["atoms"],
+        ]
+        label_params["residues"] = [
+            label_params["target"]["value"]["residues"],
+        ]
         try:
             label_params["position"] = label_params["target"]["value"]["position"]
         except:
@@ -191,4 +197,11 @@ def construct_label(label_config_path: str, fluorophore_id: str, lab_eff: float 
     label = Label()
     label.set_params(**label_params)
     label.set_fluorophore(fluorophore_id)
+    if label_params["binding"]["distance"]["to_target"]:
+        label.set_params(length=label_params["binding"]["distance"]["to_target"])
+        label.set_axis(
+            pivot=[0, 0, 0], direction=label_params["binding"]["orientation"]
+        )
+        label.generate_linker()
+        label_params["coordinates"] = label.gen_labeling_entity()
     return label, label_params
