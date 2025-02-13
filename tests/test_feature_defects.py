@@ -9,7 +9,7 @@ defects = np.linspace(0, 1, 27)
 @pytest.fixture(scope="module", autouse=True)
 def labelled_particle(configuration_directory):
     structure_id = "7R5K"
-    structure_label = "7R5K_Nup96_Cterminal_direct"
+    structure_label = "NPC_Nup96_Cterminal_direct"
     configuration_path = configuration_directory
     fluorophore_id = "AF647"
     structure, structure_param = workflows.load_structure(

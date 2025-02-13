@@ -18,11 +18,11 @@ structure_list = [
 ]
 labels_per_structure = {
     "7R5K": [
-        "7R5K_Nup96_Cterminal_direct",
+        "NPC_Nup96_Cterminal_direct",
     ]
 }
 generic_labels = [
-    "Generic_NHS_ester",
+    "NHS_ester",
 ]
 
 

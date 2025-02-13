@@ -27,7 +27,7 @@ def gt_structural_model_field(configuration_directory):
     configuration_path = configuration_directory
     fluorophore_id = "AF647"
     structure_id = "2RCJ"
-    generic_label = "Generic_NHS_ester"
+    generic_label = "NHS_ester"
     # loading structure
     structure, structure_param = workflows.load_structure(
         structure_id, configuration_path
@@ -48,12 +48,12 @@ def gt_structural_model_field(configuration_directory):
 @pytest.fixture(scope="module")
 def experiment_7r5k_base():
     selected_mods = dict(
-        STED_demo=None,
-        Confocal_demo=None,
+        STED=None,
+        Confocal=None,
     )
     structure_and_labels = dict(
         structure_id="7R5K",
-        structure_label="7R5K_Nup96_Cterminal_direct",
+        structure_label="NPC_Nup96_Cterminal_direct",
         fluorophore_id="AF647",
     )
     defects_eps_d = dict(eps1=300, eps2=600)
