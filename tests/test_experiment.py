@@ -3,12 +3,12 @@ from supramolsim.experiments import create_experiment_parametrisation
 
 def test_experiment_parameterised():
     selected_mods = dict(
-        STED_demo=None,
-        Confocal_demo=None,
+        STED=None,
+        Confocal=None,
     )
     structure_and_labels = dict(
         structure_id="7R5K",
-        structure_label="7R5K_Nup96_Cterminal_direct",
+        structure_label="NPC_Nup96_Cterminal_direct",
         fluorophore_id="AF647",
     )
     defects_eps_d = dict(eps1=300, eps2=600)
@@ -28,12 +28,12 @@ def test_experiment_parameterised():
 
 def test_experiment_runsimulation():
     selected_mods = dict(
-        STED_demo=None,
-        Confocal_demo=None,
+        STED=None,
+        Confocal=None,
     )
     structure_and_labels = dict(
         structure_id="2RCJ",
-        structure_label="Generic_NHS_ester",
+        structure_label="NHS_ester",
         fluorophore_id="AF647",
     )
     savging = dict(experiment_id="SupraMolSim_experiment", output_directory="")

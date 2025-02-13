@@ -8,7 +8,7 @@ import os
 @pytest.fixture(scope="module")
 def configuration_directory():
     pck_dir = os.path.dirname(os.path.abspath(supramolsim.__file__))
-    conf_dif = os.path.join(pck_dir, "configuration")
+    conf_dif = os.path.join(pck_dir, "configs")
     return conf_dif
 
 

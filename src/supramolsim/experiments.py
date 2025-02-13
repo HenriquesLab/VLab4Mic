@@ -30,7 +30,7 @@ class ExperimentParametrisation:
 
     def __post_init__(self):
         pck_dir = os.path.dirname(os.path.abspath(supramolsim.__file__))
-        local_dir = os.path.join(pck_dir, "configuration")
+        local_dir = os.path.join(pck_dir, "configs")
         self.configuration_path = local_dir
         # keep track of objects created
         self.objects_created = dict(
