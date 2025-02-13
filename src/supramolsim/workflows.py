@@ -87,11 +87,19 @@ def particle_from_structure(
         for label in labels:
             label_name = label["label_id"] + ".yaml"
             label_config_path = os.path.join(label_config_dir, label_name)
-            label_object, label_params = construct_label(
-                label_config_path,
-                label["fluorophore_id"],
-                lab_eff=label["labelling_efficiency"],
-            )
+            if "target_info" in label.keys():
+                label_object, label_params = construct_label(
+                    label_config_path=label_config_path,
+                    fluorophore_id = label["fluorophore_id"],
+                    lab_eff=label["labelling_efficiency"],
+                    target_info=label["target_info"]
+                )
+            else:
+                label_object, label_params = construct_label(
+                    label_config_path=label_config_path,
+                    fluorophore_id = label["fluorophore_id"],
+                    lab_eff=label["labelling_efficiency"]
+                )
             #print(label_params)
             label_params_list.append(label_params)
             # print(f"Label type is: {label_params["label_type"]}")

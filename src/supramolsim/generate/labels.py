@@ -160,7 +160,7 @@ class Label:
                 print(f"{key}: {value}")
 
 
-def construct_label(label_config_path: str, fluorophore_id: str, lab_eff: float = None):
+def construct_label(label_config_path: str, fluorophore_id: str, lab_eff: float = None, target_info=None):
     """
     Construct an object of class Label.
 
@@ -173,7 +173,10 @@ def construct_label(label_config_path: str, fluorophore_id: str, lab_eff: float 
         fluorophore_params: (dictionary)
     """
     label_params = load_yaml(label_config_path)
-    #id: Generic_NHS_ester
+    if target_info:
+        # expect label_params to have empty values on target type and value
+        label_params["target"]["type"] = target_info["type"]
+        label_params["target"]["value"] = target_info["value"]
     if label_params["target"]["type"] == "Atom_residue":
         label_params["atoms"] = [label_params["target"]["value"]["atoms"], ]
         label_params["residues"] = [label_params["target"]["value"]["residues"],]
