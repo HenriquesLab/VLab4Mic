@@ -1,9 +1,15 @@
-volume_dimensions:
+volume_dimensions: # in nanometers
   X:
   Y:
   Z:
 particles:
   copies: 1 
-  positions: random
-  orientations: random
-  min_distance
+  positions:
+    type: global
+    value: random
+  orientations:
+    type: global
+    value: random
+  distance:
+    type: centers
+    minimum:
