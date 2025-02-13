@@ -17,7 +17,7 @@ structure = None
 configuration_path = None
 coordinates_field = None
 exported_field = None
-
+workflow_patameters = dict()
 
 def set_directory():
     config_gui = easy_gui_jupyter.EasyGUI("Config")
@@ -287,7 +287,7 @@ def create_structural_model():
                 print(lab)
 
         def label_struct(b):
-            global particle, configuration_path, particle_created, nlabels
+            global particle, configuration_path, particle_created, nlabels, label_params_list
             particle_created = True
             labels_list = []
             if len(current_labels.keys()) > 0:
@@ -295,7 +295,7 @@ def create_structural_model():
                 for keys, values in current_labels.items():
                     labels_list.append(values)
                 # print(labels_list)
-                particle = supramolsim.particle_from_structure(
+                particle, label_params_list = supramolsim.particle_from_structure(
                     structure, labels_list, configuration_path[0]
                 )
                 print("Structure has been labelled")
@@ -570,7 +570,7 @@ def set_image_modalities():
 
         # create mock imager to show a pre-visualisation of PSF and noise model
         with io.capture_output() as captured:
-            temp_imager = create_imaging_system(
+            temp_imager, tmp_modality_parameters = create_imaging_system(
                 modalities_id_list=modalities_list, config_dir=configuration_path[0]
             )
 
@@ -590,7 +590,7 @@ def set_image_modalities():
                     print("No modalites had been added")
                 else:
                     with io.capture_output() as captured:
-                        imaging_system = create_imaging_system(
+                        imaging_system, modality_parameters = create_imaging_system(
                             exported_field, selected_mods, configuration_path[0]
                         )
                     imager_created = True
@@ -821,6 +821,7 @@ def run_simulation():
                 savingdir=sav_dir,
                 acquisition_param=acq_params_per_mod,
             )
+        
         experiment_gui.save_settings()
 
     experiment_gui.add_label("Set experiment name")

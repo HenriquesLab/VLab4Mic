@@ -105,14 +105,14 @@ class ExperimentParametrisation:
         if self.selected_mods:
             mods_list = list(self.selected_mods.keys())
             if use_local_field and self.generators_status("exported_coordinate_field"):
-                self.imager = create_imaging_system(
+                self.imager, modality_parameters = create_imaging_system(
                     exported_field=self.exported_coordinate_field,
                     modalities_id_list=mods_list,
                     config_dir=self.configuration_path,
                 )
             else:
                 print("Local field missing or unused. Creating imager without particles")
-                self.imager = create_imaging_system(
+                self.imager, modality_parameters = create_imaging_system(
                     modalities_id_list=mods_list, config_dir=self.configuration_path
                 )
             self.objects_created["imager"] = True
@@ -174,7 +174,7 @@ class ExperimentParametrisation:
                 write=write,
             )
         else:
-            reference_imager = create_imaging_system(
+            reference_imager, ref_modality_parameters = create_imaging_system(
                 modalities_id_list=["Reference"], 
                 config_dir=self.configuration_path
             )
