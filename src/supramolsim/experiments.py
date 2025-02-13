@@ -75,7 +75,7 @@ class ExperimentParametrisation:
     def _build_particle(self, lab_eff=1.0, defect=0.0, keep=False):
         if self.generators_status("structure"):
             labels_list = self._build_label(lab_eff=lab_eff)
-            particle = particle_from_structure(
+            particle, label_params_list = particle_from_structure(
                 self.structure, labels_list, self.configuration_path
             )
             if self.defect_eps:

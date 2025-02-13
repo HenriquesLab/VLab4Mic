@@ -38,7 +38,7 @@ def gt_structural_model_field(configuration_directory):
             generic_label, fluorophore_id
         )
     )
-    particle = workflows.particle_from_structure(
+    particle, label_params_list = workflows.particle_from_structure(
         structure, labels_list, configuration_path
     )
     exported_field, coordinates_field = workflows.field_from_particle(particle)

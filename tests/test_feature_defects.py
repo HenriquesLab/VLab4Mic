@@ -17,7 +17,7 @@ def labelled_particle(configuration_directory):
     )
     labels_list = []
     labels_list.append(label_builder_format(structure_label, fluorophore_id))
-    particle = workflows.particle_from_structure(
+    particle, label_params_list = workflows.particle_from_structure(
         structure, labels_list, configuration_path
     )
     return particle
