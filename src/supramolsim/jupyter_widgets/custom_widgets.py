@@ -285,9 +285,17 @@ def create_structural_model():
             label_id = labels_gui["mock_label_dropdown"].value
             fluorophore_id = labels_gui["mock_fluo_dropdown"].value
             lab_eff = labels_gui["mock_Labelling_efficiency"].value
+            if labels_gui["mock_type"].value == "Sequence":
+                target_value = labels_gui["mock_value"].value
+            elif labels_gui["mock_type"].value == "Atom_residue":
+                atom, residue = labels_gui["mock_value"].value.split(".")
+                target_value = dict(
+                    atoms=atom,
+                    residues=residue
+                )
             target_info=dict(
                 type=labels_gui["mock_type"].value,
-                value=labels_gui["mock_value"].value
+                value=target_value
             )
             tmp_label = data_format.structural_format.label_builder_format(
                 label_id, fluorophore_id, lab_eff, target_info
