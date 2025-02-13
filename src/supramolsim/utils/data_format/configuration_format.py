@@ -1,5 +1,7 @@
 from ..io.yaml_functions import load_yaml
+import yaml
 import os
+import numpy as np
 
 
 def compile_modality_parameters(
@@ -135,3 +137,24 @@ def format_modality_acquisition_params(
         exp_time=exp_time, noise=noise, save=save, nframes=nframes, channels=channels
     )
     return mod_acquisition_params
+
+
+def write_parameters(
+    structure=None,
+    probes=None,
+    virtualsample=None,
+    modalities=None,
+    acquisition=None,
+    writingpath: str = None,
+    **kwargs,
+):
+    if writingpath:
+        virtualsample.pop("field_emitters")
+        virtualsample.pop("reference_point")
+        saving_path = os.path.join(writingpath, "parameters.yml")
+        with open(saving_path, "w") as outfile:
+            yaml.dump_all(
+                [structure, probes, virtualsample, modalities, acquisition],
+                outfile,
+                default_flow_style=False,
+            )
