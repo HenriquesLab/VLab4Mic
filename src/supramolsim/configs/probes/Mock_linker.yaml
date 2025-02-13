@@ -1,0 +1,25 @@
+label_name: Mock_linker
+target:
+  type:
+  value:
+known_targets:
+  - Mock
+model:
+  ID:
+  format:
+  database:
+binding:
+  efficiency: 1
+  orientation: [0,0,1]
+  wobble_range:
+    theta:
+    phi:
+  distance:
+    to_target: 200
+    between_targets:
+conjugation_sites:
+  target:
+    type:
+    value:
+  efficiency:
+
