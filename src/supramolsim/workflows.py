@@ -104,7 +104,7 @@ def particle_from_structure(
         particle = labinstance.create_particle(
             source_builder=inst_builder, label_params_list=label_params_list
         )
-        return particle
+        return particle, label_params_list
 
 
 def field_from_particle(
@@ -184,10 +184,12 @@ def create_imaging_system(
                 blinking_rates = fluo_params["blinking_rates"]
             )
             fluo_emission[fluo] = fluo_params["emission"]["type"]
+        modality_parameters = []
         for mod in modalities_id_list:
-            modality = compile_modality_parameters(mod, config_dir, fluo_emission)       
+            modality = compile_modality_parameters(mod, config_dir, fluo_emission)
+            modality_parameters.append(modality)
             image_generator.set_imaging_modality(**modality)
-        return image_generator
+        return image_generator, modality_parameters
 
 
 # generate several modalities results
