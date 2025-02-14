@@ -29,6 +29,8 @@ class Label:
         self.params["target_sequence"] = None
         self.params["summary_method"] = "average"
         self.params["length"] = 0
+        self.conjugation = dict()
+        self.model = dict()
 
     def set_params(self, **kwargs):
         """
@@ -37,6 +39,13 @@ class Label:
         """
         for key, value in kwargs.items():
             self.params[key] = value
+
+    def _set_model_params(self, ID=None, format=None, database=None, **kwargs):
+        self.model["ID"] = ID
+        self.model["format"] = format
+        self.model["database"] = database
+        for key, value in kwargs.items():
+            self.model[key] = value
 
     def set_axis(self, pivot: list, direction: list):
         self.params["axis"]["pivot"] = pivot
@@ -200,10 +209,14 @@ def construct_label(
     label.set_params(**label_params)
     label.set_fluorophore(fluorophore_id)
     # check whether there is enough structural information for the labelling entity
-    if label_params["model"]["ID"] and label_params["conjugation_sites"]["target"]["type"]:
+    if (
+        label_params["model"]["ID"]
+        and label_params["conjugation_sites"]["target"]["type"]
+    ):
         # building probe from PDB/CIF
         print("antibody")
-        pass
+        #label.emitters_from_PDBCIF(**label_params)
+        #label_params["coordinates"] = label.gen_labeling_entity()
     elif label_params["binding"]["distance"]["to_target"]:
         # not from a PDB, checking if at least distance to make a rigid linker
         print("rigid linker")
