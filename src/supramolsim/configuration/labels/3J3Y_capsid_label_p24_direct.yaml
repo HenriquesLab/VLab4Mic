@@ -1,9 +1,0 @@
-id: 3J3Y_anticapsid_antibody_NHS
-title: Anti-p24 HIV-1 indirect labelling
-label_name: p24_antibody
-label_type: BindingLabel
-target_type:  Sequence
-target_sequence: SPRTLNA
-method: average
-labeling_efficiency: 1
-fluorophore_type: OrganicDye

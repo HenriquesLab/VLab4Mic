@@ -1,5 +1,0 @@
-id: STED_demo
-title: Imaging modality for STED
-psf: STED_3D # (string) id of yaml file
-detector: PMT_STED #(string) id of yaml file
-emission_type: constant
