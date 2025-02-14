@@ -48,13 +48,13 @@ class Label:
         for key, value in kwargs.items():
             self.model[key] = value
 
-    def _set_conjugation_paras(self, target: dict, efficiency, **kwargs):
+    def _set_conjugation_params(self, target: dict, efficiency, **kwargs):
         self.conjugation["target"] = target
         self.conjugation["efficiency"] = efficiency
         for key, value in kwargs.items():
             self.conjugation[key] = value
 
-    def _set_binding_paras(
+    def _set_binding_params(
         self,
         efficiency,
         orientation,
@@ -71,7 +71,6 @@ class Label:
         self.binding["paratope"] = paratope
         for key, value in kwargs.items():
             self.binding[key] = value
-        pass
 
     def set_axis(self, pivot: list, direction: list):
         self.params["axis"]["pivot"] = pivot
