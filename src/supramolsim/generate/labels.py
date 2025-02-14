@@ -31,6 +31,7 @@ class Label:
         self.params["length"] = 0
         self.conjugation = dict()
         self.model = dict()
+        self.binding = dict()
 
     def set_params(self, **kwargs):
         """
@@ -46,6 +47,31 @@ class Label:
         self.model["database"] = database
         for key, value in kwargs.items():
             self.model[key] = value
+
+    def _set_conjugation_paras(self, target: dict, efficiency, **kwargs):
+        self.conjugation["target"] = target
+        self.conjugation["efficiency"] = efficiency
+        for key, value in kwargs.items():
+            self.conjugation[key] = value
+
+    def _set_binding_paras(
+        self,
+        efficiency,
+        orientation,
+        wobble_range: dict,
+        distance: dict,
+        paratope: list,
+        **kwargs
+    ):
+        
+        self.binding["efficiency"] = efficiency
+        self.binding["orientation"] = orientation
+        self.binding["wobble_range"] = wobble_range
+        self.binding["distance"] = distance
+        self.binding["paratope"] = paratope
+        for key, value in kwargs.items():
+            self.binding[key] = value
+        pass
 
     def set_axis(self, pivot: list, direction: list):
         self.params["axis"]["pivot"] = pivot
@@ -215,8 +241,8 @@ def construct_label(
     ):
         # building probe from PDB/CIF
         print("antibody")
-        #label.emitters_from_PDBCIF(**label_params)
-        #label_params["coordinates"] = label.gen_labeling_entity()
+        # label.emitters_from_PDBCIF(**label_params)
+        # label_params["coordinates"] = label.gen_labeling_entity()
     elif label_params["binding"]["distance"]["to_target"]:
         # not from a PDB, checking if at least distance to make a rigid linker
         print("rigid linker")
