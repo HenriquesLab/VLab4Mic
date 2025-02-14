@@ -240,6 +240,9 @@ def construct_label(
     ):
         # building probe from PDB/CIF
         print("antibody")
+        label._set_model_params(**label_params["model"])
+        label._set_conjugation_params(**label_params["conjugation_sites"])
+        label._set_binding_params(**label_params["binding"])
         # label.emitters_from_PDBCIF(**label_params)
         # label_params["coordinates"] = label.gen_labeling_entity()
     elif label_params["binding"]["distance"]["to_target"]:
