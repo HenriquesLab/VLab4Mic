@@ -1,0 +1,28 @@
+label_name: HIV_capsid_p24_AB
+target:
+  type: Sequence
+  value: SPRTLNA
+known_targets:
+  - 3J3Y
+model:
+  ID: 1HZH
+  format: CIF
+  database: RCSB
+binding:
+  efficiency: 1
+  orientation:
+  wobble_range:
+    theta:
+    phi:
+  distance:
+    to_target:
+    between_targets:
+  paratope: EFSAKF
+conjugation_sites:
+  target:
+    type: Atom_residue
+    value:
+      atoms: CA
+      residues: LYS
+  efficiency: 1
+
