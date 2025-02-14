@@ -52,7 +52,7 @@ class Label:
         return self.params["label_type"]
 
     def get_target_type(self):
-        return self.params["target_type"]
+        return self.params["target"]["type"]
 
     def get_plotcolour(self):
         return self.params["plotcolour"]
@@ -160,7 +160,9 @@ class Label:
                 print(f"{key}: {value}")
 
 
-def construct_label(label_config_path: str, fluorophore_id: str, lab_eff: float = None):
+def construct_label(
+    label_config_path: str, fluorophore_id: str, lab_eff: float = None, target_info=None
+):
     """
     Construct an object of class Label.
 
@@ -173,6 +175,21 @@ def construct_label(label_config_path: str, fluorophore_id: str, lab_eff: float 
         fluorophore_params: (dictionary)
     """
     label_params = load_yaml(label_config_path)
+    if target_info:
+        # expect label_params to have empty values on target type and value
+        label_params["target"]["type"] = target_info["type"]
+        label_params["target"]["value"] = target_info["value"]
+    if label_params["target"]["type"] == "Atom_residue":
+        label_params["atoms"] = [
+            label_params["target"]["value"]["atoms"],
+        ]
+        label_params["residues"] = [
+            label_params["target"]["value"]["residues"],
+        ]
+        try:
+            label_params["position"] = label_params["target"]["value"]["position"]
+        except:
+            label_params["position"] = None
     # Build label
     label_params["fluorophore"] = fluorophore_id
     if lab_eff is not None:
@@ -180,4 +197,11 @@ def construct_label(label_config_path: str, fluorophore_id: str, lab_eff: float 
     label = Label()
     label.set_params(**label_params)
     label.set_fluorophore(fluorophore_id)
+    if label_params["binding"]["distance"]["to_target"]:
+        label.set_params(length=label_params["binding"]["distance"]["to_target"])
+        label.set_axis(
+            pivot=[0, 0, 0], direction=label_params["binding"]["orientation"]
+        )
+        label.generate_linker()
+        label_params["coordinates"] = label.gen_labeling_entity()
     return label, label_params

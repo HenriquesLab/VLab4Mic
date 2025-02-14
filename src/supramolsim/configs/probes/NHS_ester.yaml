@@ -1,0 +1,27 @@
+label_name: NHS_ester
+target:
+  type: Atom_residue
+  value:
+    atoms: CA
+    residues: LYS
+known_targets:
+  - Generic
+model:
+  ID:
+  format:
+  database:
+binding:
+  efficiency: 1
+  orientation:
+  wobble_range:
+    theta:
+    phi:
+  distance:
+    to_target:
+    between_targets:
+conjugation_sites:
+  target:
+    type:
+    value:
+  efficiency:
+

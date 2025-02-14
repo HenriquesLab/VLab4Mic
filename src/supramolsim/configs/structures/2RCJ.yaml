@@ -1,0 +1,8 @@
+model:
+  ID: 2RCJ
+  format: CIF
+  database: RCSB
+  title: Solution structure of human Immunoglobulin M
+defects:
+  small_cluster:
+  big_cluster:

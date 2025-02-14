@@ -43,25 +43,25 @@ def test_sweep_analysis(experiment_7r5k_base):
     imager_scale = experiment_7r5k_base.imager.roi_params["scale"]
     scalefactor = np.ceil(imager_scale / 1e-9)
     sweep_analyse_pars = dict(
-        STED_demo=dict(
+        STED=dict(
             metric="ssim",
             subregion=False,
             force_match=True,
-            modality_pixelsize=experiment_7r5k_base.imager.modalities["STED_demo"][
+            modality_pixelsize=experiment_7r5k_base.imager.modalities["STED"][
                 "detector"
             ]["pixelsize"]
             * scalefactor,
-            ref_pixelsize=ref_params["STED_demo"]["ref_pixelsize"],
+            ref_pixelsize=ref_params["STED"]["ref_pixelsize"],
         ),
-        Confocal_demo=dict(
+        Confocal=dict(
             metric="ssim",
             subregion=False,
             force_match=True,
-            modality_pixelsize=experiment_7r5k_base.imager.modalities["Confocal_demo"][
+            modality_pixelsize=experiment_7r5k_base.imager.modalities["Confocal"][
                 "detector"
             ]["pixelsize"]
             * scalefactor,
-            ref_pixelsize=ref_params["Confocal_demo"]["ref_pixelsize"],
+            ref_pixelsize=ref_params["Confocal"]["ref_pixelsize"],
         ),
     )
     conditions = len(list(sweep_analyse_pars.keys()))

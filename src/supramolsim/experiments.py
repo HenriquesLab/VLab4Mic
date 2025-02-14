@@ -30,7 +30,7 @@ class ExperimentParametrisation:
 
     def __post_init__(self):
         pck_dir = os.path.dirname(os.path.abspath(supramolsim.__file__))
-        local_dir = os.path.join(pck_dir, "configuration")
+        local_dir = os.path.join(pck_dir, "configs")
         self.configuration_path = local_dir
         # keep track of objects created
         self.objects_created = dict(
@@ -76,7 +76,7 @@ class ExperimentParametrisation:
     def _build_particle(self, lab_eff=1.0, defect=0.0, keep=False):
         if self.generators_status("structure"):
             labels_list = self._build_label(lab_eff=lab_eff)
-            particle = particle_from_structure(
+            particle, label_params_list = particle_from_structure(
                 self.structure, labels_list, self.configuration_path
             )
             if self.defect_eps:
@@ -114,14 +114,14 @@ class ExperimentParametrisation:
             print(f"Using selected mods: {self.selected_mods}")
             mods_list = list(self.selected_mods.keys())
             if use_local_field and self.generators_status("exported_coordinate_field"):
-                self.imager = create_imaging_system(
+                self.imager, modality_parameters = create_imaging_system(
                     exported_field=self.exported_coordinate_field,
                     modalities_id_list=mods_list,
                     config_dir=self.configuration_path,
                 )
             else:
                 print("Local field missing or unused. Creating imager without particles")
-                self.imager = create_imaging_system(
+                self.imager, modality_parameters = create_imaging_system(
                     modalities_id_list=mods_list, config_dir=self.configuration_path
                 )
             self.objects_created["imager"] = True
@@ -183,7 +183,7 @@ class ExperimentParametrisation:
                 write=write,
             )
         else:
-            reference_imager = create_imaging_system(
+            reference_imager, ref_modality_parameters = create_imaging_system(
                 modalities_id_list=["Reference"], 
                 config_dir=self.configuration_path
             )

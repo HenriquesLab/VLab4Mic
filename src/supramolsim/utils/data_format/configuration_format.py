@@ -1,4 +1,7 @@
 from ..io.yaml_functions import load_yaml
+import yaml
+import os
+import numpy as np
 
 
 def compile_modality_parameters(
@@ -14,27 +17,52 @@ def compile_modality_parameters(
         modality_optical_pars: dictionary of parameters per modality
     """
     # load modality configuration file
-    modality_config_path = (
-        congifuration_directory + "/modalities/" + modality_id + ".yaml"
+    mode_file = modality_id + ".yaml"
+    modality_config_path = os.path.join(
+        congifuration_directory, "modalities", mode_file
     )
-    modality_params = load_yaml(modality_config_path)
-    mod_emission = modality_params["emission_type"]
-    # print(modality_params)
-    # get PSF params
-    psf_id = modality_params["psf"]
-    psf_config_path = congifuration_directory + "/psfs/" + psf_id + ".yaml"
-    psf_params = load_yaml(psf_config_path)
-    # get detector params
-    detector_id = modality_params["detector"]
-    detector_config_path = (
-        congifuration_directory + "/detector/" + detector_id + ".yaml"
+    mod_pars = load_yaml(modality_config_path)
+    # approximate psf stack size
+    psfx_pixels = int(2.355 * mod_pars["PSF"]["resolution"]["X"])
+    psfy_pixels = int(2.355 * mod_pars["PSF"]["resolution"]["Y"])
+    psfz_pixels = int(2.355 * mod_pars["PSF"]["resolution"]["Z"])
+    psf_params = dict(
+        stack_source=mod_pars["PSF"]["source"],
+        scale=mod_pars["scale"],
+        shape=[150, 150, 150],  # arbitrary, ideally should cover the shole PSF
+        std_devs=[
+            mod_pars["PSF"]["resolution"]["X"] / mod_pars["PSF"]["voxelsize"],
+            mod_pars["PSF"]["resolution"]["Y"] / mod_pars["PSF"]["voxelsize"],
+            mod_pars["PSF"]["resolution"]["Z"] / mod_pars["PSF"]["voxelsize"],
+        ],
+        voxelsize=[
+            mod_pars["PSF"]["voxelsize"],
+            mod_pars["PSF"]["voxelsize"],
+            mod_pars["PSF"]["voxelsize"],
+        ],
+        depth=int(mod_pars["depth"] / mod_pars["PSF"]["voxelsize"]),
     )
-    detector_params = load_yaml(detector_config_path)
+    factor_ = 1000  # to match detector params to imager, needs fix
+    detector_params = dict(
+        scale=1.0e-06,
+        pixelsize=mod_pars["detector"]["pixelsize"] / factor_,
+        noise_model=dict(
+            binomial={"p": mod_pars["detector"]["noise"]["binomial"]},
+            gamma={"g": mod_pars["detector"]["noise"]["gain"]},
+            baselevel={"bl": mod_pars["detector"]["noise"]["baselevel"]["mean"]},
+            gaussian={
+                "sigma": mod_pars["detector"]["noise"]["gaussian"]["standard_dev"]
+            },
+            conversion={"adu": mod_pars["detector"]["noise"]["ADU"]},
+        ),
+        noise_order=["binomial", "gamma", "baselevel", "gaussian", "conversion"],
+        bits_pixel=32,
+    )
     # get filters default should be one per channel
     if fluo_emissions is None:
         filter_dictionary = None
         emission_behaviour = None
-        modality_name = modality_params["id"]
+        modality_name = mod_pars["name"]
         modality_params = dict(
             filters=filter_dictionary,
             psf_params=psf_params,
@@ -45,7 +73,7 @@ def compile_modality_parameters(
         return modality_params
     else:
         if (
-            "filters" not in modality_params.keys()
+            "filters" not in mod_pars.keys()
         ):  # each fluorophore will be assign and independent channel
             print("Creating channel for each fluorophore")
             ch = 0
@@ -60,12 +88,12 @@ def compile_modality_parameters(
                 filter_dictionary[channel_name] = fluorophores_in_chanel
                 ch += 1
         else:
-            filter_dictionary = modality_params["filters"]
+            filter_dictionary = mod_pars["filters"]
         # get emission type from fluorophore
-        emission_behaviour = define_emission_behaviour(mod_emission, fluo_emissions)
+        emission_behaviour = define_emission_behaviour("constant", fluo_emissions)
         print(f"emission for {str(modality_id)} set to {emission_behaviour}")
         # assign modality name
-        modality_name = modality_params["id"]
+        modality_name = mod_pars["name"]
         modality_params = dict(
             filters=filter_dictionary,
             psf_params=psf_params,
@@ -109,3 +137,24 @@ def format_modality_acquisition_params(
         exp_time=exp_time, noise=noise, save=save, nframes=nframes, channels=channels
     )
     return mod_acquisition_params
+
+
+def write_parameters(
+    structure=None,
+    probes=None,
+    virtualsample=None,
+    modalities=None,
+    acquisition=None,
+    writingpath: str = None,
+    **kwargs,
+):
+    if writingpath:
+        virtualsample.pop("field_emitters")
+        virtualsample.pop("reference_point")
+        saving_path = os.path.join(writingpath, "parameters.yml")
+        with open(saving_path, "w") as outfile:
+            yaml.dump_all(
+                [structure, probes, virtualsample, modalities, acquisition],
+                outfile,
+                default_flow_style=False,
+            )

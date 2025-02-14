@@ -18,11 +18,11 @@ structure_list = [
 ]
 labels_per_structure = {
     "7R5K": [
-        "7R5K_Nup96_Cterminal_direct",
+        "NPC_Nup96_Cterminal_direct",
     ]
 }
 generic_labels = [
-    "Generic_NHS_ester",
+    "NHS_ester",
 ]
 
 
@@ -43,7 +43,7 @@ def test_add_specific_labels(structure_id, structure_label, configuration_direct
             structure_label, fluorophore_id
         )
     )
-    particle = workflows.particle_from_structure(
+    particle, label_params_list = workflows.particle_from_structure(
         structure, labels_list, configuration_path
     )
     assert particle.get_ref_point().shape == (3,)
@@ -64,7 +64,7 @@ def test_add_generic_labels(structure_id, generic_label, configuration_directory
             generic_label, fluorophore_id
         )
     )
-    particle = workflows.particle_from_structure(
+    particle, label_params_list = workflows.particle_from_structure(
         structure, labels_list, configuration_path
     )
     assert particle.get_ref_point().shape == (3,)

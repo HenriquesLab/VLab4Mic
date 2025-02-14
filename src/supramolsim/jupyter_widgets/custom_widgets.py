@@ -17,13 +17,13 @@ structure = None
 configuration_path = None
 coordinates_field = None
 exported_field = None
-
+workflow_patameters = dict()
 
 def set_directory():
     config_gui = easy_gui_jupyter.EasyGUI("Config")
 
     pck_dir = os.path.dirname(os.path.abspath(supramolsim.__file__))
-    local_dir = os.path.join(pck_dir, "configuration")
+    local_dir = os.path.join(pck_dir, "configs")
 
     def clear(b):
         global configuration_path
@@ -69,9 +69,11 @@ def select_structure():
                     structure_params = supramolsim.load_yaml(
                         os.path.join(structure_dir, file)
                     )
-                    struct_id = structure_params["id"]
-                    strict_title = structure_params["title"]
-                    id_title = struct_id + ": " + strict_title
+                    struct_id = structure_params["model"]["ID"]
+                    struct_title = ""
+                    if "title" in structure_params["model"]:
+                        struct_title = structure_params["model"]["title"]
+                    id_title = struct_id + ": " + struct_title
                     structures_info_list[id_title] = struct_id
                     demo_structures.append(id_title)
 
@@ -227,19 +229,25 @@ def create_structural_model():
         particle_created = False
         current_labels = dict()
         generic_labels = []
+        mock_labels = []
         structure_labels = []
         fluorophores_list = []
         fluorophores_dir = os.path.join(configuration_path[0], "fluorophores")
-        labels_dir = os.path.join(configuration_path[0], "labels")
+        labels_dir = os.path.join(configuration_path[0], "probes")
         for fluoid in os.listdir(fluorophores_dir):
             if os.path.splitext(fluoid)[-1] == ".yaml" and "_template" not in fluoid:
                 fluorophores_list.append(os.path.splitext(fluoid)[0])
         for file in os.listdir(labels_dir):
             if os.path.splitext(file)[-1] == ".yaml" and "_template" not in file:
+                label_config_path = os.path.join(labels_dir, file)
+                label_parmeters = supramolsim.load_yaml(label_config_path)
+                print(label_parmeters)
                 lablname = os.path.splitext(file)[0]
-                if lablname.split("_")[0] == "Generic":
+                if "Mock" in label_parmeters["known_targets"]:
+                    mock_labels.append(lablname)
+                elif "Generic" in label_parmeters["known_targets"]:
                     generic_labels.append(lablname)
-                elif lablname.split("_")[0] == structure_id:
+                elif structure_id in label_parmeters["known_targets"]:
                     structure_labels.append(lablname)
 
         def build_label(b):
@@ -273,6 +281,32 @@ def create_structural_model():
                 current_labels[unique_name] = tmp_label
                 print(f"label added: {unique_name}")
 
+        def build_mock_label(b):
+            label_id = labels_gui["mock_label_dropdown"].value
+            fluorophore_id = labels_gui["mock_fluo_dropdown"].value
+            lab_eff = labels_gui["mock_Labelling_efficiency"].value
+            if labels_gui["mock_type"].value == "Sequence":
+                target_value = labels_gui["mock_value"].value
+            elif labels_gui["mock_type"].value == "Atom_residue":
+                atom, residue = labels_gui["mock_value"].value.split(".")
+                target_value = dict(
+                    atoms=atom,
+                    residues=residue
+                )
+            target_info=dict(
+                type=labels_gui["mock_type"].value,
+                value=target_value
+            )
+            tmp_label = data_format.structural_format.label_builder_format(
+                label_id, fluorophore_id, lab_eff, target_info
+            )
+            unique_name = label_id + "_conjugated_" + fluorophore_id
+            if unique_name in current_labels.keys():
+                print("label already exist")
+            else:
+                current_labels[unique_name] = tmp_label
+                print(f"label added: {unique_name}")
+
         def clear(b):
             current_labels.clear()
 
@@ -282,7 +316,7 @@ def create_structural_model():
                 print(lab)
 
         def label_struct(b):
-            global particle, configuration_path, particle_created, nlabels
+            global particle, configuration_path, particle_created, nlabels, label_params_list
             particle_created = True
             labels_list = []
             if len(current_labels.keys()) > 0:
@@ -290,7 +324,7 @@ def create_structural_model():
                 for keys, values in current_labels.items():
                     labels_list.append(values)
                 # print(labels_list)
-                particle = supramolsim.particle_from_structure(
+                particle, label_params_list = supramolsim.particle_from_structure(
                     structure, labels_list, configuration_path[0]
                 )
                 print("Structure has been labelled")
@@ -328,6 +362,22 @@ def create_structural_model():
         )
         labels_gui.add_button("Add_generic", description="Add generic label")
         labels_gui["Add_generic"].on_click(build_generic_label)
+
+        labels_gui.add_label("Mock labels")
+        labels_gui.add_dropdown("mock_label_dropdown", options=mock_labels)
+        labels_gui.add_dropdown("mock_type", options=["Sequence", "Atom_residue"])
+        labels_gui.add_textarea("mock_value")
+        labels_gui.add_dropdown("mock_fluo_dropdown", options=fluorophores_list)
+        labels_gui.add_float_slider(
+            "mock_Labelling_efficiency",
+            value=1,
+            min=0,
+            max=1,
+            step=0.01,
+            description="Labelling efficiency",
+        )
+        labels_gui.add_button("Add_mock", description="Add mock label")
+        labels_gui["Add_mock"].on_click(build_mock_label)
 
         labels_gui.add_button("Clear", description="Clear Labels")
         labels_gui.add_button("Show", description="Display current labels")
@@ -565,7 +615,7 @@ def set_image_modalities():
 
         # create mock imager to show a pre-visualisation of PSF and noise model
         with io.capture_output() as captured:
-            temp_imager = create_imaging_system(
+            temp_imager, tmp_modality_parameters = create_imaging_system(
                 modalities_id_list=modalities_list, config_dir=configuration_path[0]
             )
 
@@ -585,7 +635,7 @@ def set_image_modalities():
                     print("No modalites had been added")
                 else:
                     with io.capture_output() as captured:
-                        imaging_system = create_imaging_system(
+                        imaging_system, modality_parameters = create_imaging_system(
                             exported_field, selected_mods, configuration_path[0]
                         )
                     imager_created = True
@@ -816,6 +866,7 @@ def run_simulation():
                 savingdir=sav_dir,
                 acquisition_param=acq_params_per_mod,
             )
+        
         experiment_gui.save_settings()
 
     experiment_gui.add_label("Set experiment name")

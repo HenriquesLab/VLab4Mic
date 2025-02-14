@@ -1,0 +1,9 @@
+model:
+  ID: 1XI5
+  format: CIF
+  database: RCSB
+  title: Clathrin D6 coat with auxilin J-domain
+defects:
+  small_cluster:
+  big_cluster:
+  

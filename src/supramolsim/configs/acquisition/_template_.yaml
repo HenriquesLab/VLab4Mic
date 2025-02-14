@@ -1,0 +1,6 @@
+focusplane: # in nanometers
+xy_position: # in nanometers
+excitation_power: # percentage
+exposure_time: # in miliseconds
+frames: 
+zstacks:

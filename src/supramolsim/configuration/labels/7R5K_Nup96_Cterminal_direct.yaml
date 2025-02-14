@@ -1,9 +1,0 @@
-id: 7R5K_Nup96_Cterminal_direct
-title: Nup96 C-terminal direct labelling for Human Nuclear Pore Complex (Constricted)
-label_name: Nup96_direct
-label_type: DirectLabel
-target_type:  Sequence
-target_sequence: ELAVGSL
-method: average
-labeling_efficiency: 1
-fluorophore_type: OrganicDye

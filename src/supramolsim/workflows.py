@@ -45,9 +45,12 @@ def load_structure(structure_id: str = None, config_dir=None):
         # get CIF path
         cif_file = verify_structure(structure_id, structure_dir)
         # build structure
+        title = ""
+        if "title" in structure_params["model"]:
+            title = structure_params["model"]["title"]
         structure = build_structure_cif(
             cif_file=cif_file,
-            struct_title=structure_params["title"],
+            struct_title=title,
             cif_id=structure_id,
         )
         print("Structure Loaded!")
@@ -80,27 +83,36 @@ def particle_from_structure(
     """
     if config_dir is not None:
         label_params_list = []
-        label_config_dir = os.path.join(config_dir, "labels")
+        label_config_dir = os.path.join(config_dir, "probes")
         for label in labels:
             label_name = label["label_id"] + ".yaml"
             label_config_path = os.path.join(label_config_dir, label_name)
-            label_object, label_params = construct_label(
-                label_config_path,
-                label["fluorophore_id"],
-                lab_eff=label["labelling_efficiency"],
-            )
+            if "target_info" in label.keys():
+                label_object, label_params = construct_label(
+                    label_config_path=label_config_path,
+                    fluorophore_id = label["fluorophore_id"],
+                    lab_eff=label["labelling_efficiency"],
+                    target_info=label["target_info"]
+                )
+            else:
+                label_object, label_params = construct_label(
+                    label_config_path=label_config_path,
+                    fluorophore_id = label["fluorophore_id"],
+                    lab_eff=label["labelling_efficiency"]
+                )
+            #print(label_params)
             label_params_list.append(label_params)
             # print(f"Label type is: {label_params["label_type"]}")
             structure.add_label(label_object)
             # print(label_params)
-            if label_params["label_type"] == "BindingLabel":
+            if label_params["binding"]["distance"]["to_target"]:
                 print("Label is indirect label")
                 structure.assign_normals2targets()  # default is with scaling
         inst_builder = structure.create_instance_builder()
         particle = labinstance.create_particle(
             source_builder=inst_builder, label_params_list=label_params_list
         )
-        return particle
+        return particle, label_params_list
 
 
 def field_from_particle(
@@ -171,13 +183,21 @@ def create_imaging_system(
         for fluo in exported_field["field_emitters"].keys():
             fluo_dir = os.path.join(config_dir, "fluorophores", fluo)
             fluopath = fluo_dir + ".yaml"
-            image_generator.set_fluorophores_from_file(fluopath)
-            fluoprams = load_yaml(fluopath)
-            fluo_emission[fluo] = fluoprams["emission"]
+            #image_generator.set_fluorophores_from_file(fluopath)
+            fluo_params = load_yaml(fluopath)
+            image_generator.set_fluorophores_params(
+                identifier = fluo,
+                photon_yield = fluo_params["emission"]["photon_yield"],
+                emission = fluo_params["emission"]["type"],
+                blinking_rates = fluo_params["blinking_rates"]
+            )
+            fluo_emission[fluo] = fluo_params["emission"]["type"]
+        modality_parameters = []
         for mod in modalities_id_list:
             modality = compile_modality_parameters(mod, config_dir, fluo_emission)
+            modality_parameters.append(modality)
             image_generator.set_imaging_modality(**modality)
-        return image_generator
+        return image_generator, modality_parameters
 
 
 # generate several modalities results

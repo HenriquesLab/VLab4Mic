@@ -1,0 +1,25 @@
+label_name: HIV_capsid_p24_direct
+target:
+  type: Sequence
+  value: SPRTLNA
+known_targets:
+  - 3J3Y
+model:
+  ID:
+  format:
+  database:
+binding:
+  efficiency: 1
+  orientation:
+  wobble_range:
+    theta:
+    phi:
+  distance:
+    to_target:
+    between_targets:
+conjugation_sites:
+  target:
+    type:
+    value:
+  efficiency:
+

@@ -1,5 +1,0 @@
-id: AiryScan_demo #(string)
-title: AiryScan modality #(string) modality description
-psf: psf_AiryScan # (string) id of yaml file
-emission_type: constant 
-detector: PMT_AiryScan #(string) id of yaml file
