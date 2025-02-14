@@ -1,0 +1,29 @@
+name: SMLM
+scale: 1.0e-09
+PSF:
+  source: generate
+  resolution:  # in nanometers, as standard deviations
+    X: 8
+    Y: 8
+    Z: 8
+  voxelsize: 5
+depth: 100  # in nanometers
+detector:
+  FOV_size: # in nanometers. Default unless changed 
+    X: 1000
+    Y: 1000
+  pixelsize: 5 # in nanometers
+  noise: 
+    binomial: 1
+    gaussian:
+      mean: 0
+      standard_dev: 0
+    gain: 1 
+    baselevel:
+      mean: 0
+      standard_dev: 0
+    ADU: 1
+  
+  
+    # no value is only poisson noise. Expected order of values
+    # p (binomial), mean, standard deviation (gaussian), gain (gamma), mean, standard deviation (abaselevel), adu (conversion factor) 
