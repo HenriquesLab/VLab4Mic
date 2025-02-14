@@ -165,6 +165,7 @@ def construct_label(
 ):
     """
     Construct an object of class Label.
+    Assumes there exist a configuration file
 
     Args:
         label_id: (string) ID of Label configuration file
@@ -175,6 +176,7 @@ def construct_label(
         fluorophore_params: (dictionary)
     """
     label_params = load_yaml(label_config_path)
+    ######## information about target
     if target_info:
         # expect label_params to have empty values on target type and value
         label_params["target"]["type"] = target_info["type"]
@@ -190,18 +192,28 @@ def construct_label(
             label_params["position"] = label_params["target"]["value"]["position"]
         except:
             label_params["position"] = None
-    # Build label
+    ######## Building the labelling entity: anribody, linker, direct...
     label_params["fluorophore"] = fluorophore_id
     if lab_eff is not None:
         label_params["labeling_efficiency"] = lab_eff
     label = Label()
     label.set_params(**label_params)
     label.set_fluorophore(fluorophore_id)
-    if label_params["binding"]["distance"]["to_target"]:
+    # check whether there is enough structural information for the labelling entity
+    if label_params["model"]["ID"] and label_params["conjugation_sites"]["target"]["type"]:
+        # building probe from PDB/CIF
+        print("antibody")
+        pass
+    elif label_params["binding"]["distance"]["to_target"]:
+        # not from a PDB, checking if at least distance to make a rigid linker
+        print("rigid linker")
         label.set_params(length=label_params["binding"]["distance"]["to_target"])
         label.set_axis(
             pivot=[0, 0, 0], direction=label_params["binding"]["orientation"]
         )
         label.generate_linker()
         label_params["coordinates"] = label.gen_labeling_entity()
+    else:
+        print("direct")
+    # if none of these conditions exist, it will be treated as direct
     return label, label_params
