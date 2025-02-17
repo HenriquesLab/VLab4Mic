@@ -63,7 +63,10 @@ class MolecularStructureParser:
         self.source_file = dictionary["file"]
         self.id = dictionary["ID"]
         self.format = dictionary["format"]
-        self.identifier = dictionary["title"]
+        try:
+            self.identifier = dictionary["title"]
+        except:
+            self.identifier = ""
         if self.format == "PDB":
             parser = PDBParser()
             self.struct = parser.get_structure(self.identifier, self.source_file)
