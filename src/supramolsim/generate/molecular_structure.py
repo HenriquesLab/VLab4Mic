@@ -358,27 +358,32 @@ class MolecularStructureParser:
         else:
             return atom_res_chain
 
-    def gen_targets_by_atoms(self, labelobj: Label):
+    def gen_targets_by_atoms(self,
+                             label_name = "atoms", 
+                             residues = None,
+                             atoms = None,
+                             position = None,
+                             **kwargs):
         """
         Generate target locations for the labelling
         defined as Direct labeling
 
         :param labelobj: instance of the class Label
         """
-        label_name = labelobj.get_name()
-        fluorophore = labelobj.get_fluorophore()
-        labeling_efficiency = labelobj.get_efficiency()
+        try:
+            fluorophore = kwargs["fluorophore"]
+        except:
+            fluorophore = None
+        try:
+            labeling_efficiency = kwargs["labeling_efficiency"]
+        except:
+            labeling_efficiency = None
         colour = set_colorplot(self.plotting_params)
         parsed = self.get_atom_res_chains_assembly(
-            labelobj.params["residues"],
-            labelobj.params["atoms"],
-            labelobj.params["position"],
+            residues,
+            atoms,
+            position,
         )
-        # label_dictionary = dict(
-        #    coordinates=parsed,
-        #    labeling_efficiency=labeling_efficiency,
-        #    fluorophore=fluorophore,
-        # )
         self.label_targets[label_name] = self._wrapup_label_dictionary(
             parsed, labeling_efficiency, fluorophore
         )
@@ -476,14 +481,15 @@ class MolecularStructureParser:
         return label_dictionary
 
     # generate targets from label info
-    def gen_Targets(self, labelobj: Label):
+    def gen_Targets(self, target_name,  target_type, target_value, **kwargs):
         # call the generator depending on the target type
-        if labelobj.get_target_type() == "Atom_residue":
-            self.gen_targets_by_atoms(labelobj)
-        elif labelobj.get_target_type() == "Sequence":
-            self.gen_targets_by_sequence(labelobj)
+        if target_type == "Atom_residue":
+            #print(target_value)
+            self.gen_targets_by_atoms(target_name, **target_value)
+        elif target_type == "Sequence":
+            self.gen_targets_by_sequence(target_value)
         else:
-            print(f"Label type {labelobj.get_type()} is not a valid label")
+            print(f"Label type {target_type} is not a valid label")
 
     def get_target_coords(self, targetid: str):
         return self.label_targets[targetid]["coordinates"]
