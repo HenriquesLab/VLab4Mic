@@ -62,17 +62,20 @@ def load_structure(structure_id: str = None, config_dir=None):
         print("No configuration directory exists")
 
 
-def probe_model(model, binding, conjugation_sites, config_dir, **kwargs):
+def probe_model(
+    model, binding, conjugation_sites, config_dir, probe_name="probe", **kwargs
+):
     structural_model, structure_model_prams = load_structure(model["ID"], config_dir)
     # generate conjugation sites
-    #print(conjugation_sites["target"]["value"])
+    # print(conjugation_sites["target"]["value"])
     structural_model.gen_Targets(
-        target_name="probe",
+        target_name=probe_name,
         target_type=conjugation_sites["target"]["type"],
         target_value=conjugation_sites["target"]["value"],
-        **kwargs
-        )
-    return structural_model
+        **kwargs,
+    )
+    target_sites = structural_model.label_targets[probe_name]
+    return structural_model, target_sites
 
 
 def particle_from_structure(
@@ -103,20 +106,19 @@ def particle_from_structure(
             if "target_info" in label.keys():
                 label_object, label_params = construct_label(
                     label_config_path=label_config_path,
-                    fluorophore_id = label["fluorophore_id"],
+                    fluorophore_id=label["fluorophore_id"],
                     lab_eff=label["labelling_efficiency"],
-                    target_info=label["target_info"]
+                    target_info=label["target_info"],
                 )
             else:
                 label_object, label_params = construct_label(
                     label_config_path=label_config_path,
-                    fluorophore_id = label["fluorophore_id"],
-                    lab_eff=label["labelling_efficiency"]
+                    fluorophore_id=label["fluorophore_id"],
+                    lab_eff=label["labelling_efficiency"],
                 )
-            #get model for antibody and add to label params
+            # get model for antibody and add to label params
 
-
-            #print(label_params)
+            # print(label_params)
             label_params_list.append(label_params)
             # print(f"Label type is: {label_params["label_type"]}")
             structure.add_label(label_object)
@@ -157,7 +159,7 @@ def field_from_particle(
         # coordinates_field.init_from_file(field_config)
         ## if not file, use as dictionary
         coordinates_field = create_min_field(**field_config)
-        #coordinates_field.init_from_file(field_config)
+        # coordinates_field.init_from_file(field_config)
     else:
         coordinates_field = create_min_field()
     coordinates_field.create_molecules_from_InstanceObject(particle)
@@ -199,13 +201,13 @@ def create_imaging_system(
         for fluo in exported_field["field_emitters"].keys():
             fluo_dir = os.path.join(config_dir, "fluorophores", fluo)
             fluopath = fluo_dir + ".yaml"
-            #image_generator.set_fluorophores_from_file(fluopath)
+            # image_generator.set_fluorophores_from_file(fluopath)
             fluo_params = load_yaml(fluopath)
             image_generator.set_fluorophores_params(
-                identifier = fluo,
-                photon_yield = fluo_params["emission"]["photon_yield"],
-                emission = fluo_params["emission"]["type"],
-                blinking_rates = fluo_params["blinking_rates"]
+                identifier=fluo,
+                photon_yield=fluo_params["emission"]["photon_yield"],
+                emission=fluo_params["emission"]["type"],
+                blinking_rates=fluo_params["blinking_rates"],
             )
             fluo_emission[fluo] = fluo_params["emission"]["type"]
         modality_parameters = []
