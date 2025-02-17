@@ -394,7 +394,7 @@ class MolecularStructureParser:
 
     # Parsing secuences
 
-    def gen_targets_by_sequence(self, labelobject: Label):
+    def gen_targets_by_sequence(self, target_name, sequence, **kwargs):
         """
         Generate target locations for the labelling
         defined as Binding labeling.
@@ -409,13 +409,19 @@ class MolecularStructureParser:
         """
         #  only the first appearance of the epitope in every chain is retreived
         #  if a chain has more than one epitope, only the first one is returned
-        target_seq = labelobject.params["target"]["value"]
+        target_seq = sequence
         method = "average"
-        if "method" in labelobject.params["target"]:
-            method = labelobject.params["target"]["method"]
-        label_name = labelobject.get_name()
-        fluorophore = labelobject.get_fluorophore()
-        labeling_efficiency = labelobject.get_efficiency()
+        if "method" in kwargs.keys():
+            method = kwargs["method"]
+        label_name = target_name
+        try:
+            fluorophore = kwargs["fluorophore"]
+        except:
+            fluorophore = None
+        try:
+            labeling_efficiency = kwargs["labeling_efficiency"]
+        except:
+            labeling_efficiency = None
         print(f"Searching for sequence: {target_seq}")
         if self.chains_dict is None:
             self.generate_chains_sequences()
@@ -487,7 +493,9 @@ class MolecularStructureParser:
             #print(target_value)
             self.gen_targets_by_atoms(target_name, **target_value)
         elif target_type == "Sequence":
-            self.gen_targets_by_sequence(target_value)
+            self.gen_targets_by_sequence(
+                target_name=target_name,
+                sequence=target_value)
         else:
             print(f"Label type {target_type} is not a valid label")
 
@@ -619,8 +627,13 @@ class MolecularReplicates(MolecularStructureParser):
         self.plotcolours = {}
         self.label_fluorophore = {}
 
-    def add_label(self, labelobj: Label):
-        self.gen_Targets(labelobj)
+    def add_label(self, labelobj: Label, ):
+        #prepare target value from label object
+        self.gen_Targets(
+            target_name=labelobj.get_name(),
+            target_type=labelobj.get_target_type(),
+            target_value=labelobj.params["target"]["value"]
+            )
         self.label_names.append(labelobj.get_name())
         self.plotcolours[labelobj.get_name()] = labelobj.get_plotcolour()
         self.label_fluorophore[labelobj.get_name()] = labelobj.get_fluorophore()
