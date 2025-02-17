@@ -1,0 +1,8 @@
+model:
+  ID: 1HZH
+  format: CIF
+  database: RCSB
+  title: 
+defects:
+  small_cluster:
+  big_cluster:
