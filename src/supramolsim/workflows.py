@@ -62,6 +62,11 @@ def load_structure(structure_id: str = None, config_dir=None):
         print("No configuration directory exists")
 
 
+def probe_model(model, binding, conjugation_sites, config_dir, **kwargs):
+    structural_model = load_structure(model["ID"], config_dir)
+    return structural_model
+
+
 def particle_from_structure(
     structure: MolecularReplicates, labels=list, config_dir=None
 ):
@@ -100,6 +105,9 @@ def particle_from_structure(
                     fluorophore_id = label["fluorophore_id"],
                     lab_eff=label["labelling_efficiency"]
                 )
+            #get model for antibody and add to label params
+
+
             #print(label_params)
             label_params_list.append(label_params)
             # print(f"Label type is: {label_params["label_type"]}")
