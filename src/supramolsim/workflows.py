@@ -117,7 +117,13 @@ def particle_from_structure(
                     lab_eff=label["labelling_efficiency"],
                 )
             # get model for antibody and add to label params
-
+            if label_object.model:
+                probe, probe_emitter_sites = probe_model(
+                    model=label_object.model,
+                    binding=label_object.binding,
+                    conjugation=label_object.conjugation,
+                    config_dir=config_dir
+                )
             # print(label_params)
             label_params_list.append(label_params)
             # print(f"Label type is: {label_params["label_type"]}")
