@@ -74,7 +74,7 @@ def probe_model(
         target_value=conjugation_sites["target"]["value"],
         **kwargs,
     )
-    target_sites = structural_model.label_targets[probe_name]
+    target_sites = structural_model.label_targets[probe_name]["coordinates"]
     return structural_model, target_sites
 
 
@@ -118,12 +118,30 @@ def particle_from_structure(
                 )
             # get model for antibody and add to label params
             if label_object.model:
+                print("Generating conjugation sites")
                 probe, probe_emitter_sites = probe_model(
                     model=label_object.model,
                     binding=label_object.binding,
-                    conjugation=label_object.conjugation,
+                    conjugation_sites=label_object.conjugation,
                     config_dir=config_dir
                 )
+                # use target distanc and orientation to adjust the axis
+                # pivot and orientation 
+                # pivot: paratope site + lenght 
+                # direction: center of mass of antibody
+                if label_params["binding"]["distance"]["to_target"]:
+                    # calculate 
+                    pass
+                if label_params["binding"]["orientation"]:
+                    label_object.set_axis(
+                        pivot=[0, 0, 0],
+                        direction=label_params["binding"]["orientation"]
+                    )
+                #print(label_object.params["axis"])
+                #print(probe_emitter_sites)
+                label_object.set_emitters(probe_emitter_sites)
+                label_params["coordinates"] = label_object.gen_labeling_entity()
+                print(label_params["coordinates"])
             # print(label_params)
             label_params_list.append(label_params)
             # print(f"Label type is: {label_params["label_type"]}")
@@ -132,6 +150,8 @@ def particle_from_structure(
             if label_params["binding"]["distance"]["to_target"]:
                 print("Label is indirect label")
                 structure.assign_normals2targets()  # default is with scaling
+            else:
+                print("Label is direct")
         inst_builder = structure.create_instance_builder()
         particle = labinstance.create_particle(
             source_builder=inst_builder, label_params_list=label_params_list
