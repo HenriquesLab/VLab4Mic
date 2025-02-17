@@ -63,7 +63,15 @@ def load_structure(structure_id: str = None, config_dir=None):
 
 
 def probe_model(model, binding, conjugation_sites, config_dir, **kwargs):
-    structural_model = load_structure(model["ID"], config_dir)
+    structural_model, structure_model_prams = load_structure(model["ID"], config_dir)
+    # generate conjugation sites
+    #print(conjugation_sites["target"]["value"])
+    structural_model.gen_Targets(
+        target_name="probe",
+        target_type=conjugation_sites["target"]["type"],
+        target_value=conjugation_sites["target"]["value"],
+        **kwargs
+        )
     return structural_model
 
 
