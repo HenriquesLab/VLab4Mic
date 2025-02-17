@@ -24,7 +24,7 @@ class Label:
         self.params["plotcolour"] = None
 
         self.params["emitters_coords"] = None
-        self.params["axis"] = dict(pivot=None, direction=None)
+        self.params["axis"] = dict(pivot=[0,0,0], direction=[0,0,1])
 
         self.params["target_sequence"] = None
         self.params["summary_method"] = "average"
@@ -60,7 +60,7 @@ class Label:
         orientation,
         wobble_range: dict,
         distance: dict,
-        paratope: list,
+        paratope: str,
         **kwargs
     ):
         
