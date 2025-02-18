@@ -96,10 +96,12 @@ def probe_model(
     direction_point = structural_model.assembly_refpt
     #extend the anchor from paratope
     diff = np.array([0,0,0])
-    if binding["distance"]["to_target"]:
+    if binding["distance"]["to_target"] is not None:
         difference = paratope_site - direction_point
         unit_vector = difference / np.linalg.norm(difference)
         diff = unit_vector * binding["distance"]["to_target"]
+    else:
+        binding["distance"]["to_target"] = 0
     print(f"dif:{diff}")
     anchor_point = paratope_site + diff
 
