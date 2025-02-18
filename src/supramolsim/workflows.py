@@ -65,7 +65,7 @@ def load_structure(structure_id: str = None, config_dir=None):
 def probe_model(
     model, binding, conjugation_sites, config_dir, probe_name="probe", **kwargs
 ):
-    paratope_site = None
+    anchor_point = None
     structural_model, structure_model_prams = load_structure(model["ID"], config_dir)
     # generate conjugation sites
     # print(conjugation_sites["target"]["value"])
@@ -93,9 +93,17 @@ def probe_model(
             )
         else:
             paratope_site = structural_model.label_targets["paratope"]["coordinates"]
-    AB_direction_point = structural_model.assembly_refpt
+    direction_point = structural_model.assembly_refpt
+    #extend the anchor from paratope
+    diff = np.array([0,0,0])
+    if binding["distance"]["to_target"]:
+        difference = paratope_site - direction_point
+        unit_vector = difference / np.linalg.norm(difference)
+        diff = unit_vector * binding["distance"]["to_target"]
+    print(f"dif:{diff}")
+    anchor_point = paratope_site + diff
 
-    return structural_model, target_sites, paratope_site, AB_direction_point
+    return structural_model, target_sites, anchor_point, direction_point
 
 
 def particle_from_structure(
@@ -139,30 +147,27 @@ def particle_from_structure(
             # get model for antibody and add to label params
             if label_object.model:
                 print("Generating conjugation sites")
-                probe, probe_emitter_sites, paratope_site, AB_direction_point = probe_model(
+                probe, probe_emitter_sites, anchor_point, direction_point = probe_model(
                     model=label_object.model,
                     binding=label_object.binding,
                     conjugation_sites=label_object.conjugation,
                     config_dir=config_dir
                 )
+                #print(probe_emitter_sites, anchor_point, direction_point)
                 # use target distanc and orientation to adjust the axis
                 # pivot and orientation 
                 # pivot: paratope site + lenght 
                 # direction: center of mass of antibody
-                AB_pivot = None
-                if label_params["binding"]["distance"]["to_target"]:
-                    # extend the axis by this distance
-                    pass
-                if label_params["binding"]["orientation"]:
+                print(f"anchor_point: {anchor_point}, {anchor_point.shape}")
+                if anchor_point.shape == (3,):
+                    print("setting new axis")
                     label_object.set_axis(
-                        pivot=[0, 0, 0],
-                        direction=label_params["binding"]["orientation"]
+                        pivot=anchor_point,
+                        direction=direction_point
                     )
-                #print(label_object.params["axis"])
-                #print(probe_emitter_sites)
                 label_object.set_emitters(probe_emitter_sites)
                 label_params["coordinates"] = label_object.gen_labeling_entity()
-                print(label_params["coordinates"])
+                # print(label_params["coordinates"])
             # print(label_params)
             label_params_list.append(label_params)
             # print(f"Label type is: {label_params["label_type"]}")
