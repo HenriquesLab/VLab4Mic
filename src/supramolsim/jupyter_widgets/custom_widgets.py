@@ -71,9 +71,10 @@ def select_structure():
                     )
                     struct_id = structure_params["model"]["ID"]
                     struct_title = ""
-                    if "title" in structure_params["model"]:
-                        struct_title = structure_params["model"]["title"]
-                    id_title = struct_id + ": " + struct_title
+                    try:
+                        id_title = struct_id + ": " + structure_params["model"]["title"]
+                    except:
+                        id_title = struct_id + ": " + struct_title
                     structures_info_list[id_title] = struct_id
                     demo_structures.append(id_title)
 
