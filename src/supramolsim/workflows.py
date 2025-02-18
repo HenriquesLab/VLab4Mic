@@ -173,7 +173,7 @@ def particle_from_structure(
             # print(f"Label type is: {label_params["label_type"]}")
             structure.add_label(label_object)
             # print(label_params)
-            if label_params["binding"]["distance"]["to_target"]:
+            if label_params["binding"]["distance"]["to_target"] is not None:
                 print("Label is indirect label")
                 structure.assign_normals2targets()  # default is with scaling
             else:
