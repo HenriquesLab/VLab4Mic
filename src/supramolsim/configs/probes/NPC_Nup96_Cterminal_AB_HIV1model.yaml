@@ -1,0 +1,28 @@
+label_name: Nup96_Cterminal_indirect
+target:
+  type: Sequence
+  value: ELAVGSL
+known_targets:
+  - 7R5K
+model:
+  ID: 1HZH
+  format: CIF
+  database: RCSB
+binding:
+  efficiency: 1
+  orientation:
+  wobble_range:
+    theta:
+    phi:
+  distance:
+    to_target: 1
+    between_targets:
+  paratope:
+conjugation_sites:
+  target:
+    type: Atom_residue
+    value:
+      atoms: CA
+      residues: LYS
+  efficiency: 1
+
