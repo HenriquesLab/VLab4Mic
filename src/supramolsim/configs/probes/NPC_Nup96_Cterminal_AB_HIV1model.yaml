@@ -17,7 +17,7 @@ binding:
   distance:
     to_target: 1
     between_targets:
-  paratope:
+  paratope: EFSAKF
 conjugation_sites:
   target:
     type: Atom_residue
