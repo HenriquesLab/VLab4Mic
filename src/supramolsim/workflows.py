@@ -75,7 +75,18 @@ def probe_model(
         **kwargs,
     )
     target_sites = structural_model.label_targets[probe_name]["coordinates"]
-    return structural_model, target_sites
+    # calculate axis for antibody by getting center of mass and paratope sequence
+    if binding["paratope"]:
+        structural_model.gen_Targets(
+            target_name="paratope",
+            target_type="Sequence",
+            target_value=binding["paratope"],
+            **kwargs,
+        )
+    paratope_site = structural_model.label_targets["paratope"]["coordinates"]
+    AB_direction_point = structural_model.assembly_refpt
+
+    return structural_model, target_sites, paratope_site, AB_direction_point
 
 
 def particle_from_structure(
@@ -119,7 +130,7 @@ def particle_from_structure(
             # get model for antibody and add to label params
             if label_object.model:
                 print("Generating conjugation sites")
-                probe, probe_emitter_sites = probe_model(
+                probe, probe_emitter_sites, paratope_site, AB_direction_point = probe_model(
                     model=label_object.model,
                     binding=label_object.binding,
                     conjugation_sites=label_object.conjugation,
@@ -129,8 +140,9 @@ def particle_from_structure(
                 # pivot and orientation 
                 # pivot: paratope site + lenght 
                 # direction: center of mass of antibody
+                AB_pivot = None
                 if label_params["binding"]["distance"]["to_target"]:
-                    # calculate 
+                    # extend the axis by this distance
                     pass
                 if label_params["binding"]["orientation"]:
                     label_object.set_axis(
