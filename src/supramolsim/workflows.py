@@ -65,6 +65,7 @@ def load_structure(structure_id: str = None, config_dir=None):
 def probe_model(
     model, binding, conjugation_sites, config_dir, probe_name="probe", **kwargs
 ):
+    paratope_site = None
     structural_model, structure_model_prams = load_structure(model["ID"], config_dir)
     # generate conjugation sites
     # print(conjugation_sites["target"]["value"])
@@ -83,7 +84,15 @@ def probe_model(
             target_value=binding["paratope"],
             **kwargs,
         )
-    paratope_site = structural_model.label_targets["paratope"]["coordinates"]
+        paratopes = structural_model.label_targets["paratope"]["coordinates"]
+        if paratopes.shape[0] > 1:
+            print("more than one paratope sites recovered. Calculating average")
+            paratope_site = np.mean(
+                structural_model.label_targets["paratope"]["coordinates"],
+                axis=0
+            )
+        else:
+            paratope_site = structural_model.label_targets["paratope"]["coordinates"]
     AB_direction_point = structural_model.assembly_refpt
 
     return structural_model, target_sites, paratope_site, AB_direction_point
