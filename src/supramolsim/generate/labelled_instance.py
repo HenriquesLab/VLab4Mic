@@ -654,4 +654,7 @@ def add_label_params_to_particle(particle: LabeledInstance, label_params):
             label_name=lab["label_name"],
             labellig_efficiency=lab["labeling_efficiency"],
         )
+        if "epitope_site" in lab.keys():
+            print(f'assigning epitope site : {lab["epitope_site"]}')
+            particle.source["targets"]["epitope_site"] = copy.copy(lab["epitope_site"])
     return particle

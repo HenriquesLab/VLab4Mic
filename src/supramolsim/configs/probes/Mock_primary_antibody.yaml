@@ -25,4 +25,8 @@ conjugation_sites:
       atoms: CA
       residues: LYS
   efficiency: 1
-
+epitope: # for secondary
+  target:
+    type: Sequence
+    value: LSPGK
+  normals:

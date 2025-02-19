@@ -75,14 +75,12 @@ class Label:
 
     def _set_epitope_params(
             self,
-            target_type = None,
-            target_value = None,
-            normal = None,
+            target = None,
+            normals = None,
             **kwargs
         ):
-        self.epitope["target_type"] = target_type
-        self.epitope["target_value"] = target_value
-        self.epitope["normal"] = normal
+        self.epitope["target"] = target
+        self.epitope["normals"] = normals
 
 
     def set_axis(self, pivot: list, direction: list):
