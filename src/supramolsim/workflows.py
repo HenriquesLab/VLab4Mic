@@ -126,6 +126,7 @@ def probe_model(
                 axis=0
             )
         probe_epitope["coordinates"]=epitope_sites
+
     #print(structural_model.label_targets)
     print(f"epitope site: {probe_epitope}")
 
@@ -180,10 +181,6 @@ def particle_from_structure(
                     epitope = label_object.epitope,
                     config_dir=config_dir
                 )
-                if probe_epitope["coordinates"] is not None:
-                    label_params["epitope_site"] = dict()
-                    label_params["epitope_site"]["coordinates"] = probe_epitope["coordinates"]
-                    label_params["epitope_site"]["normals"] = probe_epitope["normals"]
                 #print(probe_emitter_sites, anchor_point, direction_point)
                 # use target distanc and orientation to adjust the axis
                 # pivot and orientation 
@@ -198,6 +195,14 @@ def particle_from_structure(
                     )
                 label_object.set_emitters(probe_emitter_sites)
                 label_params["coordinates"] = label_object.gen_labeling_entity()
+                if probe_epitope["coordinates"] is not None:
+                    print("Theres epitope site")
+                    label_params["epitope_site"] = True
+                    #label_params["epitope_site"]["coordinates"] = probe_epitope["coordinates"]
+                    #label_params["epitope_site"]["normals"] = probe_epitope["normals"]
+                    print(label_params["coordinates"].shape)
+                    label_params["coordinates"] = np.vstack([label_params["coordinates"], probe_epitope["coordinates"]])
+                    print(label_params["coordinates"].shape)
                 # print(label_params["coordinates"])
             # print(label_params)
             label_params_list.append(label_params)
