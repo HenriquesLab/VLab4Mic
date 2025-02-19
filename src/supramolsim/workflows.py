@@ -62,6 +62,52 @@ def load_structure(structure_id: str = None, config_dir=None):
         print("No configuration directory exists")
 
 
+def probe_model(
+    model, binding, conjugation_sites, config_dir, probe_name="probe", **kwargs
+):
+    anchor_point = None
+    structural_model, structure_model_prams = load_structure(model["ID"], config_dir)
+    # generate conjugation sites
+    # print(conjugation_sites["target"]["value"])
+    structural_model.gen_Targets(
+        target_name=probe_name,
+        target_type=conjugation_sites["target"]["type"],
+        target_value=conjugation_sites["target"]["value"],
+        **kwargs,
+    )
+    target_sites = structural_model.label_targets[probe_name]["coordinates"]
+    # calculate axis for antibody by getting center of mass and paratope sequence
+    if binding["paratope"]:
+        structural_model.gen_Targets(
+            target_name="paratope",
+            target_type="Sequence",
+            target_value=binding["paratope"],
+            **kwargs,
+        )
+        paratopes = structural_model.label_targets["paratope"]["coordinates"]
+        if paratopes.shape[0] > 1:
+            print("more than one paratope sites recovered. Calculating average")
+            paratope_site = np.mean(
+                structural_model.label_targets["paratope"]["coordinates"],
+                axis=0
+            )
+        else:
+            paratope_site = structural_model.label_targets["paratope"]["coordinates"]
+    direction_point = structural_model.assembly_refpt
+    #extend the anchor from paratope
+    diff = np.array([0,0,0])
+    if binding["distance"]["to_target"] is not None:
+        difference = paratope_site - direction_point
+        unit_vector = difference / np.linalg.norm(difference)
+        diff = unit_vector * binding["distance"]["to_target"]
+    else:
+        binding["distance"]["to_target"] = 0
+    print(f"dif:{diff}")
+    anchor_point = paratope_site + diff
+
+    return structural_model, target_sites, anchor_point, direction_point
+
+
 def particle_from_structure(
     structure: MolecularReplicates, labels=list, config_dir=None
 ):
@@ -90,24 +136,50 @@ def particle_from_structure(
             if "target_info" in label.keys():
                 label_object, label_params = construct_label(
                     label_config_path=label_config_path,
-                    fluorophore_id = label["fluorophore_id"],
+                    fluorophore_id=label["fluorophore_id"],
                     lab_eff=label["labelling_efficiency"],
-                    target_info=label["target_info"]
+                    target_info=label["target_info"],
                 )
             else:
                 label_object, label_params = construct_label(
                     label_config_path=label_config_path,
-                    fluorophore_id = label["fluorophore_id"],
-                    lab_eff=label["labelling_efficiency"]
+                    fluorophore_id=label["fluorophore_id"],
+                    lab_eff=label["labelling_efficiency"],
                 )
-            #print(label_params)
+            # get model for antibody and add to label params
+            if label_object.model:
+                print("Generating conjugation sites")
+                probe, probe_emitter_sites, anchor_point, direction_point = probe_model(
+                    model=label_object.model,
+                    binding=label_object.binding,
+                    conjugation_sites=label_object.conjugation,
+                    config_dir=config_dir
+                )
+                #print(probe_emitter_sites, anchor_point, direction_point)
+                # use target distanc and orientation to adjust the axis
+                # pivot and orientation 
+                # pivot: paratope site + lenght 
+                # direction: center of mass of antibody
+                print(f"anchor_point: {anchor_point}, {anchor_point.shape}")
+                if anchor_point.shape == (3,):
+                    print("setting new axis")
+                    label_object.set_axis(
+                        pivot=anchor_point,
+                        direction=direction_point
+                    )
+                label_object.set_emitters(probe_emitter_sites)
+                label_params["coordinates"] = label_object.gen_labeling_entity()
+                # print(label_params["coordinates"])
+            # print(label_params)
             label_params_list.append(label_params)
             # print(f"Label type is: {label_params["label_type"]}")
             structure.add_label(label_object)
             # print(label_params)
-            if label_params["binding"]["distance"]["to_target"]:
+            if label_params["binding"]["distance"]["to_target"] is not None:
                 print("Label is indirect label")
                 structure.assign_normals2targets()  # default is with scaling
+            else:
+                print("Label is direct")
         inst_builder = structure.create_instance_builder()
         particle = labinstance.create_particle(
             source_builder=inst_builder, label_params_list=label_params_list
@@ -141,7 +213,7 @@ def field_from_particle(
         # coordinates_field.init_from_file(field_config)
         ## if not file, use as dictionary
         coordinates_field = create_min_field(**field_config)
-        #coordinates_field.init_from_file(field_config)
+        # coordinates_field.init_from_file(field_config)
     else:
         coordinates_field = create_min_field()
     coordinates_field.create_molecules_from_InstanceObject(particle)
@@ -183,13 +255,13 @@ def create_imaging_system(
         for fluo in exported_field["field_emitters"].keys():
             fluo_dir = os.path.join(config_dir, "fluorophores", fluo)
             fluopath = fluo_dir + ".yaml"
-            #image_generator.set_fluorophores_from_file(fluopath)
+            # image_generator.set_fluorophores_from_file(fluopath)
             fluo_params = load_yaml(fluopath)
             image_generator.set_fluorophores_params(
-                identifier = fluo,
-                photon_yield = fluo_params["emission"]["photon_yield"],
-                emission = fluo_params["emission"]["type"],
-                blinking_rates = fluo_params["blinking_rates"]
+                identifier=fluo,
+                photon_yield=fluo_params["emission"]["photon_yield"],
+                emission=fluo_params["emission"]["type"],
+                blinking_rates=fluo_params["blinking_rates"],
             )
             fluo_emission[fluo] = fluo_params["emission"]["type"]
         modality_parameters = []

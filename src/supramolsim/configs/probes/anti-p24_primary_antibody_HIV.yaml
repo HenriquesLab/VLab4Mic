@@ -1,13 +1,13 @@
-label_name: Clathrin heavy chain C terminal
+label_name: HIV_capsid_p24_AB
 target:
   type: Sequence
-  value: EQATETQ
+  value: SPRTLNA
 known_targets:
-  - 1XI5
+  - 3J3Y
 model:
-  ID:
-  format:
-  database:
+  ID: 1HZH
+  format: CIF
+  database: RCSB
 binding:
   efficiency: 1
   orientation:
@@ -17,10 +17,12 @@ binding:
   distance:
     to_target:
     between_targets:
-  paratope:
+  paratope: EFSAKF
 conjugation_sites:
   target:
-    type:
+    type: Atom_residue
     value:
-  efficiency:
+      atoms: CA
+      residues: LYS
+  efficiency: 1
 

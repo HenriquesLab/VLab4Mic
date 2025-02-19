@@ -63,7 +63,10 @@ class MolecularStructureParser:
         self.source_file = dictionary["file"]
         self.id = dictionary["ID"]
         self.format = dictionary["format"]
-        self.identifier = dictionary["title"]
+        try:
+            self.identifier = dictionary["title"]
+        except:
+            self.identifier = ""
         if self.format == "PDB":
             parser = PDBParser()
             self.struct = parser.get_structure(self.identifier, self.source_file)
@@ -355,27 +358,32 @@ class MolecularStructureParser:
         else:
             return atom_res_chain
 
-    def gen_targets_by_atoms(self, labelobj: Label):
+    def gen_targets_by_atoms(self,
+                             label_name = "atoms", 
+                             residues = None,
+                             atoms = None,
+                             position = None,
+                             **kwargs):
         """
         Generate target locations for the labelling
         defined as Direct labeling
 
         :param labelobj: instance of the class Label
         """
-        label_name = labelobj.get_name()
-        fluorophore = labelobj.get_fluorophore()
-        labeling_efficiency = labelobj.get_efficiency()
+        try:
+            fluorophore = kwargs["fluorophore"]
+        except:
+            fluorophore = None
+        try:
+            labeling_efficiency = kwargs["labeling_efficiency"]
+        except:
+            labeling_efficiency = None
         colour = set_colorplot(self.plotting_params)
         parsed = self.get_atom_res_chains_assembly(
-            labelobj.params["residues"],
-            labelobj.params["atoms"],
-            labelobj.params["position"],
+            residues,
+            atoms,
+            position,
         )
-        # label_dictionary = dict(
-        #    coordinates=parsed,
-        #    labeling_efficiency=labeling_efficiency,
-        #    fluorophore=fluorophore,
-        # )
         self.label_targets[label_name] = self._wrapup_label_dictionary(
             parsed, labeling_efficiency, fluorophore
         )
@@ -386,7 +394,7 @@ class MolecularStructureParser:
 
     # Parsing secuences
 
-    def gen_targets_by_sequence(self, labelobject: Label):
+    def gen_targets_by_sequence(self, target_name, sequence, **kwargs):
         """
         Generate target locations for the labelling
         defined as Binding labeling.
@@ -401,13 +409,19 @@ class MolecularStructureParser:
         """
         #  only the first appearance of the epitope in every chain is retreived
         #  if a chain has more than one epitope, only the first one is returned
-        target_seq = labelobject.params["target"]["value"]
+        target_seq = sequence
         method = "average"
-        if "method" in labelobject.params["target"]:
-            method = labelobject.params["target"]["method"]
-        label_name = labelobject.get_name()
-        fluorophore = labelobject.get_fluorophore()
-        labeling_efficiency = labelobject.get_efficiency()
+        if "method" in kwargs.keys():
+            method = kwargs["method"]
+        label_name = target_name
+        try:
+            fluorophore = kwargs["fluorophore"]
+        except:
+            fluorophore = None
+        try:
+            labeling_efficiency = kwargs["labeling_efficiency"]
+        except:
+            labeling_efficiency = None
         print(f"Searching for sequence: {target_seq}")
         if self.chains_dict is None:
             self.generate_chains_sequences()
@@ -473,14 +487,17 @@ class MolecularStructureParser:
         return label_dictionary
 
     # generate targets from label info
-    def gen_Targets(self, labelobj: Label):
+    def gen_Targets(self, target_name,  target_type, target_value, **kwargs):
         # call the generator depending on the target type
-        if labelobj.get_target_type() == "Atom_residue":
-            self.gen_targets_by_atoms(labelobj)
-        elif labelobj.get_target_type() == "Sequence":
-            self.gen_targets_by_sequence(labelobj)
+        if target_type == "Atom_residue":
+            #print(target_value)
+            self.gen_targets_by_atoms(target_name, **target_value)
+        elif target_type == "Sequence":
+            self.gen_targets_by_sequence(
+                target_name=target_name,
+                sequence=target_value)
         else:
-            print(f"Label type {labelobj.get_type()} is not a valid label")
+            print(f"Label type {target_type} is not a valid label")
 
     def get_target_coords(self, targetid: str):
         return self.label_targets[targetid]["coordinates"]
@@ -610,8 +627,13 @@ class MolecularReplicates(MolecularStructureParser):
         self.plotcolours = {}
         self.label_fluorophore = {}
 
-    def add_label(self, labelobj: Label):
-        self.gen_Targets(labelobj)
+    def add_label(self, labelobj: Label, ):
+        #prepare target value from label object
+        self.gen_Targets(
+            target_name=labelobj.get_name(),
+            target_type=labelobj.get_target_type(),
+            target_value=labelobj.params["target"]["value"]
+            )
         self.label_names.append(labelobj.get_name())
         self.plotcolours[labelobj.get_name()] = labelobj.get_plotcolour()
         self.label_fluorophore[labelobj.get_name()] = labelobj.get_fluorophore()

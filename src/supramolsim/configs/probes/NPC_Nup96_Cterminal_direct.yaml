@@ -17,6 +17,7 @@ binding:
   distance:
     to_target:
     between_targets:
+  paratope:
 conjugation_sites:
   target:
     type:
