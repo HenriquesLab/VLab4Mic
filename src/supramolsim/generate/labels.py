@@ -77,10 +77,12 @@ class Label:
             self,
             target = None,
             normals = None,
+            site = None,
             **kwargs
         ):
         self.epitope["target"] = target
         self.epitope["normals"] = normals
+        self.epitope["site"] = site
 
 
     def set_axis(self, pivot: list, direction: list):
@@ -258,7 +260,6 @@ def construct_label(
             label._set_epitope_params(**label_params["epitope"])
         else:
             label._set_epitope_params()
-
         # label.emitters_from_PDBCIF(**label_params)
         # label_params["coordinates"] = label.gen_labeling_entity()
     elif label_params["binding"]["distance"]["to_target"]:
