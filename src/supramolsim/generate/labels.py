@@ -32,6 +32,7 @@ class Label:
         self.conjugation = dict()
         self.model = dict()
         self.binding = dict()
+        self.epitope = dict()
 
     def set_params(self, **kwargs):
         """
@@ -71,6 +72,18 @@ class Label:
         self.binding["paratope"] = paratope
         for key, value in kwargs.items():
             self.binding[key] = value
+
+    def _set_epitope_params(
+            self,
+            target_type = None,
+            target_value = None,
+            normal = None,
+            **kwargs
+        ):
+        self.epitope["target_type"] = target_type
+        self.epitope["target_value"] = target_value
+        self.epitope["normal"] = normal
+
 
     def set_axis(self, pivot: list, direction: list):
         self.params["axis"]["pivot"] = pivot
@@ -243,6 +256,11 @@ def construct_label(
         label._set_model_params(**label_params["model"])
         label._set_conjugation_params(**label_params["conjugation_sites"])
         label._set_binding_params(**label_params["binding"])
+        if "epitope" in label_params.keys():
+            label._set_epitope_params(**label_params["epitope"])
+        else:
+            label._set_epitope_params()
+
         # label.emitters_from_PDBCIF(**label_params)
         # label_params["coordinates"] = label.gen_labeling_entity()
     elif label_params["binding"]["distance"]["to_target"]:
