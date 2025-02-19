@@ -66,6 +66,10 @@ def probe_model(
     model, binding, conjugation_sites, config_dir, probe_name="probe", **kwargs
 ):
     anchor_point = None
+    probe_epitope = dict(
+        coordinates = None,
+        normals=None
+    )
     structural_model, structure_model_prams = load_structure(model["ID"], config_dir)
     # generate conjugation sites
     # print(conjugation_sites["target"]["value"])
@@ -104,8 +108,28 @@ def probe_model(
         binding["distance"]["to_target"] = 0
     print(f"dif:{diff}")
     anchor_point = paratope_site + diff
+    # generate a site for binding
+    if "epitope" in kwargs.keys():
+        print("generating epitope")
+        print(kwargs["epitope"])
+        structural_model.gen_Targets(
+            target_name="epitope",
+            target_type=kwargs["epitope"]["target"]["type"],
+            target_value=kwargs["epitope"]["target"]["value"],
+            **kwargs,
+        )
+        epitope_sites = structural_model.label_targets["epitope"]["coordinates"]
+        if epitope_sites.shape[0] > 1:
+            print("more than one paratope sites recovered. Calculating average")
+            epitope_sites = np.mean(
+                structural_model.label_targets["epitope"]["coordinates"],
+                axis=0
+            )
+        probe_epitope["coordinates"]=epitope_sites
+    #print(structural_model.label_targets)
+    print(f"epitope site: {probe_epitope}")
 
-    return structural_model, target_sites, anchor_point, direction_point
+    return structural_model, target_sites, anchor_point, direction_point, probe_epitope
 
 
 def particle_from_structure(
@@ -149,12 +173,17 @@ def particle_from_structure(
             # get model for antibody and add to label params
             if label_object.model:
                 print("Generating conjugation sites")
-                probe, probe_emitter_sites, anchor_point, direction_point = probe_model(
+                probe, probe_emitter_sites, anchor_point, direction_point, probe_epitope = probe_model(
                     model=label_object.model,
                     binding=label_object.binding,
                     conjugation_sites=label_object.conjugation,
+                    epitope = label_object.epitope,
                     config_dir=config_dir
                 )
+                if probe_epitope["coordinates"] is not None:
+                    label_params["epitope_site"] = dict()
+                    label_params["epitope_site"]["coordinates"] = probe_epitope["coordinates"]
+                    label_params["epitope_site"]["normals"] = probe_epitope["normals"]
                 #print(probe_emitter_sites, anchor_point, direction_point)
                 # use target distanc and orientation to adjust the axis
                 # pivot and orientation 
