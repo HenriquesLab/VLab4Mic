@@ -38,6 +38,8 @@ class LabeledInstance:
         self.defects_target_normals = None
         self.fluo2labels = []
         self.status = dict(source=False, labels=False)
+        # attributes for sequencial labelling
+        self.sequential_labelling = False
 
     def set_params(self, **kwargs):
         """
@@ -301,11 +303,24 @@ class LabeledInstance:
             plotting_params=plotting_params,
         )
         return instance_constructor
+    
+
+    def _generate_sequential_constructor(self):
+        # label the soruces using only the primary
+        # create another sequential source
+        # then, use a sequential_labels to label the sources
+
+        # after a first labelling, set these new emitters 
+        # as the new sources and now use a different list of secondaries
+        pass
+
 
     def generate_instance(self):
         if self.status["source"] and self.status["labels"]:
             constructor = self._generate_instance_constructor()
             self.add_emitters_n_refpoint(**constructor)
+        elif self.sequential_labelling:
+            constructor = self._generate_sequential_constructor()
         else:
             print("Missing source or Label info")
 
