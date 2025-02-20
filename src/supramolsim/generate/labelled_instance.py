@@ -46,6 +46,8 @@ class LabeledInstance:
         self.primary["scale"] = None
         self.primary["axis"] = None
         self.primary["info"] = None
+        #
+        self.secondary = {}
 
     def set_params(self, **kwargs):
         """
@@ -151,6 +153,7 @@ class LabeledInstance:
         label_name="NA",
         labellig_efficiency: float = 1.0,
         minimal_distance: float = 0.0,
+        secondary = False,
         info="NA",
         **kwargs,
     ):
@@ -186,8 +189,11 @@ class LabeledInstance:
             label_type=label_type,
             fluorophore=fluorophore,
         )
-        self.labels[label_name] = label_params
-        self.status["labels"] = True
+        if secondary:
+            self.secondary[label_name] = label_params
+        else:
+            self.labels[label_name] = label_params
+            self.status["labels"] = True
 
     def _get_labels(self):
         return self.labels
@@ -331,10 +337,37 @@ class LabeledInstance:
                 normals = col_vec
             )
 
+    def _label_primary(self, target_name):
+        emitters = None
+        target_normals = self.primary["targets"][target_name]
+        if target_name in self.secondary.keys():
+            label4target = self.secondary[target_name]
+            print(target_normals.keys())
+            print(label4target)
+            labelling_realisation, labelling_realisation_vectors = create_instance_label(
+                    target_normals, "indirect", label4target
+                )
+            return emitters
+        else:
+            print(f"No secondary for {target_name}")
+
+    def _generate_secondary_labelling(self):
+        targets_labeled_instance = {}
+        targets_labeled_instance_vectors = {}
+        label_fluorophore = {}
+        plotting_params = {}
+        # for each target create the emitters
+        for target_name in self.primary["targets"].keys():
+            emitters = self._label_primary(target_name)
+
+        pass
+
+
     def generate_instance(self):
         if self.sequential_labelling:
             primaries = self._generate_instance_constructor()
             self._generate_primary_epitopes(**primaries)
+            self._generate_secondary_labelling()
             ##self.add_emitters_n_refpoint(**secondaries)
             return primaries
         elif self.status["source"] and self.status["labels"]:
@@ -679,6 +712,9 @@ def add_label_params_to_particle(particle: LabeledInstance, label_params):
         # print(lab)
         fluorophore = lab["fluorophore"]
         coordinates = None
+        secondary=False
+        if lab["target"]["type"] == "Primary":
+            secondary=True
         if "coordinates" in lab.keys():
             # print(lab["coordinates"])
             coordinates = np.array(lab["coordinates"])
@@ -688,6 +724,7 @@ def add_label_params_to_particle(particle: LabeledInstance, label_params):
             targets=targets,
             label_name=lab["label_name"],
             labellig_efficiency=lab["labeling_efficiency"],
+            secondary=secondary
         )
         if "epitope_site" in lab.keys():
             print(f'assigning epitope site : {lab["epitope_site"]}')
