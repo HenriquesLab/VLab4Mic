@@ -12,7 +12,7 @@ from ..utils.data_format.visualisation import format_coordinates, set_colorplot
 from ..utils.visualisation.matplotlib_plots import add_ax_scatter, draw1nomral_segment
 from ..utils.transform.cif_builder import create_instance_label
 from ..utils.transform.defects import xmersubset_byclustering
-
+from ..utils.data_format.structural_format import builder_format
 
 class LabeledInstance:
     def __init__(self):
@@ -40,6 +40,12 @@ class LabeledInstance:
         self.status = dict(source=False, labels=False)
         # attributes for sequencial labelling
         self.sequential_labelling = False
+        self.primary = {}
+        self.primary["targets"] = {}
+        self.primary["reference_pt"] = None
+        self.primary["scale"] = None
+        self.primary["axis"] = None
+        self.primary["info"] = None
 
     def set_params(self, **kwargs):
         """
@@ -310,20 +316,27 @@ class LabeledInstance:
         return instance_constructor
     
 
-    def _generate_sequential_constructor(self):
+    def _generate_primary_epitopes(
+            self,
+            emitters_dictionary,
+            emitters_vectors,
+            **kwargs
+        ):
         # label the soruces using only the primary
         # create another sequential source
-        # then, use a sequential_labels to label the sources
-
-        # after a first labelling, set these new emitters 
-        # as the new sources and now use a different list of secondaries
-        pass
-
+        for target_name in emitters_dictionary.keys():
+            col_vec = np.array([i for i in emitters_vectors[target_name]])
+            self.primary["targets"][target_name] = dict(
+                coordinates=emitters_dictionary[target_name],
+                normals = col_vec
+            )
 
     def generate_instance(self):
         if self.sequential_labelling:
-            constructor = self._generate_instance_constructor()
-            return constructor
+            primaries = self._generate_instance_constructor()
+            self._generate_primary_epitopes(**primaries)
+            ##self.add_emitters_n_refpoint(**secondaries)
+            return primaries
         elif self.status["source"] and self.status["labels"]:
             constructor = self._generate_instance_constructor()
             self.add_emitters_n_refpoint(**constructor)
