@@ -278,6 +278,7 @@ class LabeledInstance:
 
     def _generate_instance_constructor(self):
         targets_labeled_instance = {}
+        targets_labeled_instance_vectors = {}
         label_fluorophore = {}
         plotting_params = {}
         # for each target create the emitters
@@ -292,12 +293,14 @@ class LabeledInstance:
             # print(f"Emitters for target {target_name}")
             # print(emitters)
             targets_labeled_instance[target_name] = emitters
+            targets_labeled_instance_vectors[target_name] = labelling_realisation_vectors
             label_fluorophore[target_name] = fluorophore_name
             plotting_params[target_name] = plotting_par
         # target_labeled_instance
         # then crete the instance constructor dictionary
         instance_constructor = dict(
             emitters_dictionary=targets_labeled_instance,
+            emitters_vectors = targets_labeled_instance_vectors,
             ref_point=self._get_source_parameter("reference_pt"),
             scale=self._get_source_parameter("scale"),
             axis=self._get_source_parameter("axis"),
@@ -319,7 +322,8 @@ class LabeledInstance:
 
     def generate_instance(self):
         if self.sequential_labelling:
-            constructor = self._generate_sequential_constructor()
+            constructor = self._generate_instance_constructor()
+            return constructor
         elif self.status["source"] and self.status["labels"]:
             constructor = self._generate_instance_constructor()
             self.add_emitters_n_refpoint(**constructor)
@@ -402,6 +406,7 @@ class LabeledInstance:
         axis: dict,
         label_fluorophore: dict,
         plotting_params: dict,
+        **kwargs
     ):
         """
         Emitters_dictionary: with the name of the label_name as keys
