@@ -253,8 +253,9 @@ class LabeledInstance:
         labelling_realisation = None
         plotting_params = None
         fluorophore_name = None
+        labelling_realisation_vectors = None
         if label4target is not None:
-            labelling_realisation = create_instance_label(
+            labelling_realisation, labelling_realisation_vectors = create_instance_label(
                 target_normals, target_type, label4target
             )
             plotting_params = self._get_label_plotting_params(target_name)
@@ -269,6 +270,7 @@ class LabeledInstance:
         # Once created, define the instance
         return (
             labelling_realisation,
+            labelling_realisation_vectors,
             fluorophore_name,
             plotting_params,
             defect_target_normals,
@@ -282,7 +284,7 @@ class LabeledInstance:
         for target_name in self._get_source_target_names():
             # print(target_name)
             self.defects_target_normals = None
-            emitters, fluorophore_name, plotting_par, defects_target_normals = (
+            emitters, labelling_realisation_vectors, fluorophore_name, plotting_par, defects_target_normals = (
                 self._label_source_target(target_name)
             )
             if defects_target_normals is not None:
@@ -316,11 +318,11 @@ class LabeledInstance:
 
 
     def generate_instance(self):
-        if self.status["source"] and self.status["labels"]:
+        if self.sequential_labelling:
+            constructor = self._generate_sequential_constructor()
+        elif self.status["source"] and self.status["labels"]:
             constructor = self._generate_instance_constructor()
             self.add_emitters_n_refpoint(**constructor)
-        elif self.sequential_labelling:
-            constructor = self._generate_sequential_constructor()
         else:
             print("Missing source or Label info")
 

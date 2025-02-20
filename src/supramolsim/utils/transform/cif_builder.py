@@ -115,7 +115,7 @@ def create_instance_label(
 def direct_labelling(coords_normals, label_data, **kwargs):
     coordinates = coords_normals["coordinates"]
     efficiency = label_data["labelling_efficiency"]
-    return binomial_epitope_sampling(coordinates, efficiency)
+    return binomial_epitope_sampling(coordinates, efficiency), None
 
 
 def indirect_labelling(coords_nomrals, label_data, **kwargs):
@@ -148,10 +148,11 @@ def indirect_labelling(coords_nomrals, label_data, **kwargs):
             coords_nomrals["coordinates"], efficiency, coords_nomrals["normals"]
         )  #####################
         normals_ft_epitopes = [normals, epitopes]
-        indirect_realisation = decorate_epitopes_normals(
+        indirect_realisation, list_reoriented_points_normals = decorate_epitopes_normals(
             normals_ft_epitopes, label_data["emitters"]
         )
     else:
         print("No emitters defined in label. Using direct labelling")
         indirect_realisation = direct_labelling(coords_nomrals, label_data)
-    return indirect_realisation
+        list_reoriented_points_normals = None
+    return indirect_realisation, list_reoriented_points_normals
