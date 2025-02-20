@@ -113,7 +113,7 @@ def decorate_epitopes_normals(normals_ft_epitopes, labeling_entity):
         )
         # print(new_points, rot_axis)
         list_reoriented_points.append(new_points)
-        list_reoriented_points_normals.append(rot_axis)
+        list_reoriented_points_normals.append(normals_ft_epitopes[0][repl])
     print(f"before cleaning: {len(list_reoriented_points)}")
     # cleanup label entities and leave only the true emitters
     cleaned_up_labels = cleanup_labeling_entities(list_reoriented_points)
