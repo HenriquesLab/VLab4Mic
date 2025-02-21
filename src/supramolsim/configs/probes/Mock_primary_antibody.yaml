@@ -15,7 +15,7 @@ binding:
     theta:
     phi:
   distance:
-    to_target: 0
+    to_target: 10
     between_targets:
   paratope: EFSAKF
 conjugation_sites:
@@ -25,4 +25,8 @@ conjugation_sites:
       atoms: CA
       residues: LYS
   efficiency: 1
-
+epitope: # for secondary
+  target:
+    type: Sequence
+    value: LSPGK
+  normals:
