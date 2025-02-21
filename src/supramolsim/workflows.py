@@ -66,10 +66,7 @@ def probe_model(
     model, binding, conjugation_sites, config_dir, probe_name="probe", **kwargs
 ):
     anchor_point = None
-    probe_epitope = dict(
-        coordinates = None,
-        normals=None
-    )
+    probe_epitope = dict(coordinates=None, normals=None)
     structural_model, structure_model_prams = load_structure(model["ID"], config_dir)
     # generate conjugation sites
     # print(conjugation_sites["target"]["value"])
@@ -92,14 +89,13 @@ def probe_model(
         if paratopes.shape[0] > 1:
             print("more than one paratope sites recovered. Calculating average")
             paratope_site = np.mean(
-                structural_model.label_targets["paratope"]["coordinates"],
-                axis=0
+                structural_model.label_targets["paratope"]["coordinates"], axis=0
             )
         else:
             paratope_site = structural_model.label_targets["paratope"]["coordinates"]
     direction_point = structural_model.assembly_refpt
-    #extend the anchor from paratope
-    diff = np.array([0,0,0])
+    # extend the anchor from paratope
+    diff = np.array([0, 0, 0])
     if binding["distance"]["to_target"] is not None:
         difference = paratope_site - direction_point
         unit_vector = difference / np.linalg.norm(difference)
@@ -122,12 +118,11 @@ def probe_model(
         if epitope_sites.shape[0] > 1:
             print("more than one paratope sites recovered. Calculating average")
             epitope_sites = np.mean(
-                structural_model.label_targets["epitope"]["coordinates"],
-                axis=0
+                structural_model.label_targets["epitope"]["coordinates"], axis=0
             )
-        probe_epitope["coordinates"]=epitope_sites
+        probe_epitope["coordinates"] = epitope_sites
 
-    #print(structural_model.label_targets)
+    # print(structural_model.label_targets)
     print(f"epitope site: {probe_epitope}")
 
     return structural_model, target_sites, anchor_point, direction_point, probe_epitope
@@ -174,34 +169,34 @@ def particle_from_structure(
             # get model for antibody and add to label params
             if label_object.model:
                 print("Generating conjugation sites")
-                probe, probe_emitter_sites, anchor_point, direction_point, probe_epitope = probe_model(
+                (
+                    probe,
+                    probe_emitter_sites,
+                    anchor_point,
+                    direction_point,
+                    probe_epitope,
+                ) = probe_model(
                     model=label_object.model,
                     binding=label_object.binding,
                     conjugation_sites=label_object.conjugation,
-                    epitope = label_object.epitope,
-                    config_dir=config_dir
+                    epitope=label_object.epitope,
+                    config_dir=config_dir,
                 )
-                #print(probe_emitter_sites, anchor_point, direction_point)
-                # use target distanc and orientation to adjust the axis
-                # pivot and orientation 
-                # pivot: paratope site + lenght 
-                # direction: center of mass of antibody
-                print(f"anchor_point: {anchor_point}, {anchor_point.shape}")
                 if anchor_point.shape == (3,):
                     print("setting new axis")
-                    label_object.set_axis(
-                        pivot=anchor_point,
-                        direction=direction_point
-                    )
-                label_object.set_emitters(probe_emitter_sites)
+                    label_object.set_axis(pivot=anchor_point, direction=direction_point)
+                if (
+                    probe_epitope["coordinates"] is not None
+                    and label_params["target"]["type"] != "Primary"
+                ):
+                    print("Generating linker from epitope site")
+                    label_object.set_emitters(probe_epitope["coordinates"])
+                else:
+                    label_object.set_emitters(probe_emitter_sites)
                 label_params["coordinates"] = label_object.gen_labeling_entity()
-                if probe_epitope["coordinates"] is not None:
-                    print("Theres epitope site")
-            # print(label_params)
+                print(label_params["coordinates"])
             label_params_list.append(label_params)
-            # print(f"Label type is: {label_params["label_type"]}")
             structure.add_label(label_object)
-            # print(label_params)
             if label_params["binding"]["distance"]["to_target"] is not None:
                 print("Label is indirect label")
                 structure.assign_normals2targets()  # default is with scaling
