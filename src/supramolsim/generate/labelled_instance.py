@@ -732,8 +732,8 @@ def add_label_params_to_particle(particle: LabeledInstance, label_params):
         coordinates = None
         secondary=False
         if lab["target"]["type"] == "Primary":
+            print(f'Label: {lab["target"]["value"]} is secondary antibody')
             lab["label_name"] = lab["target"]["value"]
-            print("Secondary antibody")
             secondary=True
         if "coordinates" in lab.keys():
             # print(lab["coordinates"])

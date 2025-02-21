@@ -127,7 +127,7 @@ def cleanup_labeling_entities(labels_on_epitopes):
     THis method removes those leaving only the true emitters
     """
     n_epitopes = len(labels_on_epitopes)
-    print(f"cleaning {n_epitopes}")
+    # print(f"cleaning {n_epitopes}")
     pivot_reference_index = 0
     # prepare the list with the first entity's emitters
     fluorophores_xyz = labels_on_epitopes[pivot_reference_index][
