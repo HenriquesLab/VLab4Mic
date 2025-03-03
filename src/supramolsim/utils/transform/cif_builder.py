@@ -107,7 +107,7 @@ def create_instance_label(
     if target_type == "direct":
         # it could be that the corresponding label is indirect
         # but would not be able to compute since there are no normals
-        return direct_labelling(coords_normals, label_data)
+        return (direct_labelling(coords_normals, label_data), None)
     elif target_type == "indirect":
         return indirect_labelling(coords_normals, label_data)
 
@@ -115,7 +115,7 @@ def create_instance_label(
 def direct_labelling(coords_normals, label_data, **kwargs):
     coordinates = coords_normals["coordinates"]
     efficiency = label_data["labelling_efficiency"]
-    return binomial_epitope_sampling(coordinates, efficiency), None
+    return binomial_epitope_sampling(coordinates, efficiency)
 
 
 def indirect_labelling(coords_nomrals, label_data, **kwargs):
