@@ -1,7 +1,6 @@
 from ..io.yaml_functions import load_yaml
 import yaml
 import os
-import numpy as np
 
 
 def compile_modality_parameters(
@@ -23,9 +22,6 @@ def compile_modality_parameters(
     )
     mod_pars = load_yaml(modality_config_path)
     # approximate psf stack size
-    psfx_pixels = int(2.355 * mod_pars["PSF"]["resolution"]["X"])
-    psfy_pixels = int(2.355 * mod_pars["PSF"]["resolution"]["Y"])
-    psfz_pixels = int(2.355 * mod_pars["PSF"]["resolution"]["Z"])
     psf_params = dict(
         stack_source=mod_pars["PSF"]["source"],
         scale=mod_pars["scale"],
