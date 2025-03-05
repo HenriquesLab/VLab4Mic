@@ -141,7 +141,7 @@ class LabeledInstance:
             self.load_label(
                 targets=targets,
                 label_name=lab["label_name"],
-                labellig_efficiency=lab["labeling_efficiency"],
+                labelling_efficiency=lab["labeling_efficiency"],
             )
 
     # methods to specify labels
@@ -151,7 +151,7 @@ class LabeledInstance:
         scale: float = 1e-9,
         axis=dict(pivot=None, direction=None),
         label_name="NA",
-        labellig_efficiency: float = 1.0,
+        labelling_efficiency: float = 1.0,
         minimal_distance: float = 0.0,
         secondary = False,
         info="NA",
@@ -184,7 +184,7 @@ class LabeledInstance:
             emitters=emitters,
             scale=scale,
             axis=axis,
-            labelling_efficiency=labellig_efficiency,
+            labelling_efficiency=labelling_efficiency,
             minimal_distance=minimal_distance,
             label_type=label_type,
             fluorophore=fluorophore,
@@ -743,10 +743,9 @@ def add_label_params_to_particle(particle: LabeledInstance, label_params):
         targets[fluorophore] = coordinates
         particle.load_label(
             targets=targets,
-            label_name=lab["label_name"],
-            labellig_efficiency=lab["labeling_efficiency"],
             secondary=secondary,
-            minimal_distance=lab["binding"]["distance"]["between_targets"]
+            minimal_distance=lab["binding"]["distance"]["between_targets"],
+            **lab
         )
         particle.sequential_labelling = secondary
         if "epitope_site" in lab.keys():

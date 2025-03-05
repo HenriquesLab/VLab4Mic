@@ -243,7 +243,7 @@ def construct_label(
     ######## Building the labelling entity: anribody, linker, direct...
     label_params["fluorophore"] = fluorophore_id
     if lab_eff is not None:
-        label_params["labeling_efficiency"] = lab_eff
+        label_params["labelling_efficiency"] = lab_eff
     label = Label()
     label.set_params(**label_params)
     label.set_fluorophore(fluorophore_id)

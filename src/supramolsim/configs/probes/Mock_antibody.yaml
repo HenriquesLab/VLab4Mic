@@ -16,7 +16,7 @@ binding:
     phi:
   distance:
     to_target: 10
-    between_targets:
+    between_targets: estimate
   paratope: EFSAKF
 conjugation_sites:
   target:
