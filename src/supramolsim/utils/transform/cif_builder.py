@@ -161,6 +161,8 @@ def indirect_labelling(coords_nomrals, label_data, **kwargs):
         #normals_ft_epitopes = [normals, epitopes]
         if label_data["binding"]["wobble_range"]["theta"]:
             cone_angle = label_data["binding"]["wobble_range"]["theta"]
+            print(f"Wobbling normals: {cone_angle}")
+            
             w_normals = []
             origin = np.array([0, 0, 0])
             for i in range(normals.shape[0]):
