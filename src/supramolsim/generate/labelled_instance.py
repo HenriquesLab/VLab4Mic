@@ -189,6 +189,8 @@ class LabeledInstance:
             label_type=label_type,
             fluorophore=fluorophore,
         )
+        for key, val in kwargs.items():
+            label_params[key] = val
         if secondary:
             self.secondary[label_name] = label_params
         else:
