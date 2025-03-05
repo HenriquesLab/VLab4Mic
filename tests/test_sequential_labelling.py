@@ -15,14 +15,14 @@ antibody = data_format.structural_format.label_builder_format(
 antibody_as_linker = data_format.structural_format.label_builder_format(
     "Mock_antibody", fluorophore_id1, lab_eff1, target_info1, as_linker=True
 )
-probes_1XI5_primaries = [linker1, antibody, antibody_as_linker]
+primaries_1XI5 = [linker1, antibody, antibody_as_linker]
 
 # parameters for sequential labelling
-probes_1XI5_primaries = [linker1, antibody_as_linker]
+primaries_1X15_linkers = [linker1, antibody_as_linker]
 secondaries_ids = ["Mock_linker", "Mock_antibody"]
 
 
-@pytest.mark.parametrize("probe_primary", probes_1XI5_primaries)
+@pytest.mark.parametrize("probe_primary", primaries_1XI5)
 def test_primaries_only(configuration_directory, probe_primary):
     structure_id = "1XI5"
     structure, structure_param = workflows.load_structure(
@@ -37,7 +37,7 @@ def test_primaries_only(configuration_directory, probe_primary):
     assert particle.get_ref_point().shape == (3,)
 
 
-@pytest.mark.parametrize("primary", probes_1XI5_primaries)
+@pytest.mark.parametrize("primary", primaries_1X15_linkers)
 @pytest.mark.parametrize("secondary_id", secondaries_ids)
 def test_primary_with_secondary(configuration_directory, primary, secondary_id):
     structure_id = "1XI5"
