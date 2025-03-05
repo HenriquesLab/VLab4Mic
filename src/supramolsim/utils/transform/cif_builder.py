@@ -115,7 +115,13 @@ def create_instance_label(
 def direct_labelling(coords_normals, label_data, **kwargs):
     coordinates = coords_normals["coordinates"]
     efficiency = label_data["labelling_efficiency"]
-    return binomial_epitope_sampling(coordinates, efficiency)
+    label_data["minimal_distance"]
+    return binomial_epitope_sampling(
+        epitopes=coordinates,
+        p=efficiency,
+        normals=None,
+        min_distance=label_data["minimal_distance"]
+    )
 
 
 def indirect_labelling(coords_nomrals, label_data, **kwargs):
@@ -142,10 +148,13 @@ def indirect_labelling(coords_nomrals, label_data, **kwargs):
 
         # select randomly, and according to labelling_efficiency
         # the places that will be labelled
-        efficiency = label_data["labelling_efficiency"]
+        #efficiency = label_data["labelling_efficiency"]
 
         epitopes, normals = binomial_epitope_sampling(
-            coords_nomrals["coordinates"], efficiency, coords_nomrals["normals"]
+            epitopes=coords_nomrals["coordinates"],
+            p=label_data["labelling_efficiency"],
+            normals=coords_nomrals["normals"],
+            min_distance=label_data["minimal_distance"]
         )  #####################
         normals_ft_epitopes = [normals, epitopes]
         indirect_realisation, list_reoriented_points_normals = decorate_epitopes_normals(

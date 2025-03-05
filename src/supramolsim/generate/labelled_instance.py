@@ -196,6 +196,7 @@ class LabeledInstance:
             self.status["labels"] = True
 
     def _get_labels(self):
+        
         return self.labels
 
     def get_label_names(self):
@@ -744,7 +745,8 @@ def add_label_params_to_particle(particle: LabeledInstance, label_params):
             targets=targets,
             label_name=lab["label_name"],
             labellig_efficiency=lab["labeling_efficiency"],
-            secondary=secondary
+            secondary=secondary,
+            minimal_distance=lab["binding"]["distance"]["between_targets"]
         )
         if "epitope_site" in lab.keys():
             print(f'assigning epitope site : {lab["epitope_site"]}')
