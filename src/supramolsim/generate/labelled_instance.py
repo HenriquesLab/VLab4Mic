@@ -748,6 +748,7 @@ def add_label_params_to_particle(particle: LabeledInstance, label_params):
             secondary=secondary,
             minimal_distance=lab["binding"]["distance"]["between_targets"]
         )
+        particle.sequential_labelling = secondary
         if "epitope_site" in lab.keys():
             print(f'assigning epitope site : {lab["epitope_site"]}')
             particle.source["targets"]["epitope_site"] = copy.copy(lab["epitope_site"])

@@ -17,7 +17,7 @@ def test_createlabel_from_config(configuration_directory):
 
 
 def test_probe_model(configuration_directory):
-    label_file = "Mock_primary_antibody" + ".yaml"
+    label_file = "Mock_antibody" + ".yaml"
     local_path_congfig = os.path.join(configuration_directory, "probes", label_file)
     probe_params = load_yaml(local_path_congfig)
     probe, probe_emitters, anchor, ab_ref, probe_epitope = probe_model(

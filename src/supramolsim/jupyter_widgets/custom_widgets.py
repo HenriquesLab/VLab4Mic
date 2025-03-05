@@ -286,20 +286,21 @@ def create_structural_model():
             label_id = labels_gui["mock_label_dropdown"].value
             fluorophore_id = labels_gui["mock_fluo_dropdown"].value
             lab_eff = labels_gui["mock_Labelling_efficiency"].value
-            if labels_gui["mock_type"].value == "Sequence":
-                target_value = labels_gui["mock_value"].value
-            elif labels_gui["mock_type"].value == "Atom_residue":
+            if labels_gui["mock_type"].value == "Atom_residue":
                 atom, residue = labels_gui["mock_value"].value.split(".")
                 target_value = dict(
                     atoms=atom,
                     residues=residue
                 )
+            else: # can be Sequence or Primary, both cases is a string
+                target_value = labels_gui["mock_value"].value
             target_info=dict(
                 type=labels_gui["mock_type"].value,
                 value=target_value
             )
+            as_linker = labels_gui["as_linker"].value
             tmp_label = data_format.structural_format.label_builder_format(
-                label_id, fluorophore_id, lab_eff, target_info
+                label_id, fluorophore_id, lab_eff, target_info, as_linker
             )
             unique_name = label_id + "_conjugated_" + fluorophore_id
             if unique_name in current_labels.keys():
@@ -366,8 +367,8 @@ def create_structural_model():
 
         labels_gui.add_label("Mock labels")
         labels_gui.add_dropdown("mock_label_dropdown", options=mock_labels)
-        labels_gui.add_dropdown("mock_type", options=["Sequence", "Atom_residue"])
-        labels_gui.add_textarea("mock_value")
+        labels_gui.add_dropdown("mock_type", options=["Sequence", "Atom_residue", "Primary"],description="Target type: ")
+        labels_gui.add_textarea("mock_value", description="Target value: ")
         labels_gui.add_dropdown("mock_fluo_dropdown", options=fluorophores_list)
         labels_gui.add_float_slider(
             "mock_Labelling_efficiency",
@@ -377,6 +378,8 @@ def create_structural_model():
             step=0.01,
             description="Labelling efficiency",
         )
+        labels_gui.add_checkbox("as_linker", description = "Model as primary with epitope for secondary probe",
+                        value = False)
         labels_gui.add_button("Add_mock", description="Add mock label")
         labels_gui["Add_mock"].on_click(build_mock_label)
 

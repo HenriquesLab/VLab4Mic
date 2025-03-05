@@ -159,6 +159,7 @@ def particle_from_structure(
                     fluorophore_id=label["fluorophore_id"],
                     lab_eff=label["labelling_efficiency"],
                     target_info=label["target_info"],
+                    as_linker=label["as_linker"]
                 )
             else:
                 label_object, label_params = construct_label(
@@ -187,9 +188,11 @@ def particle_from_structure(
                     label_object.set_axis(pivot=anchor_point, direction=direction_point)
                 if (
                     probe_epitope["coordinates"] is not None
-                    and label_params["target"]["type"] != "Primary"
+                    and label_params["as_linker"]
                 ):
                     print("Generating linker from epitope site")
+                    # TODO: this decision needs to take into account if there is a 
+                    # secondary label for this specific probe
                     label_object.set_emitters(probe_epitope["coordinates"])
                 else:
                     label_object.set_emitters(probe_emitter_sites)

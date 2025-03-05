@@ -208,7 +208,7 @@ class Label:
 
 
 def construct_label(
-    label_config_path: str, fluorophore_id: str, lab_eff: float = None, target_info=None
+    label_config_path: str, fluorophore_id: str, lab_eff: float = None, target_info=None, as_linker=False, **kwargs
 ):
     """
     Construct an object of class Label.
@@ -223,6 +223,7 @@ def construct_label(
         fluorophore_params: (dictionary)
     """
     label_params = load_yaml(label_config_path)
+    label_params["as_linker"] = as_linker
     ######## information about target
     if target_info:
         # expect label_params to have empty values on target type and value
