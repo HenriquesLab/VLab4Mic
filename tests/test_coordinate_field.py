@@ -35,3 +35,46 @@ def test_minfield_with_particles(configuration_directory):
     coordinates_field.construct_static_field()
     exported_field = coordinates_field.export_field()
     assert coordinates_field.molecules_params["minimal_distance"] is not None
+
+
+
+def test_nparticles_constraints(configuration_directory):
+    structure_id = "1XI5"
+    structure, structure_param = workflows.load_structure(
+        structure_id, configuration_directory
+    )
+    label_id = "Mock_linker"
+    target_info = dict(
+        type="Sequence",
+        value="EQATETQ"
+    )
+    fluorophore_id = "AF647"
+    lab_eff = 1
+    tmp_label1 = data_format.structural_format.label_builder_format(
+        label_id, fluorophore_id, lab_eff, target_info
+    )
+    particle, label_params_list = workflows.particle_from_structure(
+        structure, [tmp_label1], configuration_directory
+    )
+    nparticles = 1000
+    random_placing = True
+    # minimal distance should be calculated automatically from particle
+    coordinates_field = field.create_min_field(nparticles=nparticles,
+                                                random_placing=random_placing)
+    coordinates_field.create_molecules_from_InstanceObject(particle)
+    coordinates_field.construct_static_field()
+    exported_field = coordinates_field.export_field()
+    assert coordinates_field.molecules_params["minimal_distance"] is not None
+    assert len(coordinates_field.molecules) < nparticles
+    #
+    molecule_parameters = dict(
+        minimal_distance=1000
+    )
+    coordinates_field2 = field.create_min_field(nparticles=nparticles,
+                                                random_placing=random_placing,
+                                                molecule_pars=molecule_parameters)
+    coordinates_field2.create_molecules_from_InstanceObject(particle)
+    coordinates_field2.construct_static_field()
+    exported_field2 = coordinates_field2.export_field()
+    assert coordinates_field2.molecules_params["minimal_distance"] is not None
+    assert len(coordinates_field2.molecules) < nparticles
