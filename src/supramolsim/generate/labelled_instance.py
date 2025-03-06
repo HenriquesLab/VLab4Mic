@@ -202,6 +202,11 @@ class LabeledInstance:
             label_type=label_type,
             fluorophore=fluorophore,
         )
+        # add minimal distance to radial hindrance
+        probe_max_dist = np.max(pdist(emitters))
+        new_hindrance = self.radial_hindance + 2*probe_max_dist
+        if new_hindrance > self.radial_hindance:
+            self.radial_hindance = new_hindrance
         for key, val in kwargs.items():
             label_params[key] = val
         if secondary:
