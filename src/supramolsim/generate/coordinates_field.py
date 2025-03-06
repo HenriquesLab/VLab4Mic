@@ -270,9 +270,14 @@ class Field:
     # working with macromolecules
     def create_molecules_from_InstanceObject(self, InstancePrototype: LabeledInstance):
         reps = self.get_molecule_param("nMolecules")
-        self.molecules_params["absolute_positions"]
         particle_copy = copy.deepcopy(InstancePrototype)
         particle_copy.scale_coordinates_system(self.get_field_param("scale"))
+        if self.molecules_params["minimal_distance"] is None:
+            self._set_molecule_minimal_distance(
+                dist=particle_copy.radial_hindance
+            )
+            # to account for new parameter
+            self.generate_random_positions()
         # prepare plotting params
         self.labels_plotting_params = dict(particle_copy.plotting_params)
         self.fluo2labels = dict(particle_copy.fluo2labels)
@@ -280,7 +285,6 @@ class Field:
         molecules = []
         for r in range(reps):
             molecules.append(copy.deepcopy(particle_copy))
-            print(molecules[r])
         self.molecules = molecules
         self.relabel_molecules()
 
