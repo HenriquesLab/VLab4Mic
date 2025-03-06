@@ -31,6 +31,7 @@ def label_builder_format(
     target_info=None,
     as_linker=False,
     enable_wobble=False,
+    wobble_theta = None,
     **kwargs,
 ):
     if target_info:
@@ -40,7 +41,8 @@ def label_builder_format(
             labelling_efficiency=labelling_efficiency,
             target_info=target_info,
             as_linker=as_linker,
-            enable_wobble=enable_wobble
+            enable_wobble=enable_wobble,
+            wobble_theta=wobble_theta
         )
         for key, val in kwargs.items():
             label_info[key] = val

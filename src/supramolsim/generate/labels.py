@@ -223,6 +223,7 @@ def construct_label(
         fluorophore_params: (dictionary)
     """
     label_params = load_yaml(label_config_path)
+    label_params["as_linker"] = as_linker
     if enable_wobble:
         if label_params["binding"]["wobble_range"]["theta"] is None:
             label_params["binding"]["wobble_range"]["theta"] = wobble_theta
