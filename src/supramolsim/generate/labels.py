@@ -207,7 +207,7 @@ def construct_label(
     target_info=None,
     as_linker=False,
     enable_wobble=False,
-    wobble_theta=10,
+    wobble_theta=None,
     **kwargs,
 ):
     """
@@ -224,7 +224,8 @@ def construct_label(
     """
     label_params = load_yaml(label_config_path)
     if enable_wobble:
-        label_params["binding"]["wobble_range"]["theta"] = wobble_theta
+        if label_params["binding"]["wobble_range"]["theta"] is None:
+            label_params["binding"]["wobble_range"]["theta"] = wobble_theta
     else:
         label_params["binding"]["wobble_range"]["theta"] = None
     ######## information about target
