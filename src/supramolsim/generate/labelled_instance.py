@@ -584,6 +584,7 @@ class LabeledInstance:
                 # print(f'after: {self.emitters[labeltype]}')
             self.params["ref_point"] = self.params["ref_point"] * scaling_factor
             self.axis["pivot"] = self.axis["pivot"] * scaling_factor
+            self.radial_hindance *= scaling_factor
             self._set_scale(new_scale)
 
     def get_emitter_by_target(self, targetname: str):
