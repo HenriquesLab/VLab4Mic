@@ -24,15 +24,24 @@ def builder_format(
     return instance_builder
 
 
-def label_builder_format(label_id, fluorophore_id, labelling_efficiency=1, target_info=None, as_linker=False, **kwargs):
+def label_builder_format(
+    label_id,
+    fluorophore_id,
+    labelling_efficiency=1,
+    target_info=None,
+    as_linker=False,
+    **kwargs,
+):
     if target_info:
         label_info = dict(
             label_id=label_id,
             fluorophore_id=fluorophore_id,
             labelling_efficiency=labelling_efficiency,
             target_info=target_info,
-            as_linker=as_linker
+            as_linker=as_linker,
         )
+        for key, val in kwargs.items():
+            label_info[key] = val
     else:
         label_info = dict(
             label_id=label_id,
