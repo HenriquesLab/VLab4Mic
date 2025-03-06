@@ -157,10 +157,8 @@ def particle_from_structure(
             if "target_info" in label.keys():
                 label_object, label_params = construct_label(
                     label_config_path=label_config_path,
-                    fluorophore_id=label["fluorophore_id"],
                     lab_eff=label["labelling_efficiency"],
-                    target_info=label["target_info"],
-                    as_linker=label["as_linker"]
+                    **label
                 )
             else:
                 label_object, label_params = construct_label(
