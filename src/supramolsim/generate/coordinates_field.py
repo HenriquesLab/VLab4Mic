@@ -224,7 +224,7 @@ class Field:
                 if np.linalg.norm(new - selected_positions[pos]) < minimal_distance:
                     # print("rejected")
                     is_available = 0
-                    break
+                    #break
             if is_available:
                 # print(new)
                 selected_positions.append(new)
@@ -276,13 +276,13 @@ class Field:
             self._set_molecule_minimal_distance(
                 dist=particle_copy.radial_hindance
             )
-            self.generate_random_positions()
-            # due to constraints, the actual number of particles might not be reps
-            nmolecules = len(self.molecules_params["absolute_positions"])
-            if reps > nmolecules:
-              reps = nmolecules
-              print(f"Updating Number of molecules: {reps}")
-              self.set_molecule_param("nMolecules", reps)
+        self.generate_random_positions()
+        # due to constraints, the actual number of particles might not be reps
+        nmolecules = len(self.molecules_params["absolute_positions"])
+        if reps > nmolecules:
+            reps = nmolecules
+            print(f"Updating Number of molecules: {reps}")
+            self.set_molecule_param("nMolecules", reps)
         # prepare plotting params
         self.labels_plotting_params = dict(particle_copy.plotting_params)
         self.fluo2labels = dict(particle_copy.fluo2labels)
