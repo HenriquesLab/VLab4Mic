@@ -56,11 +56,11 @@ def sample_array(array, fraction=1):
 
 def binomial_epitope_sampling(epitopes, p=1, normals=None, min_distance=0.0):
     if min_distance:
-        print(f"sampling with min epitope distance: {min_distance}, and efficiency: {p}")
+        #print(f"sampling with min epitope distance: {min_distance}, and efficiency: {p}")
         available_epitopes_id = sample_epitopes_sterically(epitopes, min_distance)
         n_epitopes = len(available_epitopes_id)
     else:
-        print(f"sampling with efficiency: {p}")
+        #print(f"sampling with efficiency: {p}")
         n_epitopes = epitopes.shape[0]
         available_epitopes_id = np.arange(0, n_epitopes)
     # bernoulli trials for each epitope 
