@@ -276,8 +276,6 @@ class Field:
             self._set_molecule_minimal_distance(
                 dist=particle_copy.radial_hindance
             )
-            # to account for new parameter
-            self.generate_random_positions()
         # prepare plotting params
         self.labels_plotting_params = dict(particle_copy.plotting_params)
         self.fluo2labels = dict(particle_copy.fluo2labels)
@@ -286,7 +284,12 @@ class Field:
         for r in range(reps):
             molecules.append(copy.deepcopy(particle_copy))
         self.molecules = molecules
+        #
+        self.generate_random_orientations()
+        self.generate_random_positions()
         self.relabel_molecules()
+        
+
 
     def create_molecules_from_files(self, cif_file, structure_id, label_file):
         """
