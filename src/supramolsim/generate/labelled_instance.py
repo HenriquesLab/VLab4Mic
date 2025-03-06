@@ -523,11 +523,11 @@ class LabeledInstance:
                     * np.linalg.norm(neworientation)
                 )
             )
-            print(
-                f"theta: {thet}, "
-                f"new {neworientation}, "
-                f"current: {self.axis['direction']}"
-            )
+            #print(
+            #    f"theta: {thet}, "
+            #    f"new {neworientation}, "
+            #    f"current: {self.axis['direction']}"
+            #)
             if np.absolute(thet) == 1:
                 print(
                     f"input vector {neworientation} "
