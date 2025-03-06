@@ -24,7 +24,7 @@ class Label:
         self.params["plotcolour"] = None
 
         self.params["emitters_coords"] = None
-        self.params["axis"] = dict(pivot=[0,0,0], direction=[0,0,1])
+        self.params["axis"] = dict(pivot=[0, 0, 0], direction=[0, 0, 1])
 
         self.params["target_sequence"] = None
         self.params["summary_method"] = "average"
@@ -62,9 +62,9 @@ class Label:
         wobble_range: dict,
         distance: dict,
         paratope: str,
-        **kwargs
+        **kwargs,
     ):
-        
+
         self.binding["efficiency"] = efficiency
         self.binding["orientation"] = orientation
         self.binding["wobble_range"] = wobble_range
@@ -73,17 +73,10 @@ class Label:
         for key, value in kwargs.items():
             self.binding[key] = value
 
-    def _set_epitope_params(
-            self,
-            target = None,
-            normals = None,
-            site = None,
-            **kwargs
-        ):
+    def _set_epitope_params(self, target=None, normals=None, site=None, **kwargs):
         self.epitope["target"] = target
         self.epitope["normals"] = normals
         self.epitope["site"] = site
-
 
     def set_axis(self, pivot: list, direction: list):
         self.params["axis"]["pivot"] = pivot
@@ -208,7 +201,14 @@ class Label:
 
 
 def construct_label(
-    label_config_path: str, fluorophore_id: str, lab_eff: float = None, target_info=None, as_linker=False, **kwargs
+    label_config_path: str,
+    fluorophore_id: str,
+    lab_eff: float = None,
+    target_info=None,
+    as_linker=False,
+    enable_wobble=False,
+    wobble_theta=10,
+    **kwargs,
 ):
     """
     Construct an object of class Label.
@@ -223,7 +223,10 @@ def construct_label(
         fluorophore_params: (dictionary)
     """
     label_params = load_yaml(label_config_path)
-    label_params["as_linker"] = as_linker
+    if enable_wobble:
+        label_params["binding"]["wobble_range"]["theta"] = wobble_theta
+    else:
+        label_params["binding"]["wobble_range"]["theta"] = None
     ######## information about target
     if target_info:
         # expect label_params to have empty values on target type and value
