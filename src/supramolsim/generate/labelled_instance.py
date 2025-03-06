@@ -3,6 +3,7 @@ import numpy as np
 import warnings
 import matplotlib.pyplot as plt
 import yaml
+from scipy.spatial.distance import pdist
 
 from ..utils.transform.points_transforms import (
     rotate_pts_by_vector,
@@ -13,6 +14,7 @@ from ..utils.visualisation.matplotlib_plots import add_ax_scatter, draw1nomral_s
 from ..utils.transform.cif_builder import create_instance_label
 from ..utils.transform.defects import xmersubset_byclustering
 from ..utils.data_format.structural_format import builder_format
+
 
 class LabeledInstance:
     def __init__(self):
@@ -57,10 +59,21 @@ class LabeledInstance:
         for key, value in kwargs.items():
             self.params[key] = value
 
+    def _set_radial_hindrance(self, hindrance):
+        self.radial_hindance = hindrance
+
     # methods to define source entity
     def _set_source_targets(self, targets: dict):
         # keys are the label agent used to define such targets
         self.source["targets"] = targets
+        # estimate particle size
+        hindrance = 0
+        for tgt in self.source["targets"].keys():
+            epitopes = self._get_source_coords_normals(tgt)["coordinates"]
+            max_dist = np.max(pdist(epitopes))
+            if max_dist > hindrance:
+                hindrance = max_dist
+        self.radial_hindance = hindrance
 
     def _set_source_reference(self, ref):
         self.source["reference_pt"] = ref
@@ -153,7 +166,7 @@ class LabeledInstance:
         label_name="NA",
         labelling_efficiency: float = 1.0,
         minimal_distance: float = 0.0,
-        secondary = False,
+        secondary=False,
         info="NA",
         **kwargs,
     ):
@@ -198,7 +211,7 @@ class LabeledInstance:
             self.status["labels"] = True
 
     def _get_labels(self):
-        
+
         return self.labels
 
     def get_label_names(self):
@@ -232,7 +245,7 @@ class LabeledInstance:
                 "plotsize": 1,
                 "plotalpha": 1,
                 "plotmarker": "o",
-                "plotcolour": "k"
+                "plotcolour": "k",
             }
             return default
 
@@ -279,8 +292,8 @@ class LabeledInstance:
         fluorophore_name = None
         labelling_realisation_vectors = None
         if label4target is not None:
-            labelling_realisation, labelling_realisation_vectors = create_instance_label(
-                target_normals, target_type, label4target
+            labelling_realisation, labelling_realisation_vectors = (
+                create_instance_label(target_normals, target_type, label4target)
             )
             plotting_params = self._get_label_plotting_params(target_name)
             fluorophore_name = self._get_label_fluorophore(target_name)
@@ -309,22 +322,28 @@ class LabeledInstance:
         for target_name in self._get_source_target_names():
             # print(target_name)
             self.defects_target_normals = None
-            emitters, labelling_realisation_vectors, fluorophore_name, plotting_par, defects_target_normals = (
-                self._label_source_target(target_name)
-            )
+            (
+                emitters,
+                labelling_realisation_vectors,
+                fluorophore_name,
+                plotting_par,
+                defects_target_normals,
+            ) = self._label_source_target(target_name)
             if defects_target_normals is not None:
                 self.defects_target_normals = defects_target_normals
             # print(f"Emitters for target {target_name}")
             # print(emitters)
             targets_labeled_instance[target_name] = emitters
-            targets_labeled_instance_vectors[target_name] = labelling_realisation_vectors
+            targets_labeled_instance_vectors[target_name] = (
+                labelling_realisation_vectors
+            )
             label_fluorophore[target_name] = fluorophore_name
             plotting_params[target_name] = plotting_par
         # target_labeled_instance
         # then crete the instance constructor dictionary
         instance_constructor = dict(
             emitters_dictionary=targets_labeled_instance,
-            emitters_vectors = targets_labeled_instance_vectors,
+            emitters_vectors=targets_labeled_instance_vectors,
             ref_point=self._get_source_parameter("reference_pt"),
             scale=self._get_source_parameter("scale"),
             axis=self._get_source_parameter("axis"),
@@ -332,21 +351,16 @@ class LabeledInstance:
             plotting_params=plotting_params,
         )
         return instance_constructor
-    
 
     def _generate_primary_epitopes(
-            self,
-            emitters_dictionary,
-            emitters_vectors,
-            **kwargs
-        ):
+        self, emitters_dictionary, emitters_vectors, **kwargs
+    ):
         # label the soruces using only the primary
         # create another sequential source
         for target_name in emitters_dictionary.keys():
             col_vec = np.array([i for i in emitters_vectors[target_name]])
             self.primary["targets"][target_name] = dict(
-                coordinates=emitters_dictionary[target_name],
-                normals = col_vec
+                coordinates=emitters_dictionary[target_name], normals=col_vec
             )
 
     def _label_primary(self, target_name):
@@ -354,11 +368,11 @@ class LabeledInstance:
         target_normals = self.primary["targets"][target_name]
         if target_name in self.secondary.keys():
             label4target = self.secondary[target_name]
-            #print(target_normals.keys())
+            # print(target_normals.keys())
             print(label4target)
             emitters, labelling_realisation_vectors = create_instance_label(
-                    target_normals, "indirect", label4target
-                )
+                target_normals, "indirect", label4target
+            )
             return emitters
         else:
             print(f"No secondary for {target_name}")
@@ -382,7 +396,6 @@ class LabeledInstance:
         )
         return instance_constructor
 
-
     def generate_instance(self):
         if self.sequential_labelling:
             print("Sequential_labelling")
@@ -390,7 +403,7 @@ class LabeledInstance:
             self._generate_primary_epitopes(**primaries)
             secondaries = self._generate_secondary_labelling()
             self.add_emitters_n_refpoint(**secondaries)
-            #return primaries
+            # return primaries
         elif self.status["source"] and self.status["labels"]:
             constructor = self._generate_instance_constructor()
             self.add_emitters_n_refpoint(**constructor)
@@ -473,7 +486,7 @@ class LabeledInstance:
         axis: dict,
         label_fluorophore: dict,
         plotting_params: dict,
-        **kwargs
+        **kwargs,
     ):
         """
         Emitters_dictionary: with the name of the label_name as keys
@@ -512,9 +525,9 @@ class LabeledInstance:
             )
             if np.absolute(thet) == 1:
                 print(
-                    f'input vector {neworientation} '
+                    f"input vector {neworientation} "
                     f'has same direction as {self.axis["direction"]}. '
-                    f'No reorientation done'
+                    f"No reorientation done"
                 )
             else:
                 nori = copy.copy(neworientation)
@@ -733,11 +746,11 @@ def add_label_params_to_particle(particle: LabeledInstance, label_params):
         # print(lab)
         fluorophore = lab["fluorophore"]
         coordinates = None
-        secondary=False
+        secondary = False
         if lab["target"]["type"] == "Primary":
             print(f'Label: {lab["target"]["value"]} is secondary antibody')
             lab["label_name"] = lab["target"]["value"]
-            secondary=True
+            secondary = True
         if "coordinates" in lab.keys():
             # print(lab["coordinates"])
             coordinates = np.array(lab["coordinates"])
@@ -747,7 +760,7 @@ def add_label_params_to_particle(particle: LabeledInstance, label_params):
             targets=targets,
             secondary=secondary,
             minimal_distance=lab["binding"]["distance"]["between_targets"],
-            **lab
+            **lab,
         )
         particle.sequential_labelling = secondary
         if "epitope_site" in lab.keys():
