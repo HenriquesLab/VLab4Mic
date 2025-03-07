@@ -189,6 +189,11 @@ class LabeledInstance:
             label_type = "direct"
         else:
             label_type = "indirect"
+            # add minimal distance to radial hindrance
+            probe_max_dist = np.max(pdist(emitters))
+            new_hindrance = self.radial_hindance + 2*probe_max_dist
+            if new_hindrance > self.radial_hindance:
+                self.radial_hindance = new_hindrance
         colour = set_colorplot(self.plotting_params)
         # print(f"colour assigned to label: {colour}")
         plt_params = dict(plotsize=20, plotalpha=1, plotmarker="o", plotcolour=colour)
@@ -202,11 +207,6 @@ class LabeledInstance:
             label_type=label_type,
             fluorophore=fluorophore,
         )
-        # add minimal distance to radial hindrance
-        probe_max_dist = np.max(pdist(emitters))
-        new_hindrance = self.radial_hindance + 2*probe_max_dist
-        if new_hindrance > self.radial_hindance:
-            self.radial_hindance = new_hindrance
         for key, val in kwargs.items():
             label_params[key] = val
         if secondary:
