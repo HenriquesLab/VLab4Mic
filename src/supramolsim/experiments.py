@@ -23,6 +23,7 @@ class ExperimentParametrisation:
     fluorophore_id: str = ""
     coordinate_field_id: str = None
     selected_mods: Dict[str, int] = field(default_factory=dict)
+    probe_parameters: Dict[str, int] = field(default_factory=dict)
     defect_eps: Dict[str, int] = field(default_factory=dict)
     sweep_pars: Dict[str, int] = field(default_factory=dict)
     objects_created: Dict[str, int] = field(default_factory=dict)
@@ -61,13 +62,23 @@ class ExperimentParametrisation:
         "fluorophore_id".
         """
         labels_list = []
-        labels_list.append(
-            label_builder_format(
-                label_id=self.structure_label,
-                fluorophore_id=self.fluorophore_id,
-                labelling_efficiency=lab_eff,
+        probe_name = self.structure_label
+        if probe_name in self.probe_parameters.keys():
+            probeparams = self.probe_parameters[probe_name]
+            labels_list.append(
+                label_builder_format(
+                    label_id=probe_name,
+                    **probeparams
+                )
             )
-        )
+        else:
+            labels_list.append(
+                label_builder_format(
+                    label_id=self.structure_label,
+                    fluorophore_id=self.fluorophore_id,
+                    labelling_efficiency=lab_eff,
+                )
+            )
         if keep:
             pass
         else:
@@ -93,6 +104,7 @@ class ExperimentParametrisation:
     def _build_coordinate_field(
         self, use_self_particle=True, keep=False, coordinate_field_path=None, **kwargs
     ):
+        
         if use_self_particle and self.generators_status("particle"):
             print("creating field from existing particle")
             exported_field, fieldobject = field_from_particle(
@@ -231,6 +243,11 @@ class ExperimentParametrisation:
         else:
             print("Missing attributes")
 
+    def remove_probes(self):
+        self.structure_label = None
+        self.probe_parameters = dict()
+        self.particle = None
+        self.structure.label_targets = dict()
 
 def create_experiment_parametrisation(
     structure_and_labels: dict = None,
