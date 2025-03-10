@@ -40,33 +40,27 @@ def nested_sweep(
             for probe in probes:
                 combination = ""
                 combination += str(probe_n)
-                # _probe
+                experiment.remove_probes()
                 print(f"probe: {probe}")
                 probe_param_n = 0
                 for p_param in probe_parameters:
                     combination += str(probe_param_n)
-                    experiment.structure_label = None
-                    experiment.particle = None
-                    # particle defects should be here
-                    # print(p_param)
                     experiment.structure_label = probe
                     if p_param is not None:
-                        if "fluorophpre_id" not in probe_parameters.keys():
+                        if "fluorophpre_id" not in p_param.keys():
                             experiment.fluorophore_id = "AF647"
-                    # experiment.label_parameters[probe] = p_param
-                    # experiment._build_label()
+                        experiment.probe_parameters[probe] = p_param
                     experiment._build_particle(keep=True)
                     if len(experiment.particle.emitters) == 0:
                         print(f"Skipping {probe}. No emitters were generated")
                         break
                     vsample_n = 0
                     for vsample in virtual_samples:
+                        _exported_field = None
                         combination += str(vsample_n)
-                        print(combination)
                         _exported_field = experiment._build_coordinate_field(
                             keep=False, use_self_particle=True
                         )
-                        # print(_exported_field)
                         for (
                             modality,
                             acquisition,
