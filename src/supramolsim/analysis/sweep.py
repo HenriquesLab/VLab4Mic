@@ -35,8 +35,8 @@ def nested_sweep(
         experiment.structure_id = struct
         experiment._build_structure()
         # probe_parameters = probes["target_info"]
-        probe_n = 0
         for rep in range(repetitions):
+            probe_n = 0
             for probe in probes:
                 combination = ""
                 combination += str(probe_n)
@@ -86,8 +86,8 @@ def nested_sweep(
                                 sweep_outputs[mod_comb] = []
                             sweep_outputs[mod_comb].append(iteration_output[mod])
                             mod_n += 1
-                    vsample_n += 1
-                probe_param_n += 1
-            probe_n += 1
+                        vsample_n += 1
+                    probe_param_n += 1
+                probe_n += 1 # changes more due to repetitions
         return sweep_outputs, sweep_params
         
