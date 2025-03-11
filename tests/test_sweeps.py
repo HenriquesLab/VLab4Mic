@@ -77,5 +77,50 @@ def test_nested_sweep_empty():
     test_experiment = experiments.ExperimentParametrisation()
     outputs, params = sweep.nested_sweep(test_experiment)
 
-#def test_nested_sweep():
-#    outputs, params = sweep.nested_sweep()
+def test_nested_sweep_directprobes():
+    test_experiment = experiments.ExperimentParametrisation()
+    structures = ["1XI5",]
+    directprobes = ["NHS_ester",]
+    modalities = dict(
+        STED=None,
+        Confocal=None,
+    )
+    repetitions = 3
+    outputs, params = sweep.nested_sweep(
+        experiment=test_experiment,
+        structures=structures,
+        probes=directprobes,
+        modalities=modalities,
+        repetitions=repetitions
+    )
+    
+    assert len(outputs.keys()) > 0
+    assert len(params.keys()) > 0
+
+
+def test_nested_sweep_indirectprobes():
+    test_experiment = experiments.ExperimentParametrisation()
+    structures = ["1XI5",]
+    indirectprobes = ["Mock_antibody", "Mock_linker", ]
+    probe_parameters=[
+            dict(
+                fluorophore_id="AF647",
+                labelling_efficiency = 1,
+                target_info = dict(type="Sequence", value="EQATETQ"),
+            ),
+        ]
+    modalities = dict(
+        STED=None,
+        Confocal=None,
+    )
+    repetitions = 3
+    outputs, params = sweep.nested_sweep(
+        experiment=test_experiment,
+        structures=structures,
+        probes=indirectprobes,
+        probe_parameters=probe_parameters,
+        modalities=modalities,
+        repetitions=repetitions
+    )
+    assert len(outputs.keys()) > 0
+    assert len(params.keys()) > 0
