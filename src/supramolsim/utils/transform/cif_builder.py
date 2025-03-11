@@ -1,6 +1,7 @@
 import numpy as np
 from .points_transforms import decorate_epitopes_normals
 from ..sample.arrays import binomial_epitope_sampling
+from ..transform.normals import add_wobble
 
 
 def do_sym_operation(pts_set, sym_operation):
@@ -115,7 +116,13 @@ def create_instance_label(
 def direct_labelling(coords_normals, label_data, **kwargs):
     coordinates = coords_normals["coordinates"]
     efficiency = label_data["labelling_efficiency"]
-    return binomial_epitope_sampling(coordinates, efficiency)
+    label_data["minimal_distance"]
+    return binomial_epitope_sampling(
+        epitopes=coordinates,
+        p=efficiency,
+        normals=None,
+        min_distance=label_data["minimal_distance"]
+    )
 
 
 def indirect_labelling(coords_nomrals, label_data, **kwargs):
@@ -142,12 +149,28 @@ def indirect_labelling(coords_nomrals, label_data, **kwargs):
 
         # select randomly, and according to labelling_efficiency
         # the places that will be labelled
-        efficiency = label_data["labelling_efficiency"]
+        #efficiency = label_data["labelling_efficiency"]
 
         epitopes, normals = binomial_epitope_sampling(
-            coords_nomrals["coordinates"], efficiency, coords_nomrals["normals"]
+            epitopes=coords_nomrals["coordinates"],
+            p=label_data["labelling_efficiency"],
+            normals=coords_nomrals["normals"],
+            min_distance=label_data["minimal_distance"]
         )  #####################
-        normals_ft_epitopes = [normals, epitopes]
+        # add wobble to normals
+        #normals_ft_epitopes = [normals, epitopes]
+        if label_data["binding"]["wobble_range"]["theta"]:
+            cone_angle = label_data["binding"]["wobble_range"]["theta"]
+            print(f"Wobbling normals: {cone_angle}")
+            
+            w_normals = []
+            origin = np.array([0, 0, 0])
+            for i in range(normals.shape[0]):
+                n_wobbled = add_wobble(origin, normals[i,:], cone_angle_deg=cone_angle)
+                w_normals.append(n_wobbled)
+            normals_ft_epitopes = [np.array(w_normals), epitopes]
+        else:
+            normals_ft_epitopes = [normals, epitopes]
         indirect_realisation, list_reoriented_points_normals = decorate_epitopes_normals(
             normals_ft_epitopes, label_data["emitters"]
         )

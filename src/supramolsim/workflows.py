@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 from IPython.utils import io
 from tqdm import tqdm
 import numpy as np
+from scipy.spatial.distance import pdist
 from .utils.transform.datatype import truncate
 from .utils.data_format.structural_format import label_builder_format
 
@@ -156,10 +157,8 @@ def particle_from_structure(
             if "target_info" in label.keys():
                 label_object, label_params = construct_label(
                     label_config_path=label_config_path,
-                    fluorophore_id=label["fluorophore_id"],
                     lab_eff=label["labelling_efficiency"],
-                    target_info=label["target_info"],
-                    as_linker=label["as_linker"]
+                    **label
                 )
             else:
                 label_object, label_params = construct_label(
@@ -205,6 +204,9 @@ def particle_from_structure(
                 structure.assign_normals2targets()  # default is with scaling
             else:
                 print("Label is direct")
+            if label_params["binding"]["distance"]["between_targets"] == "estimate":
+                distances = pdist(label_params["coordinates"])
+                label_params["binding"]["distance"]["between_targets"] = np.max(distances)
         inst_builder = structure.create_instance_builder()
         particle = labinstance.create_particle(
             source_builder=inst_builder, label_params_list=label_params_list

@@ -54,12 +54,18 @@ def sample_array(array, fraction=1):
         return array
 
 
-def binomial_epitope_sampling(epitopes, p=1, normals=None):
-    n_epitopes = epitopes.shape[0]
-    total_selected = np.random.binomial(n_epitopes, p)
-    ids_selected = np.random.choice(
-        np.arange(0, n_epitopes), int(total_selected), replace=False
-    )
+def binomial_epitope_sampling(epitopes, p=1, normals=None, min_distance=0.0):
+    if min_distance:
+        #print(f"sampling with min epitope distance: {min_distance}, and efficiency: {p}")
+        available_epitopes_id = sample_epitopes_sterically(epitopes, min_distance)
+        n_epitopes = len(available_epitopes_id)
+    else:
+        #print(f"sampling with efficiency: {p}")
+        n_epitopes = epitopes.shape[0]
+        available_epitopes_id = np.arange(0, n_epitopes)
+    # bernoulli trials for each epitope 
+    ids_selected = [x for x in available_epitopes_id if np.random.rand() < p]
+    #ids_selected = np.random.binomial(available_epitopes_id, p)
     subset_epitopes = epitopes[ids_selected, :]
     if normals is None:
         return subset_epitopes

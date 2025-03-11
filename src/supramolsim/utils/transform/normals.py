@@ -45,7 +45,7 @@ def add_wobble(pivot, direction, cone_angle_deg=30, length=1):
     :param cone_angle_deg: (float) The maximum angle of the cone (in degrees).
     :param length: (float) The length of the translation vector to preserve after wobbling.
 
-    :return: (np.array) The new wobbling direction vector (translation vector).
+    :return: (np.array) The new wobbling direction vector.
     """
     # Ensure direction is a unit vector
     direction = direction / np.linalg.norm(direction)

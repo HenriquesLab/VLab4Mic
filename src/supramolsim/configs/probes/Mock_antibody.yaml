@@ -12,11 +12,11 @@ binding:
   efficiency: 1
   orientation: [0,0,1]
   wobble_range:
-    theta:
+    theta: 10
     phi:
   distance:
     to_target: 10
-    between_targets:
+    between_targets: estimate
   paratope: EFSAKF
 conjugation_sites:
   target:

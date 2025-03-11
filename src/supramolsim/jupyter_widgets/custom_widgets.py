@@ -299,8 +299,10 @@ def create_structural_model():
                 value=target_value
             )
             as_linker = labels_gui["as_linker"].value
+            enable_wobble = labels_gui["wobble"].value
+            wobble_theta = labels_gui["wobble_theta"].value
             tmp_label = data_format.structural_format.label_builder_format(
-                label_id, fluorophore_id, lab_eff, target_info, as_linker
+                label_id, fluorophore_id, lab_eff, target_info, as_linker, enable_wobble, wobble_theta
             )
             unique_name = label_id + "_conjugated_" + fluorophore_id
             if unique_name in current_labels.keys():
@@ -380,6 +382,16 @@ def create_structural_model():
         )
         labels_gui.add_checkbox("as_linker", description = "Model as primary with epitope for secondary probe",
                         value = False)
+        labels_gui.add_checkbox("wobble", description = "Enable wobble",
+                        value = False)
+        labels_gui.add_float_slider(
+            "wobble_theta",
+            value=10,
+            min=0,
+            max=45,
+            step=1,
+            description="Wobble cone range (degrees)",
+        )
         labels_gui.add_button("Add_mock", description="Add mock label")
         labels_gui["Add_mock"].on_click(build_mock_label)
 
