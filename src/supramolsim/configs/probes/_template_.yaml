@@ -22,4 +22,8 @@ conjugation_sites:
     value:
   efficiency:
   fluorophore:
-
+epitope: 
+  target:
+    type:
+    value:
+  normals:
