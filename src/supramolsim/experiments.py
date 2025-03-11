@@ -246,8 +246,10 @@ class ExperimentParametrisation:
     def remove_probes(self):
         self.structure_label = None
         self.probe_parameters = dict()
-        self.particle = None
-        self.structure.label_targets = dict()
+        if self.generators_status("particle"):
+            self.particle = None
+        if self.generators_status("structure"):
+            self.structure.label_targets = dict()
 
 def create_experiment_parametrisation(
     structure_and_labels: dict = None,
