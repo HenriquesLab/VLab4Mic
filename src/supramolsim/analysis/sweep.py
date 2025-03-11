@@ -51,8 +51,11 @@ def nested_sweep(
                             experiment.fluorophore_id = "AF647"
                         experiment.probe_parameters[probe] = p_param
                     experiment._build_particle(keep=True)
-                    if len(experiment.particle.emitters) == 0:
-                        print(f"Skipping {probe}. No emitters were generated")
+                    if experiment.generators_status("particle"):
+                        if len(experiment.particle.emmitters) == 0:
+                            print(f"Skipping {probe}. No emitters were generated")
+                            break
+                    else:
                         break
                     vsample_n = 0
                     for vsample in virtual_samples:
