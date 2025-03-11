@@ -52,7 +52,7 @@ def nested_sweep(
                         experiment.probe_parameters[probe] = p_param
                     experiment._build_particle(keep=True)
                     if experiment.generators_status("particle"):
-                        if len(experiment.particle.emmitters) == 0:
+                        if len(experiment.particle.emitters) == 0:
                             print(f"Skipping {probe}. No emitters were generated")
                             break
                     else:
