@@ -39,12 +39,12 @@ def nested_sweep(
             probe_n = 0
             for probe in probes:
                 combination = ""
-                combination += str(probe_n)
+                #combination += str(probe_n)
                 experiment.remove_probes()
                 print(f"probe: {probe}")
                 probe_param_n = 0
                 for p_param in probe_parameters:
-                    combination += str(probe_param_n)
+                    #combination += str(probe_param_n)
                     experiment.structure_label = probe
                     if p_param is not None:
                         if "fluorophpre_id" not in p_param.keys():
@@ -60,7 +60,7 @@ def nested_sweep(
                     vsample_n = 0
                     for vsample in virtual_samples:
                         _exported_field = None
-                        combination += str(vsample_n)
+                        #combination += str(vsample_n)
                         _exported_field = experiment._build_coordinate_field(
                             keep=False, use_self_particle=True
                         )
@@ -76,13 +76,14 @@ def nested_sweep(
                                 experiment.selected_mods[modality] = acquisition
                         experiment._build_imager(use_local_field=False)
                         experiment.imager.import_field(**_exported_field)
-                        iteration_name = combination
+                        #iteration_name = combination
                         iteration_output = experiment.run_simulation(
-                            name=iteration_name, save=False
+                            name="", save=False
                         )
                         mod_n = 0
+                        combination_n = str(probe_n) + str(probe_param_n) + str(vsample_n) 
                         for mod in modalities.keys():
-                            mod_comb = combination + str(mod_n)
+                            mod_comb = combination_n + str(mod_n)
                             _parameters = [struct, probe, p_param, vsample, mod, modalities[mod]]
                             if mod_comb not in sweep_params.keys():
                                 sweep_params[mod_comb] = _parameters
