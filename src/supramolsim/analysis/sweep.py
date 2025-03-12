@@ -39,6 +39,7 @@ def nested_sweep(
         # probe_parameters = probes["target_info"]
         for rep in range(repetitions):
             probe_n = 0
+            
             for probe in probes:
                 combination = ""
                 #combination += str(probe_n)
@@ -112,6 +113,9 @@ def sweep_vasmples(
 ):
     # empty lists, but fill up with default
     default_probe = "NHS_ester"
+    default_fluorophore = "AF647"
+    pck_dir = os.path.dirname(os.path.abspath(supramolsim.__file__))
+    local_dir = os.path.join(pck_dir, "configs")
     if experiment is None:
         experiment = ExperimentParametrisation()
     if structures is None:
@@ -119,12 +123,61 @@ def sweep_vasmples(
     if probes is None:
         probes = [default_probe,]
     if probe_parameters is None:
-        pck_dir = os.path.dirname(os.path.abspath(supramolsim.__file__))
-        local_dir = os.path.join(pck_dir, "configs")
         filepath = os.path.join(local_dir, "probes", default_probe + ".yaml")
         default_params = load_yaml(filepath) 
         probe_parameters = [default_params, ]
+    if virtual_samples is None:
+        filepath = os.path.join(local_dir, "probes", default_probe + ".yaml")
+        #default_vsample =  load_yaml(filepath) 
+        virtual_samples = [None,]
+
+    vsample_params = dict()
+    vsample_outputs = dict()
 
     for struct in structures:
         experiment.structure_id = struct
         experiment._build_structure()
+        for rep in range(repetitions):
+            probe_n = 0
+            for probe in probes:
+                print(f"probe: {probe}")
+                probe_param_n = 0
+                for p_param in probe_parameters:
+                    p_param["fluorophore_id"] = default_fluorophore
+                    experiment.remove_probes()
+                    experiment.structure_label = probe
+                    experiment.probe_parameters[probe] = p_param
+                    experiment._build_particle(keep=True)
+                    if experiment.generators_status("particle"):
+                        if len(experiment.particle.emitters) == 0:
+                            print(f"Skipping {probe}. No emitters were generated")
+                            break
+                    else:
+                         break
+                    vsample_n = 0
+                    for vsample in virtual_samples:
+                        _exported_field = None
+                        #combination += str(vsample_n)
+                        _exported_field = experiment._build_coordinate_field(
+                            keep=False, use_self_particle=True
+                        )
+                        combination_n = str(probe_n) + str(probe_param_n) + str(vsample_n)
+                        _parameters = [struct, probe, p_param, vsample]
+                        if combination_n not in vsample_params.keys():
+                            vsample_params[combination_n] = _parameters
+                            vsample_outputs[combination_n] = []
+                        vsample_outputs[combination_n].append(_exported_field)
+                        #
+                        #
+                        vsample_n += 1
+                    probe_param_n += 1
+                probe_n += 1
+    return experiment, vsample_outputs, vsample_params
+
+
+def sweep_modalities(
+        experiment: ExperimentParametrisation = None,
+        vsample_outputs = None
+    ):
+    if vsample_outputs is None:
+        pass # default sample can be a minimal field with a single emitter
