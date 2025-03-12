@@ -1,6 +1,8 @@
 from ..experiments import ExperimentParametrisation
 from ..utils.data_format import configuration_format
-
+from ..utils.io.yaml_functions import load_yaml
+import os
+import supramolsim
 
 def nested_sweep(
     experiment=ExperimentParametrisation,
@@ -21,6 +23,7 @@ def nested_sweep(
     ],
     repetitions = 1,
     **kwargs,
+    # empty lists, but fill up with default
 ):
     """
     Series of nested loops to cover every parameter combination
@@ -28,7 +31,6 @@ def nested_sweep(
 
     Input:
     """
-    
     sweep_params = dict()
     sweep_outputs = dict()
     for struct in structures:
@@ -45,6 +47,7 @@ def nested_sweep(
                 probe_param_n = 0
                 for p_param in probe_parameters:
                     #combination += str(probe_param_n)
+                    
                     experiment.structure_label = probe
                     if p_param is not None:
                         if "fluorophpre_id" not in p_param.keys():
@@ -95,3 +98,33 @@ def nested_sweep(
                 probe_n += 1 # changes more due to repetitions
         return sweep_outputs, sweep_params
         
+
+
+def sweep_vasmples(
+    experiment: ExperimentParametrisation = None,
+    structures=None,
+    probes=None,
+    probe_parameters=None,
+    virtual_samples=None,
+    modalities=None,
+    repetitions = 1,
+    **kwargs,
+):
+    # empty lists, but fill up with default
+    default_probe = "NHS_ester"
+    if experiment is None:
+        experiment = ExperimentParametrisation()
+    if structures is None:
+        structures = ["1XI5",]
+    if probes is None:
+        probes = [default_probe,]
+    if probe_parameters is None:
+        pck_dir = os.path.dirname(os.path.abspath(supramolsim.__file__))
+        local_dir = os.path.join(pck_dir, "configs")
+        filepath = os.path.join(local_dir, "probes", default_probe + ".yaml")
+        default_params = load_yaml(filepath) 
+        probe_parameters = [default_params, ]
+
+    for struct in structures:
+        experiment.structure_id = struct
+        experiment._build_structure()
