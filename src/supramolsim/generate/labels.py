@@ -224,6 +224,19 @@ def construct_label(
     """
     label_params = load_yaml(label_config_path)
     label_params["as_linker"] = as_linker
+    # keynames reserved for parameters that can be iteratet over
+    if "model_ID" in kwargs.keys():
+        label_params["model"]["ID"] = kwargs["model_ID"]
+    if "distance_to_epitope" in kwargs.keys():
+        label_params["binding"]["distance"]["to_target"] = kwargs["distance_to_epitope"]
+    if "paratope" in kwargs.keys():
+        label_params["binding"]["paratope"] = kwargs["paratope"]
+    if "conjugation_target_info" in kwargs.keys():
+        label_params["conjugation_sites"]["target"] = kwargs["conjugation_target_info"]
+    if "conjugation_efficiency" in kwargs.keys():
+        label_params["conjugation_sites"]["efficiency"] = kwargs["conjugation_efficiency"]
+    if "epitope_target_info" in kwargs.keys():
+        label_params["epitope"]["target"] = kwargs["epitope_target_info"]
     if enable_wobble:
         if label_params["binding"]["wobble_range"]["theta"] is None:
             label_params["binding"]["wobble_range"]["theta"] = wobble_theta
