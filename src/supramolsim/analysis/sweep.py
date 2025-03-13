@@ -140,9 +140,8 @@ def sweep_vasmples(
     if probe_parameters is None:
         probe_filepath = os.path.join(local_dir, "probes", default_probe + ".yaml")
         default_params = load_yaml(probe_filepath)
-        probe_parameters = [
-            default_params,
-        ]
+        probe_parameters = dict()
+        probe_parameters[0] = default_params
     if virtual_samples is None:
         # vprobe_filepath = os.path.join(local_dir, "probes", default_probe + ".yaml")
         # default_vsample =  load_yaml(vprobe_filepath)
@@ -159,8 +158,8 @@ def sweep_vasmples(
             probe_n = 0
             for probe in probes:
                 print(f"probe: {probe}")
-                probe_param_n = 0
-                for p_param in probe_parameters:
+                #probe_param_n = 0
+                for probe_param_n, p_param in probe_parameters.items():
                     experiment.remove_probes()
                     if p_param is None:
                         experiment.probe_parameters[probe] = default_params
@@ -193,7 +192,7 @@ def sweep_vasmples(
                         #
                         #
                         vsample_n += 1
-                    probe_param_n += 1
+                    #probe_param_n += 1
                 probe_n += 1
     return experiment, vsample_outputs, vsample_params
 
@@ -349,3 +348,15 @@ def sumarise_measurements(measurement_vectors):
         }
     )
     return data_frame
+
+
+def create_probe_param_combinations(**kwargs):
+    # Generate all combinations using itertools.product
+    combinations = list(itertools.product(*kwargs.values()))
+    # Create a new dictionary with unique integers as keys
+    # Each value in the dictionary will be another dictionary where the keys are the parameter names
+    combinations_dict = {
+        i: {key: value for key, value in zip(kwargs.keys(), combination)}
+        for i, combination in enumerate(combinations)
+    }
+    return combinations_dict
