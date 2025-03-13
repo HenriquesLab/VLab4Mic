@@ -3,7 +3,8 @@ from ..utils.data_format import configuration_format
 from ..utils.io.yaml_functions import load_yaml
 import os
 import supramolsim
-
+from . import metrics
+import numpy as np
 
 def nested_sweep(
     experiment=ExperimentParametrisation,
@@ -294,6 +295,30 @@ def generate_global_reference_modality(
         experiment.selected_mods[modality] = modality_acquisition
     experiment._build_imager(use_local_field=False)
     experiment.imager.import_field(**reference_vsample)
-    reference_parameters = [reference_vsample_params, modality, modality_acquisition]
+    reference_parameters = dict()
+    reference_parameters["Vector"] = [reference_vsample_params, modality, modality_acquisition]
     reference_output = experiment.run_simulation(name="", save=False)
+    imager_scale = experiment.imager.roi_params["scale"]
+    scalefactor = np.ceil(imager_scale / 1e-9)  # resulting pixel size in nanometers
+    reference_parameters["ref_pixelsize"] = experiment.imager.modalities["Reference"]["detector"]["pixelsize"]*scalefactor 
     return reference_output[modality], reference_parameters
+
+
+def analyse_image_sweep(img_outputs, img_params, reference, analysis_case_params=None):
+    measurement_vectors = []
+    #ref_pixelsize = analysis_case_params["ref_pixelsize"]
+    for params_id in img_params.keys():
+        rep_number = 0
+        mod_name = img_params[params_id][1]
+        for img_r in img_outputs[params_id]:
+            item_vector = []
+            im1 = img_r[0]
+            im_ref = reference[0]
+            rep_measurement, ref_used, qry_used = metrics.img_compare(im1, im_ref, **analysis_case_params[mod_name])
+            item_vector.append(params_id)
+            item_vector.append(rep_number)
+            item_vector.append(rep_measurement)
+            measurement_vectors.append(item_vector)
+            # inputs[params_id][rep_number] = [qry_used, im1]
+            rep_number += 1
+    return measurement_vectors
