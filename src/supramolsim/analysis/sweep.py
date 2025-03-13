@@ -6,6 +6,7 @@ import supramolsim
 from . import metrics
 import numpy as np
 import pandas as pd
+import itertools
 
 def nested_sweep(
     experiment=ExperimentParametrisation,
@@ -334,9 +335,15 @@ def analyse_image_sweep(img_outputs, img_params, reference, analysis_case_params
 
 def sumarise_measurements(measurement_vectors):
     measurement_array = np.array(measurement_vectors)
+    ids = [i.split("_") for i in measurement_array[:,0]]
+    ids_array = np.array(ids)
     data_frame = pd.DataFrame(
         data={
-            "Param_combination_id": measurement_array[:, 0],
+            "Combination_id":measurement_array[:,0],
+            "probe_n":ids_array[:,0],
+            "probe_param_n":ids_array[:,1],
+            "vsample":ids_array[:,2],
+            "modality":ids_array[:,3],
             "Replica": measurement_array[:, 1],
             "Metric": np.array(measurement_array[:, 2], dtype=np.float32),
         }
