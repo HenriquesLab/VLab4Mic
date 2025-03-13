@@ -116,7 +116,6 @@ def sweep_vasmples(
     probes=None,
     probe_parameters=None,
     virtual_samples=None,
-    modalities=None,
     repetitions=1,
     **kwargs,
 ):
@@ -147,7 +146,6 @@ def sweep_vasmples(
         virtual_samples = [
             None,
         ]
-
     vsample_params = dict()
     vsample_outputs = dict()
 
@@ -160,20 +158,20 @@ def sweep_vasmples(
                 print(f"probe: {probe}")
                 probe_param_n = 0
                 for p_param in probe_parameters:
+                    experiment.remove_probes()
                     if p_param is None:
                         experiment.probe_parameters[probe] = default_params
                     else:
                         p_param["fluorophore_id"] = default_fluorophore
-                        experiment.remove_probes()
                         experiment.structure_label = probe
                         experiment.probe_parameters[probe] = p_param
-                        experiment._build_particle(keep=True)
-                        if experiment.generators_status("particle"):
-                            if len(experiment.particle.emitters) == 0:
-                                print(f"Skipping {probe}. No emitters were generated")
-                                break
-                        else:
+                    experiment._build_particle(keep=True)
+                    if experiment.generators_status("particle"):
+                        if len(experiment.particle.emitters) == 0:
+                            print(f"Skipping {probe}. No emitters were generated")
                             break
+                    else:
+                        break
                     vsample_n = 0
                     for vsample in virtual_samples:
                         _exported_field = None
@@ -226,7 +224,6 @@ def sweep_modalities(
             experiment.selected_mods[modality] = acquisition
     experiment._build_imager(use_local_field=False)
     for vsmpl_id in vsampl_pars.keys():
-        reps = 0
         for virtualsample in vsample_outputs[vsmpl_id]:
             experiment.imager.import_field(**virtualsample)
             # iteration_name = combination
@@ -242,3 +239,38 @@ def sweep_modalities(
                 mod_outputs[mod_comb].append(iteration_output[mod])
                 mod_n += 1
     return experiment, mod_outputs, mod_params
+
+
+def generate_global_reference_sample(
+    experiment: ExperimentParametrisation = None,
+    structure=None,
+    probe=None,
+    probe_parameters=None,
+    virtual_sample=None,
+):
+    # empty lists, but fill up with default
+    pck_dir = os.path.dirname(os.path.abspath(supramolsim.__file__))
+    local_dir = os.path.join(pck_dir, "configs")
+    default_reference_probe = "NHS_ester"
+    default_reference_fluorophore = "AF647"
+    if experiment is None:
+        experiment = ExperimentParametrisation()
+    if probe is None:
+        probe = default_reference_probe
+    if probe_parameters is None:
+        probe_filepath = os.path.join(
+            local_dir, "probes", default_reference_probe + ".yaml"
+        )
+        probe_parameters = load_yaml(probe_filepath)
+        probe_parameters["fluorophore_id"] = default_reference_fluorophore
+    experiment.structure_id = structure
+    experiment._build_structure()
+    experiment.structure_label = probe
+    experiment.probe_parameters[probe] = probe_parameters
+    experiment._build_particle(keep=True)
+    # combination += str(vsample_n)
+    refernece_parameters = [structure, probe, probe_parameters, virtual_sample]
+    reference_vsample = experiment._build_coordinate_field(
+        keep=False, use_self_particle=True
+    )
+    return reference_vsample, refernece_parameters
