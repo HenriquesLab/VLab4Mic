@@ -274,3 +274,26 @@ def generate_global_reference_sample(
         keep=False, use_self_particle=True
     )
     return reference_vsample, refernece_parameters
+
+def generate_global_reference_modality(
+    experiment: ExperimentParametrisation = None,
+    reference_vsample=None,
+    reference_vsample_params=None,
+    modality=None,
+):
+    if experiment is None:
+        experiment = ExperimentParametrisation()
+    if modality is None:
+        modality = "Reference"
+        modality_acquisition = None
+    if modality_acquisition is None:
+        experiment.selected_mods[modality] = (
+            configuration_format.format_modality_acquisition_params()
+        )
+    else:
+        experiment.selected_mods[modality] = modality_acquisition
+    experiment._build_imager(use_local_field=False)
+    experiment.imager.import_field(**reference_vsample)
+    reference_parameters = [reference_vsample_params, modality, modality_acquisition]
+    reference_output = experiment.run_simulation(name="", save=False)
+    return reference_output[modality], reference_parameters
