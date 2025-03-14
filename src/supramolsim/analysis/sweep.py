@@ -335,8 +335,9 @@ def analyse_image_sweep(img_outputs, img_params, reference, analysis_case_params
     return measurement_vectors, inputs
 
 
-def sumarise_measurements(measurement_vectors):
+def measurements_dataframe(measurement_vectors, probe_parameters=None):
     measurement_array = np.array(measurement_vectors)
+    nrows = len(measurement_array[:, 1])
     ids = [i.split("_") for i in measurement_array[:,0]]
     ids_array = np.array(ids)
     data_frame = pd.DataFrame(
@@ -350,7 +351,19 @@ def sumarise_measurements(measurement_vectors):
             "Metric": np.array(measurement_array[:, 2], dtype=np.float32),
         }
     )
-    return data_frame
+    df_combined = None
+    if probe_parameters:
+        probe_param_names = probe_parameters[0].keys()
+        tmp_df = dict()
+        for column_name in probe_param_names:
+            tmp_df[column_name] = []
+        for i in range(nrows):
+            probe_par_comb_id = int(data_frame.iloc[i]["probe_param_n"])
+            for column_name in probe_param_names:
+                tmp_df[column_name].append(probe_parameters[probe_par_comb_id][column_name])
+        tmp = pd.DataFrame(tmp_df)
+        df_combined = data_frame.join(tmp)
+    return data_frame,df_combined
 
 
 def create_probe_param_combinations(**kwargs):
@@ -363,3 +376,21 @@ def create_probe_param_combinations(**kwargs):
         for i, combination in enumerate(combinations)
     }
     return combinations_dict
+
+
+def pivot_dataframe(dataframe, param1, param2):
+    # extract individual dataframe per condition
+    summarised_df = None
+    summarised_df = dataframe.groupby([param1,param2 ]).agg(
+        Mean_Value=('Metric', 'mean'),
+        Std_Dev=('Metric', 'std'),
+        Replicas_Count=('Replica', 'count')
+    ).reset_index()
+    # get mean and std accross parameter combinations of axes_param_names
+    condition_mean_pivot = summarised_df.pivot(
+        index=param1, columns=param2, values="Mean_Value"
+    ).round(4)
+    condition_sd_pivot = summarised_df.pivot(
+        index=param1, columns=param2, values="Std_Dev"
+    ).round(4)
+    return condition_mean_pivot, condition_sd_pivot
