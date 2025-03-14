@@ -7,6 +7,7 @@ from . import metrics
 import numpy as np
 import pandas as pd
 import itertools
+import copy
 
 def nested_sweep(
     experiment=ExperimentParametrisation,
@@ -160,13 +161,15 @@ def sweep_vasmples(
                 print(f"probe: {probe}")
                 #probe_param_n = 0
                 for probe_param_n, p_param in probe_parameters.items():
+                    # copy p_param?
                     experiment.remove_probes()
                     if p_param is None:
                         experiment.probe_parameters[probe] = default_params
                     else:
-                        p_param["fluorophore_id"] = default_fluorophore
+                        p_param_copy = copy.copy(p_param)
+                        p_param_copy["fluorophore_id"] = default_fluorophore
                         experiment.structure_label = probe
-                        experiment.probe_parameters[probe] = p_param
+                        experiment.probe_parameters[probe] = p_param_copy
                     experiment._build_particle(keep=True)
                     if experiment.generators_status("particle"):
                         if len(experiment.particle.emitters) == 0:
