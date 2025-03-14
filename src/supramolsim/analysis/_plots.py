@@ -57,8 +57,8 @@ def sns_heatmap_pivots(
             annot_kws=annot_kws,
             ax=axes[n, 0],
             cmap=conditions_cmaps[n],
-            xticklabels=df_pivots[cond][0].columns.values.round(3),
-            yticklabels=df_pivots[cond][0].index.values.round(3),
+            #xticklabels=df_pivots[cond][0].columns.values.round(3),
+            #yticklabels=df_pivots[cond][0].index.values.round(3),
             **hist_params,
         )
         axes[n, 0].set_title(titles["category"]+ ": " + cond + ". Mean Metric")
@@ -69,8 +69,8 @@ def sns_heatmap_pivots(
             annot_kws=annot_kws,
             ax=axes[n, 1],
             cmap=conditions_cmaps[n],
-            xticklabels=df_pivots[cond][1].columns.values.round(3),
-            yticklabels=df_pivots[cond][1].index.values.round(3),
+            #xticklabels=df_pivots[cond][1].columns.values.round(3),
+            #yticklabels=df_pivots[cond][1].index.values.round(3),
         )
         axes[n, 1].set_title(titles["category"]+ ": " + cond + ". Std Dev Metric")
     f.tight_layout()
