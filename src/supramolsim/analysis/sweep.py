@@ -226,7 +226,10 @@ def sweep_modalities(
                 configuration_format.format_modality_acquisition_params()
             )
         else:
-            experiment.selected_mods[modality] = acquisition
+            experiment.selected_mods[modality] = (
+                configuration_format.format_modality_acquisition_params(**acquisition)
+            )
+            #experiment.selected_mods[modality] = acquisition
     experiment._build_imager(use_local_field=False)
     for vsmpl_id in vsampl_pars.keys():
         for virtualsample in vsample_outputs[vsmpl_id]:
@@ -395,12 +398,11 @@ def pivot_dataframe(dataframe, param1, param2):
     ).round(4)
     return condition_mean_pivot, condition_sd_pivot
 
-def pivot_dataframes_byCategory(dataframe, category, param1, param2):
-    # extract individual dataframe per condition
+def pivot_dataframes_byCategory(dataframe, category_name, param1, param2, **kwargs):
     df_categories = dict()
-    for category, group in dataframe.groupby(category):
+    for category, group in dataframe.groupby(category_name):
         summarised_group = None
-        summarised_group = group.groupby([param1,param2 ]).agg(
+        summarised_group = group.groupby([param1, param2]).agg(
             Mean_Value=('Metric', 'mean'),
             Std_Dev=('Metric', 'std'),
             Replicas_Count=('Replica', 'count')
@@ -412,5 +414,10 @@ def pivot_dataframes_byCategory(dataframe, category, param1, param2):
         condition_sd_pivot = summarised_group.pivot(
             index=param1, columns=param2, values="Std_Dev"
         ).round(4)
-        df_categories[category] = [condition_mean_pivot, condition_sd_pivot]
-    return df_categories
+        df_categories[str(category)] = [condition_mean_pivot, condition_sd_pivot]
+    titles = dict(
+        category = category_name,
+        param1 = param1,
+        param2 = param2
+    )
+    return df_categories, titles
