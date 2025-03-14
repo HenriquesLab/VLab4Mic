@@ -47,7 +47,7 @@ def sns_heatmap_pivots(
     elif cmaps_range == "each":
         hist_params = dict()
     if conditions_cmaps is None:
-        conditions_cmaps = ["mako"] * n
+        conditions_cmaps = ["mako"] * nconditions
     for n, cond in enumerate(conditions):
         print(cond, n)
         # mean
