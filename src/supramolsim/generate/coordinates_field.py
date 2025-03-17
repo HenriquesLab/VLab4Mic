@@ -56,6 +56,8 @@ class Field:
         self.fluo2labels = []
         self.plotting_params = dict()
         self.fluoparams = dict()
+        self.random_placing = False
+        self.random_orientations = False
         # print(f'Working scale of the Field of View is {self.scale} meters')
 
     # methods to initialise field parameteres
@@ -93,19 +95,24 @@ class Field:
         # set molecules params
         self.set_molecules_params(**molecules)
 
-    def create_minimal_field(self, nmolecules=1, random_placing=False):
+    def create_minimal_field(self, nmolecules=1, random_placing=False, random_orientations=False, **kwargs):
         fluo_name = "AF647"
         self.calculate_absolute_reference()
         self.set_molecule_param("nMolecules", nmolecules)
         if random_placing:
+            self.random_placing = True
             self.generate_random_positions()
             self.fluorophre_emitters = {
                 fluo_name: self.get_molecule_param("absolute_positions")
             }
         elif nmolecules == 1:
             point = self.get_field_param("absolute_reference_point")
+            self._gen_abs_from_rel_positions()
             self.fluorophre_emitters = {fluo_name: point.reshape(1, 3)}
         self._set_fluo_plotting_params(fluo_name)
+        self.random_orientations = random_orientations
+
+
 
     def calculate_absolute_reference(self):
         relative_pt = self.get_field_param("relative_reference_point")
@@ -276,7 +283,8 @@ class Field:
             self._set_molecule_minimal_distance(
                 dist=particle_copy.radial_hindance
             )
-        self.generate_random_positions()
+        if self.random_placing:
+            self.generate_random_positions()
         # due to constraints, the actual number of particles might not be reps
         nmolecules = len(self.molecules_params["absolute_positions"])
         if reps > nmolecules:
@@ -291,8 +299,9 @@ class Field:
         for r in range(reps):
             molecules.append(copy.deepcopy(particle_copy))
         self.molecules = molecules
-        self.generate_random_orientations()
-        self.relabel_molecules()
+        if self.random_orientations:
+            self.generate_random_orientations()
+            self.relabel_molecules()
         
 
 
