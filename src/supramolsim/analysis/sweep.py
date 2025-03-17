@@ -181,6 +181,8 @@ def generate_global_reference_sample(
         )
         probe_parameters = load_yaml(probe_filepath)
         probe_parameters["fluorophore_id"] = default_reference_fluorophore
+    else: 
+        probe_parameters["fluorophore_id"] = default_reference_fluorophore
     experiment.structure_id = structure
     experiment._build_structure()
     experiment.structure_label = probe
