@@ -265,7 +265,7 @@ def measurements_dataframe(measurement_vectors, probe_parameters=None, p_defects
             "Metric": np.array(measurement_array[:, 2], dtype=np.float32),
         }
     )
-    df_combined = None
+    df_combined = data_frame
     if probe_parameters:
         probe_param_names = probe_parameters[0].keys()
         tmp_df = dict()
@@ -275,8 +275,20 @@ def measurements_dataframe(measurement_vectors, probe_parameters=None, p_defects
             probe_par_comb_id = int(data_frame.iloc[i]["probe_param_n"])
             for column_name in probe_param_names:
                 tmp_df[column_name].append(probe_parameters[probe_par_comb_id][column_name])
-        tmp = pd.DataFrame(tmp_df)
-        df_combined = data_frame.join(tmp)
+        tmp1 = pd.DataFrame(tmp_df)
+        df_combined = df_combined.join(tmp1)
+    if p_defects:
+        defect_param_names = p_defects[0].keys()
+        tmp_df1 = dict()
+        for column_name in defect_param_names:
+            tmp_df1[column_name] = []
+        for i in range(nrows):
+            defect_par_comb_id = int(data_frame.iloc[i]["defects"])
+            for column_name in defect_param_names:
+                tmp_df1[column_name].append(p_defects[defect_par_comb_id][column_name])
+        tmp2 = pd.DataFrame(tmp_df1)
+        df_combined = df_combined.join(tmp2)
+        
     return data_frame,df_combined
 
 
