@@ -15,6 +15,7 @@ def sweep_vasmples(
     structures=None,
     probes=None,
     probe_parameters=None,
+    particle_defects=None,
     virtual_samples=None,
     repetitions=1,
     **kwargs,
@@ -39,6 +40,8 @@ def sweep_vasmples(
         default_params = load_yaml(probe_filepath)
         probe_parameters = dict()
         probe_parameters[0] = default_params
+    if particle_defects is None:
+        particle_defects = [None,]
     if virtual_samples is None:
         # vprobe_filepath = os.path.join(local_dir, "probes", default_probe + ".yaml")
         # default_vsample =  load_yaml(vprobe_filepath)
@@ -62,36 +65,41 @@ def sweep_vasmples(
                     if p_param is None:
                         experiment.probe_parameters[probe] = default_params
                     else:
-                        p_param_copy = copy.copy(p_param)
+                        p_param_copy = copy.deepcopy(p_param)
                         p_param_copy["fluorophore_id"] = default_fluorophore
                         experiment.structure_label = probe
                         experiment.probe_parameters[probe] = p_param_copy
-                    experiment._build_particle(keep=True)
-                    if experiment.generators_status("particle"):
-                        if len(experiment.particle.emitters) == 0:
-                            print(f"Skipping {probe}. No emitters were generated")
+                    for defect_n, defects_pars in particle_defects.items():
+                        particle_defects_copy = copy.deepcopy(defects_pars)
+                        for d_key, d_val in particle_defects_copy.items():
+                            experiment.defect_eps[d_key] = d_val
+                        #print(experiment.defect_eps)
+                        experiment._build_particle(keep=True)
+                        if experiment.generators_status("particle"):
+                            if len(experiment.particle.emitters) == 0:
+                                print(f"Skipping {probe}. No emitters were generated")
+                                break
+                        else:
                             break
-                    else:
-                        break
-                    vsample_n = 0
-                    for vsample in virtual_samples:
-                        _exported_field = None
-                        # combination += str(vsample_n)
-                        _exported_field = experiment._build_coordinate_field(
-                            keep=False, use_self_particle=True
-                        )
-                        combination_n = (
-                            str(probe_n) + "_" + str(probe_param_n) + "_" + str(vsample_n)
-                        )
-                        _parameters = [struct, probe, p_param, vsample]
-                        if combination_n not in vsample_params.keys():
-                            vsample_params[combination_n] = _parameters
-                            vsample_outputs[combination_n] = []
-                        vsample_outputs[combination_n].append(_exported_field)
-                        #
-                        #
-                        vsample_n += 1
-                    #probe_param_n += 1
+                        vsample_n = 0
+                        for vsample in virtual_samples:
+                            _exported_field = None
+                            # combination += str(vsample_n)
+                            _exported_field = experiment._build_coordinate_field(
+                                keep=False, use_self_particle=True
+                            )
+                            combination_n = (
+                                str(probe_n) + "_" + str(probe_param_n) + "_" + str(defect_n) + "_" + str(vsample_n)
+                            )
+                            _parameters = [struct, probe, p_param, particle_defects, vsample]
+                            if combination_n not in vsample_params.keys():
+                                vsample_params[combination_n] = _parameters
+                                vsample_outputs[combination_n] = []
+                            vsample_outputs[combination_n].append(_exported_field)
+                            #
+                            #
+                            vsample_n += 1
+                        #defect_n += 1
                 probe_n += 1
     return experiment, vsample_outputs, vsample_params
 
@@ -240,7 +248,7 @@ def analyse_image_sweep(img_outputs, img_params, reference, analysis_case_params
     return measurement_vectors, inputs
 
 
-def measurements_dataframe(measurement_vectors, probe_parameters=None):
+def measurements_dataframe(measurement_vectors, probe_parameters=None, p_defects=None):
     measurement_array = np.array(measurement_vectors)
     nrows = len(measurement_array[:, 1])
     ids = [i.split("_") for i in measurement_array[:,0]]
