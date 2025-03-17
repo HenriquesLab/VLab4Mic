@@ -77,49 +77,39 @@ def test_sweep_vasmples_empty():
     test_experiment = experiments.ExperimentParametrisation()
     test_experiment, outputs, params = sweep.sweep_vasmples(test_experiment)
 
-def test_nested_sweep_directprobes():
+def test_sweep_vasmples_directprobes():
     test_experiment = experiments.ExperimentParametrisation()
     structures = ["1XI5",]
     directprobes = ["NHS_ester",]
-    modalities = dict(
-        STED=None,
-        Confocal=None,
-    )
     repetitions = 3
-    outputs, params = sweep.nested_sweep(
+    experiment, outputs, params = sweep.sweep_vasmples(
         experiment=test_experiment,
         structures=structures,
         probes=directprobes,
-        modalities=modalities,
         repetitions=repetitions
     )
-    
     assert len(outputs.keys()) > 0
     assert len(params.keys()) > 0
 
 
-def test_nested_sweep_indirectprobes():
+def test_sweep_vasmples_indirectprobes():
     test_experiment = experiments.ExperimentParametrisation()
     structures = ["1XI5",]
     indirectprobes = ["Mock_antibody", "Mock_linker", ]
-    probe_parameters=[
-            dict(
-                fluorophore_id="AF647",
-                labelling_efficiency = 1,
-                target_info = dict(type="Sequence", value="EQATETQ"),
-            ),
-        ]
-    modalities = dict(
-        STED=None,
-        Confocal=None,
+    # prepare probe parameters to sweep
+    probe_parameters_vectors = dict(
+        target_info = [dict(type="Sequence", value="EQATETQ"),],
+        labelling_efficiency = np.linspace(0.5,1,2),
+        distance_to_epitope = np.linspace(10,200,2)
     )
+    # generate probe combinations
+    probe_parameters = sweep.create_probe_param_combinations(**probe_parameters_vectors)
     repetitions = 3
-    outputs, params = sweep.nested_sweep(
+    experiment, outputs, params = sweep.sweep_vasmples(
         experiment=test_experiment,
         structures=structures,
         probes=indirectprobes,
         probe_parameters=probe_parameters,
-        modalities=modalities,
         repetitions=repetitions
     )
     assert len(outputs.keys()) > 0
