@@ -258,8 +258,9 @@ def measurements_dataframe(measurement_vectors, probe_parameters=None, p_defects
             "Combination_id":measurement_array[:,0],
             "probe_n":ids_array[:,0],
             "probe_param_n":ids_array[:,1],
-            "vsample":ids_array[:,2],
-            "modality":ids_array[:,3],
+            "defects":ids_array[:,2],
+            "vsample":ids_array[:,3],
+            "modality":ids_array[:,4],
             "Replica": measurement_array[:, 1],
             "Metric": np.array(measurement_array[:, 2], dtype=np.float32),
         }
