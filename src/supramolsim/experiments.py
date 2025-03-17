@@ -84,13 +84,17 @@ class ExperimentParametrisation:
         else:
             return labels_list
 
-    def _build_particle(self, lab_eff=1.0, defect=0.0, keep=False):
+    def _build_particle(self, lab_eff=1.0, defect=None, keep=False):
         if self.generators_status("structure"):
             labels_list = self._build_label(lab_eff=lab_eff)
             particle, label_params_list = particle_from_structure(
                 self.structure, labels_list, self.configuration_path
             )
             if self.defect_eps:
+                if defect is None:
+                    defect = 0.0
+                else:
+                    defect = self.defect_eps["defect"]
                 particle.add_defects(
                     eps1=self.defect_eps["eps1"],
                     xmer_neigh_distance=self.defect_eps["eps2"],
