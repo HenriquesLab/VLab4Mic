@@ -229,8 +229,14 @@ def sweep_modalities(
             experiment.selected_mods[modality] = (
                 configuration_format.format_modality_acquisition_params(**acquisition)
             )
+
             #experiment.selected_mods[modality] = acquisition
     experiment._build_imager(use_local_field=False)
+    pixelsizes = dict()
+    imager_scale = experiment.imager.roi_params["scale"]
+    scalefactor = np.ceil(imager_scale / 1e-9) # in nanometers
+    for mod_name, parameters in experiment.imager.modalities.items():
+        pixelsizes[mod_name] = np.array(parameters["detector"]["pixelsize"]*scalefactor)
     for vsmpl_id in vsampl_pars.keys():
         for virtualsample in vsample_outputs[vsmpl_id]:
             experiment.imager.import_field(**virtualsample)
@@ -246,7 +252,7 @@ def sweep_modalities(
                     mod_outputs[mod_comb] = []
                 mod_outputs[mod_comb].append(iteration_output[mod])
                 mod_n += 1
-    return experiment, mod_outputs, mod_params
+    return experiment, mod_outputs, mod_params, pixelsizes
 
 
 def generate_global_reference_sample(
