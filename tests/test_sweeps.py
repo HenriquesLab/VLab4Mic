@@ -73,9 +73,9 @@ def test_sweep_analysis(experiment_7r5k_base):
     assert len(data_frame["Metric"]) == total_combinations * replicas * conditions
 
 
-def test_nested_sweep_empty():
+def test_sweep_vasmples_empty():
     test_experiment = experiments.ExperimentParametrisation()
-    outputs, params = sweep.nested_sweep(test_experiment)
+    test_experiment, outputs, params = sweep.sweep_vasmples(test_experiment)
 
 def test_nested_sweep_directprobes():
     test_experiment = experiments.ExperimentParametrisation()
