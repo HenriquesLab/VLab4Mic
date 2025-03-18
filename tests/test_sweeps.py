@@ -60,7 +60,7 @@ def test_sweep_vasmples_indirectprobes(indirectprobe, efficiency, distance):
         ],
     )
     # generate probe combinations
-    probe_parameters = sweep.create_probe_param_combinations(**probe_parameters_vectors)
+    probe_parameters = sweep.create_param_combinations(**probe_parameters_vectors)
     repetitions = 3
     experiment, outputs, params = sweep.sweep_vasmples(
         experiment=test_experiment,
@@ -91,7 +91,7 @@ def test_sweep_vsample_modality_analysis():
         "Mock_linker",
     ]
     # generate probe combinations
-    probe_parameters = sweep.create_probe_param_combinations(**probe_parameters_vectors)
+    probe_parameters = sweep.create_param_combinations(**probe_parameters_vectors)
     repetitions = 3
     experiment, outputs, params = sweep.sweep_vasmples(
         experiment=test_experiment,
