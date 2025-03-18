@@ -42,6 +42,7 @@ class ExperimentParametrisation:
             imager=False,
             output_reference=False,
         )
+        self.defect_eps["use_defects"] = False
 
     def _build_structure(self, keep=True):
         if self.structure_id:
@@ -90,7 +91,7 @@ class ExperimentParametrisation:
             particle, label_params_list = particle_from_structure(
                 self.structure, labels_list, self.configuration_path
             )
-            if self.defect_eps:
+            if self.defect_eps["use_defects"]:
                 if defect is None:
                     defect = 0.0
                 else:
