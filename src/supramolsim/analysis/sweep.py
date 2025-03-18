@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 import itertools
 import copy
+from tqdm.notebook import tqdm
+from IPython.utils import io
 
 
 def sweep_vasmples(
@@ -141,21 +143,22 @@ def sweep_modalities(
     scalefactor = np.ceil(imager_scale / 1e-9) # in nanometers
     for mod_name, parameters in experiment.imager.modalities.items():
         pixelsizes[mod_name] = np.array(parameters["detector"]["pixelsize"]*scalefactor)
-    for vsmpl_id in vsampl_pars.keys():
-        for virtualsample in vsample_outputs[vsmpl_id]:
-            experiment.imager.import_field(**virtualsample)
-            # iteration_name = combination
-            iteration_output = experiment.run_simulation(name="", save=False)
-            mod_outputs
-            mod_n = 0
-            for mod, acq in modalities.items():
-                mod_comb = vsmpl_id + "_" + str(mod_n)
-                mod_parameters = [vsampl_pars[vsmpl_id], mod, acq]
-                if mod_comb not in mod_params.keys():
-                    mod_params[mod_comb] = mod_parameters
-                    mod_outputs[mod_comb] = []
-                mod_outputs[mod_comb].append(iteration_output[mod])
-                mod_n += 1
+    for vsmpl_id in tqdm(list(vsampl_pars.keys()), position=0, leave=True, desc='Unique parameter combination'):
+        for virtualsample in tqdm(list(vsample_outputs[vsmpl_id]), position=1, leave=False, desc='Repeats'):
+            with io.capture_output() as captured:
+                experiment.imager.import_field(**virtualsample)
+                # iteration_name = combination
+                iteration_output = experiment.run_simulation(name="", save=False)
+                mod_outputs
+                mod_n = 0
+                for mod, acq in modalities.items():
+                    mod_comb = vsmpl_id + "_" + str(mod_n)
+                    mod_parameters = [vsampl_pars[vsmpl_id], mod, acq]
+                    if mod_comb not in mod_params.keys():
+                        mod_params[mod_comb] = mod_parameters
+                        mod_outputs[mod_comb] = []
+                    mod_outputs[mod_comb].append(iteration_output[mod])
+                    mod_n += 1
     return experiment, mod_outputs, mod_params, pixelsizes
 
 
