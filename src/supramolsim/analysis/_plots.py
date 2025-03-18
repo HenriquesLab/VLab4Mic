@@ -34,7 +34,7 @@ def pivot_dataframes(dataframe, axes_param_names):
 
 
 def sns_heatmap_pivots(
-    df_pivots, conditions_cmaps, annotations=False, cmaps_range="same", **kwargs
+    df_pivots, titles = None, conditions_cmaps=None, annotations=False, cmaps_range="same", **kwargs
 ):
     conditions = list(df_pivots.keys())
     nconditions = len(conditions)
@@ -42,9 +42,12 @@ def sns_heatmap_pivots(
     f, axes = plt.subplots(nconditions, 2, figsize=(12, 10))
     plot_num = 0
     if cmaps_range == "same":
+        # min and max here correspond to SSIM
         hist_params = dict(vmin=0, vmax=1)
     elif cmaps_range == "each":
         hist_params = dict()
+    if conditions_cmaps is None:
+        conditions_cmaps = ["mako"] * nconditions
     for n, cond in enumerate(conditions):
         print(cond, n)
         # mean
@@ -53,23 +56,23 @@ def sns_heatmap_pivots(
             annot=annotations,
             annot_kws=annot_kws,
             ax=axes[n, 0],
-            cmap=conditions_cmaps[cond],
-            xticklabels=df_pivots[cond][0].columns.values.round(3),
-            yticklabels=df_pivots[cond][0].index.values.round(3),
+            cmap=conditions_cmaps[n],
+            #xticklabels=df_pivots[cond][0].columns.values.round(3),
+            #yticklabels=df_pivots[cond][0].index.values.round(3),
             **hist_params,
         )
-        axes[n, 0].set_title(cond + " mean SSIM")
+        axes[n, 0].set_title(titles["category"]+ ": " + cond + ". Mean Metric")
         # std
         sns.heatmap(
             df_pivots[cond][1],
             annot=annotations,
             annot_kws=annot_kws,
             ax=axes[n, 1],
-            cmap=conditions_cmaps[cond],
-            xticklabels=df_pivots[cond][1].columns.values.round(3),
-            yticklabels=df_pivots[cond][1].index.values.round(3),
+            cmap=conditions_cmaps[n],
+            #xticklabels=df_pivots[cond][1].columns.values.round(3),
+            #yticklabels=df_pivots[cond][1].index.values.round(3),
         )
-        axes[n, 1].set_title(cond + " sd SSIM")
+        axes[n, 1].set_title(titles["category"]+ ": " + cond + ". Std Dev Metric")
     f.tight_layout()
 
 

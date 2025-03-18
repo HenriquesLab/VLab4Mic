@@ -1,71 +1,137 @@
-from supramolsim.analysis.scripts import (
-    parameter_sweep_reps,
-    analyse_sweep,
-)
+from supramolsim.analysis import sweep
+from supramolsim import experiments
 import numpy as np
+import pytest
 
 
-def test_simple_param_sweep(experiment_7r5k_base):
-    assert experiment_7r5k_base.generators_status("structure") == True
-    assert experiment_7r5k_base.generators_status("imager") == True
-    sweep_pars = dict(
-        labelling_efficiency=dict(start=0.3, end=1, nintervals=2, ideal=1),
-        defects=dict(start=0, end=0.5, nintervals=2, ideal=0),
-    )
-    total_combinations = (
-        sweep_pars["defects"]["nintervals"]
-        * sweep_pars["labelling_efficiency"]["nintervals"]
-    )
-    sweep_out, sweep_out_pars, ref_out, ref_params = parameter_sweep_reps(
-        Experiment=experiment_7r5k_base, sweep_parameters=sweep_pars, repetitions=3
-    )
-    assert len(sweep_out_pars) == total_combinations
+def test_sweep_vasmples_empty():
+    test_experiment = experiments.ExperimentParametrisation()
+    test_experiment, outputs, params = sweep.sweep_vasmples(test_experiment)
 
 
-def test_sweep_analysis(experiment_7r5k_base):
-    assert experiment_7r5k_base.generators_status("structure") == True
-    assert experiment_7r5k_base.generators_status("imager") == True
-    sweep_pars = dict(
-        labelling_efficiency=dict(start=0.3, end=1, nintervals=2, ideal=1),
-        defects=dict(start=0, end=0.5, nintervals=2, ideal=0),
+def test_sweep_vasmples_directprobes():
+    test_experiment = experiments.ExperimentParametrisation()
+    structures = [
+        "1XI5",
+    ]
+    directprobes = [
+        "NHS_ester",
+    ]
+    repetitions = 3
+    experiment, outputs, params = sweep.sweep_vasmples(
+        experiment=test_experiment,
+        structures=structures,
+        probes=directprobes,
+        repetitions=repetitions,
     )
-    total_combinations = (
-        sweep_pars["defects"]["nintervals"]
-        * sweep_pars["labelling_efficiency"]["nintervals"]
+    assert len(outputs.keys()) > 0
+    assert len(params.keys()) > 0
+
+
+indirectprobes = [
+    "Mock_antibody",
+    "Mock_linker",
+]
+labelling_efficiency = np.linspace(0.5, 1, 3)
+distance_to_epitope = np.linspace(10, 200, 3)
+
+
+@pytest.mark.parametrize("indirectprobe", indirectprobes)
+@pytest.mark.parametrize("efficiency", labelling_efficiency)
+@pytest.mark.parametrize("distance", distance_to_epitope)
+def test_sweep_vasmples_indirectprobes(indirectprobe, efficiency, distance):
+    test_experiment = experiments.ExperimentParametrisation()
+    structures = [
+        "1XI5",
+    ]
+    probes = [
+        indirectprobe,
+    ]
+    # prepare probe parameters to sweep
+    probe_parameters_vectors = dict(
+        target_info=[
+            dict(type="Sequence", value="EQATETQ"),
+        ],
+        labelling_efficiency=[
+            efficiency,
+        ],
+        distance_to_epitope=[
+            distance,
+        ],
     )
-    replicas = 3
-    sweep_out, sweep_out_pars, ref_out, ref_params = parameter_sweep_reps(
-        Experiment=experiment_7r5k_base,
-        sweep_parameters=sweep_pars,
-        repetitions=replicas,
+    # generate probe combinations
+    probe_parameters = sweep.create_param_combinations(**probe_parameters_vectors)
+    repetitions = 3
+    experiment, outputs, params = sweep.sweep_vasmples(
+        experiment=test_experiment,
+        structures=structures,
+        probes=probes,
+        probe_parameters=probe_parameters,
+        repetitions=repetitions,
     )
-    # get pixelsizes
-    imager_scale = experiment_7r5k_base.imager.roi_params["scale"]
-    scalefactor = np.ceil(imager_scale / 1e-9)
-    sweep_analyse_pars = dict(
-        STED=dict(
-            metric="ssim",
-            subregion=False,
-            force_match=True,
-            modality_pixelsize=experiment_7r5k_base.imager.modalities["STED"][
-                "detector"
-            ]["pixelsize"]
-            * scalefactor,
-            ref_pixelsize=ref_params["STED"]["ref_pixelsize"],
-        ),
-        Confocal=dict(
-            metric="ssim",
-            subregion=False,
-            force_match=True,
-            modality_pixelsize=experiment_7r5k_base.imager.modalities["Confocal"][
-                "detector"
-            ]["pixelsize"]
-            * scalefactor,
-            ref_pixelsize=ref_params["Confocal"]["ref_pixelsize"],
-        ),
+    assert len(outputs.keys()) > 0
+    assert len(params.keys()) > 0
+
+
+def test_sweep_vsample_modality_analysis():
+    structures = [
+        "1XI5",
+    ]
+    test_experiment = experiments.ExperimentParametrisation()
+    # prepare probe parameters to sweep
+    probe_parameters_vectors = dict(
+        target_info=[
+            dict(type="Sequence", value="EQATETQ"),
+        ],
+        labelling_efficiency=np.linspace(0.5, 1, 2),
+        distance_to_epitope=np.linspace(10, 200, 2),
     )
-    conditions = len(list(sweep_analyse_pars.keys()))
-    data_frame, qries, references = analyse_sweep(
-        sweep_out, sweep_out_pars, ref_out, sweep_analyse_pars
+    indirectprobes = [
+        "Mock_antibody",
+        "Mock_linker",
+    ]
+    # generate probe combinations
+    probe_parameters = sweep.create_param_combinations(**probe_parameters_vectors)
+    repetitions = 3
+    experiment, outputs, params = sweep.sweep_vasmples(
+        experiment=test_experiment,
+        structures=structures,
+        probes=indirectprobes,
+        probe_parameters=probe_parameters,
+        repetitions=repetitions,
     )
-    assert len(data_frame["Metric"]) == total_combinations * replicas * conditions
+    assert len(outputs.keys()) > 0
+    assert len(params.keys()) > 0
+    modalities = dict(
+        STED=dict(nframes=2),  # change nframes
+        Confocal=dict(nframes=2),
+    )
+    test_experiment, mod_outputs, mod_params, mod_pixelsizes = sweep.sweep_modalities(
+        test_experiment, outputs, params, modalities=modalities
+    )
+
+    ref_vsample, ref_params = sweep.generate_global_reference_sample(
+        structure="1XI5", probe="NHS_ester"
+    )
+    ref_image, ref_image_pars = sweep.generate_global_reference_modality(
+        reference_vsample=ref_vsample, reference_vsample_params=ref_params
+    )
+    #
+    sweep_analyse_parameters = dict()
+    ref_pixelsize = ref_image_pars["ref_pixelsize"]
+
+    for mod_name, pixelsize in mod_pixelsizes.items():
+        sweep_analyse_parameters[mod_name] = {}
+        sweep_analyse_parameters[mod_name]["metric"] = "ssim"
+        sweep_analyse_parameters[mod_name]["modality_pixelsize"] = pixelsize
+        sweep_analyse_parameters[mod_name]["ref_pixelsize"] = ref_pixelsize
+        sweep_analyse_parameters[mod_name]["force_match"] = True
+
+    measurements, inputs = sweep.analyse_image_sweep(
+        mod_outputs, mod_params, ref_image, sweep_analyse_parameters
+    )
+    dframe, combined = sweep.measurements_dataframe(measurements, probe_parameters)
+
+    df_categories, titles = sweep.pivot_dataframes_byCategory(
+        combined, "modality", "labelling_efficiency", "distance_to_epitope"
+    )

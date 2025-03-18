@@ -215,7 +215,7 @@ def particle_from_structure(
 
 
 def field_from_particle(
-    particle: labinstance.LabeledInstance, field_config: str = None
+    particle: labinstance.LabeledInstance, field_config: str = None, **kwargs
 ):
     """
     Create a particle field from input particle object.
@@ -239,10 +239,10 @@ def field_from_particle(
         print("Creating field from parameter files")
         # coordinates_field.init_from_file(field_config)
         ## if not file, use as dictionary
-        coordinates_field = create_min_field(**field_config)
+        coordinates_field = create_min_field(**field_config, **kwargs)
         # coordinates_field.init_from_file(field_config)
     else:
-        coordinates_field = create_min_field()
+        coordinates_field = create_min_field(**kwargs)
     coordinates_field.create_molecules_from_InstanceObject(particle)
     coordinates_field.construct_static_field()
     return coordinates_field.export_field(), coordinates_field

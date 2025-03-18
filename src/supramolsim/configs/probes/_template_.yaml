@@ -1,3 +1,4 @@
+label_name:
 target:
   type:
   value:
@@ -22,4 +23,8 @@ conjugation_sites:
     value:
   efficiency:
   fluorophore:
-
+epitope: 
+  target:
+    type:
+    value:
+  normals:

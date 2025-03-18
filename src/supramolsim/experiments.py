@@ -23,6 +23,7 @@ class ExperimentParametrisation:
     fluorophore_id: str = ""
     coordinate_field_id: str = None
     selected_mods: Dict[str, int] = field(default_factory=dict)
+    probe_parameters: Dict[str, int] = field(default_factory=dict)
     defect_eps: Dict[str, int] = field(default_factory=dict)
     sweep_pars: Dict[str, int] = field(default_factory=dict)
     objects_created: Dict[str, int] = field(default_factory=dict)
@@ -41,6 +42,7 @@ class ExperimentParametrisation:
             imager=False,
             output_reference=False,
         )
+        self.defect_eps["use_defects"] = False
 
     def _build_structure(self, keep=True):
         if self.structure_id:
@@ -61,25 +63,39 @@ class ExperimentParametrisation:
         "fluorophore_id".
         """
         labels_list = []
-        labels_list.append(
-            label_builder_format(
-                label_id=self.structure_label,
-                fluorophore_id=self.fluorophore_id,
-                labelling_efficiency=lab_eff,
+        probe_name = self.structure_label
+        if probe_name in self.probe_parameters.keys():
+            probeparams = self.probe_parameters[probe_name]
+            labels_list.append(
+                label_builder_format(
+                    label_id=probe_name,
+                    **probeparams
+                )
             )
-        )
+        else:
+            labels_list.append(
+                label_builder_format(
+                    label_id=self.structure_label,
+                    fluorophore_id=self.fluorophore_id,
+                    labelling_efficiency=lab_eff,
+                )
+            )
         if keep:
             pass
         else:
             return labels_list
 
-    def _build_particle(self, lab_eff=1.0, defect=0.0, keep=False):
+    def _build_particle(self, lab_eff=1.0, defect=None, keep=False):
         if self.generators_status("structure"):
             labels_list = self._build_label(lab_eff=lab_eff)
             particle, label_params_list = particle_from_structure(
                 self.structure, labels_list, self.configuration_path
             )
-            if self.defect_eps:
+            if self.defect_eps["use_defects"]:
+                if defect is None:
+                    defect = 0.0
+                else:
+                    defect = self.defect_eps["defect"]
                 particle.add_defects(
                     eps1=self.defect_eps["eps1"],
                     xmer_neigh_distance=self.defect_eps["eps2"],
@@ -93,6 +109,7 @@ class ExperimentParametrisation:
     def _build_coordinate_field(
         self, use_self_particle=True, keep=False, coordinate_field_path=None, **kwargs
     ):
+        
         if use_self_particle and self.generators_status("particle"):
             print("creating field from existing particle")
             exported_field, fieldobject = field_from_particle(
@@ -231,6 +248,13 @@ class ExperimentParametrisation:
         else:
             print("Missing attributes")
 
+    def remove_probes(self):
+        self.structure_label = None
+        self.probe_parameters = dict()
+        if self.generators_status("particle"):
+            self.particle = None
+        if self.generators_status("structure"):
+            self.structure.label_targets = dict()
 
 def create_experiment_parametrisation(
     structure_and_labels: dict = None,
