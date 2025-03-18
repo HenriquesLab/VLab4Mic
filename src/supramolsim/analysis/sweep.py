@@ -48,9 +48,11 @@ def sweep_vasmples(
     if virtual_samples is None:
         # vprobe_filepath = os.path.join(local_dir, "probes", default_probe + ".yaml")
         # default_vsample =  load_yaml(vprobe_filepath)
-        virtual_samples = [
-            None,
-        ]
+        virtual_samples = dict()
+        virtual_samples[0] = {"random_orientations": False}
+        #virtual_samples = [
+        #    None,
+        #]
     vsample_params = dict()
     vsample_outputs = dict()
 
@@ -84,12 +86,12 @@ def sweep_vasmples(
                                 break
                         else:
                             break
-                        vsample_n = 0
-                        for vsample in virtual_samples:
+                        #vsample_n = 0
+                        for vsample_n, vsample_pars in virtual_samples.items():
                             _exported_field = None
                             # combination += str(vsample_n)
                             _exported_field = experiment._build_coordinate_field(
-                                keep=False, use_self_particle=True
+                                keep=False, use_self_particle=True, **vsample_pars
                             )
                             combination_n = (
                                 str(probe_n)
@@ -105,7 +107,7 @@ def sweep_vasmples(
                                 probe,
                                 p_param,
                                 particle_defects,
-                                vsample,
+                                vsample_pars,
                             ]
                             if combination_n not in vsample_params.keys():
                                 vsample_params[combination_n] = _parameters
@@ -113,7 +115,7 @@ def sweep_vasmples(
                             vsample_outputs[combination_n].append(_exported_field)
                             #
                             #
-                            vsample_n += 1
+                            #vsample_n += 1
                         # defect_n += 1
                 probe_n += 1
     return experiment, vsample_outputs, vsample_params
@@ -280,7 +282,7 @@ def analyse_image_sweep(img_outputs, img_params, reference, analysis_case_params
 
 
 def measurements_dataframe(
-    measurement_vectors, probe_parameters=None, p_defects=None, mod_params=None
+    measurement_vectors, probe_parameters=None, p_defects=None, sample_params=None, mod_params=None
 ):
     measurement_array = np.array(measurement_vectors)
     nrows = len(measurement_array[:, 1])
@@ -301,41 +303,53 @@ def measurements_dataframe(
     df_combined = data_frame
     if probe_parameters:
         probe_param_names = probe_parameters[0].keys()
-        tmp_df = dict()
+        tmp_df1 = dict()
         for column_name in probe_param_names:
-            tmp_df[column_name] = []
+            tmp_df1[column_name] = []
         for i in range(nrows):
             probe_par_comb_id = int(data_frame.iloc[i]["probe_param_n"])
             for column_name in probe_param_names:
-                tmp_df[column_name].append(
+                tmp_df1[column_name].append(
                     probe_parameters[probe_par_comb_id][column_name]
                 )
-        tmp1 = pd.DataFrame(tmp_df)
+        tmp1 = pd.DataFrame(tmp_df1)
         df_combined = df_combined.join(tmp1)
     if p_defects:
         defect_param_names = p_defects[0].keys()
-        tmp_df1 = dict()
+        tmp_df2 = dict()
         for column_name in defect_param_names:
-            tmp_df1[column_name] = []
+            tmp_df2[column_name] = []
         for i in range(nrows):
             defect_par_comb_id = int(data_frame.iloc[i]["defects"])
             for column_name in defect_param_names:
-                tmp_df1[column_name].append(p_defects[defect_par_comb_id][column_name])
-        tmp2 = pd.DataFrame(tmp_df1)
+                tmp_df2[column_name].append(p_defects[defect_par_comb_id][column_name])
+        tmp2 = pd.DataFrame(tmp_df2)
         df_combined = df_combined.join(tmp2)
+    if sample_params:
+        sample_param_names = sample_params[0].keys()
+        tmp_df3 = dict()
+        for column_name in sample_param_names:
+            tmp_df3[column_name] = []
+        for i in range(nrows):
+            sample_par_comb_id = int(data_frame.iloc[i]["vsample"])
+            for column_name in sample_param_names:
+                tmp_df3[column_name].append(sample_params[sample_par_comb_id][column_name])
+        tmp3 = pd.DataFrame(tmp_df3)
+        df_combined = df_combined.join(tmp3)
     if mod_params:
         mod_id = dict()
         # later adapt for including parameters of modalities
         for key, val in mod_params.items():
             keyname = key.split("_")[4]
             mod_id[int(keyname)] = val[5]
-        tmp_df2 = dict()
-        tmp_df2["modality_name"] = []
+        tmp_df4 = dict()
+        tmp_df4["modality_name"] = []
         for i in range(nrows):
             mod_par_comb_id = int(data_frame.iloc[i]["modality"])
-            tmp_df2["modality_name"].append(mod_id[mod_par_comb_id])
-        tmp3 = pd.DataFrame(tmp_df2)
-        df_combined = df_combined.join(tmp3)
+            tmp_df4["modality_name"].append(mod_id[mod_par_comb_id])
+        tmp4 = pd.DataFrame(tmp_df4)
+        df_combined = df_combined.join(tmp4)
+
 
     return data_frame, df_combined
 
