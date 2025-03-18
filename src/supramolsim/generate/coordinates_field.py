@@ -550,13 +550,13 @@ class Field:
         return export_field
 
 
-def create_min_field(nparticles=1, random_placing=False, molecule_pars=None):
+def create_min_field(nparticles=1, random_placing=False, random_orientations=False, molecule_pars=None):
     print("Initialising default field")
     coordinates_field = Field()
     if molecule_pars:
         for key, value in molecule_pars.items():
             coordinates_field.molecules_params[key] = value
     coordinates_field.create_minimal_field(
-        nmolecules=nparticles, random_placing=random_placing
+        nmolecules=nparticles, random_placing=random_placing, random_orientations=random_orientations
     )
     return coordinates_field
