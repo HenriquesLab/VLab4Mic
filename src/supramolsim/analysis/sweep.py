@@ -128,6 +128,10 @@ def sweep_modalities(
     modalities=None,
 ):
     default_mod = "Confocal"
+    default_aqc = dict(
+        nframes=2,
+        exp_time=0.005
+    )
     default_vsample = "None"
     mod_outputs = dict()
     mod_params = dict()
@@ -138,9 +142,14 @@ def sweep_modalities(
             default_vsample,
         ]
         # needs default sample. can be a minimal field with a single emitter
-    if modalities is None:
+    if modalities == "all":
         modalities = dict()
-        modalities[default_mod] = None
+        list_of_locals = ["Widefield", "Confocal", "SMLM", "STED"]
+        for local_mode in list_of_locals:
+            modalities[local_mode] = default_aqc
+    elif modalities is None:
+        modalities = dict()
+        modalities[default_mod] = default_aqc
     for modality, acquisition in modalities.items():  # load all modalities
         if acquisition is None:
             experiment.selected_mods[modality] = (
