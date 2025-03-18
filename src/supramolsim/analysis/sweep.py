@@ -341,7 +341,7 @@ def measurements_dataframe(
     return data_frame, df_combined
 
 
-def create_probe_param_combinations(**kwargs):
+def create_param_combinations(**kwargs):
     # Generate all combinations using itertools.product
     combinations = list(itertools.product(*kwargs.values()))
     # Create a new dictionary with unique integers as keys
