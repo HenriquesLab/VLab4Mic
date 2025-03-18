@@ -43,9 +43,8 @@ def sweep_vasmples(
         probe_parameters = dict()
         probe_parameters[0] = default_params
     if particle_defects is None:
-        particle_defects = [
-            None,
-        ]
+        particle_defects = dict()
+        particle_defects[0] = {"use_defects": False}
     if virtual_samples is None:
         # vprobe_filepath = os.path.join(local_dir, "probes", default_probe + ".yaml")
         # default_vsample =  load_yaml(vprobe_filepath)
