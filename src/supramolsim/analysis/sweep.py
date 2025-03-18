@@ -43,7 +43,9 @@ def sweep_vasmples(
         probe_parameters = dict()
         probe_parameters[0] = default_params
     if particle_defects is None:
-        particle_defects = [None,]
+        particle_defects = [
+            None,
+        ]
     if virtual_samples is None:
         # vprobe_filepath = os.path.join(local_dir, "probes", default_probe + ".yaml")
         # default_vsample =  load_yaml(vprobe_filepath)
@@ -60,7 +62,7 @@ def sweep_vasmples(
             probe_n = 0
             for probe in probes:
                 print(f"probe: {probe}")
-                #probe_param_n = 0
+                # probe_param_n = 0
                 for probe_param_n, p_param in probe_parameters.items():
                     # copy p_param?
                     experiment.remove_probes()
@@ -75,7 +77,7 @@ def sweep_vasmples(
                         particle_defects_copy = copy.deepcopy(defects_pars)
                         for d_key, d_val in particle_defects_copy.items():
                             experiment.defect_eps[d_key] = d_val
-                        #print(experiment.defect_eps)
+                        # print(experiment.defect_eps)
                         experiment._build_particle(keep=True)
                         if experiment.generators_status("particle"):
                             if len(experiment.particle.emitters) == 0:
@@ -91,9 +93,21 @@ def sweep_vasmples(
                                 keep=False, use_self_particle=True
                             )
                             combination_n = (
-                                str(probe_n) + "_" + str(probe_param_n) + "_" + str(defect_n) + "_" + str(vsample_n)
+                                str(probe_n)
+                                + "_"
+                                + str(probe_param_n)
+                                + "_"
+                                + str(defect_n)
+                                + "_"
+                                + str(vsample_n)
                             )
-                            _parameters = [struct, probe, p_param, particle_defects, vsample]
+                            _parameters = [
+                                struct,
+                                probe,
+                                p_param,
+                                particle_defects,
+                                vsample,
+                            ]
                             if combination_n not in vsample_params.keys():
                                 vsample_params[combination_n] = _parameters
                                 vsample_outputs[combination_n] = []
@@ -101,7 +115,7 @@ def sweep_vasmples(
                             #
                             #
                             vsample_n += 1
-                        #defect_n += 1
+                        # defect_n += 1
                 probe_n += 1
     return experiment, vsample_outputs, vsample_params
 
@@ -135,15 +149,24 @@ def sweep_modalities(
             experiment.selected_mods[modality] = (
                 configuration_format.format_modality_acquisition_params(**acquisition)
             )
-            #experiment.selected_mods[modality] = acquisition
+            # experiment.selected_mods[modality] = acquisition
     experiment._build_imager(use_local_field=False)
     pixelsizes = dict()
     imager_scale = experiment.imager.roi_params["scale"]
-    scalefactor = np.ceil(imager_scale / 1e-9) # in nanometers
+    scalefactor = np.ceil(imager_scale / 1e-9)  # in nanometers
     for mod_name, parameters in experiment.imager.modalities.items():
-        pixelsizes[mod_name] = np.array(parameters["detector"]["pixelsize"]*scalefactor)
-    for vsmpl_id in tqdm(list(vsampl_pars.keys()), position=0, leave=True, desc='Unique parameter combination'):
-        for virtualsample in tqdm(list(vsample_outputs[vsmpl_id]), position=1, leave=False, desc='Repeats'):
+        pixelsizes[mod_name] = np.array(
+            parameters["detector"]["pixelsize"] * scalefactor
+        )
+    for vsmpl_id in tqdm(
+        list(vsampl_pars.keys()),
+        position=0,
+        leave=True,
+        desc="Unique parameter combination",
+    ):
+        for virtualsample in tqdm(
+            list(vsample_outputs[vsmpl_id]), position=1, leave=False, desc="Repeats"
+        ):
             with io.capture_output() as captured:
                 experiment.imager.import_field(**virtualsample)
                 # iteration_name = combination
@@ -156,7 +179,7 @@ def sweep_modalities(
                     mod_parameters = copy.copy(vsampl_pars[vsmpl_id])
                     mod_parameters.append(mod)
                     mod_parameters.append(acq)
-                    #mod_parameters = [vsampl_pars[vsmpl_id], mod, acq]
+                    # mod_parameters = [vsampl_pars[vsmpl_id], mod, acq]
                     if mod_comb not in mod_params.keys():
                         mod_params[mod_comb] = mod_parameters
                         mod_outputs[mod_comb] = []
@@ -188,7 +211,7 @@ def generate_global_reference_sample(
         )
         probe_parameters = load_yaml(probe_filepath)
         probe_parameters["fluorophore_id"] = default_reference_fluorophore
-    else: 
+    else:
         probe_parameters["fluorophore_id"] = default_reference_fluorophore
     experiment.structure_id = structure
     experiment._build_structure()
@@ -244,7 +267,7 @@ def analyse_image_sweep(img_outputs, img_params, reference, analysis_case_params
     for params_id in img_params.keys():
         inputs[params_id] = dict()
         rep_number = 0
-        mod_name = img_params[params_id][1]
+        mod_name = img_params[params_id][5]  # 5th item corresponds to Modality
         for img_r in img_outputs[params_id]:
             im1 = img_r[0]
             im_ref = reference[0]
@@ -257,19 +280,21 @@ def analyse_image_sweep(img_outputs, img_params, reference, analysis_case_params
     return measurement_vectors, inputs
 
 
-def measurements_dataframe(measurement_vectors, probe_parameters=None, p_defects=None):
+def measurements_dataframe(
+    measurement_vectors, probe_parameters=None, p_defects=None, mod_params=None
+):
     measurement_array = np.array(measurement_vectors)
     nrows = len(measurement_array[:, 1])
-    ids = [i.split("_") for i in measurement_array[:,0]]
+    ids = [i.split("_") for i in measurement_array[:, 0]]
     ids_array = np.array(ids)
     data_frame = pd.DataFrame(
         data={
-            "Combination_id":measurement_array[:,0],
-            "probe_n":ids_array[:,0],
-            "probe_param_n":ids_array[:,1],
-            "defects":ids_array[:,2],
-            "vsample":ids_array[:,3],
-            "modality":ids_array[:,4],
+            "Combination_id": measurement_array[:, 0],
+            "probe_n": ids_array[:, 0],
+            "probe_param_n": ids_array[:, 1],
+            "defects": ids_array[:, 2],
+            "vsample": ids_array[:, 3],
+            "modality": ids_array[:, 4],
             "Replica": measurement_array[:, 1],
             "Metric": np.array(measurement_array[:, 2], dtype=np.float32),
         }
@@ -283,7 +308,9 @@ def measurements_dataframe(measurement_vectors, probe_parameters=None, p_defects
         for i in range(nrows):
             probe_par_comb_id = int(data_frame.iloc[i]["probe_param_n"])
             for column_name in probe_param_names:
-                tmp_df[column_name].append(probe_parameters[probe_par_comb_id][column_name])
+                tmp_df[column_name].append(
+                    probe_parameters[probe_par_comb_id][column_name]
+                )
         tmp1 = pd.DataFrame(tmp_df)
         df_combined = df_combined.join(tmp1)
     if p_defects:
@@ -297,8 +324,21 @@ def measurements_dataframe(measurement_vectors, probe_parameters=None, p_defects
                 tmp_df1[column_name].append(p_defects[defect_par_comb_id][column_name])
         tmp2 = pd.DataFrame(tmp_df1)
         df_combined = df_combined.join(tmp2)
-        
-    return data_frame,df_combined
+    if mod_params:
+        mod_id = dict()
+        # later adapt for including parameters of modalities
+        for key, val in mod_params.items():
+            keyname = key.split("_")[4]
+            mod_id[int(keyname)] = val[5]
+        tmp_df2 = dict()
+        tmp_df2["modality_name"] = []
+        for i in range(nrows):
+            mod_par_comb_id = int(data_frame.iloc[i]["modality"])
+            tmp_df2["modality_name"].append(mod_id[mod_par_comb_id])
+        tmp3 = pd.DataFrame(tmp_df2)
+        df_combined = df_combined.join(tmp3)
+
+    return data_frame, df_combined
 
 
 def create_probe_param_combinations(**kwargs):
@@ -316,11 +356,15 @@ def create_probe_param_combinations(**kwargs):
 def pivot_dataframe(dataframe, param1, param2):
     # extract individual dataframe per condition
     summarised_df = None
-    summarised_df = dataframe.groupby([param1,param2 ]).agg(
-        Mean_Value=('Metric', 'mean'),
-        Std_Dev=('Metric', 'std'),
-        Replicas_Count=('Replica', 'count')
-    ).reset_index()
+    summarised_df = (
+        dataframe.groupby([param1, param2])
+        .agg(
+            Mean_Value=("Metric", "mean"),
+            Std_Dev=("Metric", "std"),
+            Replicas_Count=("Replica", "count"),
+        )
+        .reset_index()
+    )
     # get mean and std accross parameter combinations of axes_param_names
     condition_mean_pivot = summarised_df.pivot(
         index=param1, columns=param2, values="Mean_Value"
@@ -330,15 +374,20 @@ def pivot_dataframe(dataframe, param1, param2):
     ).round(4)
     return condition_mean_pivot, condition_sd_pivot
 
+
 def pivot_dataframes_byCategory(dataframe, category_name, param1, param2, **kwargs):
     df_categories = dict()
     for category, group in dataframe.groupby(category_name):
         summarised_group = None
-        summarised_group = group.groupby([param1, param2]).agg(
-            Mean_Value=('Metric', 'mean'),
-            Std_Dev=('Metric', 'std'),
-            Replicas_Count=('Replica', 'count')
-        ).reset_index()
+        summarised_group = (
+            group.groupby([param1, param2])
+            .agg(
+                Mean_Value=("Metric", "mean"),
+                Std_Dev=("Metric", "std"),
+                Replicas_Count=("Replica", "count"),
+            )
+            .reset_index()
+        )
         # get mean and std accross parameter combinations of axes_param_names
         condition_mean_pivot = summarised_group.pivot(
             index=param1, columns=param2, values="Mean_Value"
@@ -347,9 +396,5 @@ def pivot_dataframes_byCategory(dataframe, category_name, param1, param2, **kwar
             index=param1, columns=param2, values="Std_Dev"
         ).round(4)
         df_categories[str(category)] = [condition_mean_pivot, condition_sd_pivot]
-    titles = dict(
-        category = category_name,
-        param1 = param1,
-        param2 = param2
-    )
+    titles = dict(category=category_name, param1=param1, param2=param2)
     return df_categories, titles
