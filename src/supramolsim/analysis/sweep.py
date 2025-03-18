@@ -135,7 +135,6 @@ def sweep_modalities(
             experiment.selected_mods[modality] = (
                 configuration_format.format_modality_acquisition_params(**acquisition)
             )
-
             #experiment.selected_mods[modality] = acquisition
     experiment._build_imager(use_local_field=False)
     pixelsizes = dict()
@@ -152,13 +151,18 @@ def sweep_modalities(
                 mod_outputs
                 mod_n = 0
                 for mod, acq in modalities.items():
+                    print(f"modality and acq: {mod}, {acq}")
                     mod_comb = vsmpl_id + "_" + str(mod_n)
-                    mod_parameters = [vsampl_pars[vsmpl_id], mod, acq]
+                    mod_parameters = copy.copy(vsampl_pars[vsmpl_id])
+                    mod_parameters.append(mod)
+                    mod_parameters.append(acq)
+                    #mod_parameters = [vsampl_pars[vsmpl_id], mod, acq]
                     if mod_comb not in mod_params.keys():
                         mod_params[mod_comb] = mod_parameters
                         mod_outputs[mod_comb] = []
                     mod_outputs[mod_comb].append(iteration_output[mod])
                     mod_n += 1
+                    mod_parameters = None
     return experiment, mod_outputs, mod_params, pixelsizes
 
 
