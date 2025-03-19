@@ -98,16 +98,31 @@ class Field:
     def create_minimal_field(self, nmolecules=1, random_placing=False, random_orientations=False, **kwargs):
         fluo_name = "AF647"
         self.calculate_absolute_reference()
-        self.set_molecule_param("nMolecules", nmolecules)
-        if random_placing:
+        if "relative_positions" in kwargs.keys():
+            nmolecules = len(kwargs["relative_positions"])
+            self.set_molecule_param("nMolecules", nmolecules)
+            # ignore nmolecules and randomplacing
+            # use thise values to set particles
+            pass
+        elif nmolecules > 1:
+            self.set_molecule_param("nMolecules", nmolecules)
+            # if no list was passed, then we will use the default nmolecules parameter
+            # having more than one particle necesarily use random placing
             self.random_placing = True
             self.generate_random_positions()
+            self._gen_abs_from_rel_positions()
             self.fluorophre_emitters = {
                 fluo_name: self.get_molecule_param("absolute_positions")
             }
-        elif nmolecules == 1:
-            point = self.get_field_param("absolute_reference_point")
+        else:
+            # if none of the above, this is the case of a single particle in the center
+            #point = self.get_field_param("absolute_reference_point")
+            self.set_molecule_param("nMolecules", 1)
+            if random_placing:
+                self.random_placing = True
+                self.generate_random_positions()
             self._gen_abs_from_rel_positions()
+            point = self.get_molecule_param("absolute_positions")
             self.fluorophre_emitters = {fluo_name: point.reshape(1, 3)}
         self._set_fluo_plotting_params(fluo_name)
         self.random_orientations = random_orientations
@@ -550,7 +565,7 @@ class Field:
         return export_field
 
 
-def create_min_field(nparticles=1, random_placing=False, random_orientations=False, molecule_pars=None):
+def create_min_field(nparticles=1, random_placing=False, random_orientations=False, molecule_pars=None, **kwargs):
     print("Initialising default field")
     coordinates_field = Field()
     if molecule_pars:
