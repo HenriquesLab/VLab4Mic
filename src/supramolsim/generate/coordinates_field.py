@@ -101,6 +101,11 @@ class Field:
         if "relative_positions" in kwargs.keys():
             nmolecules = len(kwargs["relative_positions"])
             self.set_molecule_param("nMolecules", nmolecules)
+            self.molecules_params["relative_positions"] = kwargs["relative_positions"]
+            self._gen_abs_from_rel_positions()
+            self.fluorophre_emitters = {
+                fluo_name: self.get_molecule_param("absolute_positions")
+            }
             # ignore nmolecules and randomplacing
             # use thise values to set particles
             pass
@@ -565,13 +570,16 @@ class Field:
         return export_field
 
 
-def create_min_field(nparticles=1, random_placing=False, random_orientations=False, molecule_pars=None, **kwargs):
+def create_min_field(nparticles=1, random_placing=False, random_orientations=False, **kwargs):
     print("Initialising default field")
     coordinates_field = Field()
-    if molecule_pars:
-        for key, value in molecule_pars.items():
-            coordinates_field.molecules_params[key] = value
+    #if molecule_pars:
+    #    for key, value in molecule_pars.items():
+    #        coordinates_field.molecules_params[key] = value
     coordinates_field.create_minimal_field(
-        nmolecules=nparticles, random_placing=random_placing, random_orientations=random_orientations
+        nmolecules=nparticles,
+        random_placing=random_placing, 
+        random_orientations=random_orientations,
+        **kwargs
     )
     return coordinates_field
