@@ -98,6 +98,8 @@ class Field:
     def create_minimal_field(self, nmolecules=1, random_placing=False, random_orientations=False, **kwargs):
         fluo_name = "AF647"
         self.calculate_absolute_reference()
+        if "minimal_distance" in kwargs.keys():
+            self.molecules_params["minimal_distance"] = kwargs["minimal_distance"]
         if "relative_positions" in kwargs.keys():
             nmolecules = len(kwargs["relative_positions"])
             self.set_molecule_param("nMolecules", nmolecules)
