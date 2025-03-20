@@ -549,13 +549,13 @@ def create_field():
 
     def createmin_particles(b):
         global coordinates_field, exported_field
-        random_pl = True
+        random_pl = field_gui["random"].value
         nparticles = field_gui["nparticles"].value
         min_distance = field_gui["mindist"].value
-        molecule_parameters = dict(minimal_distance=min_distance)
+        #molecule_parameters = dict(minimal_distance=min_distance)
         coordinates_field = field.create_min_field(nparticles=nparticles,
                                                    random_placing=random_pl,
-                                                   molecule_pars=molecule_parameters)
+                                                   minimal_distance=min_distance)
         coordinates_field.create_molecules_from_InstanceObject(particle)
         coordinates_field.construct_static_field()
         exported_field = coordinates_field.export_field()
@@ -567,6 +567,7 @@ def create_field():
         coordinates_field.show_field(view_init=[90, 0, 0])
 
     field_gui.add_button("minimal", description="Create minimal field (random)")
+    field_gui.add_checkbox("random", value=False, description="Randomise positions")
     field_gui.add_button("show", description="Show field", disabled=True)
     field_gui.add_button("minimal_particles", description="Create field")
     field_gui.add_int_slider(
@@ -597,6 +598,7 @@ def create_field():
         print("Using existing structural model")
         display(field_gui["nparticles"],
                 field_gui["mindist"],
+                field_gui["random"],
                 field_gui["minimal_particles"],
                 field_gui["show"])
 
