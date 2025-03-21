@@ -101,6 +101,7 @@ class Field:
         if "minimal_distance" in kwargs.keys():
             self.molecules_params["minimal_distance"] = kwargs["minimal_distance"]
         if "relative_positions" in kwargs.keys():
+            print("Using relative positons to initialise field")
             nmolecules = len(kwargs["relative_positions"])
             self.set_molecule_param("nMolecules", nmolecules)
             self.molecules_params["relative_positions"] = kwargs["relative_positions"]
@@ -110,8 +111,8 @@ class Field:
             }
             # ignore nmolecules and randomplacing
             # use thise values to set particles
-            pass
         elif nmolecules > 1:
+            print("More than 1 position needed. Randomising.")
             self.set_molecule_param("nMolecules", nmolecules)
             # if no list was passed, then we will use the default nmolecules parameter
             # having more than one particle necesarily use random placing
@@ -194,10 +195,11 @@ class Field:
         Sets the molecule parameter "absolute positions"
         """
         npositions = self.get_molecule_param("nMolecules")
+        print(f"nmolecules: {npositions}")
         # print(f"Total positions: {npositions}")
         # this can only work after the size of field has been established
         if self.molecules_params["minimal_distance"] is not None:
-            print("distributing with minimal distance")
+            print(f"distributing with minimal distance: {npositions}")
             self._random_pos_minimal_dist(npositions)
         else:
             print("Generating unconstrained random positions")
@@ -227,6 +229,7 @@ class Field:
     def _random_pos_minimal_dist(self, n):
         # convert minimal distance in relative units
         selected_positions = []
+        selected_relative = []
         minimal_distance = self.get_molecule_param("minimal_distance")
         dimension_sizes = self.get_field_param("dimension_sizes")
         maxabs_posx = dimension_sizes[0]
@@ -251,15 +254,20 @@ class Field:
                 # verify is the next point is within the minimum distance
                 # print(np.linalg.norm(new - selected_positions[pos]))
                 if np.linalg.norm(new - selected_positions[pos]) < minimal_distance:
-                    # print("rejected")
                     is_available = 0
                     #break
             if is_available:
-                # print(new)
                 selected_positions.append(new)
+        for abs_pos in selected_positions:
+            rel_pos = abs_pos
+            rel_pos[0] = abs_pos[0]/maxabs_posx
+            rel_pos[1] = abs_pos[1]/maxabs_posy
+            rel_pos[2] = abs_pos[2]/maxabs_posz
+            selected_relative.append(rel_pos)
         # print(f"end flag : {flag}")
-        self.set_molecule_param("absolute_positions", selected_positions)
-        self.absolute_pos = selected_positions
+        self.molecules_params["relative_positions"] = selected_relative
+        #self.set_molecule_param("absolute_positions", selected_positions)
+        #self.absolute_pos = selected_positions
 
     def _calculate_absolute_position(self, relative_pos):
         fieldsizes = self.get_field_param("dimension_sizes")
