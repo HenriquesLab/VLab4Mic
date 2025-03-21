@@ -542,8 +542,13 @@ def create_field():
 
     def createmin(b):
         global coordinates_field, exported_field
-        random_pl = True
-        coordinates_field = field.create_min_field(random_placing=random_pl)
+        random_pl = field_gui["random"].value
+        nparticles = field_gui["nparticles"].value
+        min_distance = field_gui["mindist"].value
+        coordinates_field = field.create_min_field(nparticles=nparticles,
+                                            random_placing=random_pl,
+                                            minimal_distance=min_distance)
+        coordinates_field.construct_static_field()
         exported_field = coordinates_field.export_field()
         field_gui["show"].disabled = False
 
@@ -566,7 +571,7 @@ def create_field():
         global coordinates_field
         coordinates_field.show_field(view_init=[90, 0, 0])
 
-    field_gui.add_button("minimal", description="Create minimal field (random)")
+    field_gui.add_button("minimal", description="Create minimal field")
     field_gui.add_checkbox("random", value=False, description="Randomise positions")
     field_gui.add_button("show", description="Show field", disabled=True)
     field_gui.add_button("minimal_particles", description="Create field")
@@ -593,7 +598,11 @@ def create_field():
 
     if particle is None:
         print("There is no particle initalised")
-        field_gui.show()
+        display(field_gui["nparticles"],
+                field_gui["mindist"],
+                field_gui["random"],
+                field_gui["minimal"],
+                field_gui["show"])
     else:
         print("Using existing structural model")
         display(field_gui["nparticles"],
