@@ -615,9 +615,32 @@ def gen_positions_from_image(img, mode="mask", pixelsize = None, **kwargs):
             num_pixels=npositions, 
             min_distance=min_distance
         )
-        xyz_relative = metrics.pixel_positions_to_relative(
+    elif mode == "localmaxima":
+        if "background" not in kwargs.keys():
+            background = None
+        else:
+            background = kwargs["background"]
+        if "sigma" not in kwargs.keys():
+            sigma = None
+        else:
+            sigma = kwargs["sigma"]
+        if "threshold" not in kwargs.keys():
+            threshold = None
+        else:
+            threshold = kwargs["threshold"]
+        if "min_distance" not in kwargs.keys():
+            min_distance = 1
+        else:
+            min_distance = kwargs["min_distance"]
+        pixel_positions, img_processed = metrics.local_maxima_positions(
+            img, 
+            min_distance=min_distance, 
+            threshold=threshold, 
+            sigma=sigma, 
+            background=background)
+    xyz_relative = metrics.pixel_positions_to_relative(
             pixel_positions,
             image_sizes=image_physical_size,
             pixelsize=pixelsize
         )
-    return xyz_relative
+    return xyz_relative, image_physical_size
