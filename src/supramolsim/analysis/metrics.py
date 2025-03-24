@@ -115,3 +115,8 @@ def local_maxima_positions(img, min_distance=1, threshold=None, **kwargs):
     img_pre = image_preprocess(img, **kwargs)
     xy = peak_local_max(img_pre, min_distance=min_distance, threshold_abs=threshold)
     return xy, img_pre
+
+def pixel_positions_to_relative(indices, image_sizes, pixelsize):
+    image_relative_positions=[(np.array(p)*pixelsize)/image_sizes for p in indices]
+    xyz_relative = [ np.append(xypos, 0)  for xypos in image_relative_positions]
+    return xyz_relative
