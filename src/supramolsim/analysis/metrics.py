@@ -1,6 +1,7 @@
 from skimage.metrics import structural_similarity as ssim
 from scipy.ndimage import zoom
 import numpy as np
+from scipy.ndimage import gaussian_filter
 
 
 def img_compare(ref, query, metric="ssim", force_match=False, **kwargs):
@@ -90,3 +91,12 @@ def resize_images_interpolation(
     resized_img2 = zoom(img2, pixel_size_ratio, order=interpolation_order)
 
     return _padding(img1, resized_img2)
+
+
+
+def image_preprocess(img, background=None, blurr=None, **kwargs):
+    if background:
+        img = img - background
+    if blurr:
+        img = gaussian_filter(img, sigma=blurr)
+    return img
