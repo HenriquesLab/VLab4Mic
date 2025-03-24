@@ -2,6 +2,7 @@ from skimage.metrics import structural_similarity as ssim
 from scipy.ndimage import zoom
 import numpy as np
 from scipy.ndimage import gaussian_filter
+from skimage.feature import peak_local_max
 
 
 def img_compare(ref, query, metric="ssim", force_match=False, **kwargs):
@@ -94,9 +95,23 @@ def resize_images_interpolation(
 
 
 
-def image_preprocess(img, background=None, blurr=None, **kwargs):
+def image_preprocess(img, background=None, sigma=None, **kwargs):
     if background:
         img = img - background
-    if blurr:
-        img = gaussian_filter(img, sigma=blurr)
+    if sigma:
+        img = gaussian_filter(img, sigma=sigma)
     return img
+
+def local_maxima_positions(img, min_distance=1, threshold=None, **kwargs):
+    """
+    Find local maximas. Assumes single image, non mask.
+
+    Returns:
+    (list): list of pairs of indices for each local maxima found
+    """
+    if len(img.shape) > 2:
+        img = np.mean(img, axis=-1)
+    # remove background as offset value
+    img_pre = image_preprocess(img, **kwargs)
+    xy = peak_local_max(img_pre, min_distance=min_distance, threshold_abs=threshold)
+    return xy, img_pre
