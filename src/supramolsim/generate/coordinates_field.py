@@ -2,7 +2,7 @@ import numpy as np
 import copy
 import matplotlib.pyplot as plt
 import yaml
-
+from ..analysis import metrics
 
 from .labelled_instance import LabeledInstance
 from .molecular_structure import MolecularReplicates
@@ -593,3 +593,31 @@ def create_min_field(nparticles=1, random_placing=False, random_orientations=Fal
         **kwargs
     )
     return coordinates_field
+
+
+def gen_positions_from_image(img, mode="mask", pixelsize = None, **kwargs):
+    npixels = list(img.shape)
+    image_physical_size = np.zeros(shape=(2))
+    image_physical_size[0] = pixelsize * npixels[0]
+    image_physical_size[1] = pixelsize * npixels[1]
+    if mode == "mask":
+        if "npositions" not in kwargs.keys():
+            npositions = 1
+        else:
+            npositions = kwargs["npositions"]
+        if "min_distance" not in kwargs.keys():
+            min_distance = 1
+        else:
+            min_distance = kwargs["min_distance"]
+        #
+        pixel_positions = sampl.get_random_pixels(
+            img, 
+            num_pixels=npositions, 
+            min_distance=min_distance
+        )
+        xyz_relative = metrics.pixel_positions_to_relative(
+            pixel_positions,
+            image_sizes=image_physical_size,
+            pixelsize=pixelsize
+        )
+    return xyz_relative
