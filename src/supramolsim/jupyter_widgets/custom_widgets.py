@@ -551,6 +551,7 @@ def create_field():
                                             minimal_distance=min_distance)
         coordinates_field.construct_static_field()
         exported_field = coordinates_field.export_field()
+        display(field_gui["show"])
         field_gui["show"].disabled = False
 
     def createmin_particles(b):
@@ -565,6 +566,7 @@ def create_field():
         coordinates_field.create_molecules_from_InstanceObject(particle)
         coordinates_field.construct_static_field()
         exported_field = coordinates_field.export_field()
+        display(field_gui["show"])
         field_gui["show"].disabled = False
 
     def upload(b):
@@ -580,11 +582,26 @@ def create_field():
             pixelsize=field_gui["pixelsize"].value,
             min_distance=field_gui["min_distance"].value)
         coordinates_field = field.create_min_field(relative_positions=xyz_relative)
-        coordinates_field.create_molecules_from_InstanceObject(particle)
+        if particle is not None:
+            coordinates_field.create_molecules_from_InstanceObject(particle)
         coordinates_field.construct_static_field()
         exported_field = coordinates_field.export_field()
+        display(field_gui["show"])
         field_gui["show"].disabled = False
 
+    def useimage(b):
+        plt.clf()
+        display(
+            field_gui["File"],
+            field_gui["pixelsize"],
+            field_gui["background"],
+            field_gui["min_distance"],
+            field_gui["sigma"],
+            field_gui["threshold"],
+            field_gui["Mode"],
+            field_gui["Upload"],
+            field_gui["show"]
+        )
 
     def showfield(b):
         plt.clf()
@@ -631,7 +648,8 @@ def create_field():
         remember_value=True,
     )
     field_gui.add_dropdown("Mode", options=["mask", "localmaxima"])
-    field_gui.add_button("Upload", description="Use image for positioning")
+    field_gui.add_button("Use_Upload", description="Use image for positioning")
+    field_gui.add_button("Upload", description="Load image")
     field_gui.add_button("minimal", description="Create minimal field")
     field_gui.add_checkbox("random", value=False, description="Randomise positions")
     field_gui.add_button("show", description="Show field", disabled=True)
@@ -656,6 +674,7 @@ def create_field():
     field_gui["minimal"].on_click(createmin)
     field_gui["show"].on_click(showfield)
     field_gui["minimal_particles"].on_click(createmin_particles)
+    field_gui["Use_Upload"].on_click(useimage)
     field_gui["Upload"].on_click(upload)
 
 
@@ -664,16 +683,18 @@ def create_field():
         display(field_gui["nparticles"],
                 field_gui["mindist"],
                 field_gui["random"],
+                field_gui["Use_Upload"],
                 field_gui["minimal"],
-                field_gui["show"])
+                )
     else:
         print("Using existing structural model")
-        #display(field_gui["nparticles"],
-        #        field_gui["mindist"],
-        #        field_gui["random"],
-        #        field_gui["minimal_particles"],
-        #        field_gui["show"])
-        field_gui.show()
+        display(field_gui["nparticles"],
+                field_gui["mindist"],
+                field_gui["random"],
+                field_gui["minimal_particles"],
+                field_gui["Use_Upload"],
+                field_gui["show"])
+        #field_gui.show()
 
 
 def set_image_modalities():
