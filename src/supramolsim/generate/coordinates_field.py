@@ -397,19 +397,20 @@ class Field:
                 mol.get_ref_point()
 
     def relabel_molecules(self):
-        if len(self.molecules) > 1:
+        if self.molecules:
             for mol in self.molecules:
                 mol.generate_instance()
                 # mol.show_instance()
                 mol.scale_coordinates_system(self.get_field_param("scale"))
 
     def relocate_molecules(self):
-        if self.get_molecule_param("absolute_positions") is not None:
-            # move each molecule to their absolute position
-            for mol, pos in zip(
-                self.molecules, self.get_molecule_param("absolute_positions")
-            ):
-                mol.transform_translate(pos)
+        if self.molecules:
+            if self.get_molecule_param("absolute_positions") is not None:
+                # move each molecule to their absolute position
+                for mol, pos in zip(
+                    self.molecules, self.get_molecule_param("absolute_positions")
+                ):
+                    mol.transform_translate(pos)
 
     def reorient_molecules(self):
         if self.get_molecule_param("orientations") is not None:
@@ -433,17 +434,23 @@ class Field:
     # and all of them will be able to be visualised if the optics define it
 
     def construct_static_field(self):
-        # verify absolute positions exist
-        if self.get_molecule_param("absolute_positions") is None:
-            self._gen_abs_from_rel_positions()
-        if self.params["absolute_reference_point"] is None:
-            self.calculate_absolute_reference()
-        # the only thing that will be needed every time is the placing of the particles
-        # in the field
-        self.relocate_molecules()
-        self.reorient_molecules()
-        # pull emitters by fluorophores
-        self._construct_channels_by_fluorophores()
+        if self.molecules:
+            # verify absolute positions exist
+            if self.get_molecule_param("absolute_positions") is None:
+                self._gen_abs_from_rel_positions()
+            if self.params["absolute_reference_point"] is None:
+                self.calculate_absolute_reference()
+            # the only thing that will be needed every time is the placing of the particles
+            # in the field
+            self.relocate_molecules()
+            self.reorient_molecules()
+            # pull emitters by fluorophores
+            self._construct_channels_by_fluorophores()
+        else:
+            default_fluorophore = "AF647"
+            #self.get_molecule_param("absolute_positions")
+            self.fluorophre_emitters = {}
+            self.fluorophre_emitters[default_fluorophore] = self.get_molecule_param("absolute_positions")
 
     def _construct_channels_by_fluorophores(self):
         """
