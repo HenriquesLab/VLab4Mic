@@ -199,7 +199,7 @@ class Field:
         # print(f"Total positions: {npositions}")
         # this can only work after the size of field has been established
         if self.molecules_params["minimal_distance"] is not None:
-            print(f"distributing with minimal distance: {npositions}")
+            print(f"distributing with minimal distance: {self.molecules_params['minimal_distance']}")
             self._random_pos_minimal_dist(npositions)
         else:
             print("Generating unconstrained random positions")
@@ -315,6 +315,7 @@ class Field:
             )
         if self.random_placing:
             self.generate_random_positions()
+        self._gen_abs_from_rel_positions()
         # due to constraints, the actual number of particles might not be reps
         nmolecules = len(self.molecules_params["absolute_positions"])
         if reps > nmolecules:
