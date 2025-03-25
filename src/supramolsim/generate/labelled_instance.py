@@ -538,12 +538,13 @@ class LabeledInstance:
                 nori = copy.copy(neworientation)
                 # this function should take the new orientation and match the
                 for trgt in self.labelnames:
-                    reoriented = rotate_pts_by_vector(
-                        self.get_emitter_by_target(trgt),
-                        self.axis["direction"],
-                        nori,
-                        self.get_ref_point(),
-                    )
+                    if self.get_emitter_by_target(trgt) is not None:
+                        reoriented = rotate_pts_by_vector(
+                            self.get_emitter_by_target(trgt),
+                            self.axis["direction"],
+                            nori,
+                            self.get_ref_point(),
+                        )
                     self.emitters[trgt] = reoriented
                 self.axis["direction"] = nori
 
@@ -554,9 +555,10 @@ class LabeledInstance:
         nref = copy.copy(newcenter)
         # move labels
         for labeltype in self.emitters.keys():
-            self.emitters[labeltype], _ = transform_displace_set(
-                self.emitters[labeltype], self.get_ref_point(), nref
-            )
+            if self.emitters[labeltype] is not None:
+                self.emitters[labeltype], _ = transform_displace_set(
+                    self.emitters[labeltype], self.get_ref_point(), nref
+                )
         # then replace reference point
         self._set_ref_point(nref)
         self.axis["pivot"] = nref
@@ -577,10 +579,12 @@ class LabeledInstance:
         else:
             scaling_factor = current_scale / new_scale
             for labeltype in self.emitters.keys():
-                # print(f'before: {self.emitters[labeltype]}')
-                self.emitters[labeltype] = (
-                    self.get_emitter_by_target(labeltype) * scaling_factor
-                )
+                print("scaling")
+                if self.get_emitter_by_target(labeltype) is not None:
+                    # print(f'before: {self.emitters[labeltype]}')
+                    self.emitters[labeltype] = (
+                        self.get_emitter_by_target(labeltype) * scaling_factor
+                    )
                 # print(f'after: {self.emitters[labeltype]}')
             self.params["ref_point"] = self.params["ref_point"] * scaling_factor
             self.axis["pivot"] = self.axis["pivot"] * scaling_factor
@@ -600,7 +604,8 @@ class LabeledInstance:
         lab_target = self.fluo2labels[fluoname]
         pulled = np.empty((0, 3))
         for l in lab_target:
-            pulled = np.vstack([pulled, self.get_emitter_by_target(l)])
+            if self.get_emitter_by_target(l) is not None:
+                pulled = np.vstack([pulled, self.get_emitter_by_target(l)])
         return pulled
 
     # Visualisation methods
