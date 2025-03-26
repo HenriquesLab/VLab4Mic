@@ -157,23 +157,28 @@ def indirect_labelling(coords_nomrals, label_data, **kwargs):
             normals=coords_nomrals["normals"],
             min_distance=label_data["minimal_distance"]
         )  #####################
-        # add wobble to normals
-        #normals_ft_epitopes = [normals, epitopes]
-        if label_data["binding"]["wobble_range"]["theta"]:
-            cone_angle = label_data["binding"]["wobble_range"]["theta"]
-            print(f"Wobbling normals: {cone_angle}")
-            
-            w_normals = []
-            origin = np.array([0, 0, 0])
-            for i in range(normals.shape[0]):
-                n_wobbled = add_wobble(origin, normals[i,:], cone_angle_deg=cone_angle)
-                w_normals.append(n_wobbled)
-            normals_ft_epitopes = [np.array(w_normals), epitopes]
+        print(f"number of epitopes: {epitopes.shape}")
+        if epitopes.shape[0] == 0:
+            indirect_realisation = None
+            list_reoriented_points_normals = None
         else:
-            normals_ft_epitopes = [normals, epitopes]
-        indirect_realisation, list_reoriented_points_normals = decorate_epitopes_normals(
-            normals_ft_epitopes, label_data["emitters"]
-        )
+            # add wobble to normals
+            #normals_ft_epitopes = [normals, epitopes]
+            if label_data["binding"]["wobble_range"]["theta"]:
+                cone_angle = label_data["binding"]["wobble_range"]["theta"]
+                print(f"Wobbling normals: {cone_angle}")
+                
+                w_normals = []
+                origin = np.array([0, 0, 0])
+                for i in range(normals.shape[0]):
+                    n_wobbled = add_wobble(origin, normals[i,:], cone_angle_deg=cone_angle)
+                    w_normals.append(n_wobbled)
+                normals_ft_epitopes = [np.array(w_normals), epitopes]
+            else:
+                normals_ft_epitopes = [normals, epitopes]
+            indirect_realisation, list_reoriented_points_normals = decorate_epitopes_normals(
+                normals_ft_epitopes, label_data["emitters"]
+            )
     else:
         print("No emitters defined in label. Using direct labelling")
         indirect_realisation = direct_labelling(coords_nomrals, label_data)

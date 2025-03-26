@@ -67,12 +67,10 @@ def test_nparticles_constraints(configuration_directory):
     assert coordinates_field.molecules_params["minimal_distance"] is not None
     assert len(coordinates_field.molecules) < nparticles
     #
-    molecule_parameters = dict(
-        minimal_distance=1000
-    )
+    minimal_distance=1000
     coordinates_field2 = field.create_min_field(nparticles=nparticles,
                                                 random_placing=random_placing,
-                                                molecule_pars=molecule_parameters)
+                                                minimal_distance=minimal_distance)
     coordinates_field2.create_molecules_from_InstanceObject(particle)
     coordinates_field2.construct_static_field()
     exported_field2 = coordinates_field2.export_field()

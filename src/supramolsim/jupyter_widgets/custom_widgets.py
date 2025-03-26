@@ -10,6 +10,7 @@ import os
 from IPython.utils import io
 import numpy as np
 import mpl_toolkits.axes_grid1 as axes_grid1
+import tifffile as tif
 
 global structure, particle, configuration_path, coordinates_field, exported_field
 particle = None
@@ -542,31 +543,115 @@ def create_field():
 
     def createmin(b):
         global coordinates_field, exported_field
-        random_pl = True
-        coordinates_field = field.create_min_field(random_placing=random_pl)
+        random_pl = field_gui["random"].value
+        nparticles = field_gui["nparticles"].value
+        min_distance = field_gui["mindist"].value
+        coordinates_field = field.create_min_field(nparticles=nparticles,
+                                            random_placing=random_pl,
+                                            minimal_distance=min_distance)
+        coordinates_field.construct_static_field()
         exported_field = coordinates_field.export_field()
+        display(field_gui["show"])
         field_gui["show"].disabled = False
 
     def createmin_particles(b):
         global coordinates_field, exported_field
-        random_pl = True
+        random_pl = field_gui["random"].value
         nparticles = field_gui["nparticles"].value
         min_distance = field_gui["mindist"].value
-        molecule_parameters = dict(minimal_distance=min_distance)
+        #molecule_parameters = dict(minimal_distance=min_distance)
         coordinates_field = field.create_min_field(nparticles=nparticles,
                                                    random_placing=random_pl,
-                                                   molecule_pars=molecule_parameters)
+                                                   minimal_distance=min_distance)
         coordinates_field.create_molecules_from_InstanceObject(particle)
         coordinates_field.construct_static_field()
         exported_field = coordinates_field.export_field()
+        display(field_gui["show"])
         field_gui["show"].disabled = False
+
+    def upload(b):
+        global coordinates_field, exported_field
+        filepath = field_gui["File"].selected
+        img = tif.imread(filepath)
+        xyz_relative, image_physical_size = field.gen_positions_from_image(
+            img,
+            mode=field_gui["Mode"].value,
+            sigma=field_gui["sigma"].value,
+            background=field_gui["background"].value,
+            threshold=field_gui["threshold"].value,
+            pixelsize=field_gui["pixelsize"].value,
+            min_distance=field_gui["min_distance"].value)
+        coordinates_field = field.create_min_field(relative_positions=xyz_relative)
+        if particle is not None:
+            coordinates_field.create_molecules_from_InstanceObject(particle)
+        coordinates_field.construct_static_field()
+        exported_field = coordinates_field.export_field()
+        display(field_gui["show"])
+        field_gui["show"].disabled = False
+
+    def useimage(b):
+        plt.clf()
+        display(
+            field_gui["File"],
+            field_gui["pixelsize"],
+            field_gui["background"],
+            field_gui["min_distance"],
+            field_gui["sigma"],
+            field_gui["threshold"],
+            field_gui["Mode"],
+            field_gui["Upload"],
+            field_gui["show"]
+        )
 
     def showfield(b):
         plt.clf()
         global coordinates_field
         coordinates_field.show_field(view_init=[90, 0, 0])
 
-    field_gui.add_button("minimal", description="Create minimal field (random)")
+    field_gui.add_file_upload(
+            "File", description="Select from file", accept="*.tif", save_settings=False
+        )
+    field_gui._widgets["pixelsize"] = widgets.BoundedIntText(
+        value=15,
+        description="Image pixelsize",
+        layout=field_gui._layout,
+        style=field_gui._style,
+        remember_value=True,
+    )
+    field_gui._widgets["background"] = widgets.BoundedIntText(
+        value=0,
+        max=100000,
+        description="Background",
+        layout=field_gui._layout,
+        style=field_gui._style,
+        remember_value=True,
+    )
+    field_gui._widgets["min_distance"] = widgets.BoundedIntText(
+        value=1,
+        description="min_distance",
+        layout=field_gui._layout,
+        style=field_gui._style,
+        remember_value=True,
+    )
+    field_gui._widgets["sigma"] = widgets.BoundedIntText(
+        value=2,
+        description="sigma",
+        layout=field_gui._layout,
+        style=field_gui._style,
+        remember_value=True,
+    )
+    field_gui._widgets["threshold"] = widgets.BoundedIntText(
+        value=2,
+        description="threshold",
+        layout=field_gui._layout,
+        style=field_gui._style,
+        remember_value=True,
+    )
+    field_gui.add_dropdown("Mode", options=["mask", "localmaxima"])
+    field_gui.add_button("Use_Upload", description="Use image for positioning")
+    field_gui.add_button("Upload", description="Load image")
+    field_gui.add_button("minimal", description="Create minimal field")
+    field_gui.add_checkbox("random", value=False, description="Randomise positions")
     field_gui.add_button("show", description="Show field", disabled=True)
     field_gui.add_button("minimal_particles", description="Create field")
     field_gui.add_int_slider(
@@ -589,16 +674,27 @@ def create_field():
     field_gui["minimal"].on_click(createmin)
     field_gui["show"].on_click(showfield)
     field_gui["minimal_particles"].on_click(createmin_particles)
+    field_gui["Use_Upload"].on_click(useimage)
+    field_gui["Upload"].on_click(upload)
+
 
     if particle is None:
         print("There is no particle initalised")
-        field_gui.show()
+        display(field_gui["nparticles"],
+                field_gui["mindist"],
+                field_gui["random"],
+                field_gui["Use_Upload"],
+                field_gui["minimal"],
+                )
     else:
         print("Using existing structural model")
         display(field_gui["nparticles"],
                 field_gui["mindist"],
+                field_gui["random"],
                 field_gui["minimal_particles"],
+                field_gui["Use_Upload"],
                 field_gui["show"])
+        #field_gui.show()
 
 
 def set_image_modalities():

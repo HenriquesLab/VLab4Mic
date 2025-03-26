@@ -17,7 +17,7 @@ def test_sweep_vasmples_directprobes():
     directprobes = [
         "NHS_ester",
     ]
-    repetitions = 3
+    repetitions = 50
     experiment, outputs, params = sweep.sweep_vasmples(
         experiment=test_experiment,
         structures=structures,

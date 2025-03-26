@@ -2,7 +2,7 @@ import numpy as np
 import copy
 import matplotlib.pyplot as plt
 import yaml
-
+from ..analysis import metrics
 
 from .labelled_instance import LabeledInstance
 from .molecular_structure import MolecularReplicates
@@ -98,16 +98,39 @@ class Field:
     def create_minimal_field(self, nmolecules=1, random_placing=False, random_orientations=False, **kwargs):
         fluo_name = "AF647"
         self.calculate_absolute_reference()
-        self.set_molecule_param("nMolecules", nmolecules)
-        if random_placing:
-            self.random_placing = True
-            self.generate_random_positions()
+        if "minimal_distance" in kwargs.keys():
+            self.molecules_params["minimal_distance"] = kwargs["minimal_distance"]
+        if "relative_positions" in kwargs.keys():
+            print("Using relative positons to initialise field")
+            nmolecules = len(kwargs["relative_positions"])
+            self.set_molecule_param("nMolecules", nmolecules)
+            self.molecules_params["relative_positions"] = kwargs["relative_positions"]
+            self._gen_abs_from_rel_positions()
             self.fluorophre_emitters = {
                 fluo_name: self.get_molecule_param("absolute_positions")
             }
-        elif nmolecules == 1:
-            point = self.get_field_param("absolute_reference_point")
+            # ignore nmolecules and randomplacing
+            # use thise values to set particles
+        elif nmolecules > 1:
+            print("More than 1 position needed. Randomising.")
+            self.set_molecule_param("nMolecules", nmolecules)
+            # if no list was passed, then we will use the default nmolecules parameter
+            # having more than one particle necesarily use random placing
+            self.random_placing = True
+            self.generate_random_positions()
             self._gen_abs_from_rel_positions()
+            self.fluorophre_emitters = {
+                fluo_name: self.get_molecule_param("absolute_positions")
+            }
+        else:
+            # if none of the above, this is the case of a single particle in the center
+            #point = self.get_field_param("absolute_reference_point")
+            self.set_molecule_param("nMolecules", 1)
+            if random_placing:
+                self.random_placing = True
+                self.generate_random_positions()
+            self._gen_abs_from_rel_positions()
+            point = self.get_molecule_param("absolute_positions")
             self.fluorophre_emitters = {fluo_name: point.reshape(1, 3)}
         self._set_fluo_plotting_params(fluo_name)
         self.random_orientations = random_orientations
@@ -172,10 +195,11 @@ class Field:
         Sets the molecule parameter "absolute positions"
         """
         npositions = self.get_molecule_param("nMolecules")
+        print(f"nmolecules: {npositions}")
         # print(f"Total positions: {npositions}")
         # this can only work after the size of field has been established
         if self.molecules_params["minimal_distance"] is not None:
-            print("distributing with minimal distance")
+            print(f"distributing with minimal distance: {self.molecules_params['minimal_distance']}")
             self._random_pos_minimal_dist(npositions)
         else:
             print("Generating unconstrained random positions")
@@ -205,6 +229,7 @@ class Field:
     def _random_pos_minimal_dist(self, n):
         # convert minimal distance in relative units
         selected_positions = []
+        selected_relative = []
         minimal_distance = self.get_molecule_param("minimal_distance")
         dimension_sizes = self.get_field_param("dimension_sizes")
         maxabs_posx = dimension_sizes[0]
@@ -229,15 +254,20 @@ class Field:
                 # verify is the next point is within the minimum distance
                 # print(np.linalg.norm(new - selected_positions[pos]))
                 if np.linalg.norm(new - selected_positions[pos]) < minimal_distance:
-                    # print("rejected")
                     is_available = 0
                     #break
             if is_available:
-                # print(new)
                 selected_positions.append(new)
+        for abs_pos in selected_positions:
+            rel_pos = abs_pos
+            rel_pos[0] = abs_pos[0]/maxabs_posx
+            rel_pos[1] = abs_pos[1]/maxabs_posy
+            rel_pos[2] = abs_pos[2]/maxabs_posz
+            selected_relative.append(rel_pos)
         # print(f"end flag : {flag}")
-        self.set_molecule_param("absolute_positions", selected_positions)
-        self.absolute_pos = selected_positions
+        self.molecules_params["relative_positions"] = selected_relative
+        #self.set_molecule_param("absolute_positions", selected_positions)
+        #self.absolute_pos = selected_positions
 
     def _calculate_absolute_position(self, relative_pos):
         fieldsizes = self.get_field_param("dimension_sizes")
@@ -285,6 +315,7 @@ class Field:
             )
         if self.random_placing:
             self.generate_random_positions()
+        self._gen_abs_from_rel_positions()
         # due to constraints, the actual number of particles might not be reps
         nmolecules = len(self.molecules_params["absolute_positions"])
         if reps > nmolecules:
@@ -366,19 +397,20 @@ class Field:
                 mol.get_ref_point()
 
     def relabel_molecules(self):
-        if len(self.molecules) > 1:
+        if self.molecules:
             for mol in self.molecules:
                 mol.generate_instance()
                 # mol.show_instance()
                 mol.scale_coordinates_system(self.get_field_param("scale"))
 
     def relocate_molecules(self):
-        if self.get_molecule_param("absolute_positions") is not None:
-            # move each molecule to their absolute position
-            for mol, pos in zip(
-                self.molecules, self.get_molecule_param("absolute_positions")
-            ):
-                mol.transform_translate(pos)
+        if self.molecules:
+            if self.get_molecule_param("absolute_positions") is not None:
+                # move each molecule to their absolute position
+                for mol, pos in zip(
+                    self.molecules, self.get_molecule_param("absolute_positions")
+                ):
+                    mol.transform_translate(pos)
 
     def reorient_molecules(self):
         if self.get_molecule_param("orientations") is not None:
@@ -402,17 +434,23 @@ class Field:
     # and all of them will be able to be visualised if the optics define it
 
     def construct_static_field(self):
-        # verify absolute positions exist
-        if self.get_molecule_param("absolute_positions") is None:
-            self._gen_abs_from_rel_positions()
-        if self.params["absolute_reference_point"] is None:
-            self.calculate_absolute_reference()
-        # the only thing that will be needed every time is the placing of the particles
-        # in the field
-        self.relocate_molecules()
-        self.reorient_molecules()
-        # pull emitters by fluorophores
-        self._construct_channels_by_fluorophores()
+        if self.molecules:
+            # verify absolute positions exist
+            if self.get_molecule_param("absolute_positions") is None:
+                self._gen_abs_from_rel_positions()
+            if self.params["absolute_reference_point"] is None:
+                self.calculate_absolute_reference()
+            # the only thing that will be needed every time is the placing of the particles
+            # in the field
+            self.relocate_molecules()
+            self.reorient_molecules()
+            # pull emitters by fluorophores
+            self._construct_channels_by_fluorophores()
+        else:
+            default_fluorophore = "AF647"
+            #self.get_molecule_param("absolute_positions")
+            self.fluorophre_emitters = {}
+            self.fluorophre_emitters[default_fluorophore] = self.get_molecule_param("absolute_positions")
 
     def _construct_channels_by_fluorophores(self):
         """
@@ -550,13 +588,67 @@ class Field:
         return export_field
 
 
-def create_min_field(nparticles=1, random_placing=False, random_orientations=False, molecule_pars=None):
+def create_min_field(nparticles=1, random_placing=False, random_orientations=False, **kwargs):
     print("Initialising default field")
     coordinates_field = Field()
-    if molecule_pars:
-        for key, value in molecule_pars.items():
-            coordinates_field.molecules_params[key] = value
+    #if molecule_pars:
+    #    for key, value in molecule_pars.items():
+    #        coordinates_field.molecules_params[key] = value
     coordinates_field.create_minimal_field(
-        nmolecules=nparticles, random_placing=random_placing, random_orientations=random_orientations
+        nmolecules=nparticles,
+        random_placing=random_placing, 
+        random_orientations=random_orientations,
+        **kwargs
     )
     return coordinates_field
+
+
+def gen_positions_from_image(img, mode="mask", pixelsize = None, **kwargs):
+    npixels = list(img.shape)
+    image_physical_size = np.zeros(shape=(2))
+    image_physical_size[0] = pixelsize * npixels[0]
+    image_physical_size[1] = pixelsize * npixels[1]
+    if mode == "mask":
+        if "npositions" not in kwargs.keys():
+            npositions = 1
+        else:
+            npositions = kwargs["npositions"]
+        if "min_distance" not in kwargs.keys():
+            min_distance = 1
+        else:
+            min_distance = kwargs["min_distance"]
+        #
+        pixel_positions = sampl.get_random_pixels(
+            img, 
+            num_pixels=npositions, 
+            min_distance=min_distance
+        )
+    elif mode == "localmaxima":
+        if "background" not in kwargs.keys():
+            background = None
+        else:
+            background = kwargs["background"]
+        if "sigma" not in kwargs.keys():
+            sigma = None
+        else:
+            sigma = kwargs["sigma"]
+        if "threshold" not in kwargs.keys():
+            threshold = None
+        else:
+            threshold = kwargs["threshold"]
+        if "min_distance" not in kwargs.keys():
+            min_distance = 1
+        else:
+            min_distance = kwargs["min_distance"]
+        pixel_positions, img_processed = metrics.local_maxima_positions(
+            img, 
+            min_distance=min_distance, 
+            threshold=threshold, 
+            sigma=sigma, 
+            background=background)
+    xyz_relative = metrics.pixel_positions_to_relative(
+            pixel_positions,
+            image_sizes=image_physical_size,
+            pixelsize=pixelsize
+        )
+    return xyz_relative, image_physical_size
