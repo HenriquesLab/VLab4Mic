@@ -12,7 +12,9 @@ from .workflows import (
 from .utils.data_format.structural_format import label_builder_format
 from .utils.data_format import configuration_format
 import os
-
+from supramolsim.utils.io.yaml_functions import load_yaml
+import numpy as np
+import os
 
 @dataclass
 class ExperimentParametrisation:
@@ -292,3 +294,37 @@ def create_experiment_parametrisation(
         generator.output_directory = savging["output_directory"]
     generator.build(use_locals=use_locals)
     return generator
+
+
+def generate_virtual_sample(
+        structure: str = "1XI5",
+        probe_name: str = "Mock_linker",
+        probe_target_type: str = "Sequence",
+        probe_target_value: str = "EQATETQ",
+        probe_distance_to_epitope: float = None,
+        probe_model: list[str] = None,
+        probe_fluorophore: str = "AF647",
+        labelling_efficiency: float = 1.0,
+        defect_small_cluster: list[str] = None,
+        defect_large_cluster: list[str] = None,
+        defect: list[str] = None,
+        sample_dimensions: list[str] = None,
+        number_of_particles: int = 1,
+        particle_positions: list[np.array] = None,
+        randomise_orientations = False,
+        randomise_positions = False,
+):
+    myexperiment = ExperimentParametrisation()
+    probe_configuration_file = os.path.join(myexperiment.configuration_path, "probes", probe_name + ".yaml")
+    probe_configuration = load_yaml(probe_configuration_file)
+    probe_configuration["fluorophore_id"] = probe_fluorophore
+    probe_configuration["distance_to_epitope"] = probe_distance_to_epitope
+    probe_configuration["labelling_efficiency"] = labelling_efficiency
+    probe_configuration["target_info"] = dict(type=probe_target_type, value=probe_target_value)
+    myexperiment.configuration_path
+    myexperiment.structure_id = structure
+    myexperiment.structure_label = probe_name
+    myexperiment.probe_parameters[probe_name] = probe_configuration
+    myexperiment.build(use_locals=True)
+    #myexperiment.coordinate_field_id = virtual_sample
+    return myexperiment.exported_coordinate_field, myexperiment
