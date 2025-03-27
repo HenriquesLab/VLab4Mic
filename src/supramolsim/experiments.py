@@ -31,6 +31,7 @@ class ExperimentParametrisation:
     objects_created: Dict[str, int] = field(default_factory=dict)
     output_directory: str = None
 
+
     def __post_init__(self):
         pck_dir = os.path.dirname(os.path.abspath(supramolsim.__file__))
         local_dir = os.path.join(pck_dir, "configs")
@@ -111,11 +112,10 @@ class ExperimentParametrisation:
     def _build_coordinate_field(
         self, use_self_particle=True, keep=False, coordinate_field_path=None, **kwargs
     ):
-        
         if use_self_particle and self.generators_status("particle"):
             print("creating field from existing particle")
             exported_field, fieldobject = field_from_particle(
-                self.particle, field_config=coordinate_field_path, **kwargs
+                self.particle, field_config=coordinate_field_path, **self.sample_params, **kwargs
             )
             if keep:
                 self.exported_coordinate_field = exported_field
@@ -308,6 +308,7 @@ def generate_virtual_sample(
         defect_small_cluster: list[str] = None,
         defect_large_cluster: list[str] = None,
         defect: list[str] = None,
+        virtual_sample_template: str = "square1x1um_randomised",
         sample_dimensions: list[str] = None,
         number_of_particles: int = 1,
         particle_positions: list[np.array] = None,
@@ -321,10 +322,17 @@ def generate_virtual_sample(
     probe_configuration["distance_to_epitope"] = probe_distance_to_epitope
     probe_configuration["labelling_efficiency"] = labelling_efficiency
     probe_configuration["target_info"] = dict(type=probe_target_type, value=probe_target_value)
+    virtual_sample_template = os.path.join(myexperiment.configuration_path, "virtualsample", virtual_sample_template + ".yaml")
+    #vsample_configuration = load_yaml(virtual_sample_template)
+    #print(vsample_configuration)
     myexperiment.configuration_path
     myexperiment.structure_id = structure
     myexperiment.structure_label = probe_name
     myexperiment.probe_parameters[probe_name] = probe_configuration
+    myexperiment.coo = vsample_configuration
     myexperiment.build(use_locals=True)
+    #myexperiment._build_coordinate_field(
+    #        keep=True, use_self_particle=True, **vsample_configuration
+    #    )
     #myexperiment.coordinate_field_id = virtual_sample
     return myexperiment.exported_coordinate_field, myexperiment
