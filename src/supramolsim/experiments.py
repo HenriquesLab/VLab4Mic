@@ -88,15 +88,16 @@ class ExperimentParametrisation:
         else:
             return labels_list
 
-    def _build_particle(self, lab_eff=1.0, defect=None, keep=False):
+    def _build_particle(self, lab_eff=1.0, defect_build=None, keep=False):
         if self.generators_status("structure"):
             labels_list = self._build_label(lab_eff=lab_eff)
             particle, label_params_list = particle_from_structure(
                 self.structure, labels_list, self.configuration_path
             )
             if self.defect_eps["use_defects"]:
-                if defect is None:
-                    defect = 0.0
+                print("adding defects")
+                if defect_build is not None:
+                    defect = defect_build
                 else:
                     defect = self.defect_eps["defect"]
                 particle.add_defects(
@@ -298,16 +299,16 @@ def create_experiment_parametrisation(
 
 def generate_virtual_sample(
         structure: str = "1XI5",
-        probe_name: str = "Mock_linker",
-        probe_target_type: str = "Sequence",
-        probe_target_value: str = "EQATETQ",
+        probe_name: str = "NHS_ester",
+        probe_target_type: str = None,
+        probe_target_value: str = None,
         probe_distance_to_epitope: float = None,
         probe_model: list[str] = None,
         probe_fluorophore: str = "AF647",
         labelling_efficiency: float = 1.0,
-        defect_small_cluster: list[str] = None,
-        defect_large_cluster: list[str] = None,
-        defect: list[str] = None,
+        defect_small_cluster: float = None,
+        defect_large_cluster: float = None,
+        defect: float = None,
         virtual_sample_template: str = "square1x1um_randomised",
         sample_dimensions: list[float] = None,
         number_of_particles: int = None,
@@ -316,19 +317,31 @@ def generate_virtual_sample(
         random_placing = False,
 ):
     myexperiment = ExperimentParametrisation()
+    # load default configuration for probe
     probe_configuration_file = os.path.join(myexperiment.configuration_path, "probes", probe_name + ".yaml")
     probe_configuration = load_yaml(probe_configuration_file)
-    probe_configuration["fluorophore_id"] = probe_fluorophore
-    probe_configuration["distance_to_epitope"] = probe_distance_to_epitope
-    probe_configuration["labelling_efficiency"] = labelling_efficiency
-    probe_configuration["target_info"] = dict(type=probe_target_type, value=probe_target_value)
+    if probe_target_type and probe_target_value:
+        probe_configuration["target_info"] = dict(type=probe_target_type, value=probe_target_value)
+    if probe_distance_to_epitope is not None:
+        probe_configuration["distance_to_epitope"] = probe_distance_to_epitope
+    if probe_fluorophore is not None:
+        probe_configuration["fluorophore_id"] = probe_fluorophore
+    if labelling_efficiency is not None:
+        probe_configuration["labelling_efficiency"] = labelling_efficiency
+    # load default configuration for virtual sample
     virtual_sample_template = os.path.join(myexperiment.configuration_path, "virtualsample", virtual_sample_template + ".yaml")
     vsample_configuration = load_yaml(virtual_sample_template)
     myexperiment.configuration_path
     myexperiment.structure_id = structure
     myexperiment.structure_label = probe_name
     myexperiment.probe_parameters[probe_name] = probe_configuration
-    
+
+    if defect and defect_large_cluster and defect_small_cluster:
+        myexperiment.defect_eps["eps1"] = defect_small_cluster
+        myexperiment.defect_eps["eps2"] = defect_large_cluster
+        myexperiment.defect_eps["defect"] = defect
+        myexperiment.defect_eps["use_defects"] = True
+
     if sample_dimensions is not None:
         vsample_configuration["sample_dimensions"] = sample_dimensions
     if number_of_particles is not None:
@@ -341,8 +354,6 @@ def generate_virtual_sample(
         vsample_configuration["random_placing"] = random_placing
     myexperiment.virtualsample_params = vsample_configuration
     myexperiment.build(use_locals=True)
-    #myexperiment._build_coordinate_field(
-    #        keep=True, use_self_particle=True, **vsample_configuration
-    #    )
+
     #myexperiment.coordinate_field_id = virtual_sample
     return myexperiment.exported_coordinate_field, myexperiment
