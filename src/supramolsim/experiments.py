@@ -115,7 +115,7 @@ class ExperimentParametrisation:
         if use_self_particle and self.generators_status("particle"):
             print("creating field from existing particle")
             exported_field, fieldobject = field_from_particle(
-                self.particle, field_config=coordinate_field_path, **self.sample_params, **kwargs
+                self.particle, **self.virtualsample_params, **kwargs
             )
             if keep:
                 self.exported_coordinate_field = exported_field
@@ -309,11 +309,11 @@ def generate_virtual_sample(
         defect_large_cluster: list[str] = None,
         defect: list[str] = None,
         virtual_sample_template: str = "square1x1um_randomised",
-        sample_dimensions: list[str] = None,
-        number_of_particles: int = 1,
+        sample_dimensions: list[float] = None,
+        number_of_particles: int = None,
         particle_positions: list[np.array] = None,
-        randomise_orientations = False,
-        randomise_positions = False,
+        random_orientations = False,
+        random_placing = False,
 ):
     myexperiment = ExperimentParametrisation()
     probe_configuration_file = os.path.join(myexperiment.configuration_path, "probes", probe_name + ".yaml")
@@ -323,13 +323,23 @@ def generate_virtual_sample(
     probe_configuration["labelling_efficiency"] = labelling_efficiency
     probe_configuration["target_info"] = dict(type=probe_target_type, value=probe_target_value)
     virtual_sample_template = os.path.join(myexperiment.configuration_path, "virtualsample", virtual_sample_template + ".yaml")
-    #vsample_configuration = load_yaml(virtual_sample_template)
-    #print(vsample_configuration)
+    vsample_configuration = load_yaml(virtual_sample_template)
     myexperiment.configuration_path
     myexperiment.structure_id = structure
     myexperiment.structure_label = probe_name
     myexperiment.probe_parameters[probe_name] = probe_configuration
-    myexperiment.coo = vsample_configuration
+    
+    if sample_dimensions is not None:
+        vsample_configuration["sample_dimensions"] = sample_dimensions
+    if number_of_particles is not None:
+        vsample_configuration["nparticles"] = number_of_particles
+    if particle_positions is not None:
+        vsample_configuration["relative_positions"] = particle_positions
+    if random_orientations is not None:
+        vsample_configuration["random_orientations"] = random_orientations
+    if random_placing is not None:
+        vsample_configuration["random_placing"] = random_placing
+    myexperiment.virtualsample_params = vsample_configuration
     myexperiment.build(use_locals=True)
     #myexperiment._build_coordinate_field(
     #        keep=True, use_self_particle=True, **vsample_configuration
