@@ -341,10 +341,10 @@ def generate_multi_imaging_modalities(
             outputs[mod] = timeseries
     else:
         acquisition_parameters = copy.copy(acquisition_param)
-        for mod, acq_params in acquisition_parameters.items():
-            print(mod, acq_params)
-            if acq_params is None:
-                acq_params = format_modality_acquisition_params(save=write)
+        for mod, acq_param in acquisition_parameters.items():
+            #print(mod, acq_params)
+            #if acq_params is None:
+            acq_params = format_modality_acquisition_params(save=write, **acq_param)
             if savingdir is not None:
                 savingdir = savingdir + os.sep
                 image_generator.set_writing_directory(savingdir)
