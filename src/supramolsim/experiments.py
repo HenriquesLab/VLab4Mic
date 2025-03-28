@@ -15,6 +15,7 @@ import os
 from supramolsim.utils.io.yaml_functions import load_yaml
 import numpy as np
 import os
+import copy
 
 @dataclass
 class ExperimentParametrisation:
@@ -47,6 +48,30 @@ class ExperimentParametrisation:
         )
         self.virtualsample_params = dict()
         self.defect_eps["use_defects"] = False
+        # read information of local modalities configuration
+        modalities_dir = os.path.join(local_dir, "modalities")
+        modalities_names_list = []
+        modality_parameters = {}
+        for mods in os.listdir(modalities_dir):
+            if os.path.splitext(mods)[-1] == ".yaml" and "_template" not in mods:
+                modalities_names_list.append(os.path.splitext(mods)[0])
+        for mod in modalities_names_list:
+            mod_info = configuration_format.compile_modality_parameters(
+                mod, local_dir
+            )
+            modality_parameters[mod] = mod_info
+        self.local_modalities_names = modalities_names_list
+        self.local_modalities_parameters = modality_parameters
+        self.imaging_modalities = dict()
+
+    def add_modality(self, modality_name, **kwargs):
+        if modality_name in self.local_modalities_names:
+            self.selected_mods[modality_name] = copy.deepcopy(self.local_modalities_parameters[modality_name])
+        #modality_configuration_file = os.path.join(self.configuration_path, "modalities")
+        #if modality_name
+        pass
+        
+        
 
     def _build_structure(self, keep=True):
         if self.structure_id:
