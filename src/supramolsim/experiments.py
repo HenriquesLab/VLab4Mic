@@ -305,6 +305,11 @@ def generate_virtual_sample(
         probe_distance_to_epitope: float = None,
         probe_model: list[str] = None,
         probe_fluorophore: str = "AF647",
+        probe_paratope: str = None,
+        probe_conjugation_target_info = None,
+        probe_conjugation_efficiency: float = None,
+        probe_seconday_epitope = None,
+        probe_wobbling = False,
         labelling_efficiency: float = 1.0,
         defect_small_cluster: float = None,
         defect_large_cluster: float = None,
@@ -328,6 +333,19 @@ def generate_virtual_sample(
         probe_configuration["fluorophore_id"] = probe_fluorophore
     if labelling_efficiency is not None:
         probe_configuration["labelling_efficiency"] = labelling_efficiency
+    if probe_model is not None:
+        probe_configuration["model_ID"] = probe_model
+    if probe_paratope is not None:
+        probe_configuration["paratope"] = probe_paratope
+    if probe_conjugation_target_info is not None:
+        probe_configuration["conjugation_target_info"] = probe_conjugation_target_info
+    if probe_conjugation_efficiency is not None:
+        probe_configuration["conjugation_efficiency"] = probe_conjugation_efficiency
+    if probe_seconday_epitope is not None:
+        probe_configuration["epitope_target_info"] = probe_seconday_epitope
+    if probe_wobbling:
+        probe_configuration["enable_wobble"] = probe_wobbling
+
     # load default configuration for virtual sample
     virtual_sample_template = os.path.join(myexperiment.configuration_path, "virtualsample", virtual_sample_template + ".yaml")
     vsample_configuration = load_yaml(virtual_sample_template)
