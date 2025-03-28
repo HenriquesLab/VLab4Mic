@@ -343,8 +343,11 @@ def generate_multi_imaging_modalities(
         acquisition_parameters = copy.copy(acquisition_param)
         for mod, acq_param in acquisition_parameters.items():
             #print(mod, acq_params)
-            #if acq_params is None:
-            acq_params = format_modality_acquisition_params(save=write, **acq_param)
+            if acq_param is None:
+                acq_params = format_modality_acquisition_params()
+            else:
+                acq_params = format_modality_acquisition_params(**acq_param)
+            acq_params["save"] = write
             if savingdir is not None:
                 savingdir = savingdir + os.sep
                 image_generator.set_writing_directory(savingdir)
