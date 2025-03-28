@@ -45,6 +45,7 @@ class ExperimentParametrisation:
             imager=False,
             output_reference=False,
         )
+        self.virtualsample_params = dict()
         self.defect_eps["use_defects"] = False
 
     def _build_structure(self, keep=True):
@@ -387,3 +388,17 @@ def build_virtual_microscope(
     experiment.selected_mods[modality] = None
     experiment._build_imager(use_local_field=False)
     return experiment.imager, experiment
+
+def image_vsample(
+        vsample = None, 
+        modality = None,
+        #experiment = None
+        ):
+    if vsample is None:
+        vsample, experiment = generate_virtual_sample()
+    if modality is None:
+        modality = "STED"
+    vmicroscope, experiment = build_virtual_microscope(modality=modality)
+    experiment.imager.import_field(**vsample)
+    imaging_output = experiment.run_simulation()
+    return imaging_output, experiment
