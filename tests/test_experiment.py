@@ -48,3 +48,10 @@ def test_gen_virtual_sample():
     vsample, testexperiment = experiments.generate_virtual_sample()
     print(vsample)
     assert len(vsample["reference_point"]) == 3
+
+
+def test_image_sample():
+    images, experiment = experiments.image_vsample()
+
+def test_build_virtual_microscope():
+    vmicroscope, experiment = experiments.build_virtual_microscope()
