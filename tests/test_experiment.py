@@ -58,12 +58,12 @@ def test_image_sample():
 def test_build_virtual_microscope():
     vmicroscope, experiment = experiments.build_virtual_microscope()
 
-
-
 structure_list = ["2RCJ", "7R5K", "3J3Y", "1XI5", "1HZH"]
 @pytest.mark.parametrize("structure", structure_list)
 def test_image_sample_structures(structure):
     images, experiment = experiments.image_vsample(
         structure=structure,
-        labelling_efficiency=0.01
+        labelling_efficiency=0.01,
         )
+    modalityname = list(images.keys())[0]
+    assert len(images[modalityname].shape) == 3
