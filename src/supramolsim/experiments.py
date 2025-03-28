@@ -66,12 +66,8 @@ class ExperimentParametrisation:
 
     def add_modality(self, modality_name, **kwargs):
         if modality_name in self.local_modalities_names:
-            self.selected_mods[modality_name] = copy.deepcopy(self.local_modalities_parameters[modality_name])
-        #modality_configuration_file = os.path.join(self.configuration_path, "modalities")
-        #if modality_name
-        pass
-        
-        
+            self.imaging_modalities[modality_name] = copy.deepcopy(self.local_modalities_parameters[modality_name])
+            self.selected_mods[modality_name] = None
 
     def _build_structure(self, keep=True):
         if self.structure_id:
@@ -156,9 +152,9 @@ class ExperimentParametrisation:
             pass
 
     def _build_imager(self, use_local_field=False):
-        if self.selected_mods:
-            print(f"Using selected mods: {self.selected_mods}")
-            mods_list = list(self.selected_mods.keys())
+        if self.imaging_modalities:
+            #print(f"Using selected mods: {self.imaging_modalities.keys()}")
+            mods_list = list(self.imaging_modalities.keys())
             if use_local_field and self.generators_status("exported_coordinate_field"):
                 self.imager, modality_parameters = create_imaging_system(
                     exported_field=self.exported_coordinate_field,
@@ -265,6 +261,7 @@ class ExperimentParametrisation:
         if self.experiment_id:
             name = self.experiment_id
         if self.generators_status("imager"):
+            print("simulating")
             simulation_output = generate_multi_imaging_modalities(
                 image_generator=self.imager,
                 experiment_name=name,
