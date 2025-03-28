@@ -375,3 +375,15 @@ def generate_virtual_sample(
 
     #myexperiment.coordinate_field_id = virtual_sample
     return myexperiment.exported_coordinate_field, myexperiment
+
+
+def build_virtual_microscope(
+        modality: str = "STED",
+        experiment = None,
+):
+    selected_mods = {modality: None}
+    if experiment is None:
+        experiment = ExperimentParametrisation()
+    experiment.selected_mods[modality] = None
+    experiment._build_imager(use_local_field=False)
+    return experiment.imager, experiment
