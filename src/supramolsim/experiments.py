@@ -67,7 +67,29 @@ class ExperimentParametrisation:
     def add_modality(self, modality_name, **kwargs):
         if modality_name in self.local_modalities_names:
             self.imaging_modalities[modality_name] = copy.deepcopy(self.local_modalities_parameters[modality_name])
-            self.selected_mods[modality_name] = None
+            for param, value in kwargs.items():
+                self.imaging_modalities[modality_name][param] = value
+            self.set_modality_acq(modality_name)
+    def set_modality_acq(
+            self,
+            modality_name, 
+            exp_time=0.001,
+            noise=True,
+            save=False,
+            nframes=2,
+            channels=["ch0",],
+            **kwargs
+        ):
+        if modality_name in self.imaging_modalities.keys():
+            self.selected_mods[modality_name] = configuration_format.format_modality_acquisition_params(
+               exp_time,
+               noise,
+               save,
+               nframes,
+               channels
+            )
+        else:
+            print("Modality not selected")
 
     def _build_structure(self, keep=True):
         if self.structure_id:
@@ -402,28 +424,37 @@ def generate_virtual_sample(
 
 
 def build_virtual_microscope(
-        modality: str = "STED",
+        modality = "STED",
+        multimodal: list[str] = None,
         experiment = None,
         **kwargs
 ):
-    selected_mods = {modality: None}
     if experiment is None:
         experiment = ExperimentParametrisation()
-    experiment.selected_mods[modality] = None
+    if multimodal is not None:
+        for mod in multimodal:
+            print(mod)
+            experiment.add_modality(mod, **kwargs)
+    else:
+        experiment.add_modality(modality, **kwargs)
     experiment._build_imager(use_local_field=False)
     return experiment.imager, experiment
 
 def image_vsample(
         vsample = None, 
-        modality = None,
-        #experiment = None
+        modality = "STED",
+        multimodal: list[str] = None,
+        run_simulation = True,
         **kwargs
         ):
     if vsample is None:
-        vsample, experiment = generate_virtual_sample(**kwargs)
-    if modality is None:
-        modality = "STED"
-    vmicroscope, experiment = build_virtual_microscope(modality=modality, **kwargs)
+        vsample, _ = generate_virtual_sample(**kwargs)
+    if multimodal is not None:
+        vmicroscope, experiment = build_virtual_microscope(multimodal=multimodal, **kwargs)
+    else:
+        vmicroscope, experiment = build_virtual_microscope(modality=modality, **kwargs)
     experiment.imager.import_field(**vsample)
-    imaging_output = experiment.run_simulation()
+    imaging_output = dict()
+    if run_simulation:
+        imaging_output = experiment.run_simulation()
     return imaging_output, experiment
