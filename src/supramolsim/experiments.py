@@ -321,6 +321,7 @@ def generate_virtual_sample(
         particle_positions: list[np.array] = None,
         random_orientations = False,
         random_placing = False,
+        **kwargs
 ):
     myexperiment = ExperimentParametrisation()
     # load default configuration for probe
@@ -381,6 +382,7 @@ def generate_virtual_sample(
 def build_virtual_microscope(
         modality: str = "STED",
         experiment = None,
+        **kwargs
 ):
     selected_mods = {modality: None}
     if experiment is None:
@@ -393,12 +395,13 @@ def image_vsample(
         vsample = None, 
         modality = None,
         #experiment = None
+        **kwargs
         ):
     if vsample is None:
-        vsample, experiment = generate_virtual_sample()
+        vsample, experiment = generate_virtual_sample(**kwargs)
     if modality is None:
         modality = "STED"
-    vmicroscope, experiment = build_virtual_microscope(modality=modality)
+    vmicroscope, experiment = build_virtual_microscope(modality=modality, **kwargs)
     experiment.imager.import_field(**vsample)
     imaging_output = experiment.run_simulation()
     return imaging_output, experiment
