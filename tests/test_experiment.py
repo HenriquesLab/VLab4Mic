@@ -1,4 +1,5 @@
 from supramolsim import experiments 
+import pytest
 
 def test_experiment_parameterised():
     selected_mods = dict(
@@ -50,8 +51,19 @@ def test_gen_virtual_sample():
     assert len(vsample["reference_point"]) == 3
 
 
+
 def test_image_sample():
     images, experiment = experiments.image_vsample()
 
 def test_build_virtual_microscope():
     vmicroscope, experiment = experiments.build_virtual_microscope()
+
+
+
+structure_list = ["2RCJ", "7R5K", "3J3Y", "1XI5", "1HZH"]
+@pytest.mark.parametrize("structure", structure_list)
+def test_image_sample_structures(structure):
+    images, experiment = experiments.image_vsample(
+        structure=structure,
+        labelling_efficiency=0.01
+        )
