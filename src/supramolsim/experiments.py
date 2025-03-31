@@ -437,7 +437,10 @@ def build_virtual_microscope(
             experiment.add_modality(mod, **kwargs)
     else:
         experiment.add_modality(modality, **kwargs)
-    experiment._build_imager(use_local_field=False)
+    if "use_local_field" in kwargs.keys():
+        experiment._build_imager(use_local_field=kwargs["use_local_field"])
+    else:
+        experiment._build_imager(use_local_field=kwargs["use_local_field"])
     return experiment.imager, experiment
 
 def image_vsample(
@@ -448,12 +451,22 @@ def image_vsample(
         **kwargs
         ):
     if vsample is None:
-        vsample, _ = generate_virtual_sample(**kwargs)
-    if multimodal is not None:
-        vmicroscope, experiment = build_virtual_microscope(multimodal=multimodal, **kwargs)
+        vsample, vsample_exp = generate_virtual_sample(**kwargs)
     else:
-        vmicroscope, experiment = build_virtual_microscope(modality=modality, **kwargs)
-    experiment.imager.import_field(**vsample)
+        vsample_exp = None
+    if multimodal is not None:
+        vmicroscope, experiment = build_virtual_microscope(
+            multimodal=multimodal,
+            experiment=vsample_exp, 
+            use_local_field=True,
+            **kwargs)
+    else:
+        vmicroscope, experiment = build_virtual_microscope(
+            modality=modality,
+            experiment=vsample_exp,
+            use_local_field=True,
+            **kwargs)
+    #experiment.imager.import_field(**vsample)
     imaging_output = dict()
     if run_simulation:
         imaging_output = experiment.run_simulation()
