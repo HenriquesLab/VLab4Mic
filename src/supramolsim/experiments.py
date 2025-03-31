@@ -440,7 +440,7 @@ def build_virtual_microscope(
     if "use_local_field" in kwargs.keys():
         experiment._build_imager(use_local_field=kwargs["use_local_field"])
     else:
-        experiment._build_imager(use_local_field=kwargs["use_local_field"])
+        experiment._build_imager()
     return experiment.imager, experiment
 
 def image_vsample(
