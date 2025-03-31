@@ -33,7 +33,20 @@ def test_image_sample_structures(structure):
 def test_multimodal_imaging():
     modalities = ["Widefield", "Confocal", "SMLM", "STED"]
     images, experiment = experiments.image_vsample(
-    multimodal=modalities
+        multimodal=modalities
     )
     modalityname = list(images.keys())[0]
     assert len(images[modalityname].shape) == 3
+    assert len(list(images.keys())) == len(modalities)
+    
+
+def test_nonlocal_structure():
+    structure9I0K = "9I0K"
+    modalities = ["Widefield", "Confocal", "SMLM", "STED"]
+    images, experiment = experiments.image_vsample(
+        structure=structure9I0K,
+        multimodal=modalities
+    )
+    modalityname = list(images.keys())[0]
+    assert len(images[modalityname].shape) == 3
+    assert len(list(images.keys())) == len(modalities)
