@@ -14,8 +14,8 @@ def test_build_virtual_microscope():
 
 def test_build_vmicroscope_multimodal():
     modalities = ["Widefield", "Confocal", "SMLM", "STED"]
-    images, experiment = experiments.image_vsample(
-    multimodal=modalities
+    images, experiment = experiments.build_virtual_microscope(
+    multimodal=modalities,
     )
     assert list(experiment.imager.modalities.keys()) == modalities
 
@@ -26,5 +26,14 @@ def test_image_sample_structures(structure):
         structure=structure,
         labelling_efficiency=0.01,
         )
+    modalityname = list(images.keys())[0]
+    assert len(images[modalityname].shape) == 3
+
+
+def test_multimodal_imaging():
+    modalities = ["Widefield", "Confocal", "SMLM", "STED"]
+    images, experiment = experiments.image_vsample(
+    multimodal=modalities
+    )
     modalityname = list(images.keys())[0]
     assert len(images[modalityname].shape) == 3
