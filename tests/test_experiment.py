@@ -12,6 +12,13 @@ def test_image_sample():
 def test_build_virtual_microscope():
     vmicroscope, experiment = experiments.build_virtual_microscope()
 
+def test_build_vmicroscope_multimodal():
+    modalities = ["Widefield", "Confocal", "SMLM", "STED"]
+    images, experiment = experiments.image_vsample(
+    multimodal=modalities
+    )
+    assert list(experiment.imager.modalities.keys()) == modalities
+
 structure_list = ["2RCJ", "7R5K", "3J3Y", "1XI5", "1HZH"]
 @pytest.mark.parametrize("structure", structure_list)
 def test_image_sample_structures(structure):
