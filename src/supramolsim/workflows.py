@@ -20,7 +20,7 @@ import numpy as np
 from scipy.spatial.distance import pdist
 from .utils.transform.datatype import truncate
 from .utils.data_format.structural_format import label_builder_format
-
+from pathlib import Path
 
 def load_structure(structure_id: str = None, config_dir=None):
     """
@@ -42,7 +42,12 @@ def load_structure(structure_id: str = None, config_dir=None):
         structure_dir = os.path.join(config_dir, "structures")
         config_file = structure_id + ".yaml"
         structure_configuration = os.path.join(structure_dir, config_file)
-        structure_params = load_yaml(structure_configuration)
+        structure_configuration_check = Path(structure_configuration)
+        if structure_configuration_check.exists():
+            structure_params = load_yaml(structure_configuration)
+        else:
+            template = os.path.join(structure_dir, "_template_.yaml")
+            structure_params = load_yaml(template)
         # get CIF path
         cif_file = verify_structure(structure_id, structure_dir)
         # build structure
