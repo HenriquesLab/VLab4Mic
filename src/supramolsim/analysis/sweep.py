@@ -125,7 +125,8 @@ def sweep_modalities(
     experiment: ExperimentParametrisation = None,
     vsample_outputs=None,
     vsampl_pars=None,
-    modalities=None,
+    modalities: list = None,
+    modality_params=None
 ):
     default_mod = "Confocal"
     default_aqc = dict(
@@ -143,31 +144,20 @@ def sweep_modalities(
         ]
         # needs default sample. can be a minimal field with a single emitter
     if modalities == "all":
-        modalities = dict()
         list_of_locals = ["Widefield", "Confocal", "SMLM", "STED"]
         for local_mode in list_of_locals:
-            modalities[local_mode] = default_aqc
+            experiment.add_modality(local_mode)
     elif modalities is None:
-        modalities = dict()
-        modalities[default_mod] = default_aqc
-    for modality, acquisition in modalities.items():  # load all modalities
-        experiment.add_modality(modality)
-        if acquisition is None:
-            #experiment.selected_mods[modality] = (
-            #    configuration_format.format_modality_acquisition_params()
-            #)
-            pass
-        else:
-            experiment.set_modality_acq(modality, **acquisition)
-            #experiment.selected_mods[modality] = (
-            #    configuration_format.format_modality_acquisition_params(**acquisition)
-            #)
-            # experiment.selected_mods[modality] = acquisition
+        experiment.add_modality("STED")
+    else:
+        for modality_name in modalities:
+            experiment.add_modality(modality_name)
     experiment._build_imager(use_local_field=False)
+    print(experiment.objects_created["imager"])
     pixelsizes = dict()
     imager_scale = experiment.imager.roi_params["scale"]
     scalefactor = np.ceil(imager_scale / 1e-9)  # in nanometers
-    for mod_name, parameters in experiment.imager.modalities.items():
+    for mod_name, parameters in experiment.imaging_modalities.items():
         pixelsizes[mod_name] = np.array(
             parameters["detector"]["pixelsize"] * scalefactor
         )
@@ -186,7 +176,7 @@ def sweep_modalities(
                 iteration_output = experiment.run_simulation(name="", save=False)
                 mod_outputs
                 mod_n = 0
-                for mod, acq in modalities.items():
+                for mod, acq in experiment.selected_mods.items():
                     print(f"modality and acq: {mod}, {acq}")
                     mod_comb = vsmpl_id + "_" + str(mod_n)
                     mod_parameters = copy.copy(vsampl_pars[vsmpl_id])
