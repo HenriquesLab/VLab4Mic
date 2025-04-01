@@ -26,6 +26,7 @@ class ExperimentParametrisation:
     fluorophore_id: str = ""
     coordinate_field_id: str = None
     selected_mods: Dict[str, int] = field(default_factory=dict)
+    imaging_modalities: Dict[str, int] = field(default_factory=dict)
     probe_parameters: Dict[str, int] = field(default_factory=dict)
     defect_eps: Dict[str, int] = field(default_factory=dict)
     sweep_pars: Dict[str, int] = field(default_factory=dict)
@@ -62,7 +63,7 @@ class ExperimentParametrisation:
             modality_parameters[mod] = mod_info
         self.local_modalities_names = modalities_names_list
         self.local_modalities_parameters = modality_parameters
-        self.imaging_modalities = dict()
+        #self.imaging_modalities = dict()
 
     def add_modality(self, modality_name, **kwargs):
         if modality_name in self.local_modalities_names:
@@ -77,6 +78,30 @@ class ExperimentParametrisation:
                 self.imaging_modalities[modality_name][param] = value
             self.set_modality_acq(modality_name)
 
+    def update_modality(self,
+                        modality_name,
+                        pixelsize_nm: int = None,
+                        lateral_resolution_nm: int = None,
+                        axial_resolution_nm: int = None,
+                        psf_voxel_nm: int = None,
+                        ):
+        chagnes = False
+        if pixelsize_nm is not None:
+            self.imaging_modalities[modality_name]["detector"]["pixelsize"] = pixelsize_nm / 1000
+            chagnes = True
+        if lateral_resolution_nm is not None:
+            self.imaging_modalities[modality_name]["psf_params"]["std_devs"][0] = lateral_resolution_nm
+            self.imaging_modalities[modality_name]["psf_params"]["std_devs"][1] = lateral_resolution_nm
+            chagnes = True
+        if axial_resolution_nm is not None:
+            self.imaging_modalities[modality_name]["psf_params"]["std_devs"][2] = axial_resolution_nm
+            chagnes = True
+        if psf_voxel_nm is not None:
+            self.imaging_modalities[modality_name]["psf_params"]["voxelsize"] = [psf_voxel_nm, psf_voxel_nm, psf_voxel_nm]
+            chagnes = True
+        if chagnes:
+            #mod_pars = self.imaging_modalities[modality_name]
+            self.imager.set_imaging_modality(**self.imaging_modalities[modality_name])
 
     def set_modality_acq(
             self,
