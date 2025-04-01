@@ -70,6 +70,14 @@ class ExperimentParametrisation:
             for param, value in kwargs.items():
                 self.imaging_modalities[modality_name][param] = value
             self.set_modality_acq(modality_name)
+        else:
+            print(f"Modality {modality_name} not found in demo modalities. Using Widefield params as template to create new.")
+            self.imaging_modalities[modality_name] = copy.deepcopy(self.local_modalities_parameters["Widefield"])
+            for param, value in kwargs.items():
+                self.imaging_modalities[modality_name][param] = value
+            self.set_modality_acq(modality_name)
+
+
     def set_modality_acq(
             self,
             modality_name, 
@@ -181,12 +189,15 @@ class ExperimentParametrisation:
                 self.imager, modality_parameters = create_imaging_system(
                     exported_field=self.exported_coordinate_field,
                     modalities_id_list=mods_list,
+                    mod_params=self.imaging_modalities,
                     config_dir=self.configuration_path,
                 )
             else:
                 print("Local field missing or unused. Creating imager without particles")
                 self.imager, modality_parameters = create_imaging_system(
-                    modalities_id_list=mods_list, config_dir=self.configuration_path
+                    modalities_id_list=mods_list,
+                    mod_params=self.imaging_modalities,
+                    config_dir=self.configuration_path
                 )
             self.objects_created["imager"] = True
         else:
