@@ -248,12 +248,17 @@ def generate_global_reference_modality(
         modality = "Reference"
         modality_acquisition = None
     if modality_acquisition is None:
-        experiment.selected_mods[modality] = (
-            configuration_format.format_modality_acquisition_params()
-        )
+        experiment.add_modality(modality)
+        
+        #experiment.selected_mods[modality] = (
+        #    configuration_format.format_modality_acquisition_params()
+        #)
     else:
-        experiment.selected_mods[modality] = modality_acquisition
+        experiment.add_modality(modality)
+        experiment.set_modality_acq(modality, **modality_acquisition)
+        #experiment.selected_mods[modality] = modality_acquisition
     experiment._build_imager(use_local_field=False)
+    print(experiment.generators_status)
     experiment.imager.import_field(**reference_vsample)
     reference_parameters = dict()
     reference_parameters["Vector"] = [
