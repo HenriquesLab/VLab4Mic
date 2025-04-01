@@ -151,14 +151,17 @@ def sweep_modalities(
         modalities = dict()
         modalities[default_mod] = default_aqc
     for modality, acquisition in modalities.items():  # load all modalities
+        experiment.add_modality(modality)
         if acquisition is None:
-            experiment.selected_mods[modality] = (
-                configuration_format.format_modality_acquisition_params()
-            )
+            #experiment.selected_mods[modality] = (
+            #    configuration_format.format_modality_acquisition_params()
+            #)
+            pass
         else:
-            experiment.selected_mods[modality] = (
-                configuration_format.format_modality_acquisition_params(**acquisition)
-            )
+            experiment.set_modality_acq(modality, **acquisition)
+            #experiment.selected_mods[modality] = (
+            #    configuration_format.format_modality_acquisition_params(**acquisition)
+            #)
             # experiment.selected_mods[modality] = acquisition
     experiment._build_imager(use_local_field=False)
     pixelsizes = dict()
