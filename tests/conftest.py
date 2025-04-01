@@ -1,6 +1,6 @@
 import supramolsim
 from supramolsim import workflows, data_format
-from supramolsim.experiments import create_experiment_parametrisation
+from supramolsim import experiments 
 import pytest
 import os
 
@@ -47,24 +47,23 @@ def gt_structural_model_field(configuration_directory):
 
 @pytest.fixture(scope="module")
 def experiment_7r5k_base():
-    selected_mods = dict(
-        STED=None,
-        Confocal=None,
+    structure_id = "7R5K"
+    probe = "NPC_Nup96_Cterminal_direct"
+    fluorophore_id = "AF647"
+    virtual_sample = "square1x1um_randomised" 
+    modalities = ["Widefield", "Confocal", "SMLM", "STED", "AiryScan"]
+    selected_mods = {}
+    default_aqc = dict(
+        nframes=2,
+        exp_time=0.005
     )
-    structure_and_labels = dict(
-        structure_id="7R5K",
-        structure_label="NPC_Nup96_Cterminal_direct",
-        fluorophore_id="AF647",
-    )
-    defects_eps_d = dict(eps1=300, eps2=600)
-    savging = dict(
-        experiment_id="SupraMolSim_experiment", output_directory="", save=True
-    )
-    Experiment_generator = create_experiment_parametrisation(
-        structure_and_labels=structure_and_labels,
-        modalities_acquisition=selected_mods,
-        savging=savging,
-        defects_params=defects_eps_d,
-        use_locals=True,
-    )
-    return Experiment_generator
+    for mod in modalities:
+        selected_mods[mod] = default_aqc
+    myexperiment = experiments.ExperimentParametrisation()
+    myexperiment.structure_id = structure_id
+    myexperiment.structure_label = probe
+    myexperiment.fluorophore_id = fluorophore_id
+    myexperiment.coordinate_field_id = virtual_sample
+    myexperiment.selected_mods = selected_mods
+    myexperiment.build(use_locals=True)
+    return myexperiment

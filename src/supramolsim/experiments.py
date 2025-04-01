@@ -12,7 +12,10 @@ from .workflows import (
 from .utils.data_format.structural_format import label_builder_format
 from .utils.data_format import configuration_format
 import os
-
+from supramolsim.utils.io.yaml_functions import load_yaml
+import numpy as np
+import os
+import copy
 
 @dataclass
 class ExperimentParametrisation:
@@ -29,6 +32,7 @@ class ExperimentParametrisation:
     objects_created: Dict[str, int] = field(default_factory=dict)
     output_directory: str = None
 
+
     def __post_init__(self):
         pck_dir = os.path.dirname(os.path.abspath(supramolsim.__file__))
         local_dir = os.path.join(pck_dir, "configs")
@@ -42,7 +46,50 @@ class ExperimentParametrisation:
             imager=False,
             output_reference=False,
         )
+        self.virtualsample_params = dict()
         self.defect_eps["use_defects"] = False
+        # read information of local modalities configuration
+        modalities_dir = os.path.join(local_dir, "modalities")
+        modalities_names_list = []
+        modality_parameters = {}
+        for mods in os.listdir(modalities_dir):
+            if os.path.splitext(mods)[-1] == ".yaml" and "_template" not in mods:
+                modalities_names_list.append(os.path.splitext(mods)[0])
+        for mod in modalities_names_list:
+            mod_info = configuration_format.compile_modality_parameters(
+                mod, local_dir
+            )
+            modality_parameters[mod] = mod_info
+        self.local_modalities_names = modalities_names_list
+        self.local_modalities_parameters = modality_parameters
+        self.imaging_modalities = dict()
+
+    def add_modality(self, modality_name, **kwargs):
+        if modality_name in self.local_modalities_names:
+            self.imaging_modalities[modality_name] = copy.deepcopy(self.local_modalities_parameters[modality_name])
+            for param, value in kwargs.items():
+                self.imaging_modalities[modality_name][param] = value
+            self.set_modality_acq(modality_name)
+    def set_modality_acq(
+            self,
+            modality_name, 
+            exp_time=0.001,
+            noise=True,
+            save=False,
+            nframes=2,
+            channels=["ch0",],
+            **kwargs
+        ):
+        if modality_name in self.imaging_modalities.keys():
+            self.selected_mods[modality_name] = configuration_format.format_modality_acquisition_params(
+               exp_time,
+               noise,
+               save,
+               nframes,
+               channels
+            )
+        else:
+            print("Modality not selected")
 
     def _build_structure(self, keep=True):
         if self.structure_id:
@@ -85,15 +132,16 @@ class ExperimentParametrisation:
         else:
             return labels_list
 
-    def _build_particle(self, lab_eff=1.0, defect=None, keep=False):
+    def _build_particle(self, lab_eff=1.0, defect_build=None, keep=False):
         if self.generators_status("structure"):
             labels_list = self._build_label(lab_eff=lab_eff)
             particle, label_params_list = particle_from_structure(
                 self.structure, labels_list, self.configuration_path
             )
             if self.defect_eps["use_defects"]:
-                if defect is None:
-                    defect = 0.0
+                print("adding defects")
+                if defect_build is not None:
+                    defect = defect_build
                 else:
                     defect = self.defect_eps["defect"]
                 particle.add_defects(
@@ -109,11 +157,10 @@ class ExperimentParametrisation:
     def _build_coordinate_field(
         self, use_self_particle=True, keep=False, coordinate_field_path=None, **kwargs
     ):
-        
         if use_self_particle and self.generators_status("particle"):
             print("creating field from existing particle")
             exported_field, fieldobject = field_from_particle(
-                self.particle, field_config=coordinate_field_path, **kwargs
+                self.particle, **self.virtualsample_params, **kwargs
             )
             if keep:
                 self.exported_coordinate_field = exported_field
@@ -127,9 +174,9 @@ class ExperimentParametrisation:
             pass
 
     def _build_imager(self, use_local_field=False):
-        if self.selected_mods:
-            print(f"Using selected mods: {self.selected_mods}")
-            mods_list = list(self.selected_mods.keys())
+        if self.imaging_modalities:
+            #print(f"Using selected mods: {self.imaging_modalities.keys()}")
+            mods_list = list(self.imaging_modalities.keys())
             if use_local_field and self.generators_status("exported_coordinate_field"):
                 self.imager, modality_parameters = create_imaging_system(
                     exported_field=self.exported_coordinate_field,
@@ -236,6 +283,7 @@ class ExperimentParametrisation:
         if self.experiment_id:
             name = self.experiment_id
         if self.generators_status("imager"):
+            print("simulating")
             simulation_output = generate_multi_imaging_modalities(
                 image_generator=self.imager,
                 experiment_name=name,
@@ -292,3 +340,134 @@ def create_experiment_parametrisation(
         generator.output_directory = savging["output_directory"]
     generator.build(use_locals=use_locals)
     return generator
+
+
+def generate_virtual_sample(
+        structure: str = "1XI5",
+        probe_name: str = "NHS_ester",
+        probe_target_type: str = None,
+        probe_target_value: str = None,
+        probe_distance_to_epitope: float = None,
+        probe_model: list[str] = None,
+        probe_fluorophore: str = "AF647",
+        probe_paratope: str = None,
+        probe_conjugation_target_info = None,
+        probe_conjugation_efficiency: float = None,
+        probe_seconday_epitope = None,
+        probe_wobbling = False,
+        labelling_efficiency: float = 1.0,
+        defect_small_cluster: float = None,
+        defect_large_cluster: float = None,
+        defect: float = None,
+        virtual_sample_template: str = "square1x1um_randomised",
+        sample_dimensions: list[float] = None,
+        number_of_particles: int = None,
+        particle_positions: list[np.array] = None,
+        random_orientations = False,
+        random_placing = False,
+        **kwargs
+):
+    myexperiment = ExperimentParametrisation()
+    # load default configuration for probe
+    probe_configuration_file = os.path.join(myexperiment.configuration_path, "probes", probe_name + ".yaml")
+    probe_configuration = load_yaml(probe_configuration_file)
+    if probe_target_type and probe_target_value:
+        probe_configuration["target_info"] = dict(type=probe_target_type, value=probe_target_value)
+    if probe_distance_to_epitope is not None:
+        probe_configuration["distance_to_epitope"] = probe_distance_to_epitope
+    if probe_fluorophore is not None:
+        probe_configuration["fluorophore_id"] = probe_fluorophore
+    if labelling_efficiency is not None:
+        probe_configuration["labelling_efficiency"] = labelling_efficiency
+    if probe_model is not None:
+        probe_configuration["model_ID"] = probe_model
+    if probe_paratope is not None:
+        probe_configuration["paratope"] = probe_paratope
+    if probe_conjugation_target_info is not None:
+        probe_configuration["conjugation_target_info"] = probe_conjugation_target_info
+    if probe_conjugation_efficiency is not None:
+        probe_configuration["conjugation_efficiency"] = probe_conjugation_efficiency
+    if probe_seconday_epitope is not None:
+        probe_configuration["epitope_target_info"] = probe_seconday_epitope
+    if probe_wobbling:
+        probe_configuration["enable_wobble"] = probe_wobbling
+
+    # load default configuration for virtual sample
+    virtual_sample_template = os.path.join(myexperiment.configuration_path, "virtualsample", virtual_sample_template + ".yaml")
+    vsample_configuration = load_yaml(virtual_sample_template)
+    myexperiment.configuration_path
+    myexperiment.structure_id = structure
+    myexperiment.structure_label = probe_name
+    myexperiment.probe_parameters[probe_name] = probe_configuration
+
+    if defect and defect_large_cluster and defect_small_cluster:
+        myexperiment.defect_eps["eps1"] = defect_small_cluster
+        myexperiment.defect_eps["eps2"] = defect_large_cluster
+        myexperiment.defect_eps["defect"] = defect
+        myexperiment.defect_eps["use_defects"] = True
+
+    if sample_dimensions is not None:
+        vsample_configuration["sample_dimensions"] = sample_dimensions
+    if number_of_particles is not None:
+        vsample_configuration["nparticles"] = number_of_particles
+    if particle_positions is not None:
+        vsample_configuration["relative_positions"] = particle_positions
+    if random_orientations is not None:
+        vsample_configuration["random_orientations"] = random_orientations
+    if random_placing is not None:
+        vsample_configuration["random_placing"] = random_placing
+    myexperiment.virtualsample_params = vsample_configuration
+    myexperiment.build(use_locals=True)
+
+    #myexperiment.coordinate_field_id = virtual_sample
+    return myexperiment.exported_coordinate_field, myexperiment
+
+
+def build_virtual_microscope(
+        modality = "STED",
+        multimodal: list[str] = None,
+        experiment = None,
+        **kwargs
+):
+    if experiment is None:
+        experiment = ExperimentParametrisation()
+    if multimodal is not None:
+        for mod in multimodal:
+            print(mod)
+            experiment.add_modality(mod, **kwargs)
+    else:
+        experiment.add_modality(modality, **kwargs)
+    if "use_local_field" in kwargs.keys():
+        experiment._build_imager(use_local_field=kwargs["use_local_field"])
+    else:
+        experiment._build_imager()
+    return experiment.imager, experiment
+
+def image_vsample(
+        vsample = None, 
+        modality = "STED",
+        multimodal: list[str] = None,
+        run_simulation = True,
+        **kwargs
+        ):
+    if vsample is None:
+        vsample, vsample_exp = generate_virtual_sample(**kwargs)
+    else:
+        vsample_exp = None
+    if multimodal is not None:
+        vmicroscope, experiment = build_virtual_microscope(
+            multimodal=multimodal,
+            experiment=vsample_exp, 
+            use_local_field=True,
+            **kwargs)
+    else:
+        vmicroscope, experiment = build_virtual_microscope(
+            modality=modality,
+            experiment=vsample_exp,
+            use_local_field=True,
+            **kwargs)
+    #experiment.imager.import_field(**vsample)
+    imaging_output = dict()
+    if run_simulation:
+        imaging_output = experiment.run_simulation()
+    return imaging_output, experiment

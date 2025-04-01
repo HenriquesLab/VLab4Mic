@@ -332,7 +332,8 @@ class Field:
         self.molecules = molecules
         if self.random_orientations:
             self.generate_random_orientations()
-            self.relabel_molecules()
+            # self.relabel_molecules()
+        self.relabel_molecules()
         
 
 

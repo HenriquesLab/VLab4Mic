@@ -263,6 +263,8 @@ class MolecularStructureParser:
         central_axis = eigenvectors[
             :, np.argmax(np.isclose(eigenvalues, 1.0))
         ]  # central axis is the eigenvector that corresponds to the eigenvalue = 1
+        if central_axis.dtype == "complex128":
+            central_axis = np.array([0, 0, 1])
         return central_axis
 
     # Parsing atoms
