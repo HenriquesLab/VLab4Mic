@@ -970,6 +970,7 @@ def run_simulation():
                 experiment_name=exp_name,
                 savingdir=sav_dir,
                 acquisition_param=None,
+                write=True
             )
         else:
             generate_multi_imaging_modalities(
@@ -977,6 +978,7 @@ def run_simulation():
                 experiment_name=exp_name,
                 savingdir=sav_dir,
                 acquisition_param=acq_params_per_mod,
+                write=True
             )
         
         experiment_gui.save_settings()
