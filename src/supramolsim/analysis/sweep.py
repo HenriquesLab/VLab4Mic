@@ -228,7 +228,7 @@ def sweep_modalities_updatemod(
         modality_params[0] = {}
     if modality_acq_prams is None:
         modality_acq_prams = {}
-        modality_acq_prams[0] = {"modality_name": "NA"}
+        modality_acq_prams[0] = None
     experiment._build_imager(use_local_field=False)
     # print(experiment.objects_created["imager"])
     pixelsizes = dict()
@@ -254,9 +254,10 @@ def sweep_modalities_updatemod(
                     for mod_pars_number, mod_pars in modality_params.items():
                         experiment.update_modality(modality_name, **mod_pars)
                         for mod_acq_number, acq_pars in modality_acq_prams.items():
-                            experiment.set_modality_acq(
-                                modality_name=modality_name,
-                                **acq_pars)
+                            if acq_pars:
+                                experiment.set_modality_acq(
+                                    modality_name=modality_name,
+                                    **acq_pars)
                             # iteration_name = combination
                             modality_timeseries = experiment.run_simulation(name="", save=False, modality=modality_name)
                             mod_comb = vsmpl_id + "_" + str(mod_n) + "_" + str(mod_pars_number) + "_" + str(mod_acq_number)
