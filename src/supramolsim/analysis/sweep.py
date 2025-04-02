@@ -582,3 +582,25 @@ def virtual_sample_parameters_sweep(
     if bool(field_parameters_vectors):
         field_parameters = create_param_combinations(**field_parameters_vectors)
     return field_parameters
+
+def defects_parameters_sweep(
+        defect_small_cluster: float = None,
+        defect_large_cluster: float = None,
+        defect: float = None,
+    ):
+    local_params = locals()
+    defects_parameters_vectors = {}
+    for par, value in local_params.items():
+        if value is not None and type(value) is list:
+            if len(value) == 1:
+                defects_parameters_vectors[par] = value
+            else:
+                if isinstance(value[0], (str, bool)):
+                    defects_parameters_vectors[par] = value
+                else:
+                    sequence = np.linspace(value[0],value[1],value[2])
+                    defects_parameters_vectors[par] = sequence
+    defects_parameters = None
+    if bool(defects_parameters_vectors):
+        defects_parameters = create_param_combinations(**defects_parameters_vectors)
+    return defects_parameters
