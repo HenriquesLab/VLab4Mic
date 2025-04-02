@@ -254,14 +254,16 @@ def sweep_modalities_updatemod(
                     for mod_pars_number, mod_pars in modality_params.items():
                         experiment.update_modality(modality_name, **mod_pars)
                         for mod_acq_number, acq_pars in modality_acq_prams.items():
-                            experiment.set_modality_acq(**acq_pars)
+                            experiment.set_modality_acq(
+                                modality_name=modality_name,
+                                **acq_pars)
                             # iteration_name = combination
                             modality_timeseries = experiment.run_simulation(name="", save=False, modality=modality_name)
                             mod_comb = vsmpl_id + "_" + str(mod_n) + "_" + str(mod_pars_number) + "_" + str(mod_acq_number)
                             mod_parameters = copy.copy(vsampl_pars[vsmpl_id])
                             mod_parameters.append(modality_name)
-                            mod_parameters.append(mod_pars_number)
-                            mod_parameters.append(mod_acq_number)
+                            mod_parameters.append(mod_pars)
+                            mod_parameters.append(acq_pars)
                             if mod_comb not in mod_params.keys():
                                 mod_params[mod_comb] = mod_parameters
                                 mod_outputs[mod_comb] = []
@@ -368,7 +370,7 @@ def analyse_image_sweep(img_outputs, img_params, reference, analysis_case_params
 
 
 def measurements_dataframe(
-    measurement_vectors, probe_parameters=None, p_defects=None, sample_params=None, mod_params=None
+    measurement_vectors, probe_parameters=None, p_defects=None, sample_params=None, mod_params=None, mod_acq=None
 ):
     measurement_array = np.array(measurement_vectors)
     nrows = len(measurement_array[:, 1])
@@ -382,6 +384,8 @@ def measurements_dataframe(
             "defects": ids_array[:, 2],
             "vsample": ids_array[:, 3],
             "modality": ids_array[:, 4],
+            "modality_parameters": ids_array[:, 5],
+            "modality_acqusition": ids_array[:, 6],
             "Replica": measurement_array[:, 1],
             "Metric": np.array(measurement_array[:, 2], dtype=np.float32),
         }
@@ -435,6 +439,20 @@ def measurements_dataframe(
             tmp_df4["modality_name"].append(mod_id[mod_par_comb_id])
         tmp4 = pd.DataFrame(tmp_df4)
         df_combined = df_combined.join(tmp4)
+    if mod_acq:
+        param_names = mod_acq[0].keys()
+        tmp_df5 = dict()
+        for column_name in param_names:
+            tmp_df5[column_name] = []
+        for i in range(nrows):
+            acq_par_comb_id = int(data_frame.iloc[i]["modality_acqusition"])
+            for column_name in param_names:
+                print(column_name, acq_par_comb_id)
+                print(mod_acq[acq_par_comb_id][column_name])
+                tmp_df5[column_name].append(mod_acq[acq_par_comb_id][column_name])
+        tmp5 = pd.DataFrame(tmp_df5)
+        print(tmp_df5)
+        df_combined = df_combined.join(tmp5)
 
 
     return data_frame, df_combined
