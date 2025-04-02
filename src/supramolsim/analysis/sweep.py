@@ -191,6 +191,85 @@ def sweep_modalities(
                     mod_parameters = None
     return experiment, mod_outputs, mod_params, pixelsizes
 
+def sweep_modalities_updatemod(
+    experiment: ExperimentParametrisation = None,
+    vsample_outputs=None,
+    vsampl_pars=None,
+    modalities: list = None,
+    modality_params: dict = None,
+    modality_acq_prams: dict =None,
+):
+    default_mod = "Confocal"
+    default_aqc = dict(
+        nframes=2,
+        exp_time=0.005
+    )
+    default_vsample = "None"
+    mod_outputs = dict()
+    mod_params = dict()
+    if experiment is None:
+        experiment = ExperimentParametrisation()
+    if vsample_outputs is None:
+        vsample_outputs = [
+            default_vsample,
+        ]
+        # needs default sample. can be a minimal field with a single emitter
+    if modalities == "all":
+        list_of_locals = ["Widefield", "Confocal", "SMLM", "STED"]
+        for local_mode in list_of_locals:
+            experiment.add_modality(local_mode)
+    elif modalities is None:
+        experiment.add_modality("STED")
+    else:
+        for modality_name in modalities:
+            experiment.add_modality(modality_name)
+    if modality_params is None:
+        modality_params = {}
+        modality_params[0] = {}
+    if modality_acq_prams is None:
+        modality_acq_prams = {}
+        modality_acq_prams[0] = {"modality_name": "NA"}
+    experiment._build_imager(use_local_field=False)
+    # print(experiment.objects_created["imager"])
+    pixelsizes = dict()
+    imager_scale = experiment.imager.roi_params["scale"]
+    scalefactor = np.ceil(imager_scale / 1e-9)  # in nanometers
+    for mod_name, parameters in experiment.imaging_modalities.items():
+        pixelsizes[mod_name] = np.array(
+            parameters["detector"]["pixelsize"] * scalefactor
+        )
+    for vsmpl_id in tqdm(
+        list(vsampl_pars.keys()),
+        position=0,
+        leave=True,
+        desc="Unique parameter combination",
+    ):
+        for virtualsample in tqdm(
+            list(vsample_outputs[vsmpl_id]), position=1, leave=False, desc="Repeats"
+        ):
+            experiment.imager.import_field(**virtualsample)
+            with io.capture_output() as captured:
+                mod_n = 0
+                for modality_name in experiment.selected_mods.keys():
+                    for mod_pars_number, mod_pars in modality_params.items():
+                        experiment.update_modality(modality_name, **mod_pars)
+                        for mod_acq_number, acq_pars in modality_acq_prams.items():
+                            experiment.set_modality_acq(**acq_pars)
+                            # iteration_name = combination
+                            modality_timeseries = experiment.run_simulation(name="", save=False, modality=modality_name)
+                            mod_comb = vsmpl_id + "_" + str(mod_n) + "_" + str(mod_pars_number) + "_" + str(mod_acq_number)
+                            mod_parameters = copy.copy(vsampl_pars[vsmpl_id])
+                            mod_parameters.append(modality_name)
+                            mod_parameters.append(mod_pars_number)
+                            mod_parameters.append(mod_acq_number)
+                            if mod_comb not in mod_params.keys():
+                                mod_params[mod_comb] = mod_parameters
+                                mod_outputs[mod_comb] = []
+                            mod_outputs[mod_comb].append(modality_timeseries[modality_name])
+                            mod_parameters = None
+                    mod_n += 1   
+    return experiment, mod_outputs, mod_params, pixelsizes
+
 
 def generate_global_reference_sample(
     experiment: ExperimentParametrisation = None,
