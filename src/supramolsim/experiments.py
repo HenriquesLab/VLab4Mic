@@ -311,26 +311,36 @@ class ExperimentParametrisation:
             self.objects_created["output_reference"] = True
         return _reference, _reference_parameters
 
-    def run_simulation(self, name="NONAME", acq_params=None, save=False):
+    def run_simulation(self, name="NONAME", acq_params=None, save=False, modality="All", **kwargs):
         # imager will run regardless, since by default
         # has a minimal coordinate field
-        if acq_params is None:
-            acq_params=self.selected_mods
-        if self.experiment_id:
-            name = self.experiment_id
-        if self.generators_status("imager"):
-            print("simulating")
-            simulation_output = generate_multi_imaging_modalities(
-                image_generator=self.imager,
-                experiment_name=name,
-                savingdir=self.output_directory,
-                write=save,
-                # acq_params is a value in selected mods
-                acquisition_param=acq_params,
-            )
-            return simulation_output
+        if modality == "All":
+            print("Simulating all modalities")
+            if acq_params is None:
+                acq_params=self.selected_mods
+            if self.experiment_id:
+                name = self.experiment_id
+            if self.generators_status("imager"):
+                simulation_output = generate_multi_imaging_modalities(
+                    image_generator=self.imager,
+                    experiment_name=name,
+                    savingdir=self.output_directory,
+                    write=save,
+                    # acq_params is a value in selected mods
+                    acquisition_param=acq_params,
+                )
+                return simulation_output
+            else:
+                print("Missing attributes")
         else:
-            print("Missing attributes")
+            print(f"Simulating: {modality}")
+            acq_p = self.selected_mods[modality]
+            timeseries, _ = self.imager.generate_imaging(
+                modality=modality, **acq_p
+            )
+            simulation_output = {}
+            simulation_output[modality] = timeseries
+            return simulation_output
 
     def remove_probes(self):
         self.structure_label = None
