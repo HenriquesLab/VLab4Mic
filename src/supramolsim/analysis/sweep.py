@@ -362,15 +362,16 @@ def measurements_dataframe(
 
 
 def create_param_combinations(**kwargs):
-    # Generate all combinations using itertools.product
-    combinations = list(itertools.product(*kwargs.values()))
-    # Create a new dictionary with unique integers as keys
-    # Each value in the dictionary will be another dictionary where the keys are the parameter names
-    combinations_dict = {
-        i: {key: value for key, value in zip(kwargs.keys(), combination)}
-        for i, combination in enumerate(combinations)
-    }
-    return combinations_dict
+    if kwargs:
+        # Generate all combinations using itertools.product
+        combinations = list(itertools.product(*kwargs.values()))
+        # Create a new dictionary with unique integers as keys
+        # Each value in the dictionary will be another dictionary where the keys are the parameter names
+        combinations_dict = {
+            i: {key: value for key, value in zip(kwargs.keys(), combination)}
+            for i, combination in enumerate(combinations)
+        }
+        return combinations_dict
 
 
 def pivot_dataframe(dataframe, param1, param2):
