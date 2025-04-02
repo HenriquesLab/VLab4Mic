@@ -262,7 +262,10 @@ def sweep_modalities_updatemod(
                             mod_comb = vsmpl_id + "_" + str(mod_n) + "_" + str(mod_pars_number) + "_" + str(mod_acq_number)
                             mod_parameters = copy.copy(vsampl_pars[vsmpl_id])
                             mod_parameters.append(modality_name)
-                            mod_parameters.append(mod_pars)
+                            pxsize = experiment.imager.modalities[modality_name]["detector"]["pixelsize"]*1000
+                            mod_params_copy = copy.deepcopy(mod_pars)
+                            mod_params_copy["pixelsize"] = pxsize
+                            mod_parameters.append(mod_params_copy)
                             mod_parameters.append(acq_pars)
                             if mod_comb not in mod_params.keys():
                                 mod_params[mod_comb] = mod_parameters
@@ -367,6 +370,31 @@ def analyse_image_sweep(img_outputs, img_params, reference, analysis_case_params
             inputs[params_id][rep_number] = [qry_used, im1]
             rep_number += 1
     return measurement_vectors, inputs
+
+def analyse_sweep_single_reference(img_outputs, img_params, reference_image, reference_params):
+    measurement_vectors = []
+    # ref_pixelsize = analysis_case_params["ref_pixelsize"]
+    inputs = dict()
+    for params_id in img_params.keys():
+        inputs[params_id] = dict()
+        rep_number = 0
+        mod_name = img_params[params_id][5]  # 5th item corresponds to Modality
+        modality_pixelsize = img_params[params_id][6]["pixelsize"]
+        for img_r in img_outputs[params_id]:
+            im1 = img_r[0]
+            im_ref = reference_image
+            rep_measurement, ref_used, qry_used = metrics.img_compare(
+                im_ref, im1,
+                modality_pixelsize = modality_pixelsize,
+                ref_pixelsize = reference_params["ref_pixelsize"],
+                force_match=True
+            )
+            measurement_vectors.append([params_id, rep_number, rep_measurement])
+            inputs[params_id][rep_number] = [qry_used, im1]
+            rep_number += 1
+    return measurement_vectors, inputs
+
+
 
 
 def measurements_dataframe(
