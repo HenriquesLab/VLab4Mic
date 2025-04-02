@@ -557,3 +557,28 @@ def probe_parameters_sweep(
     if bool(probe_parameters_vectors):
         probe_parameters = create_param_combinations(**probe_parameters_vectors)
     return probe_parameters
+
+def virtual_sample_parameters_sweep(
+        virtual_sample_template: str = None,
+        sample_dimensions: list[float] = None,
+        number_of_particles: int = None,
+        particle_positions: list[np.array] = None,
+        random_orientations = False,
+        random_placing = False,
+    ):
+    local_params = locals()
+    field_parameters_vectors = {}
+    for par, value in local_params.items():
+        if value is not None and type(value) is list:
+            if len(value) == 1:
+                field_parameters_vectors[par] = value
+            else:
+                if isinstance(value[0], (str, bool)):
+                    field_parameters_vectors[par] = value
+                else:
+                    sequence = np.linspace(value[0],value[1],value[2])
+                    field_parameters_vectors[par] = sequence
+    field_parameters = None
+    if bool(field_parameters_vectors):
+        field_parameters = create_param_combinations(**field_parameters_vectors)
+    return field_parameters
