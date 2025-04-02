@@ -77,7 +77,12 @@ def sweep_vasmples(
                     for defect_n, defects_pars in particle_defects.items():
                         particle_defects_copy = copy.deepcopy(defects_pars)
                         for d_key, d_val in particle_defects_copy.items():
-                            experiment.defect_eps[d_key] = d_val
+                            if d_key=="defect_small_cluster":
+                                experiment.defect_eps["eps1"] = d_val
+                            if d_key=="defect_large_cluster":
+                                experiment.defect_eps["eps2"] = d_val
+                            if d_key=="defect":
+                                experiment.defect_eps["defect"] = d_val
                         # print(experiment.defect_eps)
                         experiment._build_particle(keep=True)
                         if experiment.generators_status("particle"):
