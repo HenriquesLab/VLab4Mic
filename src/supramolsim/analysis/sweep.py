@@ -370,7 +370,7 @@ def analyse_image_sweep(img_outputs, img_params, reference, analysis_case_params
 
 
 def measurements_dataframe(
-    measurement_vectors, probe_parameters=None, p_defects=None, sample_params=None, mod_params=None, mod_acq=None
+    measurement_vectors, probe_parameters=None, p_defects=None, mod_names = None, sample_params=None, mod_params=None, mod_acq=None
 ):
     measurement_array = np.array(measurement_vectors)
     nrows = len(measurement_array[:, 1])
@@ -427,16 +427,16 @@ def measurements_dataframe(
         tmp3 = pd.DataFrame(tmp_df3)
         df_combined = df_combined.join(tmp3)
     if mod_params:
-        mod_id = dict()
-        # later adapt for including parameters of modalities
-        for key, val in mod_params.items():
-            keyname = key.split("_")[4]
-            mod_id[int(keyname)] = val[5]
+        param_names = mod_params[0].keys()
         tmp_df4 = dict()
-        tmp_df4["modality_name"] = []
+        for column_name in param_names:
+            tmp_df4[column_name] = []
         for i in range(nrows):
-            mod_par_comb_id = int(data_frame.iloc[i]["modality"])
-            tmp_df4["modality_name"].append(mod_id[mod_par_comb_id])
+            acq_par_comb_id = int(data_frame.iloc[i]["modality_acqusition"])
+            for column_name in param_names:
+                print(column_name, acq_par_comb_id)
+                print(mod_acq[acq_par_comb_id][column_name])
+                tmp_df4[column_name].append(mod_params[acq_par_comb_id][column_name])
         tmp4 = pd.DataFrame(tmp_df4)
         df_combined = df_combined.join(tmp4)
     if mod_acq:
@@ -447,12 +447,22 @@ def measurements_dataframe(
         for i in range(nrows):
             acq_par_comb_id = int(data_frame.iloc[i]["modality_acqusition"])
             for column_name in param_names:
-                print(column_name, acq_par_comb_id)
-                print(mod_acq[acq_par_comb_id][column_name])
                 tmp_df5[column_name].append(mod_acq[acq_par_comb_id][column_name])
         tmp5 = pd.DataFrame(tmp_df5)
-        print(tmp_df5)
         df_combined = df_combined.join(tmp5)
+    if mod_names:
+        tmp_df6 = {}
+        tmp_df6["modality_name"] = []
+        mod_names_id = {}
+        for m in range(len(mod_names)):
+            mod_names_id[m] = mod_names[m]
+        for i in range(nrows):
+            acq_par_comb_id = int(data_frame.iloc[i]["modality"])
+            tmp_df6["modality_name"].append(mod_names_id[acq_par_comb_id])
+        tmp6 = pd.DataFrame(tmp_df6)
+        df_combined = df_combined.join(tmp6)
+
+
 
 
     return data_frame, df_combined
