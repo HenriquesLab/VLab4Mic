@@ -526,3 +526,34 @@ def pivot_dataframes_byCategory(dataframe, category_name, param1, param2, **kwar
         df_categories[str(category)] = [condition_mean_pivot, condition_sd_pivot]
     titles = dict(category=category_name, param1=param1, param2=param2)
     return df_categories, titles
+
+
+def probe_parameters_sweep(
+        probe_target_type: list[str] = None,
+        probe_target_value: list[str] = None,
+        probe_distance_to_epitope: float = None,
+        probe_model: list[str] = None,
+        probe_fluorophore: str = None,
+        probe_paratope: str = None,
+        probe_conjugation_target_info = None,
+        probe_conjugation_efficiency: list[float] = None,
+        probe_seconday_epitope = None,
+        probe_wobbling = None,
+        labelling_efficiency: list[float] = None,
+    ):
+    local_params = locals()
+    probe_parameters_vectors = {}
+    for par, value in local_params.items():
+        if value is not None and type(value) is list:
+            if len(value) == 1:
+                probe_parameters_vectors[par] = value
+            else:
+                if isinstance(value[0], str):
+                    probe_parameters_vectors[par] = value
+                else:
+                    sequence = np.linspace(value[0],value[1],value[2])
+                    probe_parameters_vectors[par] = sequence
+    probe_parameters = None
+    if bool(probe_parameters_vectors):
+        probe_parameters = create_param_combinations(**probe_parameters_vectors)
+    return probe_parameters
