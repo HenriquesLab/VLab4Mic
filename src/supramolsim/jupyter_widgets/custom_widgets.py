@@ -730,11 +730,16 @@ def set_image_modalities():
             temp_imager, tmp_modality_parameters = create_imaging_system(
                 modalities_id_list=modalities_list, config_dir=configuration_path[0]
             )
-
+        modalities_options = copy.copy(modalities_list)
+        modalities_options.append("All")
         def add_mod(b):
             global selected_mods
-            selected_mods.append(imaging_gui["modalities_dropdown"].value)
-            print(f"{selected_mods[-1]} modality added")
+            if "All" == imaging_gui["modalities_dropdown"].value:
+                selected_mods = modalities_list
+                imaging_gui["Add"].disabled=True
+            else:
+                selected_mods.append(imaging_gui["modalities_dropdown"].value)
+                print(f"{selected_mods[-1]} modality added")
 
         def clear(b):
             global selected_mods
@@ -759,32 +764,33 @@ def set_image_modalities():
         def preview(b):
             def get_info(imaging_gui):
                 def preview_info(Modality):
-                    global modality_info
-                    # print(Modality)
-                    # print(modality_info[Modality])
-                    pixelsize = modality_info[Modality]["detector"]["pixelsize"]
-                    pixelsize_nm = pixelsize * 1000
-                    psf_sd = np.array(modality_info[Modality]["psf_params"]["std_devs"])
-                    psf_voxel = np.array(
-                        modality_info[Modality]["psf_params"]["voxelsize"]
-                    )
-                    psf_sd_metric = np.multiply(psf_voxel, psf_sd)
-                    print(f"Detector pixelsize (nm): {pixelsize_nm}")
-                    print(f"PSF sd (nm): {psf_sd_metric}")
-                    # show PSF
-                    fig, axs = plt.subplots()
-                    modality_preview = temp_imager.modalities[Modality]["psf"][
-                        "psf_stack"
-                    ]
-                    psf_shapes = modality_preview.shape
-                    stack_max = np.max(modality_preview)
-                    axs.imshow(
-                        modality_preview[:, :, int(psf_shapes[2] / 2)],
-                        cmap="gray",
-                        interpolation="none",
-                        vmin=0,
-                        vmax=stack_max,
-                    )
+                    if Modality != "All":
+                        global modality_info
+                        # print(Modality)
+                        # print(modality_info[Modality])
+                        pixelsize = modality_info[Modality]["detector"]["pixelsize"]
+                        pixelsize_nm = pixelsize * 1000
+                        psf_sd = np.array(modality_info[Modality]["psf_params"]["std_devs"])
+                        psf_voxel = np.array(
+                            modality_info[Modality]["psf_params"]["voxelsize"]
+                        )
+                        psf_sd_metric = np.multiply(psf_voxel, psf_sd)
+                        print(f"Detector pixelsize (nm): {pixelsize_nm}")
+                        print(f"PSF sd (nm): {psf_sd_metric}")
+                        # show PSF
+                        fig, axs = plt.subplots()
+                        modality_preview = temp_imager.modalities[Modality]["psf"][
+                            "psf_stack"
+                        ]
+                        psf_shapes = modality_preview.shape
+                        stack_max = np.max(modality_preview)
+                        axs.imshow(
+                            modality_preview[:, :, int(psf_shapes[2] / 2)],
+                            cmap="gray",
+                            interpolation="none",
+                            vmin=0,
+                            vmax=stack_max,
+                        )
 
                 widgets.interact(
                     preview_info, Modality=imaging_gui["modalities_dropdown"]
@@ -798,7 +804,7 @@ def set_image_modalities():
             imaging_system.show_field()
 
         imaging_gui.add_label("Select modalities")
-        imaging_gui.add_dropdown("modalities_dropdown", options=modalities_list)
+        imaging_gui.add_dropdown("modalities_dropdown", options=modalities_options)
         imaging_gui.add_button("Add", description="Add modality")
         imaging_gui.add_button("Clear", description="Clear selection")
         if exported_field is None:
@@ -953,7 +959,7 @@ def set_acq_params():
     acquisition_gui["Preview"].on_click(preview_mod)
     acquisition_gui["Set"].on_click(set_params)
     acquisition_gui["Clear"].on_click(clear)
-    display(acquisition_gui["Set"], acquisition_gui["Frames"])
+    display(acquisition_gui["Frames"], acquisition_gui["Set"])
     preview_mod(True)
 
 
