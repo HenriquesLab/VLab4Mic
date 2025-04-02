@@ -432,10 +432,8 @@ def measurements_dataframe(
         for column_name in param_names:
             tmp_df4[column_name] = []
         for i in range(nrows):
-            acq_par_comb_id = int(data_frame.iloc[i]["modality_acqusition"])
+            acq_par_comb_id = int(data_frame.iloc[i]["modality_parameters"])
             for column_name in param_names:
-                print(column_name, acq_par_comb_id)
-                print(mod_acq[acq_par_comb_id][column_name])
                 tmp_df4[column_name].append(mod_params[acq_par_comb_id][column_name])
         tmp4 = pd.DataFrame(tmp_df4)
         df_combined = df_combined.join(tmp4)
@@ -604,3 +602,51 @@ def defects_parameters_sweep(
     if bool(defects_parameters_vectors):
         defects_parameters = create_param_combinations(**defects_parameters_vectors)
     return defects_parameters
+
+def modality_parameters_sweep(
+        #modality_name: str = None,
+        pixelsize_nm: float = None,
+        lateral_resolution_nm: float = None,
+        axial_resolution_nm: float = None,
+        psf_voxel_nm: int = None,
+    ):
+    local_params = locals()
+    modality_parameters_vectors = {}
+    for par, value in local_params.items():
+        if value is not None and type(value) is list:
+            if len(value) == 1:
+                modality_parameters_vectors[par] = value
+            else:
+                if isinstance(value[0], (str, bool)):
+                    modality_parameters_vectors[par] = value
+                else:
+                    sequence = np.linspace(value[0],value[1],value[2])
+                    modality_parameters_vectors[par] = sequence
+    modality_parameters = None
+    if bool(modality_parameters_vectors):
+        modality_parameters = create_param_combinations(**modality_parameters_vectors)
+    return modality_parameters
+
+
+def acquisition_parameters_sweep(
+        exp_time: str = None,
+        noise: float = None,
+        nframes: float = None,
+        channels: float = None,
+    ):
+    local_params = locals()
+    acq_parameters_vectors = {}
+    for par, value in local_params.items():
+        if value is not None and type(value) is list:
+            if len(value) == 1:
+                acq_parameters_vectors[par] = value
+            else:
+                if isinstance(value[0], (str, bool)):
+                    acq_parameters_vectors[par] = value
+                else:
+                    sequence = np.linspace(value[0],value[1],value[2])
+                    acq_parameters_vectors[par] = sequence
+    acq_parameters = None
+    if bool(acq_parameters_vectors):
+        acq_parameters = create_param_combinations(**acq_parameters_vectors)
+    return acq_parameters
