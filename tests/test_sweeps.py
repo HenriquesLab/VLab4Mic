@@ -72,66 +72,43 @@ def test_sweep_vasmples_indirectprobes(indirectprobe, efficiency, distance):
     assert len(outputs.keys()) > 0
     assert len(params.keys()) > 0
 
+def test_sweep_modalities_updatemod():
+    myexperiment, vsmpl_output, vsampl_pars = sweep.sweep_vasmples()
+    myexperiment, mod_outputs, mod_params, mod_pixelsizes  = sweep.sweep_modalities_updatemod(
+        experiment = myexperiment,
+        vsample_outputs = vsmpl_output,
+        vsampl_pars = vsampl_pars,
+        )
 
-def test_sweep_vsample_modality_analysis():
-    structures = [
-        "1XI5",
-    ]
-    test_experiment = experiments.ExperimentParametrisation()
-    # prepare probe parameters to sweep
-    probe_parameters_vectors = dict(
-        target_info=[
-            dict(type="Sequence", value="EQATETQ"),
-        ],
-        labelling_efficiency=np.linspace(0.5, 1, 2),
-        distance_to_epitope=np.linspace(10, 200, 2),
+
+def test_parameter_generators():
+    structures = ["1XI5", ]
+    probes=["NHS_ester", ]
+    modalities = ["STED",]
+    probe_parameters = sweep.probe_parameters_sweep(labelling_efficiency=[0.5,1,1])
+    vsample_parameters = sweep.virtual_sample_parameters_sweep(random_orientations=[False,])
+    modality_parameters = sweep.modality_parameters_sweep(lateral_resolution_nm=[10,100,1])
+    acquisition_params = sweep.acquisition_parameters_sweep(exp_time=[0.001, 0.1, 1])
+    ref_probe_parameters = dict(
+        target_info = dict(type="Sequence", value="EQATETQ"),
+        labelling_efficiency = 1,
+        distance_to_epitope = 0
     )
-    indirectprobes = [
-        "Mock_antibody",
-        "Mock_linker",
-    ]
-    # generate probe combinations
-    probe_parameters = sweep.create_param_combinations(**probe_parameters_vectors)
-    repetitions = 3
-    experiment, outputs, params = sweep.sweep_vasmples(
-        experiment=test_experiment,
+    ref_vsample, ref_params = sweep.generate_global_reference_sample(structure=structures[0], probe="Mock_linker", probe_parameters=ref_probe_parameters)
+    ref_image, ref_image_pars = sweep.generate_global_reference_modality(reference_vsample=ref_vsample, reference_vsample_params=ref_params)
+    myexperiment, vsmpl_output, vsampl_pars = sweep.sweep_vasmples(
         structures=structures,
-        probes=indirectprobes,
+        probes=probes, 
         probe_parameters=probe_parameters,
-        repetitions=repetitions,
+        virtual_samples=vsample_parameters,
+        repetitions=3
     )
-    assert len(outputs.keys()) > 0
-    assert len(params.keys()) > 0
-    modalities = dict(
-        STED=dict(nframes=2),  # change nframes
-        Confocal=dict(nframes=2),
+    myexperiment, mod_outputs, mod_params, mod_pixelsizes  = sweep.sweep_modalities_updatemod(
+        experiment = myexperiment,
+        vsample_outputs = vsmpl_output,
+        vsampl_pars = vsampl_pars,
+        modalities=modalities,
+        modality_params=modality_parameters,
+        modality_acq_prams=acquisition_params
     )
-    test_experiment, mod_outputs, mod_params, mod_pixelsizes = sweep.sweep_modalities(
-        test_experiment, outputs, params, modalities=modalities
-    )
-
-    ref_vsample, ref_params = sweep.generate_global_reference_sample(
-        structure="1XI5", probe="NHS_ester"
-    )
-    ref_image, ref_image_pars = sweep.generate_global_reference_modality(
-        reference_vsample=ref_vsample, reference_vsample_params=ref_params
-    )
-    #
-    sweep_analyse_parameters = dict()
-    ref_pixelsize = ref_image_pars["ref_pixelsize"]
-
-    for mod_name, pixelsize in mod_pixelsizes.items():
-        sweep_analyse_parameters[mod_name] = {}
-        sweep_analyse_parameters[mod_name]["metric"] = "ssim"
-        sweep_analyse_parameters[mod_name]["modality_pixelsize"] = pixelsize
-        sweep_analyse_parameters[mod_name]["ref_pixelsize"] = ref_pixelsize
-        sweep_analyse_parameters[mod_name]["force_match"] = True
-
-    measurements, inputs = sweep.analyse_image_sweep(
-        mod_outputs, mod_params, ref_image, sweep_analyse_parameters
-    )
-    dframe, combined = sweep.measurements_dataframe(measurements, probe_parameters)
-
-    df_categories, titles = sweep.pivot_dataframes_byCategory(
-        combined, "modality", "labelling_efficiency", "distance_to_epitope"
-    )
+    measurements, inputs = sweep.analyse_sweep_single_reference(mod_outputs, mod_params, ref_image[0], ref_image_pars)

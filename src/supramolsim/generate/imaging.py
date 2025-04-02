@@ -211,7 +211,22 @@ class Imager:
         )
 
     def _set_modality_channels(self, modality, fluorophores_in_channel):
-        self.modalities[modality]["filters"] = fluorophores_in_channel
+        if fluorophores_in_channel is None:
+            print("Creating channel for each fluorophore")
+            ch = 0
+            filter_dictionary = dict()
+            for fluoname in list(self.emitters_by_fluorophore.keys()):
+                print(fluoname)
+                channel_name = "ch" + str(ch)
+                fluorophores_in_chanel = []
+                fluorophores_in_chanel.append(
+                    fluoname
+                )  # this is because a channel can have several fluorophores
+                filter_dictionary[channel_name] = fluorophores_in_chanel
+                ch += 1
+            self.modalities[modality]["filters"] = filter_dictionary
+        else:
+            self.modalities[modality]["filters"] = fluorophores_in_channel
 
     def _set_modality_psf(
         self, modality: str, stack_source: str = "generate", **kwargs
@@ -640,7 +655,7 @@ class Imager:
                     nframes, n_emitters, **kinetics
                 )
                 emission_notes = dictionary2string(kinetics)
-            if emission == "constant":
+            else: #if emission == "constant":
                 photons_per_second = self.fluorophore_params[fluo]["photons_per_second"]
                 photons_per_frame = exp_time * photons_per_second
                 print(f"Average number of photons per frame: {photons_per_frame}")
