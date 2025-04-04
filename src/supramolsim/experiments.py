@@ -26,6 +26,7 @@ class ExperimentParametrisation:
     fluorophore_id: str = ""
     coordinate_field_id: str = None
     selected_mods: Dict[str, int] = field(default_factory=dict)
+    imaging_modalities: Dict[str, int] = field(default_factory=dict)
     probe_parameters: Dict[str, int] = field(default_factory=dict)
     defect_eps: Dict[str, int] = field(default_factory=dict)
     sweep_pars: Dict[str, int] = field(default_factory=dict)
@@ -62,7 +63,7 @@ class ExperimentParametrisation:
             modality_parameters[mod] = mod_info
         self.local_modalities_names = modalities_names_list
         self.local_modalities_parameters = modality_parameters
-        self.imaging_modalities = dict()
+        #self.imaging_modalities = dict()
 
     def add_modality(self, modality_name, **kwargs):
         if modality_name in self.local_modalities_names:
@@ -70,6 +71,38 @@ class ExperimentParametrisation:
             for param, value in kwargs.items():
                 self.imaging_modalities[modality_name][param] = value
             self.set_modality_acq(modality_name)
+        else:
+            print(f"Modality {modality_name} not found in demo modalities. Using Widefield params as template to create new.")
+            self.imaging_modalities[modality_name] = copy.deepcopy(self.local_modalities_parameters["Widefield"])
+            for param, value in kwargs.items():
+                self.imaging_modalities[modality_name][param] = value
+            self.set_modality_acq(modality_name)
+
+    def update_modality(self,
+                        modality_name,
+                        pixelsize_nm: int = None,
+                        lateral_resolution_nm: int = None,
+                        axial_resolution_nm: int = None,
+                        psf_voxel_nm: int = None,
+                        ):
+        chagnes = False
+        if pixelsize_nm is not None:
+            self.imaging_modalities[modality_name]["detector"]["pixelsize"] = pixelsize_nm / 1000
+            chagnes = True
+        if lateral_resolution_nm is not None:
+            self.imaging_modalities[modality_name]["psf_params"]["std_devs"][0] = lateral_resolution_nm
+            self.imaging_modalities[modality_name]["psf_params"]["std_devs"][1] = lateral_resolution_nm
+            chagnes = True
+        if axial_resolution_nm is not None:
+            self.imaging_modalities[modality_name]["psf_params"]["std_devs"][2] = axial_resolution_nm
+            chagnes = True
+        if psf_voxel_nm is not None:
+            self.imaging_modalities[modality_name]["psf_params"]["voxelsize"] = [psf_voxel_nm, psf_voxel_nm, psf_voxel_nm]
+            chagnes = True
+        if chagnes:
+            #mod_pars = self.imaging_modalities[modality_name]
+            self.imager.set_imaging_modality(**self.imaging_modalities[modality_name])
+
     def set_modality_acq(
             self,
             modality_name, 
@@ -181,12 +214,15 @@ class ExperimentParametrisation:
                 self.imager, modality_parameters = create_imaging_system(
                     exported_field=self.exported_coordinate_field,
                     modalities_id_list=mods_list,
+                    mod_params=self.imaging_modalities,
                     config_dir=self.configuration_path,
                 )
             else:
                 print("Local field missing or unused. Creating imager without particles")
                 self.imager, modality_parameters = create_imaging_system(
-                    modalities_id_list=mods_list, config_dir=self.configuration_path
+                    modalities_id_list=mods_list,
+                    mod_params=self.imaging_modalities,
+                    config_dir=self.configuration_path
                 )
             self.objects_created["imager"] = True
         else:
@@ -275,26 +311,36 @@ class ExperimentParametrisation:
             self.objects_created["output_reference"] = True
         return _reference, _reference_parameters
 
-    def run_simulation(self, name="NONAME", acq_params=None, save=False):
+    def run_simulation(self, name="NONAME", acq_params=None, save=False, modality="All", **kwargs):
         # imager will run regardless, since by default
         # has a minimal coordinate field
-        if acq_params is None:
-            acq_params=self.selected_mods
-        if self.experiment_id:
-            name = self.experiment_id
-        if self.generators_status("imager"):
-            print("simulating")
-            simulation_output = generate_multi_imaging_modalities(
-                image_generator=self.imager,
-                experiment_name=name,
-                savingdir=self.output_directory,
-                write=save,
-                # acq_params is a value in selected mods
-                acquisition_param=acq_params,
-            )
-            return simulation_output
+        if modality == "All":
+            print("Simulating all modalities")
+            if acq_params is None:
+                acq_params=self.selected_mods
+            if self.experiment_id:
+                name = self.experiment_id
+            if self.generators_status("imager"):
+                simulation_output = generate_multi_imaging_modalities(
+                    image_generator=self.imager,
+                    experiment_name=name,
+                    savingdir=self.output_directory,
+                    write=save,
+                    # acq_params is a value in selected mods
+                    acquisition_param=acq_params,
+                )
+                return simulation_output
+            else:
+                print("Missing attributes")
         else:
-            print("Missing attributes")
+            print(f"Simulating: {modality}")
+            acq_p = self.selected_mods[modality]
+            timeseries, _ = self.imager.generate_imaging(
+                modality=modality, **acq_p
+            )
+            simulation_output = {}
+            simulation_output[modality] = timeseries
+            return simulation_output
 
     def remove_probes(self):
         self.structure_label = None

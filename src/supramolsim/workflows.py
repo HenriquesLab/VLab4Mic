@@ -254,7 +254,7 @@ def field_from_particle(
 
 
 def create_imaging_system(
-    exported_field=None, modalities_id_list: list = None, config_dir=None, **kwargs
+    exported_field=None, modalities_id_list: list = None, config_dir=None, mod_params=dict(), **kwargs
 ):
     """
     Create an imaging system object.
@@ -298,10 +298,16 @@ def create_imaging_system(
             fluo_emission[fluo] = fluo_params["emission"]["type"]
         modality_parameters = []
         for mod in modalities_id_list:
-            modality = compile_modality_parameters(mod, config_dir, fluo_emission)
-            modality_parameters.append(modality)
-            image_generator.set_imaging_modality(**modality)
+            if mod in mod_params.keys():
+                image_generator.set_imaging_modality(**mod_params[mod])
+                modality_parameters.append(mod_params[mod])
+            else:
+                modality = compile_modality_parameters(mod, config_dir, fluo_emission)
+                modality_parameters.append(modality)
+                image_generator.set_imaging_modality(**modality)
         return image_generator, modality_parameters
+        
+        
 
 
 # generate several modalities results
