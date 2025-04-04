@@ -48,6 +48,9 @@ class ExperimentParametrisation:
             output_reference=False,
         )
         self.virtualsample_params = dict()
+        self.defect_eps["defect"] = None
+        self.defect_eps["eps1"] = None
+        self.defect_eps["eps2"] = None
         self.defect_eps["use_defects"] = False
         # read information of local modalities configuration
         modalities_dir = os.path.join(local_dir, "modalities")
@@ -164,9 +167,13 @@ class ExperimentParametrisation:
             pass
         else:
             return labels_list
+    def _check_if_defects(self):
+        if self.defect_eps["defect"] and self.defect_eps["eps1"] and self.defect_eps["eps2"]:
+            self.defect_eps["use_defects"] = True
 
     def _build_particle(self, lab_eff=1.0, defect_build=None, keep=False):
         if self.generators_status("structure"):
+            self._check_if_defects()
             labels_list = self._build_label(lab_eff=lab_eff)
             particle, label_params_list = particle_from_structure(
                 self.structure, labels_list, self.configuration_path
@@ -182,6 +189,8 @@ class ExperimentParametrisation:
                     xmer_neigh_distance=self.defect_eps["eps2"],
                     deg_dissasembly=defect,
                 )
+            else:
+                print("Particle without defects")
             if keep:
                 self.particle = particle
                 self.objects_created["particle"] = True
