@@ -106,7 +106,7 @@ def sweep_vasmples(
                                 struct,
                                 probe,
                                 p_param,
-                                particle_defects,
+                                defects_pars,
                                 vsample_pars,
                             ]
                             if combination_n not in vsample_params.keys():
