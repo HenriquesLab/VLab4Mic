@@ -102,6 +102,7 @@ class Field:
             self.molecules_params["minimal_distance"] = kwargs["minimal_distance"]
         if "sample_dimensions" in kwargs.keys():
             self._set_dimension_sizes(kwargs["sample_dimensions"])
+            self.calculate_absolute_reference()
         if "relative_positions" in kwargs.keys():
             print("Using relative positons to initialise field")
             nmolecules = len(kwargs["relative_positions"])
