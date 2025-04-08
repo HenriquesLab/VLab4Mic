@@ -579,7 +579,7 @@ class LabeledInstance:
         else:
             scaling_factor = current_scale / new_scale
             for labeltype in self.emitters.keys():
-                print("scaling")
+                #print("scaling")
                 if self.get_emitter_by_target(labeltype) is not None:
                     # print(f'before: {self.emitters[labeltype]}')
                     self.emitters[labeltype] = (
