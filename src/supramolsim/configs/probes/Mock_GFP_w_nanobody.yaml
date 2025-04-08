@@ -20,10 +20,8 @@ binding:
   paratope: KGEEL
 conjugation_sites:
   target:
-    type: Atom_residue
-    value:
-      atoms: C1 #CA
-      residues: CRO #LYS
+    type: Sequence
+    value: ALV
   efficiency: 1
 epitope: # for secondary
   target:
