@@ -1,0 +1,32 @@
+label_name: Mock_GFP_w_nanobody
+target:
+  type:
+  value:
+known_targets:
+  - Mock
+model:
+  ID: 6XZF
+  format: CIF
+  database: RCSB
+binding:
+  efficiency: 1
+  orientation: [0,0,1]
+  wobble_range:
+    theta:
+    phi:
+  distance:
+    to_target: 10
+    between_targets: estimate
+  paratope: KGEEL
+conjugation_sites:
+  target:
+    type: Atom_residue
+    value:
+      atoms: C1 #CA
+      residues: CRO #LYS
+  efficiency: 1
+epitope: # for secondary
+  target:
+    type: 
+    value: 
+  normals:
