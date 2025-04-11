@@ -34,12 +34,15 @@ def pivot_dataframes(dataframe, axes_param_names):
 
 
 def sns_heatmap_pivots(
-    df_pivots, titles = None, conditions_cmaps=None, annotations=False, cmaps_range="same", **kwargs
+    df_pivots, titles = None, conditions_cmaps=None, annotations=False, cmaps_range="same", figsize = [12,10], **kwargs
 ):
     conditions = list(df_pivots.keys())
     nconditions = len(conditions)
-    annot_kws = {"size": 10, "rotation": 45}
-    f, axes = plt.subplots(nconditions, 2, figsize=(12, 10))
+    if "annot_kws" not in kwargs.keys():
+        annot_kws = {"size": 10, "rotation": 45}
+    else: 
+        annot_kws = kwargs["annot_kws"]
+    f, axes = plt.subplots(nconditions, 2, figsize=figsize)
     plot_num = 0
     if cmaps_range == "same":
         # min and max here correspond to SSIM
