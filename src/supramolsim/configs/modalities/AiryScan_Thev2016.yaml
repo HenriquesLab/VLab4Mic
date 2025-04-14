@@ -20,7 +20,7 @@ detector:
       standard_dev: 3
     gain: 1 
     baselevel:
-      mean: 400
+      mean: 0
       standard_dev: 1
     ADU: 1
   
