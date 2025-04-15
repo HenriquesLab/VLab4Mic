@@ -579,7 +579,7 @@ class LabeledInstance:
         else:
             scaling_factor = current_scale / new_scale
             for labeltype in self.emitters.keys():
-                print("scaling")
+                #print("scaling")
                 if self.get_emitter_by_target(labeltype) is not None:
                     # print(f'before: {self.emitters[labeltype]}')
                     self.emitters[labeltype] = (
@@ -618,22 +618,27 @@ class LabeledInstance:
         show_axis=False,
         with_sources=False,
         return_plot=False,
+        source_size=1,
+        emitter_plotsize=1,
     ):
         if labelnames == "All":
             fig = plt.figure()
             ax = fig.add_subplot(111, projection="3d")
             for labs in self.labelnames:
+                lab_plotparams = self._get_label_plotting_params(labs)
+                lab_plotparams["plotsize"] = emitter_plotsize
                 add_ax_scatter(
                     ax,
                     format_coordinates(
-                        self.emitters[labs], **self._get_label_plotting_params(labs)
+                        self.emitters[labs], **lab_plotparams
                     ),
                 )
                 if with_sources:
                     add_ax_scatter(
                         ax,
                         format_coordinates(
-                            self._get_source_coords_normals(labs)["coordinates"]
+                            self._get_source_coords_normals(labs)["coordinates"],
+                            plotsize=source_size
                         ),
                     )
                 # add_ax_scatter(ax, format_coordinates(self.emitters[labs]))

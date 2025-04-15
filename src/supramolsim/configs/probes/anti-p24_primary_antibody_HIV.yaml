@@ -12,17 +12,17 @@ binding:
   efficiency: 1
   orientation:
   wobble_range:
-    theta:
+    theta: 30
     phi:
   distance:
-    to_target:
-    between_targets:
-  paratope: EFSAKF
+    to_target: 20
+    between_targets: estimate  # "estimate" or float
+  paratope: DEQLK  #EFSAKF
 conjugation_sites:
   target:
     type: Atom_residue
     value:
       atoms: CA
       residues: LYS
-  efficiency: 1
+  efficiency: 0.2
 
