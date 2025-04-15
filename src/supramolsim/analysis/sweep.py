@@ -324,12 +324,13 @@ def generate_global_reference_modality(
     reference_vsample=None,
     reference_vsample_params=None,
     modality=None,
+    modality_acquisition = None,
 ):
     if experiment is None:
         experiment = ExperimentParametrisation()
     if modality is None:
         modality = "Reference"
-        modality_acquisition = None
+        #modality_acquisition = None
     if modality_acquisition is None:
         experiment.add_modality(modality)
         
@@ -353,7 +354,7 @@ def generate_global_reference_modality(
     imager_scale = experiment.imager.roi_params["scale"]
     scalefactor = np.ceil(imager_scale / 1e-9)  # resulting pixel size in nanometers
     reference_parameters["ref_pixelsize"] = (
-        experiment.imager.modalities["Reference"]["detector"]["pixelsize"] * scalefactor
+        experiment.imager.modalities[modality]["detector"]["pixelsize"] * scalefactor
     )
     return reference_output[modality], reference_parameters
 

@@ -1,4 +1,4 @@
-label_name: Nup96_Cterminal_direct
+label_name: NPC_Nup96_Cterminal_direct
 target:
   type: Sequence
   value: ELAVGSL

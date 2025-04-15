@@ -93,11 +93,13 @@ class ExperimentParametrisation:
             self.imaging_modalities[modality_name]["detector"]["pixelsize"] = pixelsize_nm / 1000
             chagnes = True
         if lateral_resolution_nm is not None:
-            self.imaging_modalities[modality_name]["psf_params"]["std_devs"][0] = lateral_resolution_nm
-            self.imaging_modalities[modality_name]["psf_params"]["std_devs"][1] = lateral_resolution_nm
+            voxel_size = self.imaging_modalities[modality_name]["psf_params"]["voxelsize"][0]
+            self.imaging_modalities[modality_name]["psf_params"]["std_devs"][0] = lateral_resolution_nm/voxel_size
+            self.imaging_modalities[modality_name]["psf_params"]["std_devs"][1] = lateral_resolution_nm/voxel_size
             chagnes = True
         if axial_resolution_nm is not None:
-            self.imaging_modalities[modality_name]["psf_params"]["std_devs"][2] = axial_resolution_nm
+            voxel_size = self.imaging_modalities[modality_name]["psf_params"]["voxelsize"][0]
+            self.imaging_modalities[modality_name]["psf_params"]["std_devs"][2] = axial_resolution_nm/voxel_size
             chagnes = True
         if psf_voxel_nm is not None:
             self.imaging_modalities[modality_name]["psf_params"]["voxelsize"] = [psf_voxel_nm, psf_voxel_nm, psf_voxel_nm]

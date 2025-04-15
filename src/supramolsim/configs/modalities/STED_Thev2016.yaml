@@ -3,8 +3,8 @@ scale: 1.0e-09
 PSF:
   source: generate
   resolution:  # in nanometers, as standard deviations
-    X: 20
-    Y: 20
+    X: 15
+    Y: 15
     Z: 20
   voxelsize: 5
 depth: 100  # in nanometers
@@ -14,7 +14,7 @@ detector:
     Y: 1000
   pixelsize: 15 # in nanometers
   noise: 
-    binomial: 1
+    binomial: 0.7
     gaussian:
       mean: 0
       standard_dev: 1

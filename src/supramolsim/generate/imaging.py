@@ -112,7 +112,7 @@ class Imager:
             scaling_factor = 1
         else:
             scaling_factor = field_scale / self.get_roi_params("scale")
-            print(f"scaling factor set to {scaling_factor}")
+            # print(f"scaling factor set to {scaling_factor}")
         self.set_roi_sizes(
             field_sizes[0] * scaling_factor, field_sizes[1] * scaling_factor
         )

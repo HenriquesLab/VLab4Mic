@@ -102,7 +102,7 @@ def probe_model(
     direction_point = structural_model.assembly_refpt
     # extend the anchor from paratope
     diff = np.array([0, 0, 0])
-    if binding["distance"]["to_target"] is not None:
+    if binding["distance"]["to_target"] is not None and binding["paratope"]:
         difference = paratope_site - direction_point
         unit_vector = difference / np.linalg.norm(difference)
         diff = unit_vector * binding["distance"]["to_target"]
@@ -113,23 +113,27 @@ def probe_model(
     # generate a site for binding
     if "epitope" in kwargs.keys():
         print("generating epitope")
-        print(kwargs["epitope"])
-        structural_model.gen_Targets(
-            target_name="epitope",
-            target_type=kwargs["epitope"]["target"]["type"],
-            target_value=kwargs["epitope"]["target"]["value"],
-            **kwargs,
-        )
-        epitope_sites = structural_model.label_targets["epitope"]["coordinates"]
-        if epitope_sites.shape[0] > 1:
-            print("more than one paratope sites recovered. Calculating average")
-            epitope_sites = np.mean(
-                structural_model.label_targets["epitope"]["coordinates"], axis=0
+        try:
+            #print(kwargs["epitope"])
+            structural_model.gen_Targets(
+                target_name="epitope",
+                target_type=kwargs["epitope"]["target"]["type"],
+                target_value=kwargs["epitope"]["target"]["value"],
+                **kwargs,
             )
-        probe_epitope["coordinates"] = epitope_sites
+            epitope_sites = structural_model.label_targets["epitope"]["coordinates"]
+            if epitope_sites.shape[0] > 1:
+                print("more than one paratope sites recovered. Calculating average")
+                epitope_sites = np.mean(
+                    structural_model.label_targets["epitope"]["coordinates"], axis=0
+                )
+            probe_epitope["coordinates"] = epitope_sites
+            print(f"epitope site: {probe_epitope}")
+        except:
+            print("No epitope generated")
 
     # print(structural_model.label_targets)
-    print(f"epitope site: {probe_epitope}")
+    
 
     return structural_model, target_sites, anchor_point, direction_point, probe_epitope
 
