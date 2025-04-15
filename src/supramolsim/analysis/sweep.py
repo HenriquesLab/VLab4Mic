@@ -378,7 +378,7 @@ def analyse_image_sweep(img_outputs, img_params, reference, analysis_case_params
             rep_number += 1
     return measurement_vectors, inputs
 
-def analyse_sweep_single_reference(img_outputs, img_params, reference_image, reference_params):
+def analyse_sweep_single_reference(img_outputs, img_params, reference_image, reference_params, zoom_in=0, **kwargs):
     measurement_vectors = []
     # ref_pixelsize = analysis_case_params["ref_pixelsize"]
     inputs = dict()
@@ -394,10 +394,11 @@ def analyse_sweep_single_reference(img_outputs, img_params, reference_image, ref
                 im_ref, im1,
                 modality_pixelsize = modality_pixelsize,
                 ref_pixelsize = reference_params["ref_pixelsize"],
-                force_match=True
+                force_match=True,
+                zoom_in=zoom_in
             )
             measurement_vectors.append([params_id, rep_number, rep_measurement])
-            inputs[params_id][rep_number] = [qry_used, im1]
+            inputs[params_id][rep_number] = [qry_used, im1, ref_used]
             rep_number += 1
     return measurement_vectors, inputs
 

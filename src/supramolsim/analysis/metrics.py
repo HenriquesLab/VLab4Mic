@@ -5,26 +5,28 @@ from scipy.ndimage import gaussian_filter
 from skimage.feature import peak_local_max
 import cv2
 
-def img_compare(ref, query, metric="ssim", force_match=False, **kwargs):
+def img_compare(ref, query, metric="ssim", force_match=False, zoom_in=0, **kwargs):
     if force_match:
         if 'ref_pixelsize' in kwargs and 'modality_pixelsize' in kwargs:
             ref, query = resize_images_interpolation(
                 img1=ref,
                 img2=query,
                 px_size_im1=kwargs['ref_pixelsize'],
-                px_size_im2=kwargs['modality_pixelsize']
+                px_size_im2=kwargs['modality_pixelsize'],
+                zoom_in=zoom_in
             )
         else:
             ref, query = resize_images_interpolation(
                 img1=ref,
-                img2=query
+                img2=query,
+                zoom_in=zoom_in
             )
     if metric == "ssim":
         similarity = ssim(ref, query, data_range=query.max() - query.min())
     return similarity, ref, query
 
 
-def _padding(img1, img2):
+def _padding(img1, img2, zoom_in=0, **kwargs):
     """
     Padding the images with zeroes.
     Padded images will have same sizes, makes no assumption
@@ -40,6 +42,9 @@ def _padding(img1, img2):
         tuple: Resized images by padding zeroes.
     """
     if img1.shape == img2.shape:
+        if zoom_in:
+            img1 = zoom_img(img1, zoom_in=zoom_in)
+            img2 = zoom_img(img2, zoom_in=zoom_in)
         return img1, img2
     else:
         height1, width1 = img1.shape
@@ -67,12 +72,14 @@ def _padding(img1, img2):
             padding2_top : padding2_top + height2,
             padding2_left : padding2_left + width2,
         ] = img2
-
+        if zoom_in:
+            img1_padded = zoom_img(img1_padded, zoom_in=zoom_in)
+            img2_padded = zoom_img(img2_padded, zoom_in=zoom_in)
         return img1_padded, img2_padded
 
 
 def resize_images_interpolation(
-    img1, img2, px_size_im1=1, px_size_im2=1, interpolation_order=3
+    img1, img2, px_size_im1=1, px_size_im2=1, interpolation_order=3, zoom_in=0
 ):
     """
     Interpolate image with bigger pixel size by using cubic interpolation.
@@ -91,8 +98,19 @@ def resize_images_interpolation(
 
     resized_img2 = zoom(img2, pixel_size_ratio, order=interpolation_order)
 
-    return _padding(img1, resized_img2)
+    return _padding(img1, resized_img2, zoom_in)
 
+def zoom_img(img, zoom_in=0, **kwargs):
+    if zoom_in >= 0.9 or zoom_in < 0:
+        zoom_in = 0
+    if zoom_in:
+        imshape = img.shape
+        patchsize = np.ceil(imshape[0] - (imshape[0] * zoom_in))
+        center_x = int(imshape[0] / 2)
+        center_y = int(imshape[1] / 2)
+        half_patch = int(patchsize / 2)
+        img = img[center_y-half_patch:center_y+half_patch, center_x-half_patch:center_x+half_patch]
+    return img
 
 
 def image_preprocess(img, background=None, sigma=None, **kwargs):
