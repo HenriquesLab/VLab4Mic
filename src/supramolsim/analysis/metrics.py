@@ -3,7 +3,7 @@ from scipy.ndimage import zoom
 import numpy as np
 from scipy.ndimage import gaussian_filter
 from skimage.feature import peak_local_max
-
+import cv2
 
 def img_compare(ref, query, metric="ssim", force_match=False, **kwargs):
     if force_match:
@@ -120,3 +120,43 @@ def pixel_positions_to_relative(indices, image_sizes, pixelsize):
     image_relative_positions=[(np.array(p)*pixelsize)/image_sizes for p in indices]
     xyz_relative = [ np.append(xypos, 0)  for xypos in image_relative_positions]
     return xyz_relative
+
+def get_circles(img,
+                blur_px=1,
+                dp=0.1,
+                minDist=3, 
+                param1=1,
+                param2=12,
+                minRadius=3,
+                maxRadius=7,
+                **kwargs):
+    if blur_px:
+        gray_blurred = cv2.blur(img, (blur_px, blur_px), 0)
+    else: 
+        gray_blurred = img
+    if gray_blurred.min() < 0:
+        gray_blurred += -gray_blurred.min()
+    if gray_blurred.dtype != np.uint8:
+        if gray_blurred.dtype in [np.float32, np.float64]:
+            gray_blurred = np.uint8(gray_blurred * 255)
+        else:
+            gray_blurred = gray_blurred.astype(np.uint8)
+    circles = cv2.HoughCircles(
+        gray_blurred,
+        cv2.HOUGH_GRADIENT,
+        dp=dp,
+        minDist=minDist, 
+        param1=param1,
+        param2=param2,
+        minRadius=minRadius,
+        maxRadius=maxRadius,
+    )
+    cirlce_params=dict(
+        dp=dp,
+        minDist=minDist, 
+        param1=param1,
+        param2=param2,
+        minRadius=minRadius,
+        maxRadius=maxRadius,
+    )
+    return circles, gray_blurred, cirlce_params
