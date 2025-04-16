@@ -570,10 +570,7 @@ def image_vsample(
         run_simulation = True,
         **kwargs
         ):
-    if vsample is None:
-        vsample, vsample_exp = generate_virtual_sample(**kwargs)
-    else:
-        vsample_exp = None
+    vsample_exp = None
     if multimodal is not None:
         vmicroscope, experiment = build_virtual_microscope(
             multimodal=multimodal,
@@ -586,7 +583,9 @@ def image_vsample(
             experiment=vsample_exp,
             use_local_field=True,
             **kwargs)
-    #experiment.imager.import_field(**vsample)
+    if vsample is None:
+        vsample, vsample_exp_ = generate_virtual_sample(**kwargs)
+    experiment.imager.import_field(**vsample)
     imaging_output = dict()
     if run_simulation:
         imaging_output = experiment.run_simulation()
