@@ -148,27 +148,36 @@ class ExperimentParametrisation:
         "fluorophore_id".
         """
         labels_list = []
-        probe_name = self.structure_label
-        if probe_name in self.probe_parameters.keys():
-            probeparams = self.probe_parameters[probe_name]
+        for probe_name, probe_params in self.probe_parameters.items():
             labels_list.append(
                 label_builder_format(
                     label_id=probe_name,
-                    **probeparams
+                    **probe_params
                 )
             )
-        else:
-            labels_list.append(
-                label_builder_format(
-                    label_id=self.structure_label,
-                    fluorophore_id=self.fluorophore_id,
-                    labelling_efficiency=lab_eff,
-                )
-            )
-        if keep:
-            pass
-        else:
-            return labels_list
+        return labels_list
+        #probe_name = self.structure_label
+        #if probe_name in self.probe_parameters.keys():
+        #    probeparams = self.probe_parameters[probe_name]
+        #    labels_list.append(
+        #        label_builder_format(
+        #            label_id=probe_name,
+        #            **probeparams
+        #        )
+        #    )
+        #else:
+        #    labels_list.append(
+        #        label_builder_format(
+        #            label_id=self.structure_label,
+        #            fluorophore_id=self.fluorophore_id,
+        #            labelling_efficiency=lab_eff,
+        #        )
+        #    )
+        #if keep:
+        #    pass
+        #else:
+        #    return labels_list
+
     def _check_if_defects(self):
         if self.defect_eps["defect"] and self.defect_eps["eps1"] and self.defect_eps["eps2"]:
             self.defect_eps["use_defects"] = True
@@ -375,6 +384,7 @@ class ExperimentParametrisation:
             probe_seconday_epitope = None,
             probe_wobbling = False,
             labelling_efficiency: float = 1.0,
+            as_primary=False,
             **kwargs):
         probe_configuration_file = os.path.join(self.configuration_path, "probes", probe_name + ".yaml")
         probe_configuration = load_yaml(probe_configuration_file)
@@ -398,6 +408,8 @@ class ExperimentParametrisation:
             probe_configuration["epitope_target_info"] = probe_seconday_epitope
         if probe_wobbling:
             probe_configuration["enable_wobble"] = probe_wobbling
+        if as_primary:
+            probe_configuration["as_linker"] = as_primary
         self.probe_parameters[probe_name] = probe_configuration
         self._update_probes()
 
