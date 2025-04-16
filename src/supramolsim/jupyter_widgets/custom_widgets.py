@@ -225,7 +225,7 @@ def create_structural_model():
         structure_id, \
         probe_widgets
     # ensure that structure has no labels associated
-    labels_gui = easy_gui_jupyter.EasyGUI("Labels")
+    labels_gui = easy_gui_jupyter.EasyGUI("Labels", width="70%")
     if configuration_path is None:
         print("No configuration_path has been loaded")
     else:
@@ -372,7 +372,9 @@ def create_structural_model():
                 probe_widgets[key] = False
             probe_widgets["label_3"] = True
             probe_widgets["mock_label_dropdown"] = True
+            probe_widgets["label_4"] = True
             probe_widgets["mock_type"] = True
+            probe_widgets["label_5"] = True
             probe_widgets["mock_value"] = True
             probe_widgets["mock_fluo_dropdown"] = True
             probe_widgets["mock_Labelling_efficiency"] = True
@@ -386,7 +388,7 @@ def create_structural_model():
                     display(labels_gui[widgetname])
 
 
-        labels_gui.add_label("Structure specific labels")
+        labels_gui.add_label("Use the dropdown menus to select an existing probe for your structure.")
         if structure is not None:
             #labels_gui.add_dropdown("label_dropdown", options=structure_param["labels"])
             labels_gui.add_dropdown("label_dropdown", options=structure_labels)
@@ -407,7 +409,7 @@ def create_structural_model():
         labels_gui.add_button("Demos", description="Use pre-built probes")
         labels_gui.add_button("Customise", description="Customise probes")
         # DEMOS
-        labels_gui.add_label("Generic labels")
+        labels_gui.add_label("Or, use a generic probe, such as NHS ester.")
         labels_gui.add_dropdown("generic_label_dropdown", options=generic_labels)
         labels_gui.add_dropdown("generc_fluo_dropdown", options=fluorophores_list)
         labels_gui.add_float_slider(
@@ -421,9 +423,11 @@ def create_structural_model():
         labels_gui.add_button("Add_generic", description="Add generic label")
         labels_gui["Add_generic"].on_click(build_generic_label)
         # CUSTOM
-        labels_gui.add_label("Mock labels")
+        labels_gui.add_label("Customise your probe. First, select a mock probe from the dropdown menu.")
         labels_gui.add_dropdown("mock_label_dropdown", options=mock_labels)
+        labels_gui.add_label("Define the type of target for this probe.")
         labels_gui.add_dropdown("mock_type", options=["Sequence", "Atom_residue", "Primary"],description="Target type: ")
+        labels_gui.add_label("Define the target. For a secondary probe, type in the name of the primary probe")
         labels_gui.add_textarea("mock_value", description="Target value: ")
         labels_gui.add_dropdown("mock_fluo_dropdown", options=fluorophores_list)
         labels_gui.add_float_slider(
@@ -434,6 +438,7 @@ def create_structural_model():
             step=0.01,
             description="Labelling efficiency",
         )
+        labels_gui.add_label("Activate this option if you intent to use a secondary that recognises the current probe")
         labels_gui.add_checkbox("as_linker", description = "Model as primary with epitope for secondary probe",
                         value = False)
         labels_gui.add_checkbox("wobble", description = "Enable wobble",
@@ -467,7 +472,7 @@ def create_structural_model():
             display(labels_gui["Demos"], labels_gui["Customise"])
 
 
-def refine_structural_model():
+def refine_structural_model(figsize = [15, 15]):
     global particle, particle_created, plot_exists
     structural_model_gui = easy_gui_jupyter.EasyGUI("StructuralModel")
 
@@ -479,8 +484,8 @@ def refine_structural_model():
         source_size = structural_model_gui["sourceplotsize"].value
         structural_model_gui.show()
         if particle_created:
-            # fig = plt.figure()
-            fig, axs = plt.subplots(1, 3, subplot_kw={"projection": "3d"})
+
+            fig, axs = plt.subplots(1, 3, subplot_kw={"projection": "3d"}, figsize=figsize)
             particle.gen_axis_plot(
                 with_sources=structural_model_gui["WTarget"].value,
                 source_plotsize=source_size,
