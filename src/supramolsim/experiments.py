@@ -186,30 +186,32 @@ class ExperimentParametrisation:
         if self.generators_status("structure"):
             self._check_if_defects()
             labels_list = self._build_label(lab_eff=lab_eff)
-            particle, label_params_list = particle_from_structure(
-                self.structure, labels_list, self.configuration_path
-            )
-            if self.defect_eps["use_defects"]:
-                print("adding defects")
-                if defect_build is not None:
-                    defect = defect_build
-                else:
-                    defect = self.defect_eps["defect"]
-                particle.add_defects(
-                    eps1=self.defect_eps["eps1"],
-                    xmer_neigh_distance=self.defect_eps["eps2"],
-                    deg_dissasembly=defect,
+            if len(labels_list) > 0:
+                particle, label_params_list = particle_from_structure(
+                    self.structure, labels_list, self.configuration_path
                 )
-            else:
-                print("Particle without defects")
-            if keep:
-                self.particle = particle
-                self.objects_created["particle"] = True
-            return particle
+                if self.defect_eps["use_defects"]:
+                    print("adding defects")
+                    if defect_build is not None:
+                        defect = defect_build
+                    else:
+                        defect = self.defect_eps["defect"]
+                    particle.add_defects(
+                        eps1=self.defect_eps["eps1"],
+                        xmer_neigh_distance=self.defect_eps["eps2"],
+                        deg_dissasembly=defect,
+                    )
+                else:
+                    print("Particle without defects")
+                if keep:
+                    self.particle = particle
+                    self.objects_created["particle"] = True
+                return particle
 
     def _build_coordinate_field(
         self, use_self_particle=True, keep=False, coordinate_field_path=None, **kwargs
     ):
+        self.exported_coordinate_field = None
         if use_self_particle and self.generators_status("particle"):
             print("creating field from existing particle")
             exported_field, fieldobject = field_from_particle(
@@ -261,7 +263,7 @@ class ExperimentParametrisation:
     def generators_status(self, generator_name):
         return self.objects_created[generator_name]
 
-    def build(self, use_locals=False):
+    def build(self, use_locals=True):
         print("Building objects")
         self._build_structure()
         self._build_particle(keep=use_locals)
@@ -480,40 +482,43 @@ def generate_virtual_sample(
         particle_positions: list[np.array] = None,
         random_orientations = False,
         random_placing = False,
+        clear_probes=False,
         **kwargs
 ):
     myexperiment = ExperimentParametrisation()
     # load default configuration for probe
-    probe_configuration_file = os.path.join(myexperiment.configuration_path, "probes", probe_name + ".yaml")
-    probe_configuration = load_yaml(probe_configuration_file)
-    if probe_target_type and probe_target_value:
-        probe_configuration["target_info"] = dict(type=probe_target_type, value=probe_target_value)
-    if probe_distance_to_epitope is not None:
-        probe_configuration["distance_to_epitope"] = probe_distance_to_epitope
-    if probe_fluorophore is not None:
-        probe_configuration["fluorophore_id"] = probe_fluorophore
-    if labelling_efficiency is not None:
-        probe_configuration["labelling_efficiency"] = labelling_efficiency
-    if probe_model is not None:
-        probe_configuration["model_ID"] = probe_model
-    if probe_paratope is not None:
-        probe_configuration["paratope"] = probe_paratope
-    if probe_conjugation_target_info is not None:
-        probe_configuration["conjugation_target_info"] = probe_conjugation_target_info
-    if probe_conjugation_efficiency is not None:
-        probe_configuration["conjugation_efficiency"] = probe_conjugation_efficiency
-    if probe_seconday_epitope is not None:
-        probe_configuration["epitope_target_info"] = probe_seconday_epitope
-    if probe_wobbling:
-        probe_configuration["enable_wobble"] = probe_wobbling
-
+    if not clear_probes:
+        probe_configuration_file = os.path.join(myexperiment.configuration_path, "probes", probe_name + ".yaml")
+        probe_configuration = load_yaml(probe_configuration_file)
+        if probe_target_type and probe_target_value:
+            probe_configuration["target_info"] = dict(type=probe_target_type, value=probe_target_value)
+        if probe_distance_to_epitope is not None:
+            probe_configuration["distance_to_epitope"] = probe_distance_to_epitope
+        if probe_fluorophore is not None:
+            probe_configuration["fluorophore_id"] = probe_fluorophore
+        if labelling_efficiency is not None:
+            probe_configuration["labelling_efficiency"] = labelling_efficiency
+        if probe_model is not None:
+            probe_configuration["model_ID"] = probe_model
+        if probe_paratope is not None:
+            probe_configuration["paratope"] = probe_paratope
+        if probe_conjugation_target_info is not None:
+            probe_configuration["conjugation_target_info"] = probe_conjugation_target_info
+        if probe_conjugation_efficiency is not None:
+            probe_configuration["conjugation_efficiency"] = probe_conjugation_efficiency
+        if probe_seconday_epitope is not None:
+            probe_configuration["epitope_target_info"] = probe_seconday_epitope
+        if probe_wobbling:
+            probe_configuration["enable_wobble"] = probe_wobbling
+        myexperiment.add_probe(**probe_configuration)
     # load default configuration for virtual sample
     virtual_sample_template = os.path.join(myexperiment.configuration_path, "virtualsample", virtual_sample_template + ".yaml")
     vsample_configuration = load_yaml(virtual_sample_template)
     myexperiment.configuration_path
     myexperiment.structure_id = structure
-    myexperiment.structure_label = probe_name
-    myexperiment.probe_parameters[probe_name] = probe_configuration
+    #myexperiment.structure_label = probe_name
+    #myexperiment.probe_parameters[probe_name] = probe_configuration
+    
 
     if defect and defect_large_cluster and defect_small_cluster:
         myexperiment.defect_eps["eps1"] = defect_small_cluster
