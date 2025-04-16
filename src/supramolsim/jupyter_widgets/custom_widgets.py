@@ -222,7 +222,8 @@ def create_structural_model():
         particle_created, \
         structure, \
         structure_param, \
-        structure_id
+        structure_id, \
+        probe_widgets
     # ensure that structure has no labels associated
     labels_gui = easy_gui_jupyter.EasyGUI("Labels")
     if configuration_path is None:
@@ -230,6 +231,7 @@ def create_structural_model():
     else:
         particle_created = False
         current_labels = dict()
+        probe_widgets = dict()
         generic_labels = []
         mock_labels = []
         structure_labels = []
@@ -243,7 +245,7 @@ def create_structural_model():
             if os.path.splitext(file)[-1] == ".yaml" and "_template" not in file:
                 label_config_path = os.path.join(labels_dir, file)
                 label_parmeters = supramolsim.load_yaml(label_config_path)
-                print(label_parmeters)
+                #print(label_parmeters)
                 lablname = os.path.splitext(file)[0]
                 if "Mock" in label_parmeters["known_targets"]:
                     mock_labels.append(lablname)
@@ -335,6 +337,33 @@ def create_structural_model():
                 print("Structure has been labelled")
             else:
                 print("No label has been added")
+        
+        # buttons to select preset probes or customise
+        def activate_demos(b):
+            global probe_widgets
+            plt.clf()
+            clear_output()
+            probe_widgets["struct_dropdown"] = None
+            for widgetname in probe_widgets.keys():
+                display(labels_gui[widgetname])
+
+        def activate_custom(b):
+            global probe_widgets
+            plt.clf()
+            clear_output()
+            probe_widgets["label_3"] = None
+            probe_widgets["mock_label_dropdown"] = None
+            probe_widgets["mock_type"] = None
+            probe_widgets["mock_value"] = None
+            probe_widgets["mock_fluo_dropdown"] = None
+            probe_widgets["mock_Labelling_efficiency"] = None
+            probe_widgets["as_linker"] = None
+            probe_widgets["wobble"] = None
+            probe_widgets["wobble_theta"] = None
+            probe_widgets["Add_mock"] = None
+            for widgetname in probe_widgets.keys():
+                display(labels_gui[widgetname])
+
 
         labels_gui.add_label("Structure specific labels")
         if structure is not None:
@@ -353,7 +382,10 @@ def create_structural_model():
                 "Add", description="Add specific label", disabled=(not structure_labels)
             )
             labels_gui["Add"].on_click(build_label)
-
+        # initial buttons
+        labels_gui.add_button("Demos", description="Use pre-built probes")
+        labels_gui.add_button("Customise", description="Customise probes")
+        # DEMOS
         labels_gui.add_label("Generic labels")
         labels_gui.add_dropdown("generic_label_dropdown", options=generic_labels)
         labels_gui.add_dropdown("generc_fluo_dropdown", options=fluorophores_list)
@@ -367,7 +399,7 @@ def create_structural_model():
         )
         labels_gui.add_button("Add_generic", description="Add generic label")
         labels_gui["Add_generic"].on_click(build_generic_label)
-
+        # CUSTOM
         labels_gui.add_label("Mock labels")
         labels_gui.add_dropdown("mock_label_dropdown", options=mock_labels)
         labels_gui.add_dropdown("mock_type", options=["Sequence", "Atom_residue", "Primary"],description="Target type: ")
@@ -402,6 +434,8 @@ def create_structural_model():
             "After adding labels, create a labelled model of your structure"
         )
         labels_gui.add_button("Label", description="Label structure")
+        labels_gui["Demos"].on_click(activate_demos)
+        labels_gui["Customise"].on_click(activate_custom)
         labels_gui["Clear"].on_click(clear)
         labels_gui["Show"].on_click(show)
         labels_gui["Label"].on_click(label_struct)
@@ -409,7 +443,7 @@ def create_structural_model():
             print("No structure has been loaded")
         else:
             structure._clear_labels()
-            labels_gui.show()
+            display(labels_gui["Demos"], labels_gui["Customise"])
 
 
 def refine_structural_model():
