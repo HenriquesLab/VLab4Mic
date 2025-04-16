@@ -270,6 +270,7 @@ def create_structural_model():
                 else:
                     current_labels[unique_name] = tmp_label
                     print(f"label added: {unique_name}")
+                labels_gui["Label"].disabled = False
 
         def build_generic_label(b):
             label_id = labels_gui["generic_label_dropdown"].value
@@ -284,6 +285,7 @@ def create_structural_model():
             else:
                 current_labels[unique_name] = tmp_label
                 print(f"label added: {unique_name}")
+            labels_gui["Label"].disabled = False
 
         def build_mock_label(b):
             label_id = labels_gui["mock_label_dropdown"].value
@@ -313,6 +315,7 @@ def create_structural_model():
             else:
                 current_labels[unique_name] = tmp_label
                 print(f"label added: {unique_name}")
+            labels_gui["Label"].disabled = False
 
         def clear(b):
             current_labels.clear()
@@ -343,31 +346,49 @@ def create_structural_model():
             global probe_widgets
             plt.clf()
             clear_output()
-            probe_widgets["struct_dropdown"] = None
-            for widgetname in probe_widgets.keys():
-                display(labels_gui[widgetname])
+            for key, val in probe_widgets.items():
+                probe_widgets[key] = False
+            probe_widgets["label_1"] = True
+            probe_widgets["label_dropdown"] = True
+            probe_widgets["fluo_dropdown"] = True
+            probe_widgets["Labelling_efficiency"] = True
+            probe_widgets["Add"] = True
+            probe_widgets["label_2"] = True
+            probe_widgets["generic_label_dropdown"] = True
+            probe_widgets["generc_fluo_dropdown"] = True
+            probe_widgets["generic_Labelling_efficiency"] = True
+            probe_widgets["Add_generic"] = True
+            probe_widgets["Label"] = True
+            for widgetname, value in probe_widgets.items():
+                if value:
+                    display(labels_gui[widgetname])
 
         def activate_custom(b):
             global probe_widgets
+            probe_widgets = dict()
             plt.clf()
             clear_output()
-            probe_widgets["label_3"] = None
-            probe_widgets["mock_label_dropdown"] = None
-            probe_widgets["mock_type"] = None
-            probe_widgets["mock_value"] = None
-            probe_widgets["mock_fluo_dropdown"] = None
-            probe_widgets["mock_Labelling_efficiency"] = None
-            probe_widgets["as_linker"] = None
-            probe_widgets["wobble"] = None
-            probe_widgets["wobble_theta"] = None
-            probe_widgets["Add_mock"] = None
-            for widgetname in probe_widgets.keys():
-                display(labels_gui[widgetname])
+            for key, val in probe_widgets.items():
+                probe_widgets[key] = False
+            probe_widgets["label_3"] = True
+            probe_widgets["mock_label_dropdown"] = True
+            probe_widgets["mock_type"] = True
+            probe_widgets["mock_value"] = True
+            probe_widgets["mock_fluo_dropdown"] = True
+            probe_widgets["mock_Labelling_efficiency"] = True
+            probe_widgets["as_linker"] = True
+            probe_widgets["wobble"] = True
+            probe_widgets["wobble_theta"] = True
+            probe_widgets["Add_mock"] = True
+            probe_widgets["Label"] = True
+            for widgetname, value in probe_widgets.items():
+                if value:
+                    display(labels_gui[widgetname])
 
 
         labels_gui.add_label("Structure specific labels")
         if structure is not None:
-            labels_gui.add_dropdown("label_dropdown", options=structure_param["labels"])
+            #labels_gui.add_dropdown("label_dropdown", options=structure_param["labels"])
             labels_gui.add_dropdown("label_dropdown", options=structure_labels)
             labels_gui.add_dropdown("fluo_dropdown", options=fluorophores_list)
             labels_gui.add_float_slider(
@@ -433,7 +454,7 @@ def create_structural_model():
         labels_gui.add_label(
             "After adding labels, create a labelled model of your structure"
         )
-        labels_gui.add_button("Label", description="Label structure")
+        labels_gui.add_button("Label", description="Label structure", disabled=True)
         labels_gui["Demos"].on_click(activate_demos)
         labels_gui["Customise"].on_click(activate_custom)
         labels_gui["Clear"].on_click(clear)
