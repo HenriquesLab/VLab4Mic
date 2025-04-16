@@ -354,13 +354,59 @@ class ExperimentParametrisation:
             return simulation_output
 
     def remove_probes(self):
-        self.structure_label = None
         self.probe_parameters = dict()
+        self._update_probes()
         if self.generators_status("particle"):
             self.particle = None
         if self.generators_status("structure"):
             self.structure.label_targets = dict()
 
+    def add_probe(
+            self,
+            probe_name: str = "NHS_ester",
+            probe_target_type: str = None,
+            probe_target_value: str = None,
+            probe_distance_to_epitope: float = None,
+            probe_model: list[str] = None,
+            probe_fluorophore: str = "AF647",
+            probe_paratope: str = None,
+            probe_conjugation_target_info = None,
+            probe_conjugation_efficiency: float = None,
+            probe_seconday_epitope = None,
+            probe_wobbling = False,
+            labelling_efficiency: float = 1.0,
+            **kwargs):
+        probe_configuration_file = os.path.join(self.configuration_path, "probes", probe_name + ".yaml")
+        probe_configuration = load_yaml(probe_configuration_file)
+        if probe_target_type and probe_target_value:
+            probe_configuration["target_info"] = dict(type=probe_target_type, value=probe_target_value)
+        if probe_distance_to_epitope is not None:
+            probe_configuration["distance_to_epitope"] = probe_distance_to_epitope
+        if probe_fluorophore is not None:
+            probe_configuration["fluorophore_id"] = probe_fluorophore
+        if labelling_efficiency is not None:
+            probe_configuration["labelling_efficiency"] = labelling_efficiency
+        if probe_model is not None:
+            probe_configuration["model_ID"] = probe_model
+        if probe_paratope is not None:
+            probe_configuration["paratope"] = probe_paratope
+        if probe_conjugation_target_info is not None:
+            probe_configuration["conjugation_target_info"] = probe_conjugation_target_info
+        if probe_conjugation_efficiency is not None:
+            probe_configuration["conjugation_efficiency"] = probe_conjugation_efficiency
+        if probe_seconday_epitope is not None:
+            probe_configuration["epitope_target_info"] = probe_seconday_epitope
+        if probe_wobbling:
+            probe_configuration["enable_wobble"] = probe_wobbling
+        self.probe_parameters[probe_name] = probe_configuration
+        self._update_probes()
+
+    def _update_probes(self):
+        if len(self.probe_parameters.keys()) == 0:
+            self.structure_label = None
+        else: 
+            self.structure_label = list(self.probe_parameters.keys())
+    
 def create_experiment_parametrisation(
     structure_and_labels: dict = None,
     modalities_acquisition: dict = None,
