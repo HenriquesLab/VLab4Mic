@@ -263,13 +263,21 @@ class ExperimentParametrisation:
     def generators_status(self, generator_name):
         return self.objects_created[generator_name]
 
-    def build(self, use_locals=True):
+    def build(self, use_locals=True, modules: list = ["all",], **kwargs):
         print("Building objects")
-        self._build_structure()
-        self._build_particle(keep=use_locals)
-        self._build_coordinate_field(use_self_particle=use_locals, keep=use_locals)
-        self._build_imager(use_local_field=use_locals)
-        self._param_linspaces()
+        if "all" in modules:
+            build_list = ["structure", "particle", "coordinate_field", "imager"]
+        else:
+            build_list = modules
+        if "structure" in build_list:
+            self._build_structure()
+        if "particle" in build_list: 
+            self._build_particle(keep=use_locals)
+        if "coordinate_field" in build_list:
+            self._build_coordinate_field(use_self_particle=use_locals, keep=use_locals)
+        if "imager" in build_list:
+            self._build_imager(use_local_field=use_locals)
+        # self._param_linspaces()
 
     def gen_reference(self, write=False, keep=False, ref_acq_pars=None, modality_wise=False):
         """
@@ -377,6 +385,7 @@ class ExperimentParametrisation:
             probe_name: str = "NHS_ester",
             probe_target_type: str = None,
             probe_target_value: str = None,
+            probe_target_option: str = None,
             probe_distance_to_epitope: float = None,
             probe_model: list[str] = None,
             probe_fluorophore: str = "AF647",
@@ -392,6 +401,11 @@ class ExperimentParametrisation:
         probe_configuration = load_yaml(probe_configuration_file)
         if probe_target_type and probe_target_value:
             probe_configuration["target_info"] = dict(type=probe_target_type, value=probe_target_value)
+            if probe_target_type == "Primary" and probe_target_option:
+                # check if there is a primary probe with the name of value
+                if probe_target_value in self.probe_parameters.keys():
+                    print(f"Using {probe_target_option} as epitope on {probe_target_value}")
+                    self.probe_parameters[probe_target_value]["probe_seconday_epitope"] = probe_target_option
         if probe_distance_to_epitope is not None:
             probe_configuration["distance_to_epitope"] = probe_distance_to_epitope
         if probe_fluorophore is not None:
