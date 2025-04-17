@@ -390,6 +390,9 @@ class LabeledInstance:
         for target_name in self.primary["targets"].keys():
             emitters = self._label_primary(target_name)
             targets_labeled_instance[target_name] = emitters
+            #fluorophore_name = self._get_label_fluorophore(target_name)
+            label_fluorophore[target_name] = self.secondary[target_name]["fluorophore"]
+            plotting_params[target_name] = self.plotting_params[target_name]
 
         instance_constructor = dict(
             emitters_dictionary=targets_labeled_instance,
