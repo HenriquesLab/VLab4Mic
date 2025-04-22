@@ -363,7 +363,7 @@ def measurements_dataframe(
     metrics_dictionary = dict()
     for metric_number in range(nmetrics):
         metricvector = measurement_array[:, 2+metric_number]
-        metrics_dictionary[metric_names[metric_number]] = metricvector
+        metrics_dictionary[metric_names[metric_number]] = np.array(metricvector, dtype=np.float64)
     metrics_df = pd.DataFrame(metrics_dictionary)
     df_combined = df_combined.join(metrics_df)
     if probe_parameters:
@@ -454,15 +454,15 @@ def create_param_combinations(**kwargs):
         return combinations_dict
 
 
-def pivot_dataframes_byCategory(dataframe, category_name, param1, param2, **kwargs):
+def pivot_dataframes_byCategory(dataframe, category_name, param1, param2, metric_name, **kwargs):
     df_categories = dict()
     for category, group in dataframe.groupby(category_name):
         summarised_group = None
         summarised_group = (
             group.groupby([param1, param2])
             .agg(
-                Mean_Value=("Metric", "mean"),
-                Std_Dev=("Metric", "std"),
+                Mean_Value=(metric_name, "mean"),
+                Std_Dev=(metric_name, "std"),
                 Replicas_Count=("Replica", "count"),
             )
             .reset_index()
