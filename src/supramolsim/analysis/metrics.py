@@ -3,6 +3,7 @@ from scipy.ndimage import zoom
 import numpy as np
 from scipy.ndimage import gaussian_filter
 from skimage.feature import peak_local_max
+from scipy.stats import pearsonr
 import cv2
 
 def img_compare(ref, query, metric="ssim", force_match=False, zoom_in=0, **kwargs):
@@ -23,6 +24,8 @@ def img_compare(ref, query, metric="ssim", force_match=False, zoom_in=0, **kwarg
             )
     if metric == "ssim":
         similarity = ssim(ref, query, data_range=query.max() - query.min())
+    elif metric == "pearson":
+        similarity, pval = pearsonr(ref.flatten(), query.flatten())
     return similarity, ref, query
 
 
