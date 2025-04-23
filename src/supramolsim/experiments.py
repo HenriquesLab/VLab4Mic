@@ -389,6 +389,7 @@ class ExperimentParametrisation:
             probe_distance_to_epitope: float = None,
             probe_model: list[str] = None,
             probe_fluorophore: str = "AF647",
+            probe_steric_hindrance = None,
             probe_paratope: str = None,
             probe_conjugation_target_info = None,
             probe_conjugation_efficiency: float = None,
@@ -426,6 +427,8 @@ class ExperimentParametrisation:
             probe_configuration["enable_wobble"] = probe_wobbling
         if as_primary:
             probe_configuration["as_linker"] = as_primary
+        if probe_steric_hindrance:
+            probe_configuration["distance_between_epitope"] = probe_steric_hindrance
         self.probe_parameters[probe_name] = probe_configuration
         self._update_probes()
 
