@@ -229,6 +229,8 @@ def construct_label(
         label_params["model"]["ID"] = kwargs["model_ID"]
     if "distance_to_epitope" in kwargs.keys():
         label_params["binding"]["distance"]["to_target"] = kwargs["distance_to_epitope"]
+    if "distance_between_epitope" in kwargs.keys():
+        label_params["binding"]["distance"]["between_targets"] = kwargs["distance_between_epitope"]
     if "paratope" in kwargs.keys():
         label_params["binding"]["paratope"] = kwargs["paratope"]
     if "conjugation_target_info" in kwargs.keys():
