@@ -28,7 +28,7 @@ class jupyter_gui:
         fluorophores_dir = os.path.join(
             self.my_experiment.configuration_path, "fluorophores"
         )
-        labels_dir = os.path.join(self.my_experiment.configuration_path, "labels")
+        probes_dir = os.path.join(self.my_experiment.configuration_path, "probes")
         modalities_dir = os.path.join(
             self.my_experiment.configuration_path, "modalities"
         )
@@ -44,7 +44,7 @@ class jupyter_gui:
         self.config_directories = dict(
             structure=structure_dir,
             fluorophores=fluorophores_dir,
-            labels=labels_dir,
+            probes=probes_dir,
             modalities=modalities_dir,
             base=self.my_experiment.configuration_path,
         )
@@ -218,17 +218,23 @@ class jupyter_gui:
         current_labels = dict()
         generic_labels = []
         structure_labels = []
+        mock_labels = []
         fluorophores_list = []
         structure_id = self.my_experiment.structure_id
         for fluoid in os.listdir(self.config_directories["fluorophores"]):
             if os.path.splitext(fluoid)[-1] == ".yaml" and "_template" not in fluoid:
                 fluorophores_list.append(os.path.splitext(fluoid)[0])
-        for file in os.listdir(self.config_directories["labels"]):
+        for file in os.listdir(self.config_directories["probes"]):
             if os.path.splitext(file)[-1] == ".yaml" and "_template" not in file:
+                label_config_path = os.path.join(self.config_directories["probes"], file)
+                label_parmeters = supramolsim.load_yaml(label_config_path)
+                #print(label_parmeters)
                 lablname = os.path.splitext(file)[0]
-                if lablname.split("_")[0] == "Generic":
+                if "Mock" in label_parmeters["known_targets"]:
+                    mock_labels.append(lablname)
+                elif "Generic" in label_parmeters["known_targets"]:
                     generic_labels.append(lablname)
-                elif lablname.split("_")[0] == structure_id:
+                elif structure_id in label_parmeters["known_targets"]:
                     structure_labels.append(lablname)
 
         def build_label(b):
