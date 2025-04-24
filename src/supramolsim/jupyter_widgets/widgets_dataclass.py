@@ -67,10 +67,7 @@ class jupyter_gui:
             self.my_experiment.structure_id = structure_id
             self.my_experiment._build_structure()
             active_widgets["label_3"] = None
-            active_widgets["Fraction"] = None
-            active_widgets["label_4"] = None
             active_widgets["View"] = None
-            active_widgets["hidegrid"] = None
             plt.clf()
             clear_output()
             for widgetname in active_widgets:
@@ -78,17 +75,21 @@ class jupyter_gui:
             structure_gui._widgets["label_2"].layout = widgets.Layout()
             structure_gui._widgets["label_2"].layout.display = "None"
             structure_gui["View"].disabled = False
-            structure_gui["Fraction"].disabled = False
-            structure_gui["Elevation"].disabled = False
-            structure_gui["Azimuthal"].disabled = False
-            structure_gui["Roll"].disabled = False
-            structure_gui["hidegrid"].disabled = False
+
             
 
         def view_structure(b):
             plt.clf()
             clear_output()
+            structure_gui["Fraction"].disabled = False
+            structure_gui["Elevation"].disabled = False
+            structure_gui["Azimuthal"].disabled = False
+            structure_gui["Roll"].disabled = False
+            structure_gui["hidegrid"].disabled = False
             active_widgets["label_5"] = None
+            active_widgets["Fraction"] = None
+            active_widgets["label_4"] = None
+            active_widgets["hidegrid"] = None
             active_widgets["Elevation"] = None
             active_widgets["Azimuthal"] = None
             active_widgets["Roll"] = None
@@ -104,20 +105,29 @@ class jupyter_gui:
             )
 
         def upload_file(b):
+            structure_gui["Upload"].disabled = True
+            active_widgets["label_2"] = None
+            plt.clf()
+            clear_output()
+            for widgetname in active_widgets:
+                display(structure_gui[widgetname])
             filepath = structure_gui["File"].selected
             filename = structure_gui["File"].selected_filename
             structure = build_structure_cif(
                 cif_file=filepath, struct_title=filename, cif_id=filename
             )
+            self.my_experiment.structure = structure
+            self.my_experiment.objects_created["structure"] = True
             structure_param = data_format.structural_format.struct_params_format()
-            print("Structure Loaded!")
+            active_widgets["label_3"] = None
+            active_widgets["View"] = None
+            plt.clf()
+            clear_output()
+            for widgetname in active_widgets:
+                display(structure_gui[widgetname])
+            structure_gui._widgets["label_2"].layout = widgets.Layout()
+            structure_gui._widgets["label_2"].layout.display = "None"
             structure_gui["View"].disabled = False
-            structure_gui["Fraction"].disabled = False
-            structure_gui["Elevation"].disabled = False
-            structure_gui["Azimuthal"].disabled = False
-            structure_gui["Roll"].disabled = False
-            structure_gui["hidegrid"].disabled = False
-            structure_id = filename.split(".")[0]
 
         def activate_demos(b):
             plt.clf()
@@ -131,11 +141,9 @@ class jupyter_gui:
         def activate_upload(b):
             plt.clf()
             clear_output()
+            active_widgets["label_6"] = None
             active_widgets["File"] = None
             active_widgets["Upload"] = None
-            active_widgets["Fraction"] = None
-            active_widgets["View"] = None
-            active_widgets["hidegrid"] = None
             for widgetname in active_widgets.keys():
                 display(structure_gui[widgetname])
 
@@ -195,6 +203,7 @@ class jupyter_gui:
         structure_gui.add_checkbox(
             "hidegrid", description="Hide plot grids", value=True, disabled=nostructure
         )
+        structure_gui.add_label("Locate your CIF file. Then click Load from file.")
         structure_gui["Select"].on_click(select_structure)
         structure_gui["View"].on_click(view_structure)
         structure_gui["Upload"].on_click(upload_file)
