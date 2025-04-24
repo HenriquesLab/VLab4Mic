@@ -14,11 +14,10 @@ from IPython.utils import io
 from supramolsim.workflows import create_imaging_system
 import numpy as np
 
-
 @dataclass
 class jupyter_gui:
     my_experiment = ExperimentParametrisation()
-
+    structures_to_show = ["3J3Y", "7R5K", "1XI5"]
     def __post_init__(self):
         self.demo_structures = []
         # get available structure IDs
@@ -36,11 +35,12 @@ class jupyter_gui:
         for file in os.listdir(structure_dir):
             if os.path.splitext(file)[-1] == ".yaml" and "_template" not in file:
                 structure_params = load_yaml(os.path.join(structure_dir, file))
-                struct_id = structure_params["id"]
-                strict_title = structure_params["title"]
-                id_title = struct_id + ": " + strict_title
-                self.structures_info_list[id_title] = struct_id
-                self.demo_structures.append(id_title)
+                struct_id = structure_params["model"]["ID"]
+                if struct_id in self.structures_to_show:
+                    strict_title = structure_params["model"]["title"]
+                    id_title = struct_id + ": " + strict_title
+                    self.structures_info_list[id_title] = struct_id
+                    self.demo_structures.append(id_title)
         self.config_directories = dict(
             structure=structure_dir,
             fluorophores=fluorophores_dir,
@@ -55,17 +55,34 @@ class jupyter_gui:
         nostructure = True
 
         def select_structure(b):
+            structure_gui["Select"].disabled = True
+            active_widgets["label_2"] = None
+            plt.clf()
+            clear_output()
+            for widgetname in active_widgets:
+                display(structure_gui[widgetname])
             structure_id = self.structures_info_list[
                 structure_gui["struct_dropdown"].value
             ]
             self.my_experiment.structure_id = structure_id
             self.my_experiment._build_structure()
+            active_widgets["label_3"] = None
+            active_widgets["Fraction"] = None
+            active_widgets["View"] = None
+            active_widgets["hidegrid"] = None
+            plt.clf()
+            clear_output()
+            for widgetname in active_widgets:
+                display(structure_gui[widgetname])
+            structure_gui._widgets["label_2"].layout = widgets.Layout()
+            structure_gui._widgets["label_2"].layout.display = "None"
             structure_gui["View"].disabled = False
             structure_gui["Fraction"].disabled = False
             structure_gui["Elevation"].disabled = False
             structure_gui["Azimuthal"].disabled = False
             structure_gui["Roll"].disabled = False
             structure_gui["hidegrid"].disabled = False
+            
 
         def view_structure(b):
             plt.clf()
@@ -103,11 +120,9 @@ class jupyter_gui:
         def activate_demos(b):
             plt.clf()
             clear_output()
+            active_widgets["label_1"] = None
             active_widgets["struct_dropdown"] = None
             active_widgets["Select"] = None
-            active_widgets["Fraction"] = None
-            active_widgets["View"] = None
-            active_widgets["hidegrid"] = None
             for widgetname in active_widgets.keys():
                 display(structure_gui[widgetname])
 
@@ -122,9 +137,11 @@ class jupyter_gui:
             for widgetname in active_widgets.keys():
                 display(structure_gui[widgetname])
 
-        structure_gui.add_button("Demos", description="Load from demo structures")
+        structure_gui.add_button("Demos", description="Example structures")
         structure_gui.add_button("Fileupload", description="Upload CIF file")
-        structure_gui.add_label("Select structure model to load")
+        structure_gui.add_label("Select an example structure from the dropdown menu")
+        structure_gui.add_label("Loading structure. This will take a few seconds...") # "Text_loading"]
+        structure_gui.add_label("Structure Loaded! Use the panels below to visualise your structure.") # "Text_loading"]
         structure_gui.add_dropdown("struct_dropdown", options=self.demo_structures)
         structure_gui.add_button("Select", description="Load structure")
         structure_gui.add_file_upload(
