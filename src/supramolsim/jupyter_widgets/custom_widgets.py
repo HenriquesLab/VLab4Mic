@@ -222,14 +222,16 @@ def create_structural_model():
         particle_created, \
         structure, \
         structure_param, \
-        structure_id
+        structure_id, \
+        probe_widgets
     # ensure that structure has no labels associated
-    labels_gui = easy_gui_jupyter.EasyGUI("Labels")
+    labels_gui = easy_gui_jupyter.EasyGUI("Labels", width="70%")
     if configuration_path is None:
         print("No configuration_path has been loaded")
     else:
         particle_created = False
         current_labels = dict()
+        probe_widgets = dict()
         generic_labels = []
         mock_labels = []
         structure_labels = []
@@ -243,7 +245,7 @@ def create_structural_model():
             if os.path.splitext(file)[-1] == ".yaml" and "_template" not in file:
                 label_config_path = os.path.join(labels_dir, file)
                 label_parmeters = supramolsim.load_yaml(label_config_path)
-                print(label_parmeters)
+                #print(label_parmeters)
                 lablname = os.path.splitext(file)[0]
                 if "Mock" in label_parmeters["known_targets"]:
                     mock_labels.append(lablname)
@@ -268,6 +270,7 @@ def create_structural_model():
                 else:
                     current_labels[unique_name] = tmp_label
                     print(f"label added: {unique_name}")
+                labels_gui["Label"].disabled = False
 
         def build_generic_label(b):
             label_id = labels_gui["generic_label_dropdown"].value
@@ -282,6 +285,7 @@ def create_structural_model():
             else:
                 current_labels[unique_name] = tmp_label
                 print(f"label added: {unique_name}")
+            labels_gui["Label"].disabled = False
 
         def build_mock_label(b):
             label_id = labels_gui["mock_label_dropdown"].value
@@ -311,6 +315,7 @@ def create_structural_model():
             else:
                 current_labels[unique_name] = tmp_label
                 print(f"label added: {unique_name}")
+            labels_gui["Label"].disabled = False
 
         def clear(b):
             current_labels.clear()
@@ -335,10 +340,57 @@ def create_structural_model():
                 print("Structure has been labelled")
             else:
                 print("No label has been added")
+        
+        # buttons to select preset probes or customise
+        def activate_demos(b):
+            global probe_widgets
+            plt.clf()
+            clear_output()
+            for key, val in probe_widgets.items():
+                probe_widgets[key] = False
+            probe_widgets["label_1"] = True
+            probe_widgets["label_dropdown"] = True
+            probe_widgets["fluo_dropdown"] = True
+            probe_widgets["Labelling_efficiency"] = True
+            probe_widgets["Add"] = True
+            probe_widgets["label_2"] = True
+            probe_widgets["generic_label_dropdown"] = True
+            probe_widgets["generc_fluo_dropdown"] = True
+            probe_widgets["generic_Labelling_efficiency"] = True
+            probe_widgets["Add_generic"] = True
+            probe_widgets["Label"] = True
+            for widgetname, value in probe_widgets.items():
+                if value:
+                    display(labels_gui[widgetname])
 
-        labels_gui.add_label("Structure specific labels")
+        def activate_custom(b):
+            global probe_widgets
+            probe_widgets = dict()
+            plt.clf()
+            clear_output()
+            for key, val in probe_widgets.items():
+                probe_widgets[key] = False
+            probe_widgets["label_3"] = True
+            probe_widgets["mock_label_dropdown"] = True
+            probe_widgets["label_4"] = True
+            probe_widgets["mock_type"] = True
+            probe_widgets["label_5"] = True
+            probe_widgets["mock_value"] = True
+            probe_widgets["mock_fluo_dropdown"] = True
+            probe_widgets["mock_Labelling_efficiency"] = True
+            probe_widgets["as_linker"] = True
+            probe_widgets["wobble"] = True
+            probe_widgets["wobble_theta"] = True
+            probe_widgets["Add_mock"] = True
+            probe_widgets["Label"] = True
+            for widgetname, value in probe_widgets.items():
+                if value:
+                    display(labels_gui[widgetname])
+
+
+        labels_gui.add_label("Use the dropdown menus to select an existing probe for your structure.")
         if structure is not None:
-            labels_gui.add_dropdown("label_dropdown", options=structure_param["labels"])
+            #labels_gui.add_dropdown("label_dropdown", options=structure_param["labels"])
             labels_gui.add_dropdown("label_dropdown", options=structure_labels)
             labels_gui.add_dropdown("fluo_dropdown", options=fluorophores_list)
             labels_gui.add_float_slider(
@@ -353,8 +405,11 @@ def create_structural_model():
                 "Add", description="Add specific label", disabled=(not structure_labels)
             )
             labels_gui["Add"].on_click(build_label)
-
-        labels_gui.add_label("Generic labels")
+        # initial buttons
+        labels_gui.add_button("Demos", description="Use pre-built probes")
+        labels_gui.add_button("Customise", description="Customise probes")
+        # DEMOS
+        labels_gui.add_label("Or, use a generic probe, such as NHS ester.")
         labels_gui.add_dropdown("generic_label_dropdown", options=generic_labels)
         labels_gui.add_dropdown("generc_fluo_dropdown", options=fluorophores_list)
         labels_gui.add_float_slider(
@@ -367,10 +422,12 @@ def create_structural_model():
         )
         labels_gui.add_button("Add_generic", description="Add generic label")
         labels_gui["Add_generic"].on_click(build_generic_label)
-
-        labels_gui.add_label("Mock labels")
+        # CUSTOM
+        labels_gui.add_label("Customise your probe. First, select a mock probe from the dropdown menu.")
         labels_gui.add_dropdown("mock_label_dropdown", options=mock_labels)
+        labels_gui.add_label("Define the type of target for this probe.")
         labels_gui.add_dropdown("mock_type", options=["Sequence", "Atom_residue", "Primary"],description="Target type: ")
+        labels_gui.add_label("Define the target. For a secondary probe, type in the name of the primary probe")
         labels_gui.add_textarea("mock_value", description="Target value: ")
         labels_gui.add_dropdown("mock_fluo_dropdown", options=fluorophores_list)
         labels_gui.add_float_slider(
@@ -381,6 +438,7 @@ def create_structural_model():
             step=0.01,
             description="Labelling efficiency",
         )
+        labels_gui.add_label("Activate this option if you intent to use a secondary that recognises the current probe")
         labels_gui.add_checkbox("as_linker", description = "Model as primary with epitope for secondary probe",
                         value = False)
         labels_gui.add_checkbox("wobble", description = "Enable wobble",
@@ -401,7 +459,9 @@ def create_structural_model():
         labels_gui.add_label(
             "After adding labels, create a labelled model of your structure"
         )
-        labels_gui.add_button("Label", description="Label structure")
+        labels_gui.add_button("Label", description="Label structure", disabled=True)
+        labels_gui["Demos"].on_click(activate_demos)
+        labels_gui["Customise"].on_click(activate_custom)
         labels_gui["Clear"].on_click(clear)
         labels_gui["Show"].on_click(show)
         labels_gui["Label"].on_click(label_struct)
@@ -409,10 +469,10 @@ def create_structural_model():
             print("No structure has been loaded")
         else:
             structure._clear_labels()
-            labels_gui.show()
+            display(labels_gui["Demos"], labels_gui["Customise"])
 
 
-def refine_structural_model():
+def refine_structural_model(figsize = [15, 15]):
     global particle, particle_created, plot_exists
     structural_model_gui = easy_gui_jupyter.EasyGUI("StructuralModel")
 
@@ -424,8 +484,8 @@ def refine_structural_model():
         source_size = structural_model_gui["sourceplotsize"].value
         structural_model_gui.show()
         if particle_created:
-            # fig = plt.figure()
-            fig, axs = plt.subplots(1, 3, subplot_kw={"projection": "3d"})
+
+            fig, axs = plt.subplots(1, 3, subplot_kw={"projection": "3d"}, figsize=figsize)
             particle.gen_axis_plot(
                 with_sources=structural_model_gui["WTarget"].value,
                 source_plotsize=source_size,
