@@ -216,6 +216,7 @@ class jupyter_gui:
         labels_gui = easy_gui_jupyter.EasyGUI("Labels")
         particle_created = False
         current_labels = dict()
+        probe_widgets = dict()
         generic_labels = []
         structure_labels = []
         mock_labels = []
@@ -253,6 +254,7 @@ class jupyter_gui:
                 else:
                     current_labels[unique_name] = tmp_label
                     print(f"label added: {unique_name}")
+                labels_gui["Label"].disabled = False
 
         def build_generic_label(b):
             label_id = labels_gui["generic_label_dropdown"].value
@@ -267,6 +269,37 @@ class jupyter_gui:
             else:
                 current_labels[unique_name] = tmp_label
                 print(f"label added: {unique_name}")
+            labels_gui["Label"].disabled = False
+
+        def build_mock_label(b):
+            label_id = labels_gui["mock_label_dropdown"].value
+            fluorophore_id = labels_gui["mock_fluo_dropdown"].value
+            lab_eff = labels_gui["mock_Labelling_efficiency"].value
+            if labels_gui["mock_type"].value == "Atom_residue":
+                atom, residue = labels_gui["mock_value"].value.split(".")
+                target_value = dict(
+                    atoms=atom,
+                    residues=residue
+                )
+            else: # can be Sequence or Primary, both cases is a string
+                target_value = labels_gui["mock_value"].value
+            target_info=dict(
+                type=labels_gui["mock_type"].value,
+                value=target_value
+            )
+            as_linker = labels_gui["as_linker"].value
+            enable_wobble = labels_gui["wobble"].value
+            wobble_theta = labels_gui["wobble_theta"].value
+            tmp_label = data_format.structural_format.label_builder_format(
+                label_id, fluorophore_id, lab_eff, target_info, as_linker, enable_wobble, wobble_theta
+            )
+            unique_name = label_id + "_conjugated_" + fluorophore_id
+            if unique_name in current_labels.keys():
+                print("label already exist")
+            else:
+                current_labels[unique_name] = tmp_label
+                print(f"label added: {unique_name}")
+            labels_gui["Label"].disabled = False
 
         def clear(b):
             current_labels.clear()
@@ -285,7 +318,7 @@ class jupyter_gui:
                 # print(labels_list)
                 # self.my_experiment._build_particle(keep=True)
                 # using this way since Experiment method assumes only one label
-                particle = supramolsim.particle_from_structure(
+                particle, label_params_list = supramolsim.particle_from_structure(
                     self.my_experiment.structure,
                     labels_list,
                     self.my_experiment.configuration_path,
@@ -296,6 +329,56 @@ class jupyter_gui:
             else:
                 print("No label has been added")
 
+        # buttons to select preset probes or customise
+        def activate_demos(b):
+            plt.clf()
+            clear_output()
+            for key, val in probe_widgets.items():
+                probe_widgets[key] = False
+            probe_widgets["label_1"] = True
+            probe_widgets["label_dropdown"] = True
+            probe_widgets["fluo_dropdown"] = True
+            probe_widgets["Labelling_efficiency"] = True
+            probe_widgets["Add"] = True
+            probe_widgets["label_2"] = True
+            probe_widgets["generic_label_dropdown"] = True
+            probe_widgets["generc_fluo_dropdown"] = True
+            probe_widgets["generic_Labelling_efficiency"] = True
+            probe_widgets["Add_generic"] = True
+            probe_widgets["Label"] = True
+            for widgetname, value in probe_widgets.items():
+                if value:
+                    display(labels_gui[widgetname])
+        
+        def activate_custom(b):
+            global probe_widgets
+            probe_widgets = dict()
+            plt.clf()
+            clear_output()
+            for key, val in probe_widgets.items():
+                probe_widgets[key] = False
+            probe_widgets["label_3"] = True
+            probe_widgets["mock_label_dropdown"] = True
+            probe_widgets["label_4"] = True
+            probe_widgets["mock_type"] = True
+            probe_widgets["label_5"] = True
+            probe_widgets["mock_value"] = True
+            probe_widgets["mock_fluo_dropdown"] = True
+            probe_widgets["mock_Labelling_efficiency"] = True
+            probe_widgets["as_linker"] = True
+            probe_widgets["wobble"] = True
+            probe_widgets["wobble_theta"] = True
+            probe_widgets["Add_mock"] = True
+            probe_widgets["Label"] = True
+            for widgetname, value in probe_widgets.items():
+                if value:
+                    display(labels_gui[widgetname])
+        
+        labels_gui.add_label("Use the dropdown menus to select an existing probe for your structure.")
+        # initial buttons
+        labels_gui.add_button("Demos", description="Use pre-built probes")
+        labels_gui.add_button("Customise", description="Customise probes")
+        # DEMOS
         labels_gui.add_label("Structure specific labels")
         if self.my_experiment.structure is not None:
             labels_gui.add_dropdown("label_dropdown", options=structure_labels)
@@ -326,13 +409,48 @@ class jupyter_gui:
         )
         labels_gui.add_button("Add_generic", description="Add generic label")
         labels_gui["Add_generic"].on_click(build_generic_label)
+        # CUSTOM
+        # CUSTOM
+        labels_gui.add_label("Customise your probe. First, select a mock probe from the dropdown menu.")
+        labels_gui.add_dropdown("mock_label_dropdown", options=mock_labels)
+        labels_gui.add_label("Define the type of target for this probe.")
+        labels_gui.add_dropdown("mock_type", options=["Sequence", "Atom_residue", "Primary"],description="Target type: ")
+        labels_gui.add_label("Define the target. For a secondary probe, type in the name of the primary probe")
+        labels_gui.add_textarea("mock_value", description="Target value: ")
+        labels_gui.add_dropdown("mock_fluo_dropdown", options=fluorophores_list)
+        labels_gui.add_float_slider(
+            "mock_Labelling_efficiency",
+            value=1,
+            min=0,
+            max=1,
+            step=0.01,
+            description="Labelling efficiency",
+        )
+        labels_gui.add_label("Activate this option if you intent to use a secondary that recognises the current probe")
+        labels_gui.add_checkbox("as_linker", description = "Model as primary with epitope for secondary probe",
+                        value = False)
+        labels_gui.add_checkbox("wobble", description = "Enable wobble",
+                        value = False)
+        labels_gui.add_float_slider(
+            "wobble_theta",
+            value=10,
+            min=0,
+            max=45,
+            step=1,
+            description="Wobble cone range (degrees)",
+        )
+        labels_gui.add_button("Add_mock", description="Add mock label")
+        labels_gui["Add_mock"].on_click(build_mock_label)
+
 
         labels_gui.add_button("Clear", description="Clear Labels")
         labels_gui.add_button("Show", description="Display current labels")
         labels_gui.add_label(
             "After adding labels, create a labelled model of your structure"
         )
-        labels_gui.add_button("Label", description="Label structure")
+        labels_gui.add_button("Label", description="Label structure", disabled = True)
+        labels_gui["Demos"].on_click(activate_demos)
+        labels_gui["Customise"].on_click(activate_custom)
         labels_gui["Clear"].on_click(clear)
         labels_gui["Show"].on_click(show)
         labels_gui["Label"].on_click(label_struct)
@@ -340,7 +458,7 @@ class jupyter_gui:
             print("No structure has been loaded")
         else:
             self.my_experiment.structure._clear_labels()
-            labels_gui.show()
+            display(labels_gui["Demos"], labels_gui["Customise"])
 
     def refine_model_gui(self):
         structural_model_gui = easy_gui_jupyter.EasyGUI("StructuralModel")
