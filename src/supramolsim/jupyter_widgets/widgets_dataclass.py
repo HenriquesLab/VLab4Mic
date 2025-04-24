@@ -68,6 +68,7 @@ class jupyter_gui:
             self.my_experiment._build_structure()
             active_widgets["label_3"] = None
             active_widgets["Fraction"] = None
+            active_widgets["label_4"] = None
             active_widgets["View"] = None
             active_widgets["hidegrid"] = None
             plt.clf()
@@ -87,6 +88,7 @@ class jupyter_gui:
         def view_structure(b):
             plt.clf()
             clear_output()
+            active_widgets["label_5"] = None
             active_widgets["Elevation"] = None
             active_widgets["Azimuthal"] = None
             active_widgets["Roll"] = None
@@ -157,11 +159,12 @@ class jupyter_gui:
             min=0,
             max=1,
             step=0.001,
-            description="Fraction of total atoms to show",
+            description="Fraction of atoms to show",
             disabled=nostructure,
             readout_format=".3f",
         )
-
+        structure_gui.add_label("(A smaller fraction gets a faster rendering)")
+        structure_gui.add_label("Click again in Show structure to update the figure")
         structure_gui.add_int_slider(
             "Elevation",
             value=0,
