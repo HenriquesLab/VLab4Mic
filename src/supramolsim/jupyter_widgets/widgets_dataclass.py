@@ -672,7 +672,7 @@ class jupyter_gui:
 
         # create mock imager to show a pre-visualisation of PSF and noise model
         with io.capture_output() as captured:
-            temp_imager = create_imaging_system(
+            temp_imager, tmp_modality_parameters = create_imaging_system(
                 modalities_id_list=modalities_list,
                 config_dir=self.config_directories["base"],
             )
