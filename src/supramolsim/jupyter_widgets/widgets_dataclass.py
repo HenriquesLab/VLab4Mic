@@ -220,8 +220,9 @@ class jupyter_gui:
         particle_created = False
         current_labels = dict()
         probe_widgets = dict()
-        generic_labels = []
-        structure_labels = []
+        #generic_labels = []
+        #structure_labels = []
+        vlab_probes = []
         mock_labels = []
         fluorophores_list = []
         structure_id = self.my_experiment.structure_id
@@ -236,10 +237,10 @@ class jupyter_gui:
                 lablname = os.path.splitext(file)[0]
                 if "Mock" in label_parmeters["known_targets"]:
                     mock_labels.append(lablname)
-                elif "Generic" in label_parmeters["known_targets"]:
-                    generic_labels.append(lablname)
                 elif structure_id in label_parmeters["known_targets"]:
-                    structure_labels.append(lablname)
+                    vlab_probes.append(lablname)
+                elif "Generic" in label_parmeters["known_targets"]:
+                    vlab_probes.append(lablname)
 
         def build_label(b):
             label_id = labels_gui["label_dropdown"].value
@@ -258,21 +259,6 @@ class jupyter_gui:
                     current_labels[unique_name] = tmp_label
                     print(f"label added: {unique_name}")
                 labels_gui["Label"].disabled = False
-
-        def build_generic_label(b):
-            label_id = labels_gui["generic_label_dropdown"].value
-            fluorophore_id = labels_gui["generc_fluo_dropdown"].value
-            lab_eff = labels_gui["generic_Labelling_efficiency"].value
-            tmp_label = data_format.structural_format.label_builder_format(
-                label_id, fluorophore_id, lab_eff
-            )
-            unique_name = label_id + "_conjugated_" + fluorophore_id
-            if unique_name in current_labels.keys():
-                print("label already exist")
-            else:
-                current_labels[unique_name] = tmp_label
-                print(f"label added: {unique_name}")
-            labels_gui["Label"].disabled = False
 
         def build_mock_label(b):
             label_id = labels_gui["mock_label_dropdown"].value
@@ -343,11 +329,6 @@ class jupyter_gui:
             probe_widgets["fluo_dropdown"] = True
             probe_widgets["Labelling_efficiency"] = True
             probe_widgets["Add"] = True
-            probe_widgets["label_2"] = True
-            probe_widgets["generic_label_dropdown"] = True
-            probe_widgets["generc_fluo_dropdown"] = True
-            probe_widgets["generic_Labelling_efficiency"] = True
-            probe_widgets["Add_generic"] = True
             probe_widgets["Label"] = True
             for widgetname, value in probe_widgets.items():
                 if value:
@@ -383,7 +364,7 @@ class jupyter_gui:
         # DEMOS
         labels_gui.add_label("Structure specific labels")
         if self.my_experiment.structure is not None:
-            labels_gui.add_dropdown("label_dropdown", options=structure_labels)
+            labels_gui.add_dropdown("label_dropdown", options=vlab_probes)
             labels_gui.add_dropdown("fluo_dropdown", options=fluorophores_list)
             labels_gui.add_float_slider(
                 "Labelling_efficiency",
@@ -394,24 +375,9 @@ class jupyter_gui:
                 description="Labelling efficiency",
             )
             labels_gui.add_button(
-                "Add", description="Add specific label", disabled=(not structure_labels)
+                "Add", description="Add probe", disabled=(not vlab_probes)
             )
             labels_gui["Add"].on_click(build_label)
-
-        labels_gui.add_label("Generic labels")
-        labels_gui.add_dropdown("generic_label_dropdown", options=generic_labels)
-        labels_gui.add_dropdown("generc_fluo_dropdown", options=fluorophores_list)
-        labels_gui.add_float_slider(
-            "generic_Labelling_efficiency",
-            value=1,
-            min=0,
-            max=1,
-            step=0.01,
-            description="Labelling efficiency",
-        )
-        labels_gui.add_button("Add_generic", description="Add generic label")
-        labels_gui["Add_generic"].on_click(build_generic_label)
-        # CUSTOM
         # CUSTOM
         labels_gui.add_label("Customise your probe. First, select a mock probe from the dropdown menu.")
         labels_gui.add_dropdown("mock_label_dropdown", options=mock_labels)
