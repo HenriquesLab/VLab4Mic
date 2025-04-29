@@ -1003,8 +1003,9 @@ class jupyter_gui:
         acquisition_gui["Preview"].on_click(preview_mod)
         acquisition_gui["Set"].on_click(set_params)
         acquisition_gui["Clear"].on_click(clear)
-        display(acquisition_gui["Frames"], acquisition_gui["Set"])
+        display(acquisition_gui["Frames"])
         preview_mod(True)
+        display(acquisition_gui["Set"])
 
 
     def acquire_images(self):
