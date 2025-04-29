@@ -14,6 +14,7 @@ from IPython.utils import io
 from supramolsim.workflows import create_imaging_system
 import numpy as np
 import tifffile as tif
+import copy
 
 @dataclass
 class jupyter_gui:
@@ -757,14 +758,14 @@ class jupyter_gui:
         # if configuration_path is None:
         #    print("No configuration path set")
         # else:
-        modalities_dir = self.config_directories["modalities"]
-        modalities_list = []
+        #modalities_dir = self.config_directories["modalities"]
+        modalities_list = self.my_experiment.local_modalities_names
         selected_mods = []
         modality_info = {}
 
-        for mods in os.listdir(modalities_dir):
-            if os.path.splitext(mods)[-1] == ".yaml" and "_template" not in mods:
-                modalities_list.append(os.path.splitext(mods)[0])
+        #for mods in os.listdir(modalities_dir):
+        #    if os.path.splitext(mods)[-1] == ".yaml" and "_template" not in mods:
+        #        modalities_list.append(os.path.splitext(mods)[0])
 
         for mod in modalities_list:
             mod_info = data_format.configuration_format.compile_modality_parameters(
@@ -778,30 +779,40 @@ class jupyter_gui:
                 modalities_id_list=modalities_list,
                 config_dir=self.config_directories["base"],
             )
+        modalities_options = copy.copy(modalities_list)
+        modalities_options.append("All")
 
         def add_mod(b):
-            selected_mods.append(imaging_gui["modalities_dropdown"].value)
-            print(f"{selected_mods[-1]} modality added")
+            if "All" == imaging_gui["modalities_dropdown"].value:
+                for mod_names in self.local_modalities_names:
+                    self.my_experiment.add_modality(
+                        modality_name=mod_names
+                    )
+                imaging_gui["Add"].disabled=True
+            else:
+                self.my_experiment.add_modality(
+                    modality_name=imaging_gui["modalities_dropdown"].value
+                )
+                #selected_mods.append(imaging_gui["modalities_dropdown"].value)
+                #print(f"{selected_mods[-1]} modality added")
 
         def clear(b):
             selected_mods.clear()
 
         def create_imager(b):
             mods_dict = dict()
-            for mod in selected_mods:
-                mods_dict[mod] = None
-            self.my_experiment.selected_mods = mods_dict
-            exported_field = self.my_experiment.objects_created[
-                "exported_coordinate_field"
-            ]
-            if exported_field is not None:
-                if len(selected_mods) == 0:
-                    print("No modalites had been added")
-                else:
+            #for mod in selected_mods:
+            #    self.my_experiment.add_modality(modality_name=mod)
+            #self.my_experiment.selected_mods = mods_dict
+            #exported_field = self.my_experiment.objects_created[
+            #    "exported_coordinate_field"
+            #]
+            if self.my_experiment.exported_coordinate_field is not None:
+
                     # with io.capture_output() as captured:
-                    self.my_experiment._build_imager(use_local_field=True)
-                    imager_created = True
-                    print("Imaging system created")
+                self.my_experiment.build(modules=["imager",])
+                    #imager_created = True
+                print("Imaging system created")
                 imaging_gui["Show"].disabled = False
             else:
                 print("No field info")
@@ -845,7 +856,7 @@ class jupyter_gui:
             self.my_experiment.imager.show_field()
 
         imaging_gui.add_label("Select modalities")
-        imaging_gui.add_dropdown("modalities_dropdown", options=modalities_list)
+        imaging_gui.add_dropdown("modalities_dropdown", options=modalities_options)
         imaging_gui.add_button("Add", description="Add modality")
         imaging_gui.add_button("Clear", description="Clear selection")
         if self.my_experiment.generators_status("exported_coordinate_field") is None:
