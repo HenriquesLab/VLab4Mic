@@ -225,6 +225,7 @@ class jupyter_gui:
         vlab_probes = []
         mock_labels = []
         fluorophores_list = []
+        probe_parameters = {}
         structure_id = self.my_experiment.structure_id
         for fluoid in os.listdir(self.config_directories["fluorophores"]):
             if os.path.splitext(fluoid)[-1] == ".yaml" and "_template" not in fluoid:
@@ -237,10 +238,13 @@ class jupyter_gui:
                 lablname = os.path.splitext(file)[0]
                 if "Mock" in label_parmeters["known_targets"]:
                     mock_labels.append(lablname)
+                    probe_parameters[lablname] = label_parmeters
                 elif structure_id in label_parmeters["known_targets"]:
                     vlab_probes.append(lablname)
+                    probe_parameters[lablname] = label_parmeters
                 elif "Generic" in label_parmeters["known_targets"]:
                     vlab_probes.append(lablname)
+                    probe_parameters[lablname] = label_parmeters
 
         def build_label(b):
             label_id = labels_gui["label_dropdown"].value
@@ -324,8 +328,19 @@ class jupyter_gui:
             clear_output()
             for key, val in probe_widgets.items():
                 probe_widgets[key] = False
-            probe_widgets["label_1"] = True
-            probe_widgets["label_dropdown"] = True
+            display(labels_gui["label_1"])
+            def get_info(labels_gui):
+                def show_probe_info(probe_name):
+                        probe_type = probe_parameters[probe_name]["target"]["type"]
+                        probe_value = probe_parameters[probe_name]["target"]["value"]
+                        print(f"This probe will label the {probe_type}: {probe_value}")
+                
+                widgets.interact(
+                    show_probe_info, probe_name=labels_gui["label_dropdown"]
+                )
+            get_info(labels_gui)
+            
+            #probe_widgets["label_dropdown"] = True
             probe_widgets["fluo_dropdown"] = True
             probe_widgets["Labelling_efficiency"] = True
             probe_widgets["Add"] = True
@@ -333,7 +348,7 @@ class jupyter_gui:
             for widgetname, value in probe_widgets.items():
                 if value:
                     display(labels_gui[widgetname])
-        
+
         def activate_custom(b):
             probe_widgets = dict()
             plt.clf()
