@@ -13,6 +13,7 @@ import ipywidgets as widgets
 from IPython.utils import io
 from supramolsim.workflows import create_imaging_system
 import numpy as np
+import tifffile as tif
 
 @dataclass
 class jupyter_gui:
@@ -589,65 +590,166 @@ class jupyter_gui:
         field_gui = easy_gui_jupyter.EasyGUI("field")
 
         def createmin(b):
-            random_pl = True
-            use = field_gui["use_particle"].value
-            self.my_experiment._build_coordinate_field(
-                use_self_particle=use, keep=True, random_placing=random_pl
-            )
+            random_pl = field_gui["random"].value
+            nparticles = field_gui["nparticles"].value
+            min_distance = field_gui["mindist"].value
+            # set parameters for virtual samle
+            self.virtualsample_params
+            # then create the field
+            self.my_experiment._build_coordinate_field(keep=True,nparticles=nparticles,
+                                                random_placing=random_pl,
+                                                minimal_distance=min_distance
+                                                )
+            #coordinates_field = field.create_min_field(nparticles=nparticles,
+            #                                    random_placing=random_pl,
+            #                                    minimal_distance=min_distance)
+            #coordinates_field.construct_static_field()
+            #exported_field = coordinates_field.export_field()
+            display(field_gui["show"])
             field_gui["show"].disabled = False
 
-        def upload_custom(b):
-            display(field_gui["File"], field_gui["load_custom"])
-
-        def create_custom(b):
-            path_to_custom_field = field_gui["File"].selected
-            use = field_gui["use_particle"].value
+        def createmin_particles(b):
+            random_pl = field_gui["random"].value
+            nparticles = field_gui["nparticles"].value
+            min_distance = field_gui["mindist"].value
+            #molecule_parameters = dict(minimal_distance=min_distance)
             self.my_experiment._build_coordinate_field(
-                use_self_particle=use,
                 keep=True,
-                coordinate_field_path=path_to_custom_field,
-            )
+                nparticles=nparticles,
+                random_placing=random_pl,
+                minimal_distance=min_distance
+                )
+            #coordinates_field.create_molecules_from_InstanceObject(particle)
+            #coordinates_field.construct_static_field()
+            #exported_field = coordinates_field.export_field()
+            #display(field_gui["show"])
             field_gui["show"].disabled = False
+
+        def upload(b):
+            filepath = field_gui["File"].selected
+            img = tif.imread(filepath)
+            xyz_relative, image_physical_size = field.gen_positions_from_image(
+                img,
+                mode=field_gui["Mode"].value,
+                sigma=field_gui["sigma"].value,
+                background=field_gui["background"].value,
+                threshold=field_gui["threshold"].value,
+                pixelsize=field_gui["pixelsize"].value,
+                min_distance=field_gui["min_distance"].value)
+            coordinates_field = field.create_min_field(relative_positions=xyz_relative)
+            if particle is not None:
+                coordinates_field.create_molecules_from_InstanceObject(particle)
+            coordinates_field.construct_static_field()
+            exported_field = coordinates_field.export_field()
+            #display(field_gui["show"])
+            field_gui["show"].disabled = False
+        
+        def useimage(b):
+            plt.clf()
+            display(
+                field_gui["File"],
+                field_gui["pixelsize"],
+                field_gui["background"],
+                field_gui["min_distance"],
+                field_gui["sigma"],
+                field_gui["threshold"],
+                field_gui["Mode"],
+                field_gui["Upload"],
+                field_gui["show"]
+            )
 
         def showfield(b):
-            plt.clf()
+            #plt.clf()
+            plt.close()
             self.my_experiment.coordinate_field.show_field(view_init=[90, 0, 0])
 
-        field_gui.add_button("minimal", description="Create minimal field (random)")
-        field_gui.add_button("custom", description="Use custom field params")
-        field_gui.add_button("show", description="Show field", disabled=True)
-        field_gui.add_button("load_custom", description="Load custom field")
+
         field_gui.add_file_upload(
-            "File",
-            description="Upload custom field",
-            accept="*.yaml",
-            save_settings=False,
+                "File", description="Select from file", accept="*.tif", save_settings=False
+            )
+        field_gui._widgets["pixelsize"] = widgets.BoundedIntText(
+            value=15,
+            description="Image pixelsize",
+            layout=field_gui._layout,
+            style=field_gui._style,
+            remember_value=True,
         )
-        if self.my_experiment.particle is None:
-            print("There is no particle initalised")
-            use_p_disabled = True
-            is_particle = False
-        else:
-            print("Particle model exists")
-            use_p_disabled = False
-            is_particle = True
-        field_gui.add_checkbox(
-            "use_particle",
-            description="Use existing particle",
-            value=is_particle,
-            disabled=use_p_disabled,
+        field_gui._widgets["background"] = widgets.BoundedIntText(
+            value=0,
+            max=100000,
+            description="Background",
+            layout=field_gui._layout,
+            style=field_gui._style,
+            remember_value=True,
+        )
+        field_gui._widgets["min_distance"] = widgets.BoundedIntText(
+            value=1,
+            description="min_distance",
+            layout=field_gui._layout,
+            style=field_gui._style,
+            remember_value=True,
+        )
+        field_gui._widgets["sigma"] = widgets.BoundedIntText(
+            value=2,
+            description="sigma",
+            layout=field_gui._layout,
+            style=field_gui._style,
+            remember_value=True,
+        )
+        field_gui._widgets["threshold"] = widgets.BoundedIntText(
+            value=2,
+            description="threshold",
+            layout=field_gui._layout,
+            style=field_gui._style,
+            remember_value=True,
+        )
+        field_gui.add_dropdown("Mode", options=["mask", "localmaxima"])
+        field_gui.add_button("Use_Upload", description="Use image for positioning")
+        field_gui.add_button("Upload", description="Load image")
+        field_gui.add_button("minimal", description="Create minimal field")
+        field_gui.add_checkbox("random", value=False, description="Randomise positions")
+        field_gui.add_button("show", description="Show field", disabled=True)
+        field_gui.add_button("minimal_particles", description="Create field")
+        field_gui.add_int_slider(
+                "nparticles",
+                value=1,
+                min=1,
+                max=20,
+                step=1,
+                description="Number of Particles in field",
+                disabled=False,
+            )
+        field_gui._widgets["mindist"] = widgets.BoundedIntText(
+            value=100,
+            min=1,
+            max=1000,
+            description="Minimal distance",
+            layout=field_gui._layout,
+            style=field_gui._style
         )
         field_gui["minimal"].on_click(createmin)
         field_gui["show"].on_click(showfield)
-        field_gui["custom"].on_click(upload_custom)
-        field_gui["load_custom"].on_click(create_custom)
-        # field_gui.show()
-        display(
-            field_gui["minimal"],
-            field_gui["custom"],
-            field_gui["show"],
-            field_gui["use_particle"],
-        )
+        field_gui["minimal_particles"].on_click(createmin_particles)
+        field_gui["Use_Upload"].on_click(useimage)
+        field_gui["Upload"].on_click(upload)
+
+
+        if self.my_experiment.particle is None:
+            print("There is no particle initalised")
+            display(field_gui["nparticles"],
+                    field_gui["mindist"],
+                    field_gui["random"],
+                    field_gui["Use_Upload"],
+                    field_gui["minimal"],
+                    )
+        else:
+            print("Using existing structural model")
+            display(field_gui["nparticles"],
+                    field_gui["mindist"],
+                    field_gui["random"],
+                    field_gui["minimal_particles"],
+                    field_gui["Use_Upload"],
+                    field_gui["show"])
 
     def set_image_modalities(self):
         imager_created = False
