@@ -1005,3 +1005,29 @@ class jupyter_gui:
         acquisition_gui["Clear"].on_click(clear)
         display(acquisition_gui["Frames"], acquisition_gui["Set"])
         preview_mod(True)
+
+
+    def acquire_images(self):
+        experiment_gui = easy_gui_jupyter.EasyGUI("experiment")
+
+        def run_simulation(b):
+            sav_dir = experiment_gui["saving_directory"].value
+            if sav_dir is not None:
+                self.my_experiment.output_directory = sav_dir
+                save=True
+            exp_name = experiment_gui["experiment_name"].value
+            self.my_experiment.run_simulation(
+                name=exp_name,
+                save=save
+            )
+            experiment_gui.save_settings()
+
+        experiment_gui.add_label("Set experiment name")
+        experiment_gui.add_textarea(
+            "experiment_name", value="Exp_name", remember_value=True
+        )
+        experiment_gui.add_label("Set saving directory")
+        experiment_gui.add_textarea("saving_directory", remember_value=True)
+        experiment_gui.add_button("Acquire", description="Run Simulation")
+        experiment_gui["Acquire"].on_click(run_simulation)
+        experiment_gui.show()
