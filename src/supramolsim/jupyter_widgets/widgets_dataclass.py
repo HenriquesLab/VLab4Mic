@@ -276,7 +276,7 @@ class jupyter_gui:
                     atoms=atom,
                     residues=residue
                 )
-            else: # can be Sequence or Primary, both cases is a string
+            else: 
                 target_value = labels_gui["mock_value"].value
             target_info=dict(
                 type=labels_gui["mock_type"].value,
@@ -285,9 +285,7 @@ class jupyter_gui:
             as_linker = labels_gui["as_linker"].value
             enable_wobble = labels_gui["wobble"].value
             wobble_theta = labels_gui["wobble_theta"].value
-            #tmp_label = data_format.structural_format.label_builder_format(
-            #    label_id, fluorophore_id, lab_eff, target_info, as_linker, enable_wobble, wobble_theta
-            #)
+
             tmp_label = {
                     "probe_name": label_id,
                     "probe_fluorophore": fluorophore_id,
@@ -315,7 +313,6 @@ class jupyter_gui:
                 print(lab)
 
         def label_struct(b):
-            labels_list = []
             if len(current_labels.keys()) > 0:
                 self.nlabels = len(current_labels)
                 for keys, values in current_labels.items():
@@ -323,18 +320,9 @@ class jupyter_gui:
                 self.my_experiment.build(modules=["particle",])
                 probe_names = list(self.my_experiment.probe_parameters.keys())
                 display(probe_names)
-                    #labels_list.append(values)
-                # print(labels_list)
-                # self.my_experiment._build_particle(keep=True)
-                # using this way since Experiment method assumes only one label
-                #particle, label_params_list = supramolsim.particle_from_structure(
-                #    self.my_experiment.structure,
-                #    labels_list,
-                #    self.my_experiment.configuration_path,
-                #)
-                #self.my_experiment.particle = particle
-                #self.my_experiment.objects_created["particle"] = True
-                print("Structure has been labelled")
+                labels_gui["Label"].disabled = True
+                labels_gui["Add"].disabled = True
+                labels_gui["Add_mock"].disabled = True
             else:
                 print("No label has been added")
 
