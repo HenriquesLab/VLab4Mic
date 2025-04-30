@@ -958,7 +958,7 @@ class jupyter_gui:
                 channels=channels
             )
             acq_per_modalities[mod_id] = "Custom"
-            output_str = '<br>'.join(f"{name}: {val}" for name, val in acq_per_modalities.items())
+            output_str = '<br>'.join(f"{name}: {val}" for name, val in self.my_experiment.selected_mods.items())
             acquisition_gui["message"].value = output_str
             acquisition_gui.save_settings()
 
@@ -1032,7 +1032,7 @@ class jupyter_gui:
         acq_per_modalities = dict()
         for mods_selected in self.my_experiment.selected_mods.keys():
             acq_per_modalities[mods_selected] = "Default"
-        output_str = '<br>'.join(f"{name}: {val}" for name, val in acq_per_modalities.items())
+        output_str = '<br>'.join(f"{name}: {val}" for name, val in self.my_experiment.selected_mods.items())
         acquisition_gui._widgets["message"] = widgets.HTML(value = output_str)
         selected_mods = list(self.my_experiment.imaging_modalities.keys())
         acquisition_gui.add_dropdown("modalities_dropdown", options=selected_mods)
