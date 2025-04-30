@@ -302,7 +302,6 @@ class jupyter_gui:
                 print(lab)
 
         def label_struct(b):
-            particle_created = True
             labels_list = []
             if len(current_labels.keys()) > 0:
                 self.nlabels = len(current_labels)
@@ -328,22 +327,27 @@ class jupyter_gui:
             clear_output()
             for key, val in probe_widgets.items():
                 probe_widgets[key] = False
-            display(labels_gui["label_1"])
             def get_info(labels_gui):
-                def show_probe_info(probe_name):
+                def show_probe_info(message, probe_name):
                         probe_type = probe_parameters[probe_name]["target"]["type"]
                         probe_value = probe_parameters[probe_name]["target"]["value"]
-                        print(f"This probe will label the {probe_type}: {probe_value}")
-                
+                        if probe_type == "Sequence":
+                            print(f"This probe will label the amino acid sequence: {probe_value}")
+                        elif probe_type == "Atom_residue":
+                            print(f"This probe will label all available residue(s): {probe_value['residues']}")
+                        elif probe_type == "Primary":
+                            print(f"This is a secondary probe that labels this probe: {probe_value}")
+
                 widgets.interact(
-                    show_probe_info, probe_name=labels_gui["label_dropdown"]
+                    show_probe_info, message=labels_gui["label_1"],  probe_name=labels_gui["label_dropdown"]
                 )
             get_info(labels_gui)
             
             #probe_widgets["label_dropdown"] = True
-            probe_widgets["fluo_dropdown"] = True
+            #probe_widgets["fluo_dropdown"] = True
             probe_widgets["Labelling_efficiency"] = True
             probe_widgets["Add"] = True
+            probe_widgets["label_7"] = True
             probe_widgets["Label"] = True
             for widgetname, value in probe_widgets.items():
                 if value:
@@ -372,10 +376,10 @@ class jupyter_gui:
                 if value:
                     display(labels_gui[widgetname])
         
-        labels_gui.add_label("Use the dropdown menus to select an existing probe for your structure.")
+        labels_gui.add_label("Use the dropdown menu to select an existing probe for your structure.")
         # initial buttons
-        labels_gui.add_button("Demos", description="Use pre-built probes")
-        labels_gui.add_button("Customise", description="Customise probes")
+        labels_gui.add_button("Demos", description="VLab4Mic probes")
+        labels_gui.add_button("Customise", description="Customise your probe")
         # DEMOS
         labels_gui.add_label("Structure specific labels")
         if self.my_experiment.structure is not None:
@@ -429,9 +433,9 @@ class jupyter_gui:
         labels_gui.add_button("Clear", description="Clear Labels")
         labels_gui.add_button("Show", description="Display current labels")
         labels_gui.add_label(
-            "After adding labels, create a labelled model of your structure"
+            "After adding your probes, click on 'Done' to continue"
         )
-        labels_gui.add_button("Label", description="Label structure", disabled = True)
+        labels_gui.add_button("Label", description="Done", disabled = True)
         labels_gui["Demos"].on_click(activate_demos)
         labels_gui["Customise"].on_click(activate_custom)
         labels_gui["Clear"].on_click(clear)
