@@ -801,7 +801,7 @@ class jupyter_gui:
 
     def set_image_modalities(self):
         imager_created = False
-        imaging_gui = easy_gui_jupyter.EasyGUI("imaging")
+        imaging_gui = easy_gui_jupyter.EasyGUI("imaging", width="70%")
         modalities_list = self.my_experiment.local_modalities_names
         selected_mods = []
         modality_info = {}
@@ -829,48 +829,61 @@ class jupyter_gui:
                 self.my_experiment.add_modality(
                     modality_name=imaging_gui["modalities_dropdown"].value
                 )
+            
+            imaging_gui["label_4"].value = str(list(self.my_experiment.imaging_modalities.keys()))
 
         def clear(b):
-            selected_mods.clear()
+            #selected_mods.clear()
+            mods = list(self.my_experiment.imaging_modalities.keys())
+            for mod_name in mods:
+                self.my_experiment.update_modality(mod_name, remove=True)
+            imaging_gui["label_4"].value = "No modality selected"
 
         def create_imager(b):
             if self.my_experiment.exported_coordinate_field is not None:
                 self.my_experiment.build(modules=["imager",])
                 print("Imaging system created")
                 imaging_gui["Show"].disabled = False
+                imaging_gui["modalities_dropdown"].disabled = True
+                imaging_gui["Create"].disabled = True
+                imaging_gui["Clear"].disabled = True
+                imaging_gui["Add"].disabled = True
             else:
                 print("No field info")
 
         def preview(b):
             def get_info(imaging_gui):
-                def preview_info(Modality):
-
-                    pixelsize = modality_info[Modality]["detector"]["pixelsize"]
-                    pixelsize_nm = pixelsize * 1000
-                    psf_sd = np.array(modality_info[Modality]["psf_params"]["std_devs"])
-                    psf_voxel = np.array(
-                        modality_info[Modality]["psf_params"]["voxelsize"]
-                    )
-                    psf_sd_metric = np.multiply(psf_voxel, psf_sd)
-                    print(f"Detector pixelsize (nm): {pixelsize_nm}")
-                    print(f"PSF sd (nm): {psf_sd_metric}")
-                    # show PSF
-                    fig, axs = plt.subplots()
-                    modality_preview = temp_imager.modalities[Modality]["psf"][
-                        "psf_stack"
-                    ]
-                    psf_shapes = modality_preview.shape
-                    stack_max = np.max(modality_preview)
-                    axs.imshow(
-                        modality_preview[:, :, int(psf_shapes[2] / 2)],
-                        cmap="gray",
-                        interpolation="none",
-                        vmin=0,
-                        vmax=stack_max,
-                    )
+                def preview_info(message, Modality):
+                    if Modality != "All":
+                        pixelsize = modality_info[Modality]["detector"]["pixelsize"]
+                        pixelsize_nm = pixelsize * 1000
+                        psf_sd = np.array(modality_info[Modality]["psf_params"]["std_devs"])
+                        psf_voxel = np.array(
+                            modality_info[Modality]["psf_params"]["voxelsize"]
+                        )
+                        psf_sd_metric = np.multiply(psf_voxel, psf_sd)
+                        print(f"Detector pixelsize (nm): {pixelsize_nm}")
+                        print(f"PSF sd (nm): {psf_sd_metric}")
+                        print(f"PSF preview (on a 1x1 µm field of view): ")
+                        # show PSF
+                        fig, axs = plt.subplots()
+                        modality_preview = temp_imager.modalities[Modality]["psf"][
+                            "psf_stack"
+                        ]
+                        psf_shapes = modality_preview.shape
+                        stack_max = np.max(modality_preview)
+                        axs.imshow(
+                            modality_preview[:, :, int(psf_shapes[2] / 2)],
+                            cmap="gray",
+                            interpolation="none",
+                            vmin=0,
+                            vmax=stack_max,
+                        )
+                        axs.set_xticks([])
+                        axs.set_yticks([])
 
                 widgets.interact(
-                    preview_info, Modality=imaging_gui["modalities_dropdown"]
+                    preview_info, message=imaging_gui["label_1"], Modality=imaging_gui["modalities_dropdown"]
                 )
 
             get_info(imaging_gui)
@@ -878,18 +891,21 @@ class jupyter_gui:
         def showfov(b):
             self.my_experiment.imager.show_field()
 
-        imaging_gui.add_label("Select modalities")
+        imaging_gui.add_label("Use the dropdown menu to get a preview of the selected imaging modality")
         imaging_gui.add_dropdown("modalities_dropdown", options=modalities_options)
+        imaging_gui.add_label("Click on Add modality to include the selected modality to the virtual microscope")
         imaging_gui.add_button("Add", description="Add modality")
-        imaging_gui.add_button("Clear", description="Clear selection")
+        imaging_gui.add_label("Selected modalities:")
+        imaging_gui.add_label("No modality selected")
+        imaging_gui.add_button("Clear", description="Clear modalities")
         if self.my_experiment.generators_status("exported_coordinate_field") is None:
             disable_button = True
         else:
             disable_button = False
         imaging_gui.add_button(
-            "Create", description="Create imaging system", disabled=disable_button
+            "Create", description="Done!", disabled=disable_button
         )
-        imaging_gui.add_button("Show", description="Show field of view", disabled=True)
+        imaging_gui.add_button("Show", description="Show field of view (yellow)", disabled=True)
         imaging_gui.add_int_slider(
             "PSF_nslice", min=0, max=400, continuous_update=False
         )
@@ -899,7 +915,10 @@ class jupyter_gui:
         imaging_gui["Show"].on_click(showfov)
         preview(True)
         display(
+            imaging_gui["label_2"],
             imaging_gui["Add"],
+            imaging_gui["label_3"],
+            imaging_gui["label_4"],
             imaging_gui["Clear"],
             imaging_gui["Create"],
             imaging_gui["Show"],
