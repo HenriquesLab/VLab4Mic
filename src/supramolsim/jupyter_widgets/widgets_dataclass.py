@@ -645,35 +645,27 @@ class jupyter_gui:
             nparticles = field_gui["nparticles"].value
             min_distance = field_gui["mindist"].value
             # set parameters for virtual samle
-            self.virtualsample_params
+            #self.virtualsample_params
             # then create the field
-            self.my_experiment._build_coordinate_field(keep=True,nparticles=nparticles,
-                                                random_placing=random_pl,
-                                                minimal_distance=min_distance
-                                                )
-            #coordinates_field = field.create_min_field(nparticles=nparticles,
-            #                                    random_placing=random_pl,
-            #                                    minimal_distance=min_distance)
-            #coordinates_field.construct_static_field()
-            #exported_field = coordinates_field.export_field()
-            display(field_gui["show"])
+            self.my_experiment._build_coordinate_field(
+                keep=True,
+                nparticles=nparticles,
+                use_self_particle=False,
+                random_placing=random_pl,
+                minimal_distance=min_distance
+            )
             field_gui["show"].disabled = False
 
         def createmin_particles(b):
             random_pl = field_gui["random"].value
             nparticles = field_gui["nparticles"].value
             min_distance = field_gui["mindist"].value
-            #molecule_parameters = dict(minimal_distance=min_distance)
             self.my_experiment._build_coordinate_field(
                 keep=True,
                 nparticles=nparticles,
                 random_placing=random_pl,
                 minimal_distance=min_distance
                 )
-            #coordinates_field.create_molecules_from_InstanceObject(particle)
-            #coordinates_field.construct_static_field()
-            #exported_field = coordinates_field.export_field()
-            #display(field_gui["show"])
             field_gui["show"].disabled = False
 
         def upload(b):
@@ -757,10 +749,10 @@ class jupyter_gui:
         field_gui.add_dropdown("Mode", options=["mask", "localmaxima"])
         field_gui.add_button("Use_Upload", description="Use image for positioning")
         field_gui.add_button("Upload", description="Load image")
-        field_gui.add_button("minimal", description="Create minimal field")
+        field_gui.add_button("minimal", description="Create field")
         field_gui.add_checkbox("random", value=False, description="Randomise positions")
         field_gui.add_button("show", description="Show field", disabled=True)
-        field_gui.add_button("minimal_particles", description="Create field")
+        field_gui.add_button("minimal_particles", description="Create field with particle")
         field_gui.add_int_slider(
                 "nparticles",
                 value=1,
@@ -774,7 +766,7 @@ class jupyter_gui:
             value=100,
             min=1,
             max=1000,
-            description="Minimal distance",
+            description="Minimal distance from particle center (nanometers)",
             layout=field_gui._layout,
             style=field_gui._style
         )
@@ -785,20 +777,20 @@ class jupyter_gui:
         field_gui["Upload"].on_click(upload)
 
 
-        if self.my_experiment.particle is None:
+        if self.my_experiment.generators_status("particle"):
             print("There is no particle initalised")
             display(field_gui["nparticles"],
                     field_gui["mindist"],
                     field_gui["random"],
                     field_gui["Use_Upload"],
-                    field_gui["minimal"],
+                    field_gui["minimal_particles"]
                     )
         else:
-            print("Using existing structural model")
+            print("No particle available")
             display(field_gui["nparticles"],
                     field_gui["mindist"],
                     field_gui["random"],
-                    field_gui["minimal_particles"],
+                    field_gui["minimal"],
                     field_gui["Use_Upload"],
                     field_gui["show"])
 

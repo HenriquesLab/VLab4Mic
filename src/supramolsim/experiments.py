@@ -9,6 +9,7 @@ from .workflows import (
     field_from_particle,
     generate_multi_imaging_modalities,
 )
+from .generate import coordinates_field
 from .utils.data_format.structural_format import label_builder_format
 from .utils.data_format import configuration_format
 import os
@@ -225,8 +226,13 @@ class ExperimentParametrisation:
             return exported_field
         else:
             # create minimal field
-            print("else")
-            pass
+            fieldobject = coordinates_field.create_min_field(**kwargs)
+            exported_field = fieldobject.export_field()
+            if keep:
+                self.exported_coordinate_field = exported_field
+                self.objects_created["exported_coordinate_field"] = True
+                self.coordinate_field = fieldobject
+                self.objects_created["coordinate_field"] = True
 
     def _build_imager(self, use_local_field=False):
         if self.imaging_modalities:
