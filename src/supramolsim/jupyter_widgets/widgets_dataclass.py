@@ -454,10 +454,20 @@ class jupyter_gui:
 
     def refine_model_gui(self):
         width = "50%"
+        style = {"description_width": "initial"}
         structural_model_gui = easy_gui_jupyter.EasyGUI("StructuralModel",width=width)
         def show_model(b):
             plt.clf()
             clear_output()
+            # show hidden widgets
+            structural_model_gui["label_1"].layout.display = "block"
+            structural_model_gui["emitterplotsize"].layout.display = "block"
+            structural_model_gui["sourceplotsize"].layout.display = "block"
+            structural_model_gui["WTarget"].layout.display = "block"
+            structural_model_gui["Axes"].layout.display = "block"
+            structural_model_gui["label_2"].layout.display = "block"
+            structural_model_gui["enable_defects"].layout.display = "block"
+            # plot
             emitter_plotsize = structural_model_gui["emitterplotsize"].value
             source_size = structural_model_gui["sourceplotsize"].value
             structural_model_gui.show()
@@ -530,6 +540,7 @@ class jupyter_gui:
 
         structural_model_gui.add_button("Show", description="Show current model")
         structural_model_gui.add_label("Visualisation parameters")
+        structural_model_gui["label_1"].layout = widgets.Layout(width=width, display = "None")
         structural_model_gui.add_float_slider(
             "emitterplotsize",
             value=24,
@@ -538,17 +549,25 @@ class jupyter_gui:
             step=1,
             description="Emitter size",
         )
+        structural_model_gui["emitterplotsize"].layout = widgets.Layout(width=width, display = "None")
+        structural_model_gui["emitterplotsize"].style = style
         structural_model_gui.add_float_slider(
             "sourceplotsize", value=1, min=0, max=50, step=1, description="Target size"
         )
+        structural_model_gui["sourceplotsize"].layout = widgets.Layout(width=width, display = "None")
+        structural_model_gui["sourceplotsize"].style = style
         structural_model_gui.add_checkbox(
             "WTarget", description="With target site", value=True
         )
+        structural_model_gui["WTarget"].layout = widgets.Layout(width=width, display = "None")
         structural_model_gui.add_checkbox("Axes", description="Hide Axes", value=True)
+        structural_model_gui["Axes"].layout = widgets.Layout(width=width, display = "None")
         structural_model_gui.add_button(
             "Relabel", description="Recalculate labelled particle and show"
         )
+        structural_model_gui["Relabel"].layout = widgets.Layout(width=width, display = "None")
         structural_model_gui.add_label("Model defects parameters (optional):")
+        structural_model_gui["label_2"].layout = widgets.Layout(width=width, display = "None")
         structural_model_gui._widgets["eps1"] = widgets.BoundedIntText(
             value=300,
             min=0,
@@ -587,6 +606,7 @@ class jupyter_gui:
         structural_model_gui.add_button(
             "enable_defects", description="Enable particle defects"
         )
+        structural_model_gui["enable_defects"].layout = widgets.Layout(width=width, display = "None")
         structural_model_gui["enable_defects"].on_click(activate_defects)
         structural_model_gui["Show"].on_click(show_model)
         structural_model_gui["use_defects"].on_click(add_defects)
