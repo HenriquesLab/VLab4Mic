@@ -253,9 +253,11 @@ class jupyter_gui:
             else:
                 fluorophore_id = labels_gui["fluo_dropdown"].value
                 lab_eff = labels_gui["Labelling_efficiency"].value
-                tmp_label = data_format.structural_format.label_builder_format(
-                    label_id, fluorophore_id, lab_eff
-                )
+                tmp_label = {
+                    "probe_name": label_id,
+                    "probe_fluorophore": fluorophore_id,
+                    "labelling_efficiency": lab_eff
+                }
                 unique_name = label_id + "_conjugated_" + fluorophore_id
                 if unique_name in current_labels.keys():
                     print("label already exist")
@@ -283,9 +285,20 @@ class jupyter_gui:
             as_linker = labels_gui["as_linker"].value
             enable_wobble = labels_gui["wobble"].value
             wobble_theta = labels_gui["wobble_theta"].value
-            tmp_label = data_format.structural_format.label_builder_format(
-                label_id, fluorophore_id, lab_eff, target_info, as_linker, enable_wobble, wobble_theta
-            )
+            #tmp_label = data_format.structural_format.label_builder_format(
+            #    label_id, fluorophore_id, lab_eff, target_info, as_linker, enable_wobble, wobble_theta
+            #)
+            tmp_label = {
+                    "probe_name": label_id,
+                    "probe_fluorophore": fluorophore_id,
+                    "labelling_efficiency": lab_eff,
+                    "probe_target_type": target_info["type"],
+                    "probe_target_value": target_info["value"],
+                    "as_primary": as_linker,
+                    "probe_wobbling": enable_wobble,
+                    "wobble_theta": wobble_theta
+            }
+
             unique_name = label_id + "_conjugated_" + fluorophore_id
             if unique_name in current_labels.keys():
                 print("label already exist")
@@ -306,17 +319,21 @@ class jupyter_gui:
             if len(current_labels.keys()) > 0:
                 self.nlabels = len(current_labels)
                 for keys, values in current_labels.items():
-                    labels_list.append(values)
+                    self.my_experiment.add_probe(**values)
+                self.my_experiment.build(modules=["particle",])
+                probe_names = list(self.my_experiment.probe_parameters.keys())
+                display(probe_names)
+                    #labels_list.append(values)
                 # print(labels_list)
                 # self.my_experiment._build_particle(keep=True)
                 # using this way since Experiment method assumes only one label
-                particle, label_params_list = supramolsim.particle_from_structure(
-                    self.my_experiment.structure,
-                    labels_list,
-                    self.my_experiment.configuration_path,
-                )
-                self.my_experiment.particle = particle
-                self.my_experiment.objects_created["particle"] = True
+                #particle, label_params_list = supramolsim.particle_from_structure(
+                #    self.my_experiment.structure,
+                #    labels_list,
+                #    self.my_experiment.configuration_path,
+                #)
+                #self.my_experiment.particle = particle
+                #self.my_experiment.objects_created["particle"] = True
                 print("Structure has been labelled")
             else:
                 print("No label has been added")
