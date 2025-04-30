@@ -459,21 +459,14 @@ class jupyter_gui:
         def show_model(b):
             plt.clf()
             clear_output()
-            # show hidden widgets
-            structural_model_gui["label_1"].layout.display = "block"
-            structural_model_gui["emitterplotsize"].layout.display = "block"
-            structural_model_gui["sourceplotsize"].layout.display = "block"
-            structural_model_gui["WTarget"].layout.display = "block"
-            structural_model_gui["Axes"].layout.display = "block"
-            structural_model_gui["label_2"].layout.display = "block"
-            structural_model_gui["enable_defects"].layout.display = "block"
             # plot
             emitter_plotsize = structural_model_gui["emitterplotsize"].value
             source_size = structural_model_gui["sourceplotsize"].value
+            plot_size = structural_model_gui["plot_size"].value
             structural_model_gui.show()
             if self.my_experiment.particle:
                 particle = self.my_experiment.particle
-                fig, axs = plt.subplots(1, 3, subplot_kw={"projection": "3d"})
+                fig, axs = plt.subplots(1, 3, subplot_kw={"projection": "3d"}, figsize = [plot_size, plot_size/2])
                 particle.gen_axis_plot(
                     with_sources=structural_model_gui["WTarget"].value,
                     source_plotsize=source_size,
@@ -505,7 +498,22 @@ class jupyter_gui:
                     "You have not created a labelled structure. "
                     "Make sure you select 'Label structure' button on previous cell"
                 )
-        
+        def activate_visualisation_options(b):
+            # show hidden widgets
+            structural_model_gui["show_preview"].layout.display = "None"
+            structural_model_gui["label_1"].layout.display = "block"
+            structural_model_gui["plot_size"].layout.display = 'inline-flex'
+            structural_model_gui["emitterplotsize"].layout.display = 'inline-flex'
+            structural_model_gui["sourceplotsize"].layout.display = 'inline-flex'
+            structural_model_gui["WTarget"].layout.display = "block"
+            structural_model_gui["Axes"].layout.display = "block"
+            structural_model_gui["update_plot"].layout.display = "block"
+            structural_model_gui["Relabel"].layout.display = "block"
+            structural_model_gui["label_2"].layout.display = "block"
+            structural_model_gui["enable_defects"].layout.display = "block"
+            show_model(b)
+
+
         def activate_defects(b):
             structural_model_gui._widgets["eps1"].layout.display = "block"
             structural_model_gui._widgets["xmer_neigh_distance"].layout.display = "block"
@@ -532,15 +540,25 @@ class jupyter_gui:
             show_model(b)
             print(message)
 
-        
+        def update_plot(b):
+            show_model(b)
 
         def relabel(b):
             self.my_experiment.particle.generate_instance()
             show_model(b)
 
-        structural_model_gui.add_button("Show", description="Show current model")
+        structural_model_gui.add_button("show_preview", description="Preview your model")
         structural_model_gui.add_label("Visualisation parameters")
         structural_model_gui["label_1"].layout = widgets.Layout(width=width, display = "None")
+        structural_model_gui.add_int_slider(
+            "plot_size",
+            value=10,
+            min=5,
+            max=24,
+            step=1,
+            description="Figure size",
+        )
+        structural_model_gui["plot_size"].layout = widgets.Layout(width=width, display = "None")
         structural_model_gui.add_float_slider(
             "emitterplotsize",
             value=24,
@@ -562,8 +580,10 @@ class jupyter_gui:
         structural_model_gui["WTarget"].layout = widgets.Layout(width=width, display = "None")
         structural_model_gui.add_checkbox("Axes", description="Hide Axes", value=True)
         structural_model_gui["Axes"].layout = widgets.Layout(width=width, display = "None")
+        structural_model_gui.add_button("update_plot", description="Update figure")
+        structural_model_gui["update_plot"].layout = widgets.Layout(width=width, display = "None")
         structural_model_gui.add_button(
-            "Relabel", description="Recalculate labelled particle and show"
+            "Relabel", description="Relabel particle and update figure"
         )
         structural_model_gui["Relabel"].layout = widgets.Layout(width=width, display = "None")
         structural_model_gui.add_label("Model defects parameters (optional):")
@@ -599,7 +619,7 @@ class jupyter_gui:
         )
         structural_model_gui._widgets["Defect"].layout = widgets.Layout(width=width, display = "None")
         structural_model_gui.add_button(
-            "use_defects", description="Model defects and show model"
+            "use_defects", description="Apply defects and update figure"
         )
         structural_model_gui._widgets["use_defects"].layout = widgets.Layout(width=width, display = "None")
         #
@@ -608,7 +628,8 @@ class jupyter_gui:
         )
         structural_model_gui["enable_defects"].layout = widgets.Layout(width=width, display = "None")
         structural_model_gui["enable_defects"].on_click(activate_defects)
-        structural_model_gui["Show"].on_click(show_model)
+        structural_model_gui["show_preview"].on_click(activate_visualisation_options)
+        structural_model_gui["update_plot"].on_click(update_plot)
         structural_model_gui["use_defects"].on_click(add_defects)
         structural_model_gui["Relabel"].on_click(relabel)
         if self.my_experiment.particle:
