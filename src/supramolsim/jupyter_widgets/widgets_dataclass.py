@@ -453,8 +453,8 @@ class jupyter_gui:
             display(labels_gui["Demos"], labels_gui["Customise"])
 
     def refine_model_gui(self):
-        structural_model_gui = easy_gui_jupyter.EasyGUI("StructuralModel")
-
+        width = "50%"
+        structural_model_gui = easy_gui_jupyter.EasyGUI("StructuralModel",width=width)
         def show_model(b):
             plt.clf()
             clear_output()
@@ -495,6 +495,14 @@ class jupyter_gui:
                     "You have not created a labelled structure. "
                     "Make sure you select 'Label structure' button on previous cell"
                 )
+        
+        def activate_defects(b):
+            structural_model_gui._widgets["eps1"].layout.display = "block"
+            structural_model_gui._widgets["xmer_neigh_distance"].layout.display = "block"
+            structural_model_gui._widgets["Defect"].layout.display = "block"
+            structural_model_gui._widgets["use_defects"].layout.display = "block"
+            structural_model_gui["enable_defects"].disabled = True
+
 
         def add_defects(b):
             if self.nlabels == 1:
@@ -513,6 +521,8 @@ class jupyter_gui:
             structural_model_gui.save_settings()
             show_model(b)
             print(message)
+
+        
 
         def relabel(b):
             self.my_experiment.particle.generate_instance()
@@ -548,6 +558,7 @@ class jupyter_gui:
             style=structural_model_gui._style,
             remember_value=True,
         )
+        structural_model_gui._widgets["eps1"].layout = widgets.Layout(width=width, display = "None")
         structural_model_gui._widgets["xmer_neigh_distance"] = widgets.BoundedIntText(
             value=600,
             min=0,
@@ -557,6 +568,7 @@ class jupyter_gui:
             style=structural_model_gui._style,
             remember_value=True,
         )
+        structural_model_gui._widgets["xmer_neigh_distance"].layout = widgets.Layout(width=width, display = "None")
         structural_model_gui._widgets["Defect"] = widgets.BoundedFloatText(
             value=0.5,
             min=0,
@@ -566,11 +578,18 @@ class jupyter_gui:
             style=structural_model_gui._style,
             remember_value=True,
         )
+        structural_model_gui._widgets["Defect"].layout = widgets.Layout(width=width, display = "None")
         structural_model_gui.add_button(
-            "Defects", description="Model defects and show model"
+            "use_defects", description="Model defects and show model"
         )
+        structural_model_gui._widgets["use_defects"].layout = widgets.Layout(width=width, display = "None")
+        #
+        structural_model_gui.add_button(
+            "enable_defects", description="Enable particle defects"
+        )
+        structural_model_gui["enable_defects"].on_click(activate_defects)
         structural_model_gui["Show"].on_click(show_model)
-        structural_model_gui["Defects"].on_click(add_defects)
+        structural_model_gui["use_defects"].on_click(add_defects)
         structural_model_gui["Relabel"].on_click(relabel)
         if self.my_experiment.particle:
             structural_model_gui.show()
