@@ -802,25 +802,14 @@ class jupyter_gui:
     def set_image_modalities(self):
         imager_created = False
         imaging_gui = easy_gui_jupyter.EasyGUI("imaging")
-        # if configuration_path is None:
-        #    print("No configuration path set")
-        # else:
-        #modalities_dir = self.config_directories["modalities"]
         modalities_list = self.my_experiment.local_modalities_names
         selected_mods = []
         modality_info = {}
-
-        #for mods in os.listdir(modalities_dir):
-        #    if os.path.splitext(mods)[-1] == ".yaml" and "_template" not in mods:
-        #        modalities_list.append(os.path.splitext(mods)[0])
-
         for mod in modalities_list:
             mod_info = data_format.configuration_format.compile_modality_parameters(
                 mod, self.config_directories["base"]
             )
             modality_info[mod] = mod_info
-
-        # create mock imager to show a pre-visualisation of PSF and noise model
         with io.capture_output() as captured:
             temp_imager, tmp_modality_parameters = create_imaging_system(
                 modalities_id_list=modalities_list,
@@ -840,25 +829,13 @@ class jupyter_gui:
                 self.my_experiment.add_modality(
                     modality_name=imaging_gui["modalities_dropdown"].value
                 )
-                #selected_mods.append(imaging_gui["modalities_dropdown"].value)
-                #print(f"{selected_mods[-1]} modality added")
 
         def clear(b):
             selected_mods.clear()
 
         def create_imager(b):
-            mods_dict = dict()
-            #for mod in selected_mods:
-            #    self.my_experiment.add_modality(modality_name=mod)
-            #self.my_experiment.selected_mods = mods_dict
-            #exported_field = self.my_experiment.objects_created[
-            #    "exported_coordinate_field"
-            #]
             if self.my_experiment.exported_coordinate_field is not None:
-
-                    # with io.capture_output() as captured:
                 self.my_experiment.build(modules=["imager",])
-                    #imager_created = True
                 print("Imaging system created")
                 imaging_gui["Show"].disabled = False
             else:
@@ -867,8 +844,7 @@ class jupyter_gui:
         def preview(b):
             def get_info(imaging_gui):
                 def preview_info(Modality):
-                    # print(Modality)
-                    # print(modality_info[Modality])
+
                     pixelsize = modality_info[Modality]["detector"]["pixelsize"]
                     pixelsize_nm = pixelsize * 1000
                     psf_sd = np.array(modality_info[Modality]["psf_params"]["std_devs"])
