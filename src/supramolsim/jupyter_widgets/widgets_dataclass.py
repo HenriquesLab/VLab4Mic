@@ -820,7 +820,7 @@ class jupyter_gui:
 
         def add_mod(b):
             if "All" == imaging_gui["modalities_dropdown"].value:
-                for mod_names in self.local_modalities_names:
+                for mod_names in modalities_list:
                     self.my_experiment.add_modality(
                         modality_name=mod_names
                     )
@@ -957,6 +957,9 @@ class jupyter_gui:
                 nframes=nframes,
                 channels=channels
             )
+            acq_per_modalities[mod_id] = "Custom"
+            output_str = '<br>'.join(f"{name}: {val}" for name, val in acq_per_modalities.items())
+            acquisition_gui["message"].value = output_str
             acquisition_gui.save_settings()
 
         def preview_mod(b):
@@ -964,7 +967,7 @@ class jupyter_gui:
 
             def get_preview(imaging_system, acq_gui):
 
-                def preview_exposure(Modality, Exposure, Noise):
+                def preview_exposure(message, Modality, Exposure, Noise):
                     fig = plt.figure()
                     grid = axes_grid1.AxesGrid(
                         fig,
@@ -998,16 +1001,25 @@ class jupyter_gui:
                             vmin=min_val,
                             vmax=max_val,
                         )
-                        grid[i].set_title("preview: " + single_channel)
+                        grid[i].set_title("preview channel:" + single_channel)
                         grid.cbar_axes[i].colorbar(preview_image)
                         i = i + 1
 
+                def preview_parameters(Settings):
+                    pass
+
                 widgets.interact(
                     preview_exposure,
+                    message = acq_gui["label_1"],
                     Modality=acq_gui["modalities_dropdown"],
                     Exposure=acq_gui["Exposure"],
-                    Noise=acq_gui["Noise"],
+                    Noise=acq_gui["Noise"]
                 )
+                widgets.interact(
+                    preview_parameters,
+                    Settings = acq_gui["message"]
+                )
+
 
             get_preview(self.my_experiment.imager, acquisition_gui)
 
@@ -1016,6 +1028,12 @@ class jupyter_gui:
             acquisition_gui.save_settings()
 
         acquisition_gui.add_label("Set acquisition parameters")
+        acquisition_gui.add_label("Acquisition parameters per modality:")
+        acq_per_modalities = dict()
+        for mods_selected in self.my_experiment.selected_mods.keys():
+            acq_per_modalities[mods_selected] = "Default"
+        output_str = '<br>'.join(f"{name}: {val}" for name, val in acq_per_modalities.items())
+        acquisition_gui._widgets["message"] = widgets.HTML(value = output_str)
         selected_mods = list(self.my_experiment.imaging_modalities.keys())
         acquisition_gui.add_dropdown("modalities_dropdown", options=selected_mods)
         acquisition_gui.add_checkbox("Noise", description="Use Noise", value=True)
