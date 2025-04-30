@@ -639,7 +639,8 @@ class jupyter_gui:
 
     def create_field(self):
         field_gui = easy_gui_jupyter.EasyGUI("field")
-
+        width = "50%"
+        style = {"description_width": "initial"}
         def createmin(b):
             random_pl = field_gui["random"].value
             nparticles = field_gui["nparticles"].value
@@ -654,7 +655,8 @@ class jupyter_gui:
                 random_placing=random_pl,
                 minimal_distance=min_distance
             )
-            field_gui["show"].disabled = False
+            field_gui["show"].layout.display = "block"
+            #field_gui["show"].disabled = False
 
         def createmin_particles(b):
             random_pl = field_gui["random"].value
@@ -666,7 +668,7 @@ class jupyter_gui:
                 random_placing=random_pl,
                 minimal_distance=min_distance
                 )
-            field_gui["show"].disabled = False
+            field_gui["show"].layout.display = "block"
 
         def upload(b):
             filepath = field_gui["File"].selected
@@ -685,7 +687,7 @@ class jupyter_gui:
             coordinates_field.construct_static_field()
             exported_field = coordinates_field.export_field()
             #display(field_gui["show"])
-            field_gui["show"].disabled = False
+            field_gui["show"].layout.display = "block"
         
         def useimage(b):
             plt.clf()
@@ -704,6 +706,7 @@ class jupyter_gui:
         def showfield(b):
             #plt.clf()
             plt.close()
+            field_gui["show"].disabled = True
             self.my_experiment.coordinate_field.show_field(view_init=[90, 0, 0])
 
 
@@ -746,13 +749,14 @@ class jupyter_gui:
             style=field_gui._style,
             remember_value=True,
         )
-        field_gui.add_dropdown("Mode", options=["mask", "localmaxima"])
-        field_gui.add_button("Use_Upload", description="Use image for positioning")
+        field_gui.add_dropdown("Mode", options=["mask", "localmaxima"]) 
         field_gui.add_button("Upload", description="Load image")
         field_gui.add_button("minimal", description="Create field")
         field_gui.add_checkbox("random", value=False, description="Randomise positions")
-        field_gui.add_button("show", description="Show field", disabled=True)
+        field_gui.add_button("show", description="Show field", disabled=False)
+        field_gui["show"].layout = widgets.Layout(width=width, display = "None")
         field_gui.add_button("minimal_particles", description="Create field with particle")
+        field_gui.add_button("Use_Upload", description="Use image for positioning")
         field_gui.add_int_slider(
                 "nparticles",
                 value=1,
@@ -776,14 +780,14 @@ class jupyter_gui:
         field_gui["Use_Upload"].on_click(useimage)
         field_gui["Upload"].on_click(upload)
 
-
         if self.my_experiment.generators_status("particle"):
-            print("There is no particle initalised")
+            print("Using particle model")
             display(field_gui["nparticles"],
                     field_gui["mindist"],
                     field_gui["random"],
+                    field_gui["minimal_particles"],
                     field_gui["Use_Upload"],
-                    field_gui["minimal_particles"]
+                    field_gui["show"]
                     )
         else:
             print("No particle available")
@@ -792,7 +796,8 @@ class jupyter_gui:
                     field_gui["random"],
                     field_gui["minimal"],
                     field_gui["Use_Upload"],
-                    field_gui["show"])
+                    field_gui["show"]
+            )
 
     def set_image_modalities(self):
         imager_created = False
