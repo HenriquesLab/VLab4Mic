@@ -88,26 +88,30 @@ class ExperimentParametrisation:
                         lateral_resolution_nm: int = None,
                         axial_resolution_nm: int = None,
                         psf_voxel_nm: int = None,
+                        remove = False,
                         ):
-        chagnes = False
-        if pixelsize_nm is not None:
-            self.imaging_modalities[modality_name]["detector"]["pixelsize"] = pixelsize_nm / 1000
-            chagnes = True
-        if lateral_resolution_nm is not None:
-            voxel_size = self.imaging_modalities[modality_name]["psf_params"]["voxelsize"][0]
-            self.imaging_modalities[modality_name]["psf_params"]["std_devs"][0] = lateral_resolution_nm/voxel_size
-            self.imaging_modalities[modality_name]["psf_params"]["std_devs"][1] = lateral_resolution_nm/voxel_size
-            chagnes = True
-        if axial_resolution_nm is not None:
-            voxel_size = self.imaging_modalities[modality_name]["psf_params"]["voxelsize"][0]
-            self.imaging_modalities[modality_name]["psf_params"]["std_devs"][2] = axial_resolution_nm/voxel_size
-            chagnes = True
-        if psf_voxel_nm is not None:
-            self.imaging_modalities[modality_name]["psf_params"]["voxelsize"] = [psf_voxel_nm, psf_voxel_nm, psf_voxel_nm]
-            chagnes = True
-        if chagnes:
-            #mod_pars = self.imaging_modalities[modality_name]
-            self.imager.set_imaging_modality(**self.imaging_modalities[modality_name])
+        if remove:
+            self.imaging_modalities.pop(modality_name, None)
+        else:
+            changes = False
+            if pixelsize_nm is not None:
+                self.imaging_modalities[modality_name]["detector"]["pixelsize"] = pixelsize_nm / 1000
+                changes = True
+            if lateral_resolution_nm is not None:
+                voxel_size = self.imaging_modalities[modality_name]["psf_params"]["voxelsize"][0]
+                self.imaging_modalities[modality_name]["psf_params"]["std_devs"][0] = lateral_resolution_nm/voxel_size
+                self.imaging_modalities[modality_name]["psf_params"]["std_devs"][1] = lateral_resolution_nm/voxel_size
+                changes = True
+            if axial_resolution_nm is not None:
+                voxel_size = self.imaging_modalities[modality_name]["psf_params"]["voxelsize"][0]
+                self.imaging_modalities[modality_name]["psf_params"]["std_devs"][2] = axial_resolution_nm/voxel_size
+                changes = True
+            if psf_voxel_nm is not None:
+                self.imaging_modalities[modality_name]["psf_params"]["voxelsize"] = [psf_voxel_nm, psf_voxel_nm, psf_voxel_nm]
+                changes = True
+            if changes:
+                #mod_pars = self.imaging_modalities[modality_name]
+                self.imager.set_imaging_modality(**self.imaging_modalities[modality_name])
 
     def set_modality_acq(
             self,
