@@ -270,6 +270,7 @@ class jupyter_gui:
             label_id = labels_gui["mock_label_dropdown"].value
             fluorophore_id = labels_gui["mock_fluo_dropdown"].value
             lab_eff = labels_gui["mock_Labelling_efficiency"].value
+            probe_distance_to_epitope = labels_gui["mock_distance_to_epitope"].value 
             mock_type = options_dictionary[labels_gui["mock_type"].value]
             if mock_type == "Atom_residue":
                 #atom, residue = labels_gui["mock_value"].value.split(".")
@@ -301,6 +302,7 @@ class jupyter_gui:
                     "labelling_efficiency": lab_eff,
                     "probe_target_type": target_info["type"],
                     "probe_target_value": target_info["value"],
+                    "probe_distance_to_epitope": probe_distance_to_epitope,
                     "as_primary": as_linker,
                     "probe_wobbling": enable_wobble,
                     "wobble_theta": wobble_theta
@@ -387,6 +389,7 @@ class jupyter_gui:
             
             #probe_widgets["mock_fluo_dropdown"] = True
             probe_widgets["mock_Labelling_efficiency"] = True
+            probe_widgets["mock_distance_to_epitope"] = True
             probe_widgets["as_linker"] = True
             probe_widgets["wobble"] = True
             probe_widgets["wobble_theta"] = True
@@ -477,6 +480,14 @@ class jupyter_gui:
             max=1,
             step=0.01,
             description="Labelling efficiency",
+        )
+        labels_gui.add_float_slider(
+            "mock_distance_to_epitope",
+            value=0,
+            min=0,
+            max=500,
+            step=1,
+            description="Distance from probe to epitope (A)",
         )
         labels_gui.add_label("Activate this option if you intent to use a secondary that recognises the current probe")
         labels_gui.add_checkbox("as_linker", description = "Model as primary with epitope for secondary probe",
