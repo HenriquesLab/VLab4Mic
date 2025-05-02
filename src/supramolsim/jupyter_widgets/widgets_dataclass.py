@@ -726,6 +726,7 @@ class jupyter_gui:
                 random_placing=random_pl,
                 minimal_distance=min_distance
             )
+            field_gui["Use_Upload"].disabled = True
             field_gui["show"].layout.display = "block"
             #field_gui["show"].disabled = False
 
@@ -744,6 +745,7 @@ class jupyter_gui:
                 minimal_distance=min_distance,
                 random_orientations = random_orientations
                 )
+            field_gui["Use_Upload"].disabled = True
             field_gui["show"].layout.display = "block"
 
         def upload(b):
@@ -763,6 +765,8 @@ class jupyter_gui:
             coordinates_field.construct_static_field()
             exported_field = coordinates_field.export_field()
             #display(field_gui["show"])
+            field_gui["minimal"].disabled = True
+            field_gui["minimal_particles"].disabled = True
             field_gui["show"].layout.display = "block"
         
         def useimage(b):
@@ -1139,7 +1143,7 @@ class jupyter_gui:
             style=acquisition_gui._style,
             remember_value=True,
         )
-        acquisition_gui.add_button("Set", description="Add params")
+        acquisition_gui.add_button("Set", description="Update acquisition parameters")
         acquisition_gui.add_button("Preview", description="Preview (Expermiental feature)")
         acquisition_gui.add_button("Clear", description="Clear params")
         acquisition_gui["Preview"].on_click(preview_mod)
