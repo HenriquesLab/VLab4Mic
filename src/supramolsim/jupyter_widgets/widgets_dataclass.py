@@ -443,7 +443,7 @@ class jupyter_gui:
         )
         labels_gui.add_dropdown("mock_type", options=list(options_dictionary.keys()),description="I want this probe to target a: ")
         list_of_proteins = self.my_experiment.structure.list_protein_names()
-        list_of_residues = ["LYS", "ALA",]
+        list_of_residues = ["ALA", "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "GLY", "HIS", "ILE", "LEU", "LYS", "MET", "PHE", "PRO", "SER", "THR", "TRP", "TYR", "VAL"]
         options_per_type1= dict(
             Protein=list_of_proteins,
             Residue=list_of_residues,
