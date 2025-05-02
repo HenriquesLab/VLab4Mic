@@ -421,7 +421,7 @@ class jupyter_gui:
             Residue="Atom_residue",
             Primary_Probe="Primary"
         )
-        labels_gui.add_dropdown("mock_type", options=list(options_dictionary.keys()),description="I want to label a: ")
+        labels_gui.add_dropdown("mock_type", options=list(options_dictionary.keys()),description="I want this probe to target a: ")
         labels_gui.add_label("Type in a sequence motif, Residue names or name of a primary probe")
         protein_name = None
         sequence = None
