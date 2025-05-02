@@ -369,6 +369,7 @@ class jupyter_gui:
             probe_widgets["label_4"] = True
             probe_widgets["mock_type"] = True
             probe_widgets["label_5"] = True
+            probe_widgets["Suggestion"] = True
             probe_widgets["mock_value"] = True
             probe_widgets["mock_fluo_dropdown"] = True
             probe_widgets["mock_Labelling_efficiency"] = True
@@ -407,7 +408,10 @@ class jupyter_gui:
         labels_gui.add_dropdown("mock_label_dropdown", options=mock_labels)
         labels_gui.add_label("Define the type of target for this probe.")
         labels_gui.add_dropdown("mock_type", options=["Sequence", "Atom_residue", "Primary"],description="Target type: ")
-        labels_gui.add_label("Define the target. For a secondary probe, type in the name of the primary probe")
+        labels_gui.add_label("Type in a sequence motif, Residue names or name of a primary probe")
+        protein_name, _1, site, sequence, = self.my_experiment.structure.get_peptide_motif()
+        hint_message = "Our suggestion: Protein " + protein_name + " sequence: " + sequence
+        labels_gui._widgets["Suggestion"] = widgets.HTML(value = hint_message)
         labels_gui.add_textarea("mock_value", description="Target value: ")
         labels_gui.add_dropdown("mock_fluo_dropdown", options=fluorophores_list)
         labels_gui.add_float_slider(
