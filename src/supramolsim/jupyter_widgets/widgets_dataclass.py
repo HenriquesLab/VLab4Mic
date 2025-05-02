@@ -272,13 +272,21 @@ class jupyter_gui:
             lab_eff = labels_gui["mock_Labelling_efficiency"].value
             mock_type = options_dictionary[labels_gui["mock_type"].value]
             if mock_type == "Atom_residue":
-                atom, residue = labels_gui["mock_value"].value.split(".")
+                #atom, residue = labels_gui["mock_value"].value.split(".")
+                residue = labels_gui["mock_type_options1"].value
+                atom = labels_gui["mock_type_options2"].value
                 target_value = dict(
                     atoms=atom,
                     residues=residue
                 )
             else: 
-                target_value = labels_gui["mock_value"].value
+                #target_value = labels_gui["mock_value"].value
+                chain_name = labels_gui["mock_type_options1"].value
+                position = labels_gui["mock_type_options2"].value
+                protein_name, _1, site, sequence = self.my_experiment.structure.get_peptide_motif(
+                    chain_name=chain_name,
+                    position=position)
+                target_value = sequence
             target_info=dict(
                 type=mock_type,
                 value=target_value
@@ -369,10 +377,14 @@ class jupyter_gui:
             probe_widgets["mock_label_dropdown"] = True
             probe_widgets["label_4"] = True
             probe_widgets["mock_type"] = True
-            probe_widgets["label_5"] = True
-            probe_widgets["Suggestion"] = True
-            probe_widgets["mock_value"] = True
-            probe_widgets["radnom_value"] = True
+            probe_widgets["mock_type_options1"] = True
+            probe_widgets["mock_type_options2"] = True
+            # widgets for advace setting
+            #probe_widgets["label_5"] = True
+            #probe_widgets["Suggestion"] = True
+            #probe_widgets["mock_value"] = True
+            #probe_widgets["radnom_value"] = True
+            
             #probe_widgets["mock_fluo_dropdown"] = True
             probe_widgets["mock_Labelling_efficiency"] = True
             probe_widgets["as_linker"] = True
@@ -390,6 +402,11 @@ class jupyter_gui:
             labels_gui["Suggestion"].value = hint_message
             labels_gui["mock_value"].value = sequence
 
+        def type_dropdown_change(change):
+            labels_gui["mock_type_options1"].options = options_per_type1[change.new] 
+            labels_gui["mock_type_options1"].value = options_per_type1[change.new][0]
+            labels_gui["mock_type_options2"].options = options_per_type2[change.new]
+            labels_gui["mock_type_options2"].value = options_per_type2[change.new][0]
 
         labels_gui.add_label("Use the dropdown menu to select an existing probe for your structure.")
         # initial buttons
@@ -422,6 +439,22 @@ class jupyter_gui:
             Primary_Probe="Primary"
         )
         labels_gui.add_dropdown("mock_type", options=list(options_dictionary.keys()),description="I want this probe to target a: ")
+        list_of_proteins = self.my_experiment.structure.list_protein_names()
+        list_of_residues = ["LYS", "ALA",]
+        options_per_type1= dict(
+            Protein=list_of_proteins,
+            Residue=list_of_residues,
+            Primary_Probe=[None,]
+        )
+        options_per_type2= dict(
+            Protein=["cterminal", "nterminal"],
+            Residue=["CA"],
+            Primary_Probe=[None,]
+        )
+
+        labels_gui.add_dropdown("mock_type_options1", options=options_per_type1[labels_gui["mock_type"].value],description="Which one: ")
+        labels_gui.add_dropdown("mock_type_options2", options=options_per_type2[labels_gui["mock_type"].value],description="Where: ")
+        labels_gui["mock_type"].observe(type_dropdown_change, names='value')
         labels_gui.add_label("Type in a sequence motif, Residue names or name of a primary probe")
         protein_name = None
         sequence = None
