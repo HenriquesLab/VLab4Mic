@@ -270,7 +270,8 @@ class jupyter_gui:
             label_id = labels_gui["mock_label_dropdown"].value
             fluorophore_id = labels_gui["mock_fluo_dropdown"].value
             lab_eff = labels_gui["mock_Labelling_efficiency"].value
-            if labels_gui["mock_type"].value == "Atom_residue":
+            mock_type = options_dictionary[labels_gui["mock_type"].value]
+            if mock_type == "Atom_residue":
                 atom, residue = labels_gui["mock_value"].value.split(".")
                 target_value = dict(
                     atoms=atom,
@@ -279,7 +280,7 @@ class jupyter_gui:
             else: 
                 target_value = labels_gui["mock_value"].value
             target_info=dict(
-                type=labels_gui["mock_type"].value,
+                type=mock_type,
                 value=target_value
             )
             as_linker = labels_gui["as_linker"].value
@@ -407,12 +408,24 @@ class jupyter_gui:
         labels_gui.add_label("Customise your probe. First, select a mock probe from the dropdown menu.")
         labels_gui.add_dropdown("mock_label_dropdown", options=mock_labels)
         labels_gui.add_label("Define the type of target for this probe.")
-        labels_gui.add_dropdown("mock_type", options=["Sequence", "Atom_residue", "Primary"],description="Target type: ")
+        options_dictionary = dict(
+            Protein="Sequence",
+            Residue="Atom_residue",
+            Primary_Probe="Primary"
+        )
+        labels_gui.add_dropdown("mock_type", options=list(options_dictionary.keys()),description="I want to label a: ")
         labels_gui.add_label("Type in a sequence motif, Residue names or name of a primary probe")
-        protein_name, _1, site, sequence, = self.my_experiment.structure.get_peptide_motif()
+        protein_name = None
+        sequence = None
+        protein_name, _1, site, sequence = self.my_experiment.structure.get_peptide_motif()
         hint_message = "Our suggestion: Protein " + protein_name + " sequence: " + sequence
         labels_gui._widgets["Suggestion"] = widgets.HTML(value = hint_message)
-        labels_gui.add_textarea("mock_value", description="Target value: ")
+        mock_value_suggestions = dict(
+            Protein=sequence,
+            Residue="LYS.CA",
+            Primary_Probe=None
+        )
+        labels_gui.add_textarea("mock_value", description="At this position:", value=sequence)
         labels_gui.add_dropdown("mock_fluo_dropdown", options=fluorophores_list)
         labels_gui.add_float_slider(
             "mock_Labelling_efficiency",
