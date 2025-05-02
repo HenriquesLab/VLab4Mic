@@ -433,7 +433,7 @@ class jupyter_gui:
             )
             labels_gui["Add"].on_click(build_label)
         # CUSTOM
-        labels_gui.add_label("Customise your probe. First, select a mock probe from the dropdown menu.")
+        labels_gui.add_label("Customise your probe. First, select a probe model from the dropdown menu.")
         labels_gui.add_dropdown("mock_label_dropdown", options=mock_labels)
         labels_gui.add_label("Define the type of target for this probe.")
         options_dictionary = dict(
