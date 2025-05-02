@@ -372,7 +372,8 @@ class jupyter_gui:
             probe_widgets["label_5"] = True
             probe_widgets["Suggestion"] = True
             probe_widgets["mock_value"] = True
-            probe_widgets["mock_fluo_dropdown"] = True
+            probe_widgets["radnom_value"] = True
+            #probe_widgets["mock_fluo_dropdown"] = True
             probe_widgets["mock_Labelling_efficiency"] = True
             probe_widgets["as_linker"] = True
             probe_widgets["wobble"] = True
@@ -383,6 +384,13 @@ class jupyter_gui:
                 if value:
                     display(labels_gui[widgetname])
         
+        def random_sequence(b):
+            protein_name, _1, site, sequence = self.my_experiment.structure.get_peptide_motif()
+            hint_message = "Our suggestion: C-terminal of " + protein_name + " (" + sequence + ")"
+            labels_gui["Suggestion"].value = hint_message
+            labels_gui["mock_value"].value = sequence
+
+
         labels_gui.add_label("Use the dropdown menu to select an existing probe for your structure.")
         # initial buttons
         labels_gui.add_button("Demos", description="VLab4Mic probes")
@@ -418,7 +426,7 @@ class jupyter_gui:
         protein_name = None
         sequence = None
         protein_name, _1, site, sequence = self.my_experiment.structure.get_peptide_motif()
-        hint_message = "Our suggestion: Protein " + protein_name + " sequence: " + sequence
+        hint_message = "Our suggestion: C-terminal of " + protein_name + " (" + sequence + ")"
         labels_gui._widgets["Suggestion"] = widgets.HTML(value = hint_message)
         mock_value_suggestions = dict(
             Protein=sequence,
@@ -426,6 +434,8 @@ class jupyter_gui:
             Primary_Probe=None
         )
         labels_gui.add_textarea("mock_value", description="At this position:", value=sequence)
+        labels_gui.add_button("radnom_value", description="Give me another suggestion")
+        labels_gui["radnom_value"].on_click(random_sequence)
         labels_gui.add_dropdown("mock_fluo_dropdown", options=fluorophores_list)
         labels_gui.add_float_slider(
             "mock_Labelling_efficiency",
