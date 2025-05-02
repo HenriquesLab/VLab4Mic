@@ -143,6 +143,9 @@ class MolecularStructureParser:
         for  name, number, strands in zip(chain_name, chain_number, strand_id):
             protein_name[name] = {"number": number, "strand_id": strands}
         self.protein_names = protein_name
+    
+    def list_protein_names(self):
+        return list(self.protein_names.keys())
 
     def _random_substring(string, size=5):
         if len(string) > size:
