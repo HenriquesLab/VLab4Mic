@@ -1001,6 +1001,8 @@ class jupyter_gui:
                             vmin=min_val,
                             vmax=max_val,
                         )
+                        grid[i].set_xticks([])
+                        grid[i].set_yticks([])
                         grid[i].set_title("preview channel:" + single_channel)
                         grid.cbar_axes[i].colorbar(preview_image)
                         i = i + 1
