@@ -520,7 +520,7 @@ class jupyter_gui:
         if self.my_experiment.structure is None:
             print("No structure has been loaded")
         else:
-            self.my_experiment.structure._clear_labels()
+            self.my_experiment.remove_probes()
             display(labels_gui["Demos"], labels_gui["Customise"])
 
     def refine_model_gui(self):

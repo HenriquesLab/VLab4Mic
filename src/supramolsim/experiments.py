@@ -388,7 +388,8 @@ class ExperimentParametrisation:
         if self.generators_status("particle"):
             self.particle = None
         if self.generators_status("structure"):
-            self.structure.label_targets = dict()
+            self.structure._clear_labels()
+            #self.structure.label_targets = dict()
 
     def add_probe(
             self,
