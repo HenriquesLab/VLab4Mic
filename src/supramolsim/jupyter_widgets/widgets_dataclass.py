@@ -661,12 +661,17 @@ class jupyter_gui:
         def createmin_particles(b):
             random_pl = field_gui["random"].value
             nparticles = field_gui["nparticles"].value
-            min_distance = field_gui["mindist"].value
+            if field_gui["distance_from_particle"].value:
+                min_distance = None
+            else:
+                min_distance = field_gui["mindist"].value
+            random_orientations = field_gui["random_orientations"].value
             self.my_experiment._build_coordinate_field(
                 keep=True,
                 nparticles=nparticles,
                 random_placing=random_pl,
-                minimal_distance=min_distance
+                minimal_distance=min_distance,
+                random_orientations = random_orientations
                 )
             field_gui["show"].layout.display = "block"
 
@@ -707,7 +712,7 @@ class jupyter_gui:
             #plt.clf()
             plt.close()
             field_gui["show"].disabled = True
-            self.my_experiment.coordinate_field.show_field(view_init=[90, 0, 0])
+            self.my_experiment.coordinate_field.show_field(view_init=[90, 0, 0], initial_pos=False)
 
 
         field_gui.add_file_upload(
@@ -752,7 +757,9 @@ class jupyter_gui:
         field_gui.add_dropdown("Mode", options=["mask", "localmaxima"]) 
         field_gui.add_button("Upload", description="Load image")
         field_gui.add_button("minimal", description="Create field")
-        field_gui.add_checkbox("random", value=False, description="Randomise positions")
+        field_gui.add_checkbox("random", value=True, description="Randomise positions (enforced when there is more than one particle)")
+        field_gui.add_checkbox("random_orientations", value=True, description="Randomise orientation")
+        field_gui.add_checkbox("distance_from_particle", value=True, description="Use minimal distance of particle")
         field_gui.add_button("show", description="Show field", disabled=False)
         field_gui["show"].layout = widgets.Layout(width=width, display = "None")
         field_gui.add_button("minimal_particles", description="Create field with particle")
@@ -785,6 +792,8 @@ class jupyter_gui:
             display(field_gui["nparticles"],
                     field_gui["mindist"],
                     field_gui["random"],
+                    field_gui["random_orientations"],
+                    field_gui["distance_from_particle"],
                     field_gui["minimal_particles"],
                     field_gui["Use_Upload"],
                     field_gui["show"]
