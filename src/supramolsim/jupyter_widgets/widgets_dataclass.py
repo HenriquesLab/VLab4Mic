@@ -21,6 +21,7 @@ import mpl_toolkits.axes_grid1 as axes_grid1
 class jupyter_gui:
     my_experiment = ExperimentParametrisation()
     structures_to_show = ["3J3Y", "7R5K", "1XI5"]
+    modalities_default = ["Widefield", "Confocal", "STED", "SMLM"]
     def __post_init__(self):
         self.demo_structures = []
         # get available structure IDs
@@ -889,10 +890,11 @@ class jupyter_gui:
                     field_gui["show"]
             )
 
-    def set_image_modalities(self):
+    def set_image_modalities(self, mode = "default"):
         imager_created = False
-        imaging_gui = easy_gui_jupyter.EasyGUI("imaging", width="70%")
+        modalities_options = []
         modalities_list = self.my_experiment.local_modalities_names
+        imaging_gui = easy_gui_jupyter.EasyGUI("imaging", width="70%")
         selected_mods = []
         modality_info = {}
         for mod in modalities_list:
@@ -905,8 +907,14 @@ class jupyter_gui:
                 modalities_id_list=modalities_list,
                 config_dir=self.config_directories["base"],
             )
-        modalities_options = copy.copy(modalities_list)
-        modalities_options.append("All")
+        if mode == "default":
+            for mode_name in modalities_list:
+                if mode_name in self.modalities_default:
+                    modalities_options.append(mode_name)
+            modalities_options.append("All")
+        else:
+            modalities_options = copy.copy(modalities_list)
+            modalities_options.append("All")
 
         def add_mod(b):
             if "All" == imaging_gui["modalities_dropdown"].value:
