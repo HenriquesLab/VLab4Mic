@@ -280,7 +280,7 @@ class jupyter_gui:
                     atoms=atom,
                     residues=residue
                 )
-            else: 
+            elif mock_type == "Sequence": 
                 #target_value = labels_gui["mock_value"].value
                 chain_name = labels_gui["mock_type_options1"].value
                 position = labels_gui["mock_type_options2"].value
@@ -288,11 +288,17 @@ class jupyter_gui:
                     chain_name=chain_name,
                     position=position)
                 target_value = sequence
+            elif mock_type == "Primary":
+                target_value = labels_gui["mock_type_options1"].value
             target_info=dict(
                 type=mock_type,
                 value=target_value
             )
             as_linker = labels_gui["as_linker"].value
+            if as_linker:
+                options_per_type1["Primary_Probe"] = [label_id,]
+                #labels_gui["mock_type_options1"].options = options_per_type1
+
             enable_wobble = labels_gui["wobble"].value
             wobble_theta = labels_gui["wobble_theta"].value
 
@@ -378,6 +384,7 @@ class jupyter_gui:
             probe_widgets["label_3"] = True
             probe_widgets["mock_label_dropdown"] = True
             probe_widgets["label_4"] = True
+            probe_widgets["as_linker"] = True
             probe_widgets["mock_type"] = True
             probe_widgets["mock_type_options1"] = True
             probe_widgets["mock_type_options2"] = True
@@ -390,7 +397,6 @@ class jupyter_gui:
             #probe_widgets["mock_fluo_dropdown"] = True
             probe_widgets["mock_Labelling_efficiency"] = True
             probe_widgets["mock_distance_to_epitope"] = True
-            probe_widgets["as_linker"] = True
             probe_widgets["wobble"] = True
             probe_widgets["wobble_theta"] = True
             probe_widgets["Add_mock"] = True
@@ -502,7 +508,7 @@ class jupyter_gui:
             step=1,
             description="Wobble cone range (degrees)",
         )
-        labels_gui.add_button("Add_mock", description="Add mock label")
+        labels_gui.add_button("Add_mock", description="Add custom probe")
         labels_gui["Add_mock"].on_click(build_mock_label)
 
 
@@ -981,11 +987,12 @@ class jupyter_gui:
         imaging_gui.add_button("Add", description="Add modality")
         imaging_gui.add_label("Selected modalities:")
         imaging_gui.add_label("No modality selected")
-        imaging_gui.add_button("Clear", description="Clear modalities")
+        imaging_gui.add_button("Clear", description="Reset selected modalities")
         if self.my_experiment.generators_status("exported_coordinate_field") is None:
             disable_button = True
         else:
             disable_button = False
+        imaging_gui.add_label("Click 'Done!' after selecting your modalities ")
         imaging_gui.add_button(
             "Create", description="Done!", disabled=disable_button
         )
@@ -1004,6 +1011,7 @@ class jupyter_gui:
             imaging_gui["label_3"],
             imaging_gui["label_4"],
             imaging_gui["Clear"],
+            imaging_gui["label_5"],
             imaging_gui["Create"],
             imaging_gui["Show"],
         )
@@ -1158,6 +1166,7 @@ class jupyter_gui:
         experiment_gui = easy_gui_jupyter.EasyGUI("experiment")
 
         def run_simulation(b):
+            experiment_gui["Acquire"].disabled = True
             sav_dir = experiment_gui["saving_directory"].value
             if sav_dir is not None:
                 self.my_experiment.output_directory = sav_dir
