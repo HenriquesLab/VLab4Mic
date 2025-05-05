@@ -871,10 +871,10 @@ class jupyter_gui:
         if self.my_experiment.generators_status("particle"):
             print("Using particle model")
             display(field_gui["nparticles"],
-                    field_gui["mindist"],
                     field_gui["random"],
                     field_gui["random_orientations"],
                     field_gui["distance_from_particle"],
+                    field_gui["mindist"],
                     field_gui["minimal_particles"],
                     field_gui["Use_Upload"],
                     field_gui["show"]
@@ -882,8 +882,8 @@ class jupyter_gui:
         else:
             print("No particle available")
             display(field_gui["nparticles"],
-                    field_gui["mindist"],
                     field_gui["random"],
+                    field_gui["mindist"],
                     field_gui["minimal"],
                     field_gui["Use_Upload"],
                     field_gui["show"]
