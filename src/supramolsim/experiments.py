@@ -260,16 +260,6 @@ class ExperimentParametrisation:
         else:
             print("No modalities")
 
-    def _param_linspaces(self):
-        if self.sweep_pars:
-            self.sweep_linspaces = dict()
-            for param_name, pars in self.sweep_pars.items():
-                self.sweep_linspaces[param_name] = np.linspace(
-                    pars["start"], pars["end"], pars["nintervals"]
-                )
-        else:
-            print("No parameters set")
-
     def generators_status(self, generator_name):
         return self.objects_created[generator_name]
 
@@ -289,7 +279,7 @@ class ExperimentParametrisation:
             self._build_imager(use_local_field=use_locals)
         # self._param_linspaces()
 
-    def gen_reference(self, write=False, keep=False, ref_acq_pars=None, modality_wise=False):
+    def _gen_reference(self, write=False, keep=False, ref_acq_pars=None, modality_wise=False):
         """
         Calculate a reference image of the virtual sample by using the ideal
         parameters for each of the parameters to sweep. Requires the 
@@ -448,43 +438,7 @@ class ExperimentParametrisation:
             self.structure_label = None
         else: 
             self.structure_label = list(self.probe_parameters.keys())
-    
-def create_experiment_parametrisation(
-    structure_and_labels: dict = None,
-    modalities_acquisition: dict = None,
-    field_params: dict = None,
-    savging: dict = None,
-    defects_params: dict = None,
-    params2sweep: dict = None,
-    use_locals=False,
-):
-    generator = ExperimentParametrisation()
-    # Structural parameters
-    if structure_and_labels:
-        generator.structure_id = structure_and_labels["structure_id"]
-        generator.structure_label = structure_and_labels["structure_label"]
-        generator.fluorophore_id = structure_and_labels["fluorophore_id"]
-    if modalities_acquisition:
-        for mod, acquisition in modalities_acquisition.items():
-            if acquisition is None:
-                generator.selected_mods[mod] = configuration_format.format_modality_acquisition_params()
-            else:
-                generator.selected_mods[mod] = acquisition
-    if field_params:
-        #for field_param, value in field_params.items():
-        generator.coordinate_field_id=field_params
-    if defects_params:
-        for key, val in defects_params.items():
-            generator.defect_eps[key] = val
-    if params2sweep:
-        for parametername, pars in params2sweep.items():
-            generator.sweep_pars[parametername] = pars
-    # writing
-    if savging:
-        generator.experiment_id = savging["experiment_id"]
-        generator.output_directory = savging["output_directory"]
-    generator.build(use_locals=use_locals)
-    return generator
+
 
 
 def generate_virtual_sample(
