@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 
 
 class sweep_generator:
+    #sweep parameters
     experiment = ExperimentParametrisation()
     structures = [
         "1XI5",
@@ -18,6 +19,8 @@ class sweep_generator:
     vsample_parameters = None
     modality_parameters = None
     acquisition_parameters = None
+    # parameter dictionary
+    params_by_group = {}
     # reference parameters
     reference_structure = "1XI5"
     reference_probe = "NHS_ester"
@@ -31,6 +34,14 @@ class sweep_generator:
     acquisition_outputs = None
     acquisition_outputs_parameters = None
 
+    def __init__(self):
+        self.params_by_group["probe"] = {}
+        self.params_by_group["virtual_sample"] = {}
+        self.params_by_group["particle_defect"] = {}
+        self.params_by_group["modality"] = {}
+        self.params_by_group["acquisition"] = {}
+
+    # generators
     def generate_virtual_samples(self):
         self.experiment, self.virtual_samples, self.virtual_samples_parameters = (
             sweep.sweep_vasmples(
@@ -42,7 +53,7 @@ class sweep_generator:
             )
         )
 
-    def image_virtual_samples(self):
+    def generate_acquisitions(self):
         if self.virtual_samples is None:
             self.generate_virtual_samples()
         (
@@ -77,6 +88,7 @@ class sweep_generator:
             )
         )
 
+    # previews
     def preview_acquisition_output(self, return_image=False):
         param_id = list(self.acquisition_outputs_parameters.keys())[0]
         repetition = 0
@@ -93,3 +105,16 @@ class sweep_generator:
         else:
             plt.imshow(self.reference_image[0])
             print(self.reference_image_parameters)
+
+    # set and change parameters
+    def _set_param_range(self, param_group, param_name, param_type, first, last, option):
+        if param_type == "numeric":
+            self.params_by_group[param_group][param_name] = [first, last, option]
+        if param_type == "logical":
+            self.params_by_group[param_group][param_name] = option
+
+    def create_parameters_iterables(self):
+        if self.params_by_group["probe"]:
+            self.probe_parameters = sweep.probe_parameters_sweep(
+                **self.params_by_group["probe"]
+            )
