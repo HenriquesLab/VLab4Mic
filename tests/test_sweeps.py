@@ -1,8 +1,13 @@
 from supramolsim.analysis import sweep
-from supramolsim import experiments
+from supramolsim import experiments, sweep_generator
 import numpy as np
 import pytest
 
+
+def test_sweep_generator():
+    sweep_gen = sweep_generator.sweep_generator()
+    sweep_gen.generate_acquisitions()
+    sweep_gen.generate_reference_image()
 
 def test_sweep_vasmples_empty():
     test_experiment = experiments.ExperimentParametrisation()
