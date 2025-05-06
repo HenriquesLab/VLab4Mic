@@ -1,5 +1,6 @@
 from .experiments import ExperimentParametrisation
 from .analysis import sweep
+import matplotlib.pyplot as plt
 
 class sweep_generator:
     experiment = ExperimentParametrisation()
@@ -19,7 +20,8 @@ class sweep_generator:
     # outputs
     virtual_samples = None
     virtual_samples_parameters = None
-
+    acquisition_outputs = None
+    acquisition_outputs_parameters = None
 
     def generate_virtual_samples(self):
         self.experiment, self.virtual_samples, self.virtual_samples_parameters = sweep.sweep_vasmples(
@@ -28,3 +30,25 @@ class sweep_generator:
             probe_parameters=self.probe_parameters, 
             virtual_samples=self.vsample_parameters,
             repetitions=self.sweep_repetitions)
+
+
+    def image_virtual_samples(self):
+        if self.virtual_samples is None:
+            self.generate_virtual_samples()
+        self.experiment, self.acquisition_outputs, self.acquisition_outputs_parameters, mod_pixelsizes  = sweep.sweep_modalities_updatemod(
+        experiment = self.experiment,
+        vsample_outputs = self.virtual_samples,
+        vsampl_pars = self.virtual_samples_parameters,
+        modalities = self.modalities,
+        modality_acq_prams = self.acquisition_parameters
+        )
+
+    def preview_acquisition_output(self, return_image = False):
+        param_id = list(self.acquisition_outputs_parameters.keys())[0]
+        repetition = 0
+        frame = 0
+        if return_image:
+            return self.acquisition_outputs[param_id][repetition][frame]
+        else:
+            plt.imshow(self.acquisition_outputs[param_id][repetition][frame])
+            print(self.acquisition_outputs_parameters[param_id])
