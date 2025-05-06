@@ -125,3 +125,17 @@ class sweep_generator:
             self.probe_parameters = sweep.probe_parameters_sweep(
                 **self.params_by_group["probe"]
             )
+        if self.params_by_group["particle_defect"]:
+            pass
+        if self.params_by_group["virtual_sample"]:
+            self.vsample_parameters = sweep.virtual_sample_parameters_sweep(
+                **self.params_by_group["virtual_sample"]
+            )
+        if self.params_by_group["modality"]:
+            self.modality_parameters = sweep.acquisition_parameters_sweep(
+                **self.params_by_group["modality"]
+            )
+        if self.params_by_group["acquisition"]:
+            self.acquisition_parameters = sweep.acquisition_parameters_sweep(
+                **self.params_by_group["acquisition"]
+            )
