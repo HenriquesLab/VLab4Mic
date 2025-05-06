@@ -18,6 +18,9 @@ class sweep_generator:
     reference_probe = "NHS_ester"
     reference_probe_parameters = {"labelling_efficiency": 1.0}
     # outputs
+    reference_virtual_sample = None
+    reference_virtual_sample_params = None
+    reference_image = None
     virtual_samples = None
     virtual_samples_parameters = None
     acquisition_outputs = None
@@ -42,6 +45,20 @@ class sweep_generator:
         modalities = self.modalities,
         modality_acq_prams = self.acquisition_parameters
         )
+
+    def generate_reference_sample(self):
+        self.reference_virtual_sample, self.reference_virtual_sample_params = sweep.generate_global_reference_sample(
+            structure=self.reference_structure,
+            probe=self.reference_probe,
+            probe_parameters=self.reference_probe_parameters)
+        
+    def generate_reference_image(self):
+        if self.reference_image is None:
+            self.generate_reference_sample()
+        self.reference_image, self.reference_image_parameters = sweep.generate_global_reference_modality(
+            reference_vsample = self.reference_virtual_sample,
+            reference_vsample_params = self.reference_virtual_sample_params
+            )
 
     def preview_acquisition_output(self, return_image = False):
         param_id = list(self.acquisition_outputs_parameters.keys())[0]
