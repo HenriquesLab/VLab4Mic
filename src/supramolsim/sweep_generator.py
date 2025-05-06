@@ -107,11 +107,18 @@ class sweep_generator:
             print(self.reference_image_parameters)
 
     # set and change parameters
-    def _set_param_range(self, param_group, param_name, param_type, first, last, option):
+    def _set_param_range(self, param_group, param_name, param_type, first=None, last=None, option=None):
         if param_type == "numeric":
             self.params_by_group[param_group][param_name] = [first, last, option]
         if param_type == "logical":
-            self.params_by_group[param_group][param_name] = option
+            logic_list = []
+            if option == "True":
+                logic_list = [True,]
+            elif option == "True":
+                logic_list = [False,]
+            elif option == "Both":
+                logic_list = [True, False,]
+            self.params_by_group[param_group][param_name] = logic_list
 
     def create_parameters_iterables(self):
         if self.params_by_group["probe"]:
