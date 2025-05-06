@@ -1,0 +1,63 @@
+import ipywidgets as widgets
+import easy_gui_jupyter
+from dataclasses import dataclass, field, fields
+import numpy as np
+
+
+@dataclass
+class widgen:
+    int_minmaxstep = [0, 10, 1]
+    float_minmaxstep = [0, 10, 0.1]
+    layout_config = {'width': '50%'}
+
+    def gen_range_slider(
+        self,
+        slidertype="int",
+        minmaxstep=None,
+        options: list = None,
+        description="range_slider",
+        disabled=False,
+        orientation="horizontal",
+        layout=None,
+        **kwargs
+    ):
+        if layout is None:
+            layout = self.layout_config
+        if slidertype == "int":
+            if minmaxstep is None:
+                minmaxstep = self.int_minmaxstep
+            range_slider = widgets.IntRangeSlider(
+                value=[minmaxstep[0], minmaxstep[1]],
+                min=minmaxstep[0],
+                max=minmaxstep[1],
+                step=minmaxstep[2],
+                description=description,
+                disabled=False,
+                orientation=orientation,
+                layout=layout
+            )
+        if slidertype == "float":
+            if minmaxstep is None:
+                minmaxstep = self.float_minmaxstep
+            range_slider = widgets.FloatRangeSlider(
+                value=[minmaxstep[0], minmaxstep[1]],
+                min=minmaxstep[0],
+                max=minmaxstep[1],
+                step=minmaxstep[2],
+                description=description,
+                disabled=False,
+                orientation=orientation,
+                layout=layout
+            )
+        return range_slider
+
+    def gen_logicals(self, layout=None, **kwargs):
+        if layout is None:
+            layout = self.layout_config
+        logicals =  widgets.RadioButtons(
+            options=["True", "False", "Both"],
+            layout=layout, # If the items' names are long
+            description="",
+            disabled=False
+            )
+        return logicals
