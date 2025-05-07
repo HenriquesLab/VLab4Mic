@@ -157,6 +157,12 @@ class Sweep_gui(jupyter_gui):
                 option=option,
             )
             print(self.sweep_gen.params_by_group)
+        
+        def disable_widgets(b):
+            param_ranges["groups"].disabled = True
+            param_ranges["parms_per_group"].disabled = True
+            param_ranges["add_parameter"].disabled = True
+            param_ranges["done"].disabled = True
 
         parameter_group_names = list(self.param_settings.keys())
         # print(self.param_settings)
@@ -176,8 +182,12 @@ class Sweep_gui(jupyter_gui):
         param_ranges.add_button(
             "add_parameter", description="add parameter values to sweep"
         )
+        param_ranges.add_button(
+            "done", description="Done"
+        )
         # widget actions or updates
         param_ranges["groups"].observe(change_param_list, names="value")
         param_ranges["parms_per_group"].observe(change_param_widget, names="value")
         param_ranges["add_parameter"].on_click(set_param_range)
+        param_ranges["done"].on_click(disable_widgets)
         param_ranges.show()
