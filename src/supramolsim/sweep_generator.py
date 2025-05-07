@@ -153,7 +153,7 @@ class sweep_generator:
             self.reference_image_parameters)
     
 
-    def analysis_dataframe(self):
+    def gen_analysis_dataframe(self):
         self.analysis["dframe"], self.analysis["extended_dataframe"] = sweep.measurements_dataframe(
             measurement_vectors=self.analysis["measurements"],
             probe_parameters=self.probe_parameters,
