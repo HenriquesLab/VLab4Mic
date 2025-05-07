@@ -61,3 +61,25 @@ class widgen:
             disabled=False
             )
         return logicals
+
+    def gen_bound_int(self, value = 2, max = 100, **kwargs):
+        bound_int = widgets.BoundedIntText(
+            value=value,
+            min=0,
+            max=max,
+            step=1,
+            **kwargs
+        )
+        return bound_int
+    
+    def gen_box(self, widget1=None, widget2=None, orientation="horizontal", **kwargs):
+        items = [widget1, widget2]
+        if orientation == "horizontal":
+            box = widgets.HBox(items)
+        else:
+            box = widgets.VBox(items)
+        return box
+    
+    def gen_dropdown(self, options=None):
+        menu = widgets.Dropdown(options=options)
+        return menu
