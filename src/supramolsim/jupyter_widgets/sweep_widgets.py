@@ -1,3 +1,4 @@
+import supramolsim.utils
 from ..sweep_generator import sweep_generator
 import ipywidgets as widgets
 from .widget_generator import widgen
@@ -5,6 +6,7 @@ from .widgets_dataclass import jupyter_gui
 import easy_gui_jupyter
 import os
 import supramolsim
+from supramolsim.utils.io import yaml_functions
 import copy
 
 class Sweep_gui(jupyter_gui):
@@ -17,10 +19,14 @@ class Sweep_gui(jupyter_gui):
     models4probes = []
     probes_per_structure = {}
     probe_parameters = {}
+    # widget parameters
+    param_settings = None
     
     def __init__(self):
         super().__init__()
         self.vlab_probes = []
+        param_settings_file = os.path.join(self.config_directories["base"], "parameter_settings.yaml")
+        self.param_settings = yaml_functions.load_yaml(param_settings_file)
         for file in os.listdir(self.config_directories["probes"]):
             if os.path.splitext(file)[-1] == ".yaml" and "_template" not in file:
                 label_config_path = os.path.join(self.config_directories["probes"], file)
@@ -82,5 +88,19 @@ class Sweep_gui(jupyter_gui):
         ez_sweep["Select"].on_click(select_str)
         ez_sweep.show()
         
-    
+    def add_parameters_ranges(self):
+        param_ranges = easy_gui_jupyter.EasyGUI("ranges")
+        
+        def change_param_list(change):
+            new_options = list(self.param_settings[change.new].keys())
+            param_ranges["parms_per_group"].options = new_options
+
+        parameter_group_names = list(self.param_settings.keys())
+        #print(self.param_settings)
+        param_ranges.add_dropdown("groups", options = parameter_group_names)
+        param_ranges.add_dropdown(
+            "parms_per_group",
+            options = list(self.param_settings[param_ranges["groups"].value].keys()))
+        param_ranges["groups"].observe(change_param_list, names='value')
+        param_ranges.show()
 
