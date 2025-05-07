@@ -21,12 +21,14 @@ class Sweep_gui(jupyter_gui):
     probe_parameters = {}
     # widget parameters
     param_settings = None
-    
+    range_widgets = {}
+
     def __init__(self):
         super().__init__()
         self.vlab_probes = []
         param_settings_file = os.path.join(self.config_directories["base"], "parameter_settings.yaml")
         self.param_settings = yaml_functions.load_yaml(param_settings_file)
+        self._create_param_widgets()
         for file in os.listdir(self.config_directories["probes"]):
             if os.path.splitext(file)[-1] == ".yaml" and "_template" not in file:
                 label_config_path = os.path.join(self.config_directories["probes"], file)
@@ -46,6 +48,19 @@ class Sweep_gui(jupyter_gui):
                         else:
                             self.probes_per_structure[known_structures] = [lablname,]
     
+    def _create_param_widgets(self):
+        # for now try with probe
+        for parameter_name, settings in self.param_settings["probe"].items():
+            if settings["wtype"] == "float_slider":
+                slider = self.wgen.gen_range_slider(
+                    slidertype="float", 
+                    minmaxstep=settings["range"], 
+                    orientation="horizontal",
+                    description=parameter_name
+                    )
+                inttext = self.wgen.gen_bound_int(value=settings["nintervals"],
+                                                    description="points") 
+                self.range_widgets[parameter_name] = self.wgen.gen_box(slider, inttext)
     
     
     def select_structure(self):
@@ -90,10 +105,35 @@ class Sweep_gui(jupyter_gui):
         
     def add_parameters_ranges(self):
         param_ranges = easy_gui_jupyter.EasyGUI("ranges")
-        
         def change_param_list(change):
             new_options = list(self.param_settings[change.new].keys())
             param_ranges["parms_per_group"].options = new_options
+
+        def change_param_widget(change):
+            param_ranges[change.old].layout.display = 'None'
+            param_ranges[change.new].layout.display = 'inline-flex'
+
+        def set_param_range(b):
+            param_group = param_ranges["groups"].value
+            param_name = param_ranges["parms_per_group"].value
+            if self.param_settings[param_group][param_name]["wtype"] != "logical":
+                param_type = "numeric"
+                first, last = param_ranges[param_name].children[0].value
+                #last = param_ranges[param_name].children[0].value
+                option = param_ranges[param_name].children[1].value
+            else:
+                param_type = "logical"
+                first = None
+                last = None
+                option = param_ranges[param_name].value
+            self.sweep_gen._set_param_range(
+                param_group=param_group,
+                param_name=param_name,
+                param_type=param_type, 
+                first=first,
+                last=last, 
+                option=option)
+            print(self.sweep_gen.params_by_group)
 
         parameter_group_names = list(self.param_settings.keys())
         #print(self.param_settings)
@@ -101,6 +141,16 @@ class Sweep_gui(jupyter_gui):
         param_ranges.add_dropdown(
             "parms_per_group",
             options = list(self.param_settings[param_ranges["groups"].value].keys()))
+        # add the widgets to list
+        for wname, wgt in self.range_widgets.items():
+            param_ranges._widgets[wname] = wgt
+            param_ranges._widgets[wname].layout.display = "None"
+        # show the first one
+        param_ranges[param_ranges["parms_per_group"].value].layout.display = 'inline-flex'
+        param_ranges.add_button("add_parameter", description = "add parameter values to sweep")
+        # widget actions or updates
         param_ranges["groups"].observe(change_param_list, names='value')
+        param_ranges["parms_per_group"].observe(change_param_widget, names='value')
+        param_ranges["add_parameter"].on_click(set_param_range)
         param_ranges.show()
 
