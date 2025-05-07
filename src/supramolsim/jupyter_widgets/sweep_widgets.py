@@ -71,12 +71,13 @@ class Sweep_gui(jupyter_gui):
                         minmaxstep=settings["range"],
                         orientation="horizontal",
                         description=parameter_name,
+                        style={'description_width': 'initial'}
                     )
                     inttext = self.wgen.gen_bound_int(
-                        value=settings["nintervals"], description="points"
+                        value=settings["nintervals"], description="Total values"
                     )
                     self.range_widgets[parameter_name] = self.wgen.gen_box(
-                        slider, inttext
+                        slider, inttext, layout = widgets.Layout(width="70%")
                     )
                 elif settings["wtype"] == "logical":
                     self.range_widgets[parameter_name] = self.wgen.gen_logicals()
@@ -191,3 +192,17 @@ class Sweep_gui(jupyter_gui):
         param_ranges["add_parameter"].on_click(set_param_range)
         param_ranges["done"].on_click(disable_widgets)
         param_ranges.show()
+
+
+    def run_analysis(self):
+        analysis_widget = easy_gui_jupyter.EasyGUI("analysis")
+        def run_sweeps(b):
+            analysis_widget["Run"].disabled = True
+            self.sweep_gen.create_parameters_iterables()
+            self.sweep_gen.generate_reference_image()
+            self.sweep_gen.generate_acquisitions()
+        analysis_widget.add_button(
+            "Run", description="Run"
+        )
+        analysis_widget["Run"].on_click(run_sweeps)
+        analysis_widget.show()
