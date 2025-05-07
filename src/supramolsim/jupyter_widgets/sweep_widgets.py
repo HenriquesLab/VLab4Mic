@@ -49,18 +49,24 @@ class Sweep_gui(jupyter_gui):
                             self.probes_per_structure[known_structures] = [lablname,]
     
     def _create_param_widgets(self):
-        # for now try with probe
-        for parameter_name, settings in self.param_settings["probe"].items():
-            if settings["wtype"] == "float_slider":
-                slider = self.wgen.gen_range_slider(
-                    slidertype="float", 
-                    minmaxstep=settings["range"], 
-                    orientation="horizontal",
-                    description=parameter_name
-                    )
-                inttext = self.wgen.gen_bound_int(value=settings["nintervals"],
-                                                    description="points") 
-                self.range_widgets[parameter_name] = self.wgen.gen_box(slider, inttext)
+        for groupname, group_parameters in self.param_settings.items():
+            for parameter_name, settings in group_parameters.items():
+                if settings["wtype"] == "float_slider" or  settings["wtype"] == "int_slider":
+                    if settings["wtype"] == "float_slider":
+                        slidertype = "float"
+                    else:
+                        slidertype = "int"
+                    slider = self.wgen.gen_range_slider(
+                        slidertype=slidertype, 
+                        minmaxstep=settings["range"], 
+                        orientation="horizontal",
+                        description=parameter_name
+                        )
+                    inttext = self.wgen.gen_bound_int(value=settings["nintervals"],
+                                                        description="points") 
+                    self.range_widgets[parameter_name] = self.wgen.gen_box(slider, inttext)
+                elif settings["wtype"] == "logical":
+                    self.range_widgets[parameter_name] = self.wgen.gen_logicals()
     
     
     def select_structure(self):
