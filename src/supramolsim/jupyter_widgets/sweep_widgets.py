@@ -9,6 +9,7 @@ import supramolsim
 from supramolsim.utils.io import yaml_functions
 import copy
 
+
 class Sweep_gui(jupyter_gui):
     sweep_gen = sweep_generator()
     wgen = widgen()
@@ -26,16 +27,20 @@ class Sweep_gui(jupyter_gui):
     def __init__(self):
         super().__init__()
         self.vlab_probes = []
-        param_settings_file = os.path.join(self.config_directories["base"], "parameter_settings.yaml")
+        param_settings_file = os.path.join(
+            self.config_directories["base"], "parameter_settings.yaml"
+        )
         self.param_settings = yaml_functions.load_yaml(param_settings_file)
         self._create_param_widgets()
         for file in os.listdir(self.config_directories["probes"]):
             if os.path.splitext(file)[-1] == ".yaml" and "_template" not in file:
-                label_config_path = os.path.join(self.config_directories["probes"], file)
+                label_config_path = os.path.join(
+                    self.config_directories["probes"], file
+                )
                 label_parmeters = supramolsim.load_yaml(label_config_path)
                 lablname = os.path.splitext(file)[0]
-                #self.vlab_probes.append(lablname)
-                #self.probe_parameters[lablname] = label_parmeters
+                # self.vlab_probes.append(lablname)
+                # self.probe_parameters[lablname] = label_parmeters
                 if "Mock" in label_parmeters["known_targets"]:
                     self.models4probes.append(lablname)
                     self.probe_parameters[lablname] = label_parmeters
@@ -46,78 +51,89 @@ class Sweep_gui(jupyter_gui):
                         if known_structures in self.probes_per_structure.keys():
                             self.probes_per_structure[known_structures].append(lablname)
                         else:
-                            self.probes_per_structure[known_structures] = [lablname,]
-    
+                            self.probes_per_structure[known_structures] = [
+                                lablname,
+                            ]
+
     def _create_param_widgets(self):
         for groupname, group_parameters in self.param_settings.items():
             for parameter_name, settings in group_parameters.items():
-                if settings["wtype"] == "float_slider" or  settings["wtype"] == "int_slider":
+                if (
+                    settings["wtype"] == "float_slider"
+                    or settings["wtype"] == "int_slider"
+                ):
                     if settings["wtype"] == "float_slider":
                         slidertype = "float"
                     else:
                         slidertype = "int"
                     slider = self.wgen.gen_range_slider(
-                        slidertype=slidertype, 
-                        minmaxstep=settings["range"], 
+                        slidertype=slidertype,
+                        minmaxstep=settings["range"],
                         orientation="horizontal",
-                        description=parameter_name
-                        )
-                    inttext = self.wgen.gen_bound_int(value=settings["nintervals"],
-                                                        description="points") 
-                    self.range_widgets[parameter_name] = self.wgen.gen_box(slider, inttext)
+                        description=parameter_name,
+                    )
+                    inttext = self.wgen.gen_bound_int(
+                        value=settings["nintervals"], description="points"
+                    )
+                    self.range_widgets[parameter_name] = self.wgen.gen_box(
+                        slider, inttext
+                    )
                 elif settings["wtype"] == "logical":
                     self.range_widgets[parameter_name] = self.wgen.gen_logicals()
-    
-    
+
     def select_structure(self):
         ez_sweep_structure = easy_gui_jupyter.EasyGUI("structure")
         ez_sweep_structure.add_dropdown("structures", options=self.demo_structures)
         ez_sweep_structure.add_button("Select", description="Select")
+
         def select(b):
             self.selected_structure = self.structures_info_list[
                 ez_sweep_structure["structures"].value
             ]
             ez_sweep_structure["structures"].disabled = True
+
         ez_sweep_structure["Select"].on_click(select)
         ez_sweep_structure.show()
 
-    
     def select_probes_and_mods(self):
         ez_sweep = easy_gui_jupyter.EasyGUI("Sweep")
         probes2show = []
         if self.selected_structure:
             for p in self.probes_per_structure[self.selected_structure]:
-                probes2show.extend(copy.copy(self.probes_per_structure[self.selected_structure]))
-            #probes2show + copy.copy(self.probes_per_structure[self.selected_structure])
+                probes2show.extend(
+                    copy.copy(self.probes_per_structure[self.selected_structure])
+                )
+            # probes2show + copy.copy(self.probes_per_structure[self.selected_structure])
         probes2show.extend(copy.copy(self.models4probes))
-        #ez_sweep.add_dropdown("probes", description="Probes", options=self.vlab_probes)
-        ez_sweep._widgets["probes"]= widgets.SelectMultiple(
-            description="probes", 
-            options=probes2show
+        # ez_sweep.add_dropdown("probes", description="Probes", options=self.vlab_probes)
+        ez_sweep._widgets["probes"] = widgets.SelectMultiple(
+            description="probes", options=probes2show
         )
-        ez_sweep._widgets["modalities"]= widgets.SelectMultiple(
-            description="Modalities", 
-            options=self.modalities_default
+        ez_sweep._widgets["modalities"] = widgets.SelectMultiple(
+            description="Modalities", options=self.modalities_default
         )
+
         # on clicks
         def select_str(b):
             self.selected_modalities = ez_sweep["modalities"].value
             self.selected_probes = ez_sweep["probes"].value
             ez_sweep["modalities"].disabled = True
             ez_sweep["probes"].disabled = True
+
         ez_sweep.add_button("Select", description="Select")
         ez_sweep["Select"].on_click(select_str)
         ez_sweep.show()
-        
+
     def add_parameters_ranges(self):
         param_ranges = easy_gui_jupyter.EasyGUI("ranges")
+
         def change_param_list(change):
             new_options = list(self.param_settings[change.new].keys())
             param_ranges["parms_per_group"].options = new_options
 
         def change_param_widget(change):
-            param_ranges[change.old].layout.display = 'None'
-            param_ranges[change.new].layout.display = 'inline-flex'
+            param_ranges[change.old].layout.display = "None"
+            param_ranges[change.new].layout.display = "inline-flex"
 
         def set_param_range(b):
             param_group = param_ranges["groups"].value
@@ -125,7 +141,7 @@ class Sweep_gui(jupyter_gui):
             if self.param_settings[param_group][param_name]["wtype"] != "logical":
                 param_type = "numeric"
                 first, last = param_ranges[param_name].children[0].value
-                #last = param_ranges[param_name].children[0].value
+                # last = param_ranges[param_name].children[0].value
                 option = param_ranges[param_name].children[1].value
             else:
                 param_type = "logical"
@@ -135,28 +151,33 @@ class Sweep_gui(jupyter_gui):
             self.sweep_gen._set_param_range(
                 param_group=param_group,
                 param_name=param_name,
-                param_type=param_type, 
+                param_type=param_type,
                 first=first,
-                last=last, 
-                option=option)
+                last=last,
+                option=option,
+            )
             print(self.sweep_gen.params_by_group)
 
         parameter_group_names = list(self.param_settings.keys())
-        #print(self.param_settings)
-        param_ranges.add_dropdown("groups", options = parameter_group_names)
+        # print(self.param_settings)
+        param_ranges.add_dropdown("groups", options=parameter_group_names)
         param_ranges.add_dropdown(
             "parms_per_group",
-            options = list(self.param_settings[param_ranges["groups"].value].keys()))
+            options=list(self.param_settings[param_ranges["groups"].value].keys()),
+        )
         # add the widgets to list
         for wname, wgt in self.range_widgets.items():
             param_ranges._widgets[wname] = wgt
             param_ranges._widgets[wname].layout.display = "None"
         # show the first one
-        param_ranges[param_ranges["parms_per_group"].value].layout.display = 'inline-flex'
-        param_ranges.add_button("add_parameter", description = "add parameter values to sweep")
+        param_ranges[param_ranges["parms_per_group"].value].layout.display = (
+            "inline-flex"
+        )
+        param_ranges.add_button(
+            "add_parameter", description="add parameter values to sweep"
+        )
         # widget actions or updates
-        param_ranges["groups"].observe(change_param_list, names='value')
-        param_ranges["parms_per_group"].observe(change_param_widget, names='value')
+        param_ranges["groups"].observe(change_param_list, names="value")
+        param_ranges["parms_per_group"].observe(change_param_widget, names="value")
         param_ranges["add_parameter"].on_click(set_param_range)
         param_ranges.show()
-
