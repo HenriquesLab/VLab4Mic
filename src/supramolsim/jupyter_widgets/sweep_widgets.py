@@ -104,9 +104,7 @@ class Sweep_gui(jupyter_gui):
                 probes2show.extend(
                     copy.copy(self.probes_per_structure[self.selected_structure])
                 )
-            # probes2show + copy.copy(self.probes_per_structure[self.selected_structure])
         probes2show.extend(copy.copy(self.models4probes))
-        # ez_sweep.add_dropdown("probes", description="Probes", options=self.vlab_probes)
         ez_sweep._widgets["probes"] = widgets.SelectMultiple(
             description="probes", options=probes2show
         )
@@ -142,7 +140,6 @@ class Sweep_gui(jupyter_gui):
             if self.param_settings[param_group][param_name]["wtype"] != "logical":
                 param_type = "numeric"
                 first, last = param_ranges[param_name].children[0].value
-                # last = param_ranges[param_name].children[0].value
                 option = param_ranges[param_name].children[1].value
             else:
                 param_type = "logical"
@@ -166,7 +163,6 @@ class Sweep_gui(jupyter_gui):
             param_ranges["done"].disabled = True
 
         parameter_group_names = list(self.param_settings.keys())
-        # print(self.param_settings)
         param_ranges.add_dropdown("groups", options=parameter_group_names)
         param_ranges.add_dropdown(
             "parms_per_group",
