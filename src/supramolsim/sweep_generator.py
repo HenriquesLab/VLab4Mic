@@ -25,7 +25,7 @@ class sweep_generator:
     reference_structure = "1XI5"
     reference_probe = "NHS_ester"
     reference_probe_parameters = {"labelling_efficiency": 1.0}
-    # outputs
+    ####  outputs
     reference_virtual_sample = None
     reference_virtual_sample_params = None
     reference_image = None
@@ -33,6 +33,11 @@ class sweep_generator:
     virtual_samples_parameters = None
     acquisition_outputs = None
     acquisition_outputs_parameters = None
+    # analysis
+    analysis = {}
+    analysis["measurements"] = None
+    analysis["inputs"] = None
+    analysis["extended_dataframe"] = None
 
     def __init__(self):
         self.params_by_group["probe"] = {}
@@ -139,3 +144,21 @@ class sweep_generator:
             self.acquisition_parameters = sweep.acquisition_parameters_sweep(
                 **self.params_by_group["acquisition"]
             )
+
+    def run_analysis(self):
+        self.analysis["measurements"], self.analysis["inputs"] = sweep.analyse_sweep_single_reference(
+            self.acquisition_outputs, 
+            self.acquisition_outputs_parameters, 
+            self.reference_image[0], 
+            self.reference_image_parameters)
+    
+
+    def analysis_dataframe(self):
+        self.analysis["dframe"], self.analysis["extended_dataframe"] = sweep.measurements_dataframe(
+            measurement_vectors=self.analysis["measurements"],
+            probe_parameters=self.probe_parameters,
+            p_defects=self.defect_parameters,
+            sample_params=self.vsample_parameters,
+            mod_acq=self.acquisition_parameters,
+            mod_names=self.modalities,
+            mod_params=self.modality_parameters)
