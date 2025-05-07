@@ -34,7 +34,8 @@ class widgen:
                 description=description,
                 disabled=False,
                 orientation=orientation,
-                layout=layout
+                layout=layout,
+                **kwargs
             )
         if slidertype == "float":
             if minmaxstep is None:
@@ -47,7 +48,8 @@ class widgen:
                 description=description,
                 disabled=False,
                 orientation=orientation,
-                layout=layout
+                layout=layout,
+                **kwargs
             )
         return range_slider
 
@@ -75,9 +77,9 @@ class widgen:
     def gen_box(self, widget1=None, widget2=None, orientation="horizontal", **kwargs):
         items = [widget1, widget2]
         if orientation == "horizontal":
-            box = widgets.HBox(items)
+            box = widgets.HBox(items, **kwargs)
         else:
-            box = widgets.VBox(items)
+            box = widgets.VBox(items, **kwargs)
         return box
     
     def gen_dropdown(self, options=None):
