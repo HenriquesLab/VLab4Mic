@@ -13,7 +13,7 @@ def test_minfield_with_particles(configuration_directory):
     structure, structure_param = workflows.load_structure(
         structure_id, configuration_directory
     )
-    label_id = "Mock_linker"
+    label_id = "Linker"
     target_info = dict(
         type="Sequence",
         value="EQATETQ"
@@ -43,7 +43,7 @@ def test_nparticles_constraints(configuration_directory):
     structure, structure_param = workflows.load_structure(
         structure_id, configuration_directory
     )
-    label_id = "Mock_linker"
+    label_id = "Linker"
     target_info = dict(
         type="Sequence",
         value="EQATETQ"

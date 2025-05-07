@@ -7,19 +7,19 @@ target_info1 = dict(type="Sequence", value="EQATETQ")
 fluorophore_id1 = "AF647"
 lab_eff1 = 1
 linker1 = data_format.structural_format.label_builder_format(
-    "Mock_linker", fluorophore_id1, lab_eff1, target_info1
+    "Linker", fluorophore_id1, lab_eff1, target_info1
 )
 antibody = data_format.structural_format.label_builder_format(
-    "Mock_antibody", fluorophore_id1, lab_eff1, target_info1, as_linker=False
+    "Antibody", fluorophore_id1, lab_eff1, target_info1, as_linker=False
 )
 antibody_as_linker = data_format.structural_format.label_builder_format(
-    "Mock_antibody", fluorophore_id1, lab_eff1, target_info1, as_linker=True
+    "Antibody", fluorophore_id1, lab_eff1, target_info1, as_linker=True
 )
 primaries_1XI5 = [linker1, antibody, antibody_as_linker]
 
 # parameters for sequential labelling
 primaries_1X15_linkers = [linker1, antibody_as_linker]
-secondaries_ids = ["Mock_linker", "Mock_antibody"]
+secondaries_ids = ["Linker", "Antibody"]
 
 
 @pytest.mark.parametrize("probe_primary", primaries_1XI5)
@@ -62,7 +62,7 @@ def test_linker_secondary(configuration_directory):
     structure, structure_param = workflows.load_structure(
         structure_id, configuration_directory
     )
-    label_id1 = "Mock_linker"
+    label_id1 = "Linker"
     target_info1 = dict(type="Sequence", value="EQATETQ")
     fluorophore_id1 = "AF647"
     lab_eff1 = 1
@@ -70,8 +70,8 @@ def test_linker_secondary(configuration_directory):
         label_id1, fluorophore_id1, lab_eff1, target_info1
     )
 
-    label_id2 = "Mock_antibody"
-    target_info2 = dict(type="Primary", value="Mock_linker")
+    label_id2 = "Antibody"
+    target_info2 = dict(type="Primary", value="Linker")
     fluorophore_id2 = "AF488"
     lab_eff2 = 1
     tmp_label2 = data_format.structural_format.label_builder_format(
@@ -91,7 +91,7 @@ def test_primary_secondary(configuration_directory):
     structure, structure_param = workflows.load_structure(
         structure_id, configuration_directory
     )
-    label_id1 = "Mock_antibody"
+    label_id1 = "Antibody"
     target_info1 = dict(type="Sequence", value="EQATETQ")
     fluorophore_id1 = "AF647"
     lab_eff1 = 1
@@ -99,8 +99,8 @@ def test_primary_secondary(configuration_directory):
         label_id1, fluorophore_id1, lab_eff1, target_info1, as_linker=True
     )
 
-    label_id2 = "Mock_antibody"
-    target_info2 = dict(type="Primary", value="Mock_antibody")
+    label_id2 = "Antibody"
+    target_info2 = dict(type="Primary", value="Antibody")
     fluorophore_id2 = "AF488"
     lab_eff2 = 1
     tmp_label2 = data_format.structural_format.label_builder_format(
@@ -119,14 +119,14 @@ def test_primary_secondary_fromExperiment():
     sample, test_experiment = experiments.generate_virtual_sample(clear_probes=True)
     test_experiment.remove_probes()
     test_experiment.add_probe(
-        probe_name = "Mock_linker",
+        probe_name = "Linker",
         probe_target_type = "Sequence",
         probe_target_value = "EQATETQ",
         )
     test_experiment.add_probe(
-        probe_name = "Mock_antibody",
+        probe_name = "Antibody",
         probe_target_type = "Primary",
-        probe_target_value = "Mock_linker")
+        probe_target_value = "Linker")
     test_experiment.build()
     assert test_experiment.particle is not None
     assert test_experiment.exported_coordinate_field['field_emitters'] != {}

@@ -1,4 +1,4 @@
-label_name: Mock_linker
+label_name: Linker
 target:
   type:
   value:

@@ -29,8 +29,8 @@ def test_sweep_vasmples_directprobes():
 
 
 indirectprobes = [
-    "Mock_antibody",
-    "Mock_linker",
+    "Antibody",
+    "Linker",
 ]
 labelling_efficiency = np.linspace(0.5, 1, 3)
 distance_to_epitope = np.linspace(10, 200, 3)
@@ -94,7 +94,7 @@ def test_parameter_generators():
         labelling_efficiency = 1,
         distance_to_epitope = 0
     )
-    ref_vsample, ref_params = sweep.generate_global_reference_sample(structure=structures[0], probe="Mock_linker", probe_parameters=ref_probe_parameters)
+    ref_vsample, ref_params = sweep.generate_global_reference_sample(structure=structures[0], probe="Linker", probe_parameters=ref_probe_parameters)
     ref_image, ref_image_pars = sweep.generate_global_reference_modality(reference_vsample=ref_vsample, reference_vsample_params=ref_params)
     myexperiment, vsmpl_output, vsampl_pars = sweep.sweep_vasmples(
         structures=structures,

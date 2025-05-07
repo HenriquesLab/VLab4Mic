@@ -4,6 +4,7 @@ import os
 from Bio.PDB import PDBParser, MMCIFParser, PPBuilder, CaPPBuilder
 from Bio.PDB.MMCIF2Dict import MMCIF2Dict
 import matplotlib.pyplot as plt
+import random
 
 from ..utils.transform import cif_builder  # Verified
 from ..utils.visualisation.matplotlib_plots import (
@@ -31,6 +32,7 @@ class MolecularStructureParser:
         self.ch_builder_max_dist = 5
         self.ppgen = None
         self.CIFdictionary = None
+        self.protein_names = None
         self.assembly_operations = None
         self.chains_dict = None
         self.assembly_refpt = None
@@ -96,6 +98,7 @@ class MolecularStructureParser:
     def generate_MMCIF_dictionary(self):
         # generate the dictionary with all field parsed from CIF file
         self.CIFdictionary = MMCIF2Dict(self.source_file)
+        self._gen_protein_names()
 
     def get_atoms_infile(self):
         """
@@ -131,6 +134,43 @@ class MolecularStructureParser:
         self.chains_dict = seq_chains_dict
         # nchains = len(list(seq_chains_dict.keys()))
         # print(f"file contains {nchains} chains")
+    
+    def _gen_protein_names(self):
+        protein_name = dict()
+        chain_name = self.CIFdictionary["_entity.pdbx_description"]
+        chain_number = self.CIFdictionary["_entity.id"]
+        strand_id = self.CIFdictionary["_entity_poly.pdbx_strand_id"]
+        for  name, number, strands in zip(chain_name, chain_number, strand_id):
+            protein_name[name] = {"number": number, "strand_id": strands}
+        self.protein_names = protein_name
+    
+    def list_protein_names(self):
+        return list(self.protein_names.keys())
+
+    def _random_substring(string, size=5):
+        if len(string) > size:
+            start = random.randint(0, len(string) - (size + 1))
+            end = start + size
+            return string[start:end]
+
+    def _sequence_substring(self, string, size=5, position="random"):
+        if position == "random":
+            return self._random_substring(string, size)
+        elif position == "cterminal":
+            start = len(string) - (size + 1)
+            return string[start:(len(string)-1)]
+        elif position == "nterminal":
+            end = size 
+            return string[0:end]
+
+    def get_peptide_motif(self, chain_name=None, chain_id=None, size = 5, position="cterminal"):
+        if chain_name is None:
+            chains_in_structure = list(self.protein_names.keys())
+            chain_name = random.choice(chains_in_structure)
+        if chain_id is None:
+            chain_id = random.choice(self.protein_names[chain_name]["strand_id"].split(","))
+        chain_sequence = self.chains_dict[chain_id]
+        return chain_name, chain_id, position, self._sequence_substring(chain_sequence, size=size, position=position)
 
     def generate_assemmbly_operations(self):
         """

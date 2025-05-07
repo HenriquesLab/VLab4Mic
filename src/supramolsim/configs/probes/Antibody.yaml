@@ -1,32 +1,32 @@
-label_name: Mock_GFP
+label_name: Antibody
 target:
   type:
   value:
 known_targets:
   - Mock
 model:
-  ID: 6YLQ
+  ID: 1HZH
   format: CIF
   database: RCSB
 binding:
   efficiency: 1
   orientation: [0,0,1]
   wobble_range:
-    theta:
+    theta: 10
     phi:
   distance:
     to_target: 10
     between_targets: estimate
-  paratope: KGEEL
+  paratope: EFSAKF
 conjugation_sites:
   target:
     type: Atom_residue
     value:
-      atoms: C1
-      residues: CRO
+      atoms: CA
+      residues: LYS
   efficiency: 1
 epitope: # for secondary
   target:
-    type: 
-    value: 
+    type: Sequence
+    value: LSPGK
   normals:
