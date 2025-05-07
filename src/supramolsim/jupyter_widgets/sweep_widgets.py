@@ -5,14 +5,17 @@ from .widgets_dataclass import jupyter_gui
 import easy_gui_jupyter
 import os
 import supramolsim
+import copy
 
 class Sweep_gui(jupyter_gui):
     sweep_gen = sweep_generator()
     wgen = widgen()
     selected_structure = None
+    selected_probes = None
     selected_modalities = None
     vlab_probes = []
-    model_probes = []
+    models4probes = []
+    probes_per_structure = {}
     probe_parameters = {}
     
     def __init__(self):
@@ -26,11 +29,16 @@ class Sweep_gui(jupyter_gui):
                 #self.vlab_probes.append(lablname)
                 #self.probe_parameters[lablname] = label_parmeters
                 if "Mock" in label_parmeters["known_targets"]:
-                    self.model_probes.append(lablname)
+                    self.models4probes.append(lablname)
                     self.probe_parameters[lablname] = label_parmeters
                 else:
                     self.vlab_probes.append(lablname)
                     self.probe_parameters[lablname] = label_parmeters
+                    for known_structures in label_parmeters["known_targets"]:
+                        if known_structures in self.probes_per_structure.keys():
+                            self.probes_per_structure[known_structures].append(lablname)
+                        else:
+                            self.probes_per_structure[known_structures] = [lablname,]
     
     
     
@@ -47,12 +55,18 @@ class Sweep_gui(jupyter_gui):
         ez_sweep_structure.show()
 
     
-    def static_selection(self):
+    def select_probes_and_mods(self):
         ez_sweep = easy_gui_jupyter.EasyGUI("Sweep")
+        probes2show = []
+        if self.selected_structure:
+            for p in self.probes_per_structure[self.selected_structure]:
+                probes2show.extend(copy.copy(self.probes_per_structure[self.selected_structure]))
+            #probes2show + copy.copy(self.probes_per_structure[self.selected_structure])
+        probes2show.extend(copy.copy(self.models4probes))
         #ez_sweep.add_dropdown("probes", description="Probes", options=self.vlab_probes)
         ez_sweep._widgets["probes"]= widgets.SelectMultiple(
-            description="Modalities", 
-            options=self.vlab_probes
+            description="probes", 
+            options=probes2show
         )
         ez_sweep._widgets["modalities"]= widgets.SelectMultiple(
             description="Modalities", 
@@ -60,8 +74,8 @@ class Sweep_gui(jupyter_gui):
         )
         # on clicks
         def select_str(b):
-
             self.selected_modalities = ez_sweep["modalities"].value
+            self.selected_probes = ez_sweep["probes"].value
             ez_sweep["modalities"].disabled = True
             ez_sweep["probes"].disabled = True
         ez_sweep.add_button("Select", description="Select")
