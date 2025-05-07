@@ -191,16 +191,16 @@ class Sweep_gui(jupyter_gui):
 
 
     def generate_simulations(self):
-        analysis_widget = easy_gui_jupyter.EasyGUI("analysis")
+        simulate = easy_gui_jupyter.EasyGUI("analysis")
         def run_sweeps(b):
-            analysis_widget["Run"].disabled = True
+            simulate["Run"].disabled = True
             self.sweep_gen.create_parameters_iterables()
             self.sweep_gen.generate_acquisitions()
-        analysis_widget.add_button(
+        simulate.add_button(
             "Run", description="Run"
         )
-        analysis_widget["Run"].on_click(run_sweeps)
-        analysis_widget.show()
+        simulate["Run"].on_click(run_sweeps)
+        simulate.show()
 
     def set_reference(self):
         reference = easy_gui_jupyter.EasyGUI("reference")
@@ -214,3 +214,14 @@ class Sweep_gui(jupyter_gui):
         reference["set"].on_click(gen_ref)
         reference.show()
         
+    def analyse_sweep(self):
+        analysis_widget = easy_gui_jupyter.EasyGUI("reference")
+        def analyse_sweep(b):
+            analysis_widget["analyse"].disabled = True
+            self.sweep_gen.run_analysis()
+            self.sweep_gen.gen_analysis_dataframe()
+        analysis_widget.add_button(
+            "analyse", description="Run analysis"
+        )
+        analysis_widget["analyse"].on_click(analyse_sweep)
+        analysis_widget.show()
