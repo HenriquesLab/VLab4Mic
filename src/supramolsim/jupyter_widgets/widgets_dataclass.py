@@ -893,7 +893,12 @@ class jupyter_gui:
     def set_image_modalities(self, mode = "default"):
         imager_created = False
         modalities_options = []
-        modalities_list = self.my_experiment.local_modalities_names
+        if mode == "default":
+            modalities_list = self.modalities_default
+        else:
+            modalities_list = self.my_experiment.local_modalities_names
+        modalities_options = copy.copy(modalities_list)
+        modalities_options.append("All")
         imaging_gui = easy_gui_jupyter.EasyGUI("imaging", width="70%")
         selected_mods = []
         modality_info = {}
@@ -907,14 +912,6 @@ class jupyter_gui:
                 modalities_id_list=modalities_list,
                 config_dir=self.config_directories["base"],
             )
-        if mode == "default":
-            for mode_name in modalities_list:
-                if mode_name in self.modalities_default:
-                    modalities_options.append(mode_name)
-            modalities_options.append("All")
-        else:
-            modalities_options = copy.copy(modalities_list)
-            modalities_options.append("All")
 
         def add_mod(b):
             if "All" == imaging_gui["modalities_dropdown"].value:
@@ -1134,6 +1131,7 @@ class jupyter_gui:
         acq_per_modalities = dict()
         for mods_selected in self.my_experiment.selected_mods.keys():
             acq_per_modalities[mods_selected] = "Default"
+        output_str = ""
         output_str = '<br>'.join(f"{name}: {val}" for name, val in self.my_experiment.selected_mods.items())
         acquisition_gui._widgets["message"] = widgets.HTML(value = output_str)
         selected_mods = list(self.my_experiment.imaging_modalities.keys())
