@@ -232,6 +232,11 @@ class Sweep_gui(jupyter_gui):
         analysis_widget._widgets["reps"] = self.wgen.gen_bound_int(
                         value=3, description="Repeats per combination"
                     )
+        analysis_widget.add_dropdown(
+            "metric", options=["SSIM",], 
+            description="Metric for image comparison",
+            disabled = True
+        )
         analysis_widget.add_button(
             "analyse", description="Run analysis"
         )
