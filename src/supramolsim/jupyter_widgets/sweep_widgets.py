@@ -17,7 +17,7 @@ class Sweep_gui(jupyter_gui):
     selected_probes = None
     selected_modalities = None
     vlab_probes = []
-    models4probes = []
+    targetless_probes = []
     probes_per_structure = {}
     probe_parameters = {}
     # widget parameters
@@ -42,10 +42,13 @@ class Sweep_gui(jupyter_gui):
                 # self.vlab_probes.append(lablname)
                 # self.probe_parameters[lablname] = label_parmeters
                 if "Mock" in label_parmeters["known_targets"]:
-                    self.models4probes.append(lablname)
+                    self.targetless_probes.append(lablname)
+                    self.probe_parameters[lablname] = label_parmeters
+                if "Generic" in label_parmeters["known_targets"]:
+                    self.vlab_probes.append(lablname)
                     self.probe_parameters[lablname] = label_parmeters
                 else:
-                    self.vlab_probes.append(lablname)
+                    #self.vlab_probes.append(lablname)
                     self.probe_parameters[lablname] = label_parmeters
                     for known_structures in label_parmeters["known_targets"]:
                         if known_structures in self.probes_per_structure.keys():
@@ -96,15 +99,19 @@ class Sweep_gui(jupyter_gui):
         ez_sweep_structure["Select"].on_click(select)
         ez_sweep_structure.show()
 
-    def select_probes_and_mods(self):
+    def select_probes_and_mods(self, include_probe_models=False):
         ez_sweep = easy_gui_jupyter.EasyGUI("Sweep")
         probes2show = []
         if self.selected_structure:
-            for p in self.probes_per_structure[self.selected_structure]:
-                probes2show.extend(
-                    copy.copy(self.probes_per_structure[self.selected_structure])
-                )
-        probes2show.extend(copy.copy(self.models4probes))
+            probe_list = self.probes_per_structure[self.selected_structure]
+            probes2show.extend(
+                copy.copy(probe_list)
+            )
+        probes2show.extend(
+                copy.copy(self.vlab_probes)
+            )
+        if include_probe_models:
+            probes2show.extend(copy.copy(self.targetless_probes))
         ez_sweep._widgets["probes"] = widgets.SelectMultiple(
             description="probes", options=probes2show
         )
