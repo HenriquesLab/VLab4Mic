@@ -634,7 +634,7 @@ class MolecularStructureParser:
         )
         if axesoff:
             ax.set_axis_off()
-        fig.show
+        return fig
 
     def create_instance_builder(self, write=False, savingdir=None):
         """
