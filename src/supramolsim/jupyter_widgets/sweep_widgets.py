@@ -213,9 +213,23 @@ class Sweep_gui(jupyter_gui):
         reference = easy_gui_jupyter.EasyGUI("reference")
         def gen_ref(b):
             reference["set"].disabled = True
-            self.reference_structure = self.selected_structure
+            self.reference_structure = self.select_structure
             self.sweep_gen.generate_reference_image()
-
+        reference.add_dropdown(
+            "structure", options=["same for parameter sweep",], 
+            description="Structure",
+            disabled = True
+        )
+        reference.add_dropdown(
+            "probe", options=["NHS_ester",], 
+            description="Probe",
+            disabled = True
+        )
+        reference.add_dropdown(
+            "modality", options=["Reference",], 
+            description="Modality",
+            disabled = True
+        )
         reference.add_button(
             "set", description="Set reference"
         )
