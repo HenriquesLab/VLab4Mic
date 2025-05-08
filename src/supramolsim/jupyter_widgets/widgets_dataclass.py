@@ -367,7 +367,7 @@ class jupyter_gui:
                     self.my_experiment.add_probe(**values)
                 self.my_experiment.build(modules=["particle",])
                 probe_names = list(self.my_experiment.probe_parameters.keys())
-                display(probe_names)
+                #display(probe_names)
                 labels_gui["Label"].disabled = True
                 labels_gui["Add"].disabled = True
                 labels_gui["Add_mock"].disabled = True
@@ -376,40 +376,36 @@ class jupyter_gui:
 
         # buttons to select preset probes or customise
         def activate_demos(b):
-            plt.clf()
-            clear_output()
-            for key, val in probe_widgets.items():
-                probe_widgets[key] = False
-            def get_info(labels_gui):
-                def show_probe_info(message, probe_name):
-                        probe_type = probe_parameters[probe_name]["target"]["type"]
-                        probe_value = probe_parameters[probe_name]["target"]["value"]
-                        if probe_type == "Sequence":
-                            print(f"This probe will label the amino acid sequence: {probe_value}")
-                        elif probe_type == "Atom_residue":
-                            print(f"This probe will label all available residue(s): {probe_value['residues']}")
-                        elif probe_type == "Primary":
-                            print(f"This is a secondary probe that labels this probe: {probe_value}")
-
-                widgets.interact(
-                    show_probe_info, message=labels_gui["label_1"],  probe_name=labels_gui["label_dropdown"]
-                )
-            get_info(labels_gui)
-            
-            #probe_widgets["label_dropdown"] = True
-            #probe_widgets["fluo_dropdown"] = True
+            #plt.clf()
+            #clear_output()
+            probe_widgets["label_dropdown"] = True
+            probe_widgets["label_message"] = True
+            probe_widgets["label_1"] = True
             probe_widgets["Labelling_efficiency"] = True
             probe_widgets["Add"] = True
             probe_widgets["label_7"] = True
             probe_widgets["Label"] = True
-            for widgetname, value in probe_widgets.items():
-                if value:
-                    display(labels_gui[widgetname])
+            self._update_widgets(labels_gui, probe_widgets)
+            
+            #probe_widgets["label_dropdown"] = True
+            #probe_widgets["fluo_dropdown"] = True
+
+        def update_label_message(change):
+            probe_type = probe_parameters[change.new]["target"]["type"]
+            probe_value = probe_parameters[change.new]["target"]["value"]
+            if probe_type == "Sequence":
+                #print(f"This probe will label the amino acid sequence: {probe_value}")
+                new_message = "This probe will label the amino acid sequence: " + str(probe_value)
+            elif probe_type == "Atom_residue":
+                new_message = "This probe will label all available residue(s): " + str(probe_value['residues'])
+            elif probe_type == "Primary":
+                new_message = "This is a secondary probe that labels this probe: " + str(probe_value)
+            labels_gui["label_message"].value = new_message
 
         def activate_custom(b):
-            probe_widgets = dict()
-            plt.clf()
-            clear_output()
+            #probe_widgets = dict()
+            #plt.clf()
+            #clear_output()
             for key, val in probe_widgets.items():
                 probe_widgets[key] = False
             probe_widgets["label_3"] = True
@@ -432,9 +428,7 @@ class jupyter_gui:
             probe_widgets["wobble_theta"] = True
             probe_widgets["Add_mock"] = True
             probe_widgets["Label"] = True
-            for widgetname, value in probe_widgets.items():
-                if value:
-                    display(labels_gui[widgetname])
+            self._update_widgets(labels_gui, probe_widgets)
         
         def random_sequence(b):
             protein_name, _1, site, sequence = self.my_experiment.structure.get_peptide_motif()
@@ -455,7 +449,10 @@ class jupyter_gui:
         # DEMOS
         labels_gui.add_label("Structure specific labels")
         if self.my_experiment.structure is not None:
-            labels_gui.add_dropdown("label_dropdown", options=vlab_probes)
+            labels_gui.add_dropdown("label_dropdown", options=vlab_probes, value=vlab_probes[1])
+            labels_gui._widgets["label_message"] = widgets.HTML(value = "")
+            labels_gui["label_dropdown"].observe(update_label_message, names='value')
+            labels_gui["label_dropdown"].value = vlab_probes[0]
             labels_gui.add_dropdown("fluo_dropdown", options=fluorophores_list)
             labels_gui.add_float_slider(
                 "Labelling_efficiency",
@@ -554,11 +551,23 @@ class jupyter_gui:
         labels_gui["Clear"].on_click(clear)
         labels_gui["Show"].on_click(show)
         labels_gui["Label"].on_click(label_struct)
+        probe_widgets = {}
+        for wgt in labels_gui._widgets.keys():
+            probe_widgets[wgt] = False
+            labels_gui._widgets[wgt].layout = widgets.Layout(width="50%", display="None")
+        labels_gui.show()
+        probe_widgets["Demos"] = True
+        probe_widgets["Customise"] = True
         if self.my_experiment.structure is None:
             print("No structure has been loaded")
         else:
             self.my_experiment.remove_probes()
-            display(labels_gui["Demos"], labels_gui["Customise"])
+            probe_widgets["Demos"] = True
+            probe_widgets["Customise"] = True
+            self._update_widgets(labels_gui, probe_widgets)
+            probe_widgets["Demos"] = False
+            probe_widgets["Customise"] = False
+            #display(labels_gui["Demos"], labels_gui["Customise"])
 
     def refine_model_gui(self):
         width = "50%"

@@ -49,7 +49,7 @@ class MolecularStructureParser:
         self.axis = dict(pivot=None, direction=None)
 
     def _clear_labels(self):
-        print("labels cleared")
+        #print("labels cleared")
         self.label_targets = dict()
         self.label_normals = None
         temp_ = self.plotting_params["assemblyatoms"]
