@@ -497,7 +497,7 @@ class Field:
         return dict(self.fluorophre_emitters)
 
     # methods for visualisation
-    def show_field(self, fluo_type="all", view_init=[30, 0, 0], initial_pos=True):
+    def show_field(self, fluo_type="all", view_init=[30, 0, 0], initial_pos=True, return_fig=False):
         dimension_sizes = self.get_field_param("dimension_sizes")
         xx, yy = np.meshgrid(
             range(int(dimension_sizes[0])), range(int(dimension_sizes[1]))
@@ -540,7 +540,10 @@ class Field:
             [ub - lb for lb, ub in (getattr(ax, f"get_{a}lim")() for a in "xyz")]
         )
         ax.view_init(elev=view_init[0], azim=view_init[1], roll=view_init[2])
-        fig.show
+        if return_fig:
+            return fig
+        else:
+            fig.show()
 
     def expand_isotropically(self, factor):
         if factor <= 1:
