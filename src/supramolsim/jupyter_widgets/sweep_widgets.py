@@ -205,6 +205,7 @@ class Sweep_gui(jupyter_gui):
         reference = easy_gui_jupyter.EasyGUI("reference")
         def gen_ref(b):
             reference["set"].disabled = True
+            self.reference_structure = self.selected_structure
             self.sweep_gen.generate_reference_image()
 
         reference.add_button(
