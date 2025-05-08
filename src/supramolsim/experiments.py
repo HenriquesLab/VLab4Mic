@@ -69,18 +69,18 @@ class ExperimentParametrisation:
         self.local_modalities_parameters = modality_parameters
         #self.imaging_modalities = dict()
 
-    def add_modality(self, modality_name, **kwargs):
+    def add_modality(self, modality_name, save=False, **kwargs):
         if modality_name in self.local_modalities_names:
             self.imaging_modalities[modality_name] = copy.deepcopy(self.local_modalities_parameters[modality_name])
             for param, value in kwargs.items():
                 self.imaging_modalities[modality_name][param] = value
-            self.set_modality_acq(modality_name)
+            self.set_modality_acq(modality_name, save=save)
         else:
             print(f"Modality {modality_name} not found in demo modalities. Using Widefield params as template to create new.")
             self.imaging_modalities[modality_name] = copy.deepcopy(self.local_modalities_parameters["Widefield"])
             for param, value in kwargs.items():
                 self.imaging_modalities[modality_name][param] = value
-            self.set_modality_acq(modality_name)
+            self.set_modality_acq(modality_name, save=save)
 
     def update_modality(self,
                         modality_name,
@@ -133,6 +133,11 @@ class ExperimentParametrisation:
             )
         else:
             print("Modality not selected")
+    
+    def reset_to_defaults(self, module = "acquisitions", **kwargs):
+        if module == "acquisitions":
+            for mod_name in self.selected_mods.keys():
+                self.set_modality_acq(mod_name, **kwargs)
 
     def _build_structure(self, keep=True):
         if self.structure_id:

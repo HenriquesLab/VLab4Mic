@@ -917,12 +917,14 @@ class jupyter_gui:
             if "All" == imaging_gui["modalities_dropdown"].value:
                 for mod_names in modalities_list:
                     self.my_experiment.add_modality(
-                        modality_name=mod_names
+                        modality_name=mod_names,
+                        save=True
                     )
                 imaging_gui["Add"].disabled=True
             else:
                 self.my_experiment.add_modality(
-                    modality_name=imaging_gui["modalities_dropdown"].value
+                    modality_name=imaging_gui["modalities_dropdown"].value,
+                    save=True
                 )
             
             imaging_gui["label_4"].value = str(list(self.my_experiment.imaging_modalities.keys()))
@@ -1035,7 +1037,6 @@ class jupyter_gui:
             mod_id = acquisition_gui["modalities_dropdown"].value
             exp_time = acquisition_gui["Exposure"].value
             noise = acquisition_gui["Noise"].value
-            save = True
             nframes = acquisition_gui["Frames"].value
             if acquisition_gui["Channels"].value:
                 channels = []
@@ -1050,7 +1051,7 @@ class jupyter_gui:
                 modality_name=mod_id,
                 exp_time=exp_time,
                 noise=noise,
-                save=save,
+                save=True,
                 nframes=nframes,
                 channels=channels
             )
@@ -1124,6 +1125,9 @@ class jupyter_gui:
 
         def clear(b):
             print("Acquisition parameters cleared")
+            self.my_experiment.reset_to_defaults(module="acquisitions",save=True)
+            output_str = '<br>'.join(f"{name}: {val}" for name, val in self.my_experiment.selected_mods.items())
+            acquisition_gui["message"].value = output_str
             acquisition_gui.save_settings()
 
         acquisition_gui.add_label("Set acquisition parameters")
@@ -1149,7 +1153,7 @@ class jupyter_gui:
             remember_value=True,
         )
         acquisition_gui._widgets["Exposure"] = widgets.BoundedFloatText(
-            value=0.005,
+            value=0.001,
             min=0.000000,
             step=0.0001,
             description="exposure (sec)",
@@ -1159,13 +1163,13 @@ class jupyter_gui:
         )
         acquisition_gui.add_button("Set", description="Update acquisition parameters")
         acquisition_gui.add_button("Preview", description="Preview (Expermiental feature)")
-        acquisition_gui.add_button("Clear", description="Clear params")
+        acquisition_gui.add_button("Clear", description="Reset params")
         acquisition_gui["Preview"].on_click(preview_mod)
         acquisition_gui["Set"].on_click(set_params)
         acquisition_gui["Clear"].on_click(clear)
         display(acquisition_gui["Frames"])
         preview_mod(True)
-        display(acquisition_gui["Set"])
+        display(acquisition_gui["Set"], acquisition_gui["Clear"])
 
 
     def acquire_images(self):
