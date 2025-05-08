@@ -574,8 +574,7 @@ class jupyter_gui:
         style = {"description_width": "initial"}
         structural_model_gui = easy_gui_jupyter.EasyGUI("StructuralModel",width=width)
         def show_model(b):
-            plt.clf()
-            clear_output()
+            #clear_output()
             # plot
             emitter_plotsize = structural_model_gui["emitterplotsize"].value
             source_size = structural_model_gui["sourceplotsize"].value
@@ -609,7 +608,10 @@ class jupyter_gui:
                     emitter_plotsize=emitter_plotsize,
                 )
                 plt.subplots_adjust(wspace=0.5)
-                plt.show()
+                plt.close()
+                structural_model_gui["image_output"].clear_output()
+                with structural_model_gui["image_output"]:
+                    display(fig)
             else:
                 print(
                     "You have not created a labelled structure. "
@@ -749,6 +751,7 @@ class jupyter_gui:
         structural_model_gui["update_plot"].on_click(update_plot)
         structural_model_gui["use_defects"].on_click(add_defects)
         structural_model_gui["Relabel"].on_click(relabel)
+        structural_model_gui._widgets["image_output"] = widgets.Output()
         if self.my_experiment.particle:
             structural_model_gui.show()
         else:
