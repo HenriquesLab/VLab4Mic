@@ -154,7 +154,6 @@ class Sweep_gui(jupyter_gui):
                 last=last,
                 option=option,
             )
-            print(self.sweep_gen.params_by_group)
         
         def disable_widgets(b):
             param_ranges["groups"].disabled = True
