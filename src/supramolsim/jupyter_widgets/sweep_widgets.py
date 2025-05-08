@@ -201,8 +201,13 @@ class Sweep_gui(jupyter_gui):
         simulate = easy_gui_jupyter.EasyGUI("simulate")
         def run_sweeps(b):
             simulate["Run"].disabled = True
+            self.sweep_gen.sweep_repetitions = simulate["reps"].value
             self.sweep_gen.create_parameters_iterables()
             self.sweep_gen.generate_acquisitions()
+        simulate._widgets["reps"] = self.wgen.gen_bound_int(
+                value=3, description="Repeats per parameter combination",
+                style={'description_width': 'initial'}
+            )
         simulate.add_button(
             "Run", description="Run"
         )
@@ -240,12 +245,9 @@ class Sweep_gui(jupyter_gui):
         analysis_widget = easy_gui_jupyter.EasyGUI("analysis")
         def analyse_sweep(b):
             analysis_widget["analyse"].disabled = True
-            self.sweep_gen.sweep_repetitions = analysis_widget["reps"].value
+            
             self.sweep_gen.run_analysis()
             self.sweep_gen.gen_analysis_dataframe()
-        analysis_widget._widgets["reps"] = self.wgen.gen_bound_int(
-                        value=3, description="Repeats per combination"
-                    )
         analysis_widget.add_dropdown(
             "metric", options=["SSIM",], 
             description="Metric for image comparison",
