@@ -122,14 +122,10 @@ class jupyter_gui:
 
         def upload_file(b):
             structure_gui["Upload"].disabled = True
-            active_widgets["label_2"] = None
+            widgets_visibility["label_2"] = True
             #plt.clf()
             #clear_output()
-            for widgetname in active_widgets:
-                if widgets_visibility[widgetname]:
-                    structure_gui[widgetname].layout.display = 'inline-flex'
-                else:
-                    structure_gui[widgetname].layout.display = 'None'
+            self._update_widgets(structure_gui, widgets_visibility)
             filepath = structure_gui["File"].selected
             filename = structure_gui["File"].selected_filename
             structure = build_structure_cif(
@@ -138,15 +134,12 @@ class jupyter_gui:
             self.my_experiment.structure = structure
             self.my_experiment.objects_created["structure"] = True
             structure_param = data_format.structural_format.struct_params_format()
-            active_widgets["label_3"] = None
-            active_widgets["View"] = None
+            widgets_visibility["label_3"] = True
+            widgets_visibility["View"] = True
             #plt.clf()
             #clear_output()
-            for widgetname in active_widgets:
-                if widgets_visibility[widgetname]:
-                    structure_gui[widgetname].layout.display = 'inline-flex'
-                else:
-                    structure_gui[widgetname].layout.display = 'None'
+            widgets_visibility["label_2"] = False
+            self._update_widgets(structure_gui, widgets_visibility)
             structure_gui._widgets["label_2"].layout = widgets.Layout()
             structure_gui._widgets["label_2"].layout.display = "None"
             structure_gui["View"].disabled = False
@@ -171,14 +164,10 @@ class jupyter_gui:
             #clear_output()
             widgets_visibility["Demos"] = False
             widgets_visibility["Fileupload"] = False
-            active_widgets["label_6"] = None
-            active_widgets["File"] = None
-            active_widgets["Upload"] = None
-            for widgetname in widgets_visibility.keys():
-                if widgets_visibility[widgetname]:
-                    structure_gui[widgetname].layout.display = 'inline-flex'
-                else:
-                    structure_gui[widgetname].layout.display = 'None'
+            widgets_visibility["label_6"] = True
+            widgets_visibility["File"] = True
+            widgets_visibility["Upload"] = True
+            self._update_widgets(structure_gui, widgets_visibility)
 
         structure_gui.add_button("Demos", description="Example structures")
         structure_gui.add_button("Fileupload", description="Upload CIF file")
