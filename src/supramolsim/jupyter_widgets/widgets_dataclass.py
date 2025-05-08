@@ -61,10 +61,10 @@ class jupyter_gui:
         def select_structure(b):
             structure_gui["Select"].disabled = True
             active_widgets["label_2"] = None
-            plt.clf()
-            clear_output()
+            #plt.clf()
+            #clear_output()
             for widgetname in active_widgets:
-                display(structure_gui[widgetname])
+                structure_gui[widgetname].layout.display = 'inline-flex'
             structure_id = self.structures_info_list[
                 structure_gui["struct_dropdown"].value
             ]
@@ -72,10 +72,10 @@ class jupyter_gui:
             self.my_experiment._build_structure()
             active_widgets["label_3"] = None
             active_widgets["View"] = None
-            plt.clf()
-            clear_output()
+            #plt.clf()
+            #clear_output()
             for widgetname in active_widgets:
-                display(structure_gui[widgetname])
+                structure_gui[widgetname].layout.display = 'inline-flex'
             structure_gui._widgets["label_2"].layout = widgets.Layout()
             structure_gui._widgets["label_2"].layout.display = "None"
             structure_gui["View"].disabled = False
@@ -98,7 +98,7 @@ class jupyter_gui:
             active_widgets["Azimuthal"] = None
             active_widgets["Roll"] = None
             for widgetname in active_widgets:
-                display(structure_gui[widgetname])
+                structure_gui[widgetname].layout.display = 'inline-flex'
             fraction = structure_gui["Fraction"].value
             el = structure_gui["Elevation"].value
             az = structure_gui["Azimuthal"].value
@@ -114,7 +114,7 @@ class jupyter_gui:
             plt.clf()
             clear_output()
             for widgetname in active_widgets:
-                display(structure_gui[widgetname])
+                structure_gui[widgetname].layout.display = 'inline-flex'
             filepath = structure_gui["File"].selected
             filename = structure_gui["File"].selected_filename
             structure = build_structure_cif(
@@ -128,28 +128,33 @@ class jupyter_gui:
             plt.clf()
             clear_output()
             for widgetname in active_widgets:
-                display(structure_gui[widgetname])
+                structure_gui[widgetname].layout.display = 'inline-flex'
             structure_gui._widgets["label_2"].layout = widgets.Layout()
             structure_gui._widgets["label_2"].layout.display = "None"
             structure_gui["View"].disabled = False
 
         def activate_demos(b):
-            plt.clf()
-            clear_output()
+            #plt.clf()
+            #clear_output()
+            structure_gui["Demos"].layout.display = "None"
+            structure_gui["Fileupload"].layout.display = "None"
             active_widgets["label_1"] = None
             active_widgets["struct_dropdown"] = None
             active_widgets["Select"] = None
             for widgetname in active_widgets.keys():
-                display(structure_gui[widgetname])
+                structure_gui[widgetname].layout.display = 'inline-flex'
+                #display(structure_gui[widgetname])
 
         def activate_upload(b):
-            plt.clf()
-            clear_output()
+            #plt.clf()
+            #clear_output()
+            structure_gui["Demos"].layout.display = "None"
+            structure_gui["Fileupload"].layout.display = "None"
             active_widgets["label_6"] = None
             active_widgets["File"] = None
             active_widgets["Upload"] = None
             for widgetname in active_widgets.keys():
-                display(structure_gui[widgetname])
+                structure_gui[widgetname].layout.display = 'inline-flex'
 
         structure_gui.add_button("Demos", description="Example structures")
         structure_gui.add_button("Fileupload", description="Upload CIF file")
@@ -213,7 +218,13 @@ class jupyter_gui:
         structure_gui["Upload"].on_click(upload_file)
         structure_gui["Demos"].on_click(activate_demos)
         structure_gui["Fileupload"].on_click(activate_upload)
-        display(structure_gui["Demos"], structure_gui["Fileupload"])
+        for wgt in structure_gui._widgets.keys():
+            structure_gui._widgets[wgt].layout = widgets.Layout(width="50%", display="None")
+        #
+        structure_gui.show()
+        structure_gui["Demos"].layout.display = 'inline-flex'
+        structure_gui["Fileupload"].layout.display = 'inline-flex'
+        #display(structure_gui["Demos"], structure_gui["Fileupload"])
 
     def structural_model_gui(self):
         # ensure that structure has no labels associated
