@@ -67,7 +67,7 @@ class jupyter_gui:
 
         def select_structure(b):
             structure_gui["Select"].disabled = True
-            widgets_visibility["label_2"] = False
+            widgets_visibility["label_2"] = True
             #plt.clf()
             #clear_output()
             self._update_widgets(structure_gui, widgets_visibility)
@@ -77,15 +77,12 @@ class jupyter_gui:
             ]
             self.my_experiment.structure_id = structure_id
             self.my_experiment._build_structure()
-            active_widgets["label_3"] = None
-            active_widgets["View"] = None
+            widgets_visibility["label_3"] = True
+            widgets_visibility["View"] = True
+            widgets_visibility["label_2"] = False
             #plt.clf()
             #clear_output()
-            for widgetname in widgets_visibility.keys():
-                if widgets_visibility[widgetname]:
-                    structure_gui[widgetname].layout.display = 'inline-flex'
-                else:
-                    structure_gui[widgetname].layout.display = 'None'
+            self._update_widgets(structure_gui, widgets_visibility)
             structure_gui._widgets["label_2"].layout = widgets.Layout()
             structure_gui._widgets["label_2"].layout.display = "None"
             structure_gui["View"].disabled = False
@@ -100,18 +97,15 @@ class jupyter_gui:
             structure_gui["Azimuthal"].disabled = False
             structure_gui["Roll"].disabled = False
             structure_gui["hidegrid"].disabled = False
-            active_widgets["label_5"] = None
-            active_widgets["Fraction"] = None
-            active_widgets["label_4"] = None
-            active_widgets["hidegrid"] = None
-            active_widgets["Elevation"] = None
-            active_widgets["Azimuthal"] = None
-            active_widgets["Roll"] = None
-            for widgetname in active_widgets:
-                if widgets_visibility[widgetname]:
-                    structure_gui[widgetname].layout.display = 'inline-flex'
-                else:
-                    structure_gui[widgetname].layout.display = 'None'
+            widgets_visibility["label_5"] = True
+            widgets_visibility["Fraction"] = True
+            widgets_visibility["label_4"] = True
+            widgets_visibility["hidegrid"] = True
+            widgets_visibility["Elevation"] = True
+            widgets_visibility["Azimuthal"] = True
+            widgets_visibility["Roll"] = True
+            widgets_visibility["image_output"] = True
+            self._update_widgets(structure_gui, widgets_visibility)
             fraction = structure_gui["Fraction"].value
             el = structure_gui["Elevation"].value
             az = structure_gui["Azimuthal"].value
@@ -119,9 +113,11 @@ class jupyter_gui:
             axes_off = structure_gui["hidegrid"].value
             structure_gui["image_output"].clear_output()
             with structure_gui["image_output"]:
-                clear_output()
-                self.my_experiment.structure.show_assembly_atoms(
-                    assembly_fraction=fraction, view_init=[el, az, rll], axesoff=axes_off
+                #fig, ax = plt.subplots()
+                display(
+                    self.my_experiment.structure.show_assembly_atoms(
+                        assembly_fraction=fraction, view_init=[el, az, rll], axesoff=axes_off
+                    )
                 )
 
         def upload_file(b):
