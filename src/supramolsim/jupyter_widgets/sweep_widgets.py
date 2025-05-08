@@ -162,10 +162,11 @@ class Sweep_gui(jupyter_gui):
             param_ranges["done"].disabled = True
 
         parameter_group_names = list(self.param_settings.keys())
-        param_ranges.add_dropdown("groups", options=parameter_group_names)
+        param_ranges.add_dropdown("groups", options=parameter_group_names, description="Parameter group")
         param_ranges.add_dropdown(
             "parms_per_group",
             options=list(self.param_settings[param_ranges["groups"].value].keys()),
+            description="Parameter name"
         )
         # add the widgets to list
         for wname, wgt in self.range_widgets.items():
@@ -176,7 +177,7 @@ class Sweep_gui(jupyter_gui):
             "inline-flex"
         )
         param_ranges.add_button(
-            "add_parameter", description="add parameter values to sweep"
+            "add_parameter", description="Add this parameter for sweep"
         )
         param_ranges.add_button(
             "done", description="Done"
