@@ -13,4 +13,4 @@ def write_tif(image_stack: np.ndarray, dirname: str, notes: str):
         image_stack = image_stack.astype(np.uint32)
     filename = dirname + dt_string + notes + ".tif"
     print(f"image saved in {filename}")
-    tif.imsave(filename, image_stack, bigtiff=True)
+    tif.imwrite(filename, image_stack, bigtiff=True)
