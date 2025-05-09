@@ -16,6 +16,7 @@ import numpy as np
 import tifffile as tif
 import copy
 import mpl_toolkits.axes_grid1 as axes_grid1
+from ipyfilechooser import FileChooser
 
 @dataclass
 class jupyter_gui:
@@ -1286,7 +1287,13 @@ class jupyter_gui:
             "experiment_name", value="Exp_name", remember_value=True
         )
         experiment_gui.add_label("Set saving directory")
-        experiment_gui.add_textarea("saving_directory", remember_value=True)
+        experiment_gui._widgets["saving_directory"] = FileChooser(
+            os.getcwd(),
+            title='<b>Select output directory</b>',
+            show_hidden=False,
+            select_default=True,
+            show_only_dirs=False
+        )
         experiment_gui.add_button("Acquire", description="Run Simulation")
         experiment_gui["Acquire"].on_click(run_simulation)
         experiment_gui.show()
