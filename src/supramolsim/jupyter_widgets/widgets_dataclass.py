@@ -1051,7 +1051,7 @@ class jupyter_gui:
         def showfov(b):
             imaging_gui["image_output"].clear_output()
             with imaging_gui["image_output"]:
-                display(self.my_experiment.imager.show_field())
+                display(self.my_experiment.imager.show_field(return_fig=True))
 
         imaging_gui.add_label("Use the dropdown menu to get a preview of the selected imaging modality")
         imaging_gui.add_dropdown("modalities_dropdown", options=modalities_options)
@@ -1184,7 +1184,7 @@ class jupyter_gui:
                             #grid[i].set_visible(False)
                         fig.canvas.draw()
                         plt.show()
-                        #display(fig)
+                        display(acq_widgets["message"])
 
                 def preview_parameters(Settings):
                     pass
@@ -1260,7 +1260,7 @@ class jupyter_gui:
         acq_widgets["modalities_dropdown"] = True
         acq_widgets["Exposure"] = True
         acq_widgets["Noise"] = True
-        acq_widgets["message"] = True
+       #acq_widgets["message"] = True
         #display(acquisition_gui["Frames"])
         self._update_widgets(acquisition_gui, acq_widgets)
         preview_mod(True)
