@@ -592,7 +592,7 @@ def probe_parameters_sweep(
             if len(value) == 1:
                 probe_parameters_vectors[par] = value
             else:
-                if isinstance(value[0], str):
+                if isinstance(value[0], (str, bool)):
                     probe_parameters_vectors[par] = value
                 else:
                     sequence = np.linspace(value[0],value[1],value[2])

@@ -9,6 +9,7 @@ from .workflows import (
     field_from_particle,
     generate_multi_imaging_modalities,
 )
+from .generate import coordinates_field
 from .utils.data_format.structural_format import label_builder_format
 from .utils.data_format import configuration_format
 import os
@@ -68,18 +69,18 @@ class ExperimentParametrisation:
         self.local_modalities_parameters = modality_parameters
         #self.imaging_modalities = dict()
 
-    def add_modality(self, modality_name, **kwargs):
+    def add_modality(self, modality_name, save=False, **kwargs):
         if modality_name in self.local_modalities_names:
             self.imaging_modalities[modality_name] = copy.deepcopy(self.local_modalities_parameters[modality_name])
             for param, value in kwargs.items():
                 self.imaging_modalities[modality_name][param] = value
-            self.set_modality_acq(modality_name)
+            self.set_modality_acq(modality_name, save=save)
         else:
             print(f"Modality {modality_name} not found in demo modalities. Using Widefield params as template to create new.")
             self.imaging_modalities[modality_name] = copy.deepcopy(self.local_modalities_parameters["Widefield"])
             for param, value in kwargs.items():
                 self.imaging_modalities[modality_name][param] = value
-            self.set_modality_acq(modality_name)
+            self.set_modality_acq(modality_name, save=save)
 
     def update_modality(self,
                         modality_name,
@@ -87,26 +88,30 @@ class ExperimentParametrisation:
                         lateral_resolution_nm: int = None,
                         axial_resolution_nm: int = None,
                         psf_voxel_nm: int = None,
+                        remove = False,
                         ):
-        chagnes = False
-        if pixelsize_nm is not None:
-            self.imaging_modalities[modality_name]["detector"]["pixelsize"] = pixelsize_nm / 1000
-            chagnes = True
-        if lateral_resolution_nm is not None:
-            voxel_size = self.imaging_modalities[modality_name]["psf_params"]["voxelsize"][0]
-            self.imaging_modalities[modality_name]["psf_params"]["std_devs"][0] = lateral_resolution_nm/voxel_size
-            self.imaging_modalities[modality_name]["psf_params"]["std_devs"][1] = lateral_resolution_nm/voxel_size
-            chagnes = True
-        if axial_resolution_nm is not None:
-            voxel_size = self.imaging_modalities[modality_name]["psf_params"]["voxelsize"][0]
-            self.imaging_modalities[modality_name]["psf_params"]["std_devs"][2] = axial_resolution_nm/voxel_size
-            chagnes = True
-        if psf_voxel_nm is not None:
-            self.imaging_modalities[modality_name]["psf_params"]["voxelsize"] = [psf_voxel_nm, psf_voxel_nm, psf_voxel_nm]
-            chagnes = True
-        if chagnes:
-            #mod_pars = self.imaging_modalities[modality_name]
-            self.imager.set_imaging_modality(**self.imaging_modalities[modality_name])
+        if remove:
+            self.imaging_modalities.pop(modality_name, None)
+        else:
+            changes = False
+            if pixelsize_nm is not None:
+                self.imaging_modalities[modality_name]["detector"]["pixelsize"] = pixelsize_nm / 1000
+                changes = True
+            if lateral_resolution_nm is not None:
+                voxel_size = self.imaging_modalities[modality_name]["psf_params"]["voxelsize"][0]
+                self.imaging_modalities[modality_name]["psf_params"]["std_devs"][0] = lateral_resolution_nm/voxel_size
+                self.imaging_modalities[modality_name]["psf_params"]["std_devs"][1] = lateral_resolution_nm/voxel_size
+                changes = True
+            if axial_resolution_nm is not None:
+                voxel_size = self.imaging_modalities[modality_name]["psf_params"]["voxelsize"][0]
+                self.imaging_modalities[modality_name]["psf_params"]["std_devs"][2] = axial_resolution_nm/voxel_size
+                changes = True
+            if psf_voxel_nm is not None:
+                self.imaging_modalities[modality_name]["psf_params"]["voxelsize"] = [psf_voxel_nm, psf_voxel_nm, psf_voxel_nm]
+                changes = True
+            if changes:
+                #mod_pars = self.imaging_modalities[modality_name]
+                self.imager.set_imaging_modality(**self.imaging_modalities[modality_name])
 
     def set_modality_acq(
             self,
@@ -128,6 +133,11 @@ class ExperimentParametrisation:
             )
         else:
             print("Modality not selected")
+    
+    def reset_to_defaults(self, module = "acquisitions", **kwargs):
+        if module == "acquisitions":
+            for mod_name in self.selected_mods.keys():
+                self.set_modality_acq(mod_name, **kwargs)
 
     def _build_structure(self, keep=True):
         if self.structure_id:
@@ -225,8 +235,13 @@ class ExperimentParametrisation:
             return exported_field
         else:
             # create minimal field
-            print("else")
-            pass
+            fieldobject = coordinates_field.create_min_field(**kwargs)
+            exported_field = fieldobject.export_field()
+            if keep:
+                self.exported_coordinate_field = exported_field
+                self.objects_created["exported_coordinate_field"] = True
+                self.coordinate_field = fieldobject
+                self.objects_created["coordinate_field"] = True
 
     def _build_imager(self, use_local_field=False):
         if self.imaging_modalities:
@@ -250,16 +265,6 @@ class ExperimentParametrisation:
         else:
             print("No modalities")
 
-    def _param_linspaces(self):
-        if self.sweep_pars:
-            self.sweep_linspaces = dict()
-            for param_name, pars in self.sweep_pars.items():
-                self.sweep_linspaces[param_name] = np.linspace(
-                    pars["start"], pars["end"], pars["nintervals"]
-                )
-        else:
-            print("No parameters set")
-
     def generators_status(self, generator_name):
         return self.objects_created[generator_name]
 
@@ -279,7 +284,7 @@ class ExperimentParametrisation:
             self._build_imager(use_local_field=use_locals)
         # self._param_linspaces()
 
-    def gen_reference(self, write=False, keep=False, ref_acq_pars=None, modality_wise=False):
+    def _gen_reference(self, write=False, keep=False, ref_acq_pars=None, modality_wise=False):
         """
         Calculate a reference image of the virtual sample by using the ideal
         parameters for each of the parameters to sweep. Requires the 
@@ -378,7 +383,8 @@ class ExperimentParametrisation:
         if self.generators_status("particle"):
             self.particle = None
         if self.generators_status("structure"):
-            self.structure.label_targets = dict()
+            self.structure._clear_labels()
+            #self.structure.label_targets = dict()
 
     def add_probe(
             self,
@@ -437,43 +443,7 @@ class ExperimentParametrisation:
             self.structure_label = None
         else: 
             self.structure_label = list(self.probe_parameters.keys())
-    
-def create_experiment_parametrisation(
-    structure_and_labels: dict = None,
-    modalities_acquisition: dict = None,
-    field_params: dict = None,
-    savging: dict = None,
-    defects_params: dict = None,
-    params2sweep: dict = None,
-    use_locals=False,
-):
-    generator = ExperimentParametrisation()
-    # Structural parameters
-    if structure_and_labels:
-        generator.structure_id = structure_and_labels["structure_id"]
-        generator.structure_label = structure_and_labels["structure_label"]
-        generator.fluorophore_id = structure_and_labels["fluorophore_id"]
-    if modalities_acquisition:
-        for mod, acquisition in modalities_acquisition.items():
-            if acquisition is None:
-                generator.selected_mods[mod] = configuration_format.format_modality_acquisition_params()
-            else:
-                generator.selected_mods[mod] = acquisition
-    if field_params:
-        #for field_param, value in field_params.items():
-        generator.coordinate_field_id=field_params
-    if defects_params:
-        for key, val in defects_params.items():
-            generator.defect_eps[key] = val
-    if params2sweep:
-        for parametername, pars in params2sweep.items():
-            generator.sweep_pars[parametername] = pars
-    # writing
-    if savging:
-        generator.experiment_id = savging["experiment_id"]
-        generator.output_directory = savging["output_directory"]
-    generator.build(use_locals=use_locals)
-    return generator
+
 
 
 def generate_virtual_sample(

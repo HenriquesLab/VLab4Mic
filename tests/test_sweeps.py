@@ -1,8 +1,15 @@
 from supramolsim.analysis import sweep
-from supramolsim import experiments
+from supramolsim import experiments, sweep_generator
 import numpy as np
 import pytest
 
+
+def test_sweep_generator():
+    sweep_gen = sweep_generator.sweep_generator()
+    sweep_gen.generate_acquisitions()
+    sweep_gen.generate_reference_image()
+    sweep_gen.run_analysis()
+    sweep_gen.gen_analysis_dataframe()
 
 def test_sweep_vasmples_empty():
     test_experiment = experiments.ExperimentParametrisation()
@@ -29,8 +36,8 @@ def test_sweep_vasmples_directprobes():
 
 
 indirectprobes = [
-    "Mock_antibody",
-    "Mock_linker",
+    "Antibody",
+    "Linker",
 ]
 labelling_efficiency = np.linspace(0.5, 1, 3)
 distance_to_epitope = np.linspace(10, 200, 3)
@@ -94,7 +101,7 @@ def test_parameter_generators():
         labelling_efficiency = 1,
         distance_to_epitope = 0
     )
-    ref_vsample, ref_params = sweep.generate_global_reference_sample(structure=structures[0], probe="Mock_linker", probe_parameters=ref_probe_parameters)
+    ref_vsample, ref_params = sweep.generate_global_reference_sample(structure=structures[0], probe="Linker", probe_parameters=ref_probe_parameters)
     ref_image, ref_image_pars = sweep.generate_global_reference_modality(reference_vsample=ref_vsample, reference_vsample_params=ref_params)
     myexperiment, vsmpl_output, vsampl_pars = sweep.sweep_vasmples(
         structures=structures,

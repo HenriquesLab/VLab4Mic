@@ -1,0 +1,16 @@
+probe:
+  labelling_efficiency:
+    wtype: float_slider
+    range: [0, 1, 0.1]
+    nintervals: 2
+  probe_distance_to_epitope:
+    wtype: float_slider
+    range: [0, 300, 0.1]
+    nintervals: 2
+virtual_sample:
+  random_orientations:
+    wtype: logical
+  number_of_particles:
+    wtype: int_slider
+    range: [1, 100, 1]
+    nintervals: 1

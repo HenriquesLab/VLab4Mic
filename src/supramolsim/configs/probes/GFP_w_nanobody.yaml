@@ -1,11 +1,11 @@
-label_name: Mock_nanobody
+label_name: GFP_w_nanobody
 target:
   type:
   value:
 known_targets:
   - Mock
 model:
-  ID: 7MFV
+  ID: 6XZF
   format: CIF
   database: RCSB
 binding:
@@ -17,13 +17,11 @@ binding:
   distance:
     to_target: 10
     between_targets: estimate
-  paratope: VYLQ 
+  paratope: KGEEL
 conjugation_sites:
   target:
-    type: Atom_residue
-    value:
-      atoms: CA
-      residues: LYS
+    type: Sequence
+    value: ALV
   efficiency: 1
 epitope: # for secondary
   target:
