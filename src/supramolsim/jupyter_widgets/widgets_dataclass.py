@@ -1139,9 +1139,6 @@ class jupyter_gui:
             def get_preview(imaging_system, acq_gui):
 
                 def preview_exposure(message, Modality, Exposure, Noise):
-                    
-                    with acq_widgets["image_output"]:
-                        acq_widgets["image_output"].clear_output()
                         fig = plt.figure()
                         grid = axes_grid1.AxesGrid(
                             fig,
@@ -1162,12 +1159,12 @@ class jupyter_gui:
                                 nframes=1,
                                 channel=single_channel,
                             )
-                            #with io.capture_output() as captured:
-                            timeseries, calibration_beads = imaging_system.generate_imaging(
-                                modality=Modality, **single_mod_acq_params
-                            )
-                            min_val = np.min(timeseries[0])
-                            max_val = np.max(timeseries[0])
+                            with io.capture_output() as captured:
+                                timeseries, calibration_beads = imaging_system.generate_imaging(
+                                    modality=Modality, **single_mod_acq_params
+                                )
+                                min_val = np.min(timeseries[0])
+                                max_val = np.max(timeseries[0])
 
                             preview_image = grid[i].imshow(
                                 timeseries[0],
@@ -1182,24 +1179,19 @@ class jupyter_gui:
                             grid.cbar_axes[i].colorbar(preview_image)
                             i = i + 1
                             #grid[i].set_visible(False)
-                        fig.canvas.draw()
-                        plt.show()
-                        display(acq_widgets["message"])
+                        return fig
 
-                def preview_parameters(Settings):
-                    pass
 
-                widgets.interactive(
-                    preview_exposure,
-                    message = acq_gui["label_1"],
-                    Modality=acq_gui["modalities_dropdown"],
-                    Exposure=acq_gui["Exposure"],
-                    Noise=acq_gui["Noise"]
-                )
-                widgets.interactive(
-                    preview_parameters,
-                    Settings = acq_gui["message"]
-                )
+                figure = preview_exposure(
+                            message = acq_gui["label_1"].value,
+                            Modality=acq_gui["modalities_dropdown"].value,
+                            Exposure=acq_gui["Exposure"].value,
+                            Noise=acq_gui["Noise"].value
+                        )
+                plt.close()
+                acquisition_gui["image_output"].clear_output()
+                with acquisition_gui["image_output"]:
+                    display(figure)
             #display(acquisition_gui["image_output"])
             get_preview(self.my_experiment.imager, acquisition_gui)
 
@@ -1209,6 +1201,9 @@ class jupyter_gui:
             output_str = '<br>'.join(f"{name}: {val}" for name, val in self.my_experiment.selected_mods.items())
             acquisition_gui["message"].value = output_str
             acquisition_gui.save_settings()
+
+        def preview_params_chage(change):
+            preview_mod(True)
 
         acquisition_gui.add_label("Set acquisition parameters")
         acquisition_gui.add_label("Acquisition parameters per modality:")
@@ -1241,6 +1236,9 @@ class jupyter_gui:
             style=acquisition_gui._style,
             remember_value=True,
         )
+        acquisition_gui["modalities_dropdown"].observe(preview_params_chage, names="value")
+        acquisition_gui["Noise"].observe(preview_params_chage, names="value")
+        acquisition_gui["Exposure"].observe(preview_params_chage, names="value")
         acquisition_gui.add_button("Set", description="Update acquisition parameters")
         acquisition_gui.add_button("Preview", description="Preview (Expermiental feature)")
         acquisition_gui.add_button("Clear", description="Reset params")
