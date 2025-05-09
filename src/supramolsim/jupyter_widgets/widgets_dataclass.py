@@ -1018,9 +1018,6 @@ class jupyter_gui:
                             modality_info[Modality]["psf_params"]["voxelsize"]
                         )
                         psf_sd_metric = np.multiply(psf_voxel, psf_sd)
-                        print(f"Detector pixelsize (nm): {pixelsize_nm}")
-                        print(f"PSF sd (nm): {psf_sd_metric}")
-                        print(f"PSF preview (on a 1x1 µm field of view): ")
                         # show PSF
                         fig, axs = plt.subplots()
                         modality_preview = temp_imager.modalities[Modality]["psf"][
@@ -1037,15 +1034,24 @@ class jupyter_gui:
                         )
                         axs.set_xticks([])
                         axs.set_yticks([])
+                        plt.close()
+                        imaging_gui["image_output"].clear_output()
+                        with imaging_gui["image_output"]:
+                            display(fig)
+                            print(f"Detector pixelsize (nm): {pixelsize_nm}")
+                            print(f"PSF sd (nm): {psf_sd_metric}")
+                            print(f"PSF preview (on a 1x1 µm field of view)")
 
-                widgets.interact(
+                widgets.interactive(
                     preview_info, message=imaging_gui["label_1"], Modality=imaging_gui["modalities_dropdown"]
                 )
 
             get_info(imaging_gui)
 
         def showfov(b):
-            self.my_experiment.imager.show_field()
+            imaging_gui["image_output"].clear_output()
+            with imaging_gui["image_output"]:
+                self.my_experiment.imager.show_field()
 
         imaging_gui.add_label("Use the dropdown menu to get a preview of the selected imaging modality")
         imaging_gui.add_dropdown("modalities_dropdown", options=modalities_options)
@@ -1070,17 +1076,25 @@ class jupyter_gui:
         imaging_gui["Clear"].on_click(clear)
         imaging_gui["Create"].on_click(create_imager)
         imaging_gui["Show"].on_click(showfov)
+        imaging_gui._widgets["image_output"] = widgets.Output()
+        mod_widgets = {}
+        for wgt in imaging_gui._widgets.keys():
+            mod_widgets[wgt] = False
+            imaging_gui._widgets[wgt].layout = widgets.Layout(width="50%", display="None")
+        imaging_gui.show()
         preview(True)
-        display(
-            imaging_gui["label_2"],
-            imaging_gui["Add"],
-            imaging_gui["label_3"],
-            imaging_gui["label_4"],
-            imaging_gui["Clear"],
-            imaging_gui["label_5"],
-            imaging_gui["Create"],
-            imaging_gui["Show"],
-        )
+        mod_widgets["label_2"] = True
+        mod_widgets["Add"] = True
+        mod_widgets["label_3"]  = True
+        mod_widgets["label_4"]  = True
+        mod_widgets["Clear"]  = True
+        mod_widgets["label_5"]  = True
+        mod_widgets["Create"]  = True
+        mod_widgets["Show"] = True
+        mod_widgets["label_1"]= True
+        mod_widgets["modalities_dropdown"]= True
+        mod_widgets["image_output"] = True
+        self._update_widgets(imaging_gui, mod_widgets)
 
 
     def set_acq_params(self):
