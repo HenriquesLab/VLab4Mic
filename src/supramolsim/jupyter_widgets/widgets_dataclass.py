@@ -1051,7 +1051,7 @@ class jupyter_gui:
         def showfov(b):
             imaging_gui["image_output"].clear_output()
             with imaging_gui["image_output"]:
-                self.my_experiment.imager.show_field()
+                display(self.my_experiment.imager.show_field())
 
         imaging_gui.add_label("Use the dropdown menu to get a preview of the selected imaging modality")
         imaging_gui.add_dropdown("modalities_dropdown", options=modalities_options)
@@ -1139,8 +1139,9 @@ class jupyter_gui:
             def get_preview(imaging_system, acq_gui):
 
                 def preview_exposure(message, Modality, Exposure, Noise):
-                    acq_widgets["image_output"].clear_output()
+                    
                     with acq_widgets["image_output"]:
+                        acq_widgets["image_output"].clear_output()
                         fig = plt.figure()
                         grid = axes_grid1.AxesGrid(
                             fig,
@@ -1161,15 +1162,13 @@ class jupyter_gui:
                                 nframes=1,
                                 channel=single_channel,
                             )
-                            with io.capture_output() as captured:
-                                timeseries, calibration_beads = imaging_system.generate_imaging(
-                                    modality=Modality, **single_mod_acq_params
-                                )
-                                min_val = np.min(timeseries[0])
-                                max_val = np.max(timeseries[0])
-                            
-                            
-                            
+                            #with io.capture_output() as captured:
+                            timeseries, calibration_beads = imaging_system.generate_imaging(
+                                modality=Modality, **single_mod_acq_params
+                            )
+                            min_val = np.min(timeseries[0])
+                            max_val = np.max(timeseries[0])
+
                             preview_image = grid[i].imshow(
                                 timeseries[0],
                                 cmap="gray",
@@ -1183,8 +1182,9 @@ class jupyter_gui:
                             grid.cbar_axes[i].colorbar(preview_image)
                             i = i + 1
                             #grid[i].set_visible(False)
+                        fig.canvas.draw()
                         plt.show()
-                    display(fig)
+                        #display(fig)
 
                 def preview_parameters(Settings):
                     pass
@@ -1200,7 +1200,7 @@ class jupyter_gui:
                     preview_parameters,
                     Settings = acq_gui["message"]
                 )
-            display(acquisition_gui["image_output"])
+            #display(acquisition_gui["image_output"])
             get_preview(self.my_experiment.imager, acquisition_gui)
 
         def clear(b):
@@ -1262,8 +1262,8 @@ class jupyter_gui:
         acq_widgets["Noise"] = True
         acq_widgets["message"] = True
         #display(acquisition_gui["Frames"])
-        preview_mod(True)
         self._update_widgets(acquisition_gui, acq_widgets)
+        preview_mod(True)
         #display(acquisition_gui["Set"], acquisition_gui["Clear"])
 
 
