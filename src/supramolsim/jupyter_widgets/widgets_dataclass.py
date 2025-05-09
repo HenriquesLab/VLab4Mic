@@ -1259,6 +1259,7 @@ class jupyter_gui:
         acq_widgets["modalities_dropdown"] = True
         acq_widgets["Exposure"] = True
         acq_widgets["Noise"] = True
+        acq_widgets["Clear"] = True
        #acq_widgets["message"] = True
         #display(acquisition_gui["Frames"])
         self._update_widgets(acquisition_gui, acq_widgets)
