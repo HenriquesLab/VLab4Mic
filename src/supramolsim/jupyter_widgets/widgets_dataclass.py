@@ -1139,61 +1139,68 @@ class jupyter_gui:
             def get_preview(imaging_system, acq_gui):
 
                 def preview_exposure(message, Modality, Exposure, Noise):
-                    fig = plt.figure()
-                    grid = axes_grid1.AxesGrid(
-                        fig,
-                        111,
-                        nrows_ncols=(1, nchannels),
-                        axes_pad=1,
-                        cbar_location="right",
-                        cbar_mode="each",
-                        cbar_size="10%",
-                        cbar_pad="20%",
-                    )
-                    i = 0
-                    for single_channel in imager_channels:
-                        single_mod_acq_params = dict(
-                            exp_time=Exposure,
-                            noise=Noise,
-                            save=False,
-                            nframes=1,
-                            channel=single_channel,
+                    acq_widgets["image_output"].clear_output()
+                    with acq_widgets["image_output"]:
+                        fig = plt.figure()
+                        grid = axes_grid1.AxesGrid(
+                            fig,
+                            111,
+                            nrows_ncols=(1, nchannels),
+                            axes_pad=1,
+                            cbar_location="right",
+                            cbar_mode="each",
+                            cbar_size="10%",
+                            cbar_pad="20%",
                         )
-                        with io.capture_output() as captured:
-                            timeseries, calibration_beads = imaging_system.generate_imaging(
-                                modality=Modality, **single_mod_acq_params
+                        i = 0
+                        for single_channel in imager_channels:
+                            single_mod_acq_params = dict(
+                                exp_time=Exposure,
+                                noise=Noise,
+                                save=False,
+                                nframes=1,
+                                channel=single_channel,
                             )
-                            min_val = np.min(timeseries[0])
-                            max_val = np.max(timeseries[0])
-                        preview_image = grid[i].imshow(
-                            timeseries[0],
-                            cmap="gray",
-                            interpolation="none",
-                            vmin=min_val,
-                            vmax=max_val,
-                        )
-                        grid[i].set_xticks([])
-                        grid[i].set_yticks([])
-                        grid[i].set_title("preview channel:" + single_channel)
-                        grid.cbar_axes[i].colorbar(preview_image)
-                        i = i + 1
+                            with io.capture_output() as captured:
+                                timeseries, calibration_beads = imaging_system.generate_imaging(
+                                    modality=Modality, **single_mod_acq_params
+                                )
+                                min_val = np.min(timeseries[0])
+                                max_val = np.max(timeseries[0])
+                            
+                            
+                            
+                            preview_image = grid[i].imshow(
+                                timeseries[0],
+                                cmap="gray",
+                                interpolation="none",
+                                vmin=min_val,
+                                vmax=max_val,
+                            )
+                            grid[i].set_xticks([])
+                            grid[i].set_yticks([])
+                            grid[i].set_title("preview channel:" + single_channel)
+                            grid.cbar_axes[i].colorbar(preview_image)
+                            i = i + 1
+                            #grid[i].set_visible(False)
+                        plt.show()
+                    display(fig)
 
                 def preview_parameters(Settings):
                     pass
 
-                widgets.interact(
+                widgets.interactive(
                     preview_exposure,
                     message = acq_gui["label_1"],
                     Modality=acq_gui["modalities_dropdown"],
                     Exposure=acq_gui["Exposure"],
                     Noise=acq_gui["Noise"]
                 )
-                widgets.interact(
+                widgets.interactive(
                     preview_parameters,
                     Settings = acq_gui["message"]
                 )
-
-
+            display(acquisition_gui["image_output"])
             get_preview(self.my_experiment.imager, acquisition_gui)
 
         def clear(b):
@@ -1240,9 +1247,24 @@ class jupyter_gui:
         acquisition_gui["Preview"].on_click(preview_mod)
         acquisition_gui["Set"].on_click(set_params)
         acquisition_gui["Clear"].on_click(clear)
-        display(acquisition_gui["Frames"])
+        acquisition_gui._widgets["image_output"] = widgets.Output()
+        acq_widgets = {}
+        for wgt in acquisition_gui._widgets.keys():
+            acq_widgets[wgt] = False
+            acquisition_gui._widgets[wgt].layout = widgets.Layout(width="50%", display="None")
+        acquisition_gui.show()
+        acq_widgets["Frames"] = True
+        acq_widgets["Set"] = True
+        acq_widgets["image_output"] = True
+        acq_widgets["label_1"] = True
+        acq_widgets["modalities_dropdown"] = True
+        acq_widgets["Exposure"] = True
+        acq_widgets["Noise"] = True
+        acq_widgets["message"] = True
+        #display(acquisition_gui["Frames"])
         preview_mod(True)
-        display(acquisition_gui["Set"], acquisition_gui["Clear"])
+        self._update_widgets(acquisition_gui, acq_widgets)
+        #display(acquisition_gui["Set"], acquisition_gui["Clear"])
 
 
     def acquire_images(self):
