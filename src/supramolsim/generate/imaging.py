@@ -775,6 +775,7 @@ class Imager:
         initial_pos=True,
         reference_pt=False,
         axesoff=False,
+        return_fig = False
     ):
         # FOCUS
         roi_ranges = self.get_roi_params("ranges")
@@ -812,4 +813,5 @@ class Imager:
         ax.view_init(elev=view_init[0], azim=view_init[1], roll=view_init[2])
         if axesoff:
             ax.set_axis_off()
-        fig.show
+        if return_fig:
+            return fig

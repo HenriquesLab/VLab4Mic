@@ -16,12 +16,15 @@ import numpy as np
 import tifffile as tif
 import copy
 import mpl_toolkits.axes_grid1 as axes_grid1
+from ipyfilechooser import FileChooser
+
 
 @dataclass
 class jupyter_gui:
     my_experiment = ExperimentParametrisation()
     structures_to_show = ["3J3Y", "7R5K", "1XI5"]
     modalities_default = ["Widefield", "Confocal", "STED", "SMLM"]
+
     def __post_init__(self):
         self.demo_structures = []
         # get available structure IDs
@@ -53,6 +56,13 @@ class jupyter_gui:
             base=self.my_experiment.configuration_path,
         )
 
+    def _update_widgets(self, container, visibility):
+        for widgetname in visibility.keys():
+            if visibility[widgetname]:
+                container[widgetname].layout.display = "inline-flex"
+            else:
+                container[widgetname].layout.display = "None"
+
     def structure_gui(self):
         structure_gui = easy_gui_jupyter.EasyGUI("Structure")
         active_widgets = dict()
@@ -60,61 +70,58 @@ class jupyter_gui:
 
         def select_structure(b):
             structure_gui["Select"].disabled = True
-            active_widgets["label_2"] = None
-            plt.clf()
-            clear_output()
-            for widgetname in active_widgets:
-                display(structure_gui[widgetname])
+            widgets_visibility["label_2"] = True
+            self._update_widgets(structure_gui, widgets_visibility)
+
             structure_id = self.structures_info_list[
                 structure_gui["struct_dropdown"].value
             ]
             self.my_experiment.structure_id = structure_id
             self.my_experiment._build_structure()
-            active_widgets["label_3"] = None
-            active_widgets["View"] = None
-            plt.clf()
-            clear_output()
-            for widgetname in active_widgets:
-                display(structure_gui[widgetname])
+            widgets_visibility["label_3"] = True
+            widgets_visibility["View"] = True
+            widgets_visibility["label_2"] = False
+            # plt.clf()
+            # clear_output()
+            self._update_widgets(structure_gui, widgets_visibility)
             structure_gui._widgets["label_2"].layout = widgets.Layout()
             structure_gui._widgets["label_2"].layout.display = "None"
             structure_gui["View"].disabled = False
 
-            
-
         def view_structure(b):
-            plt.clf()
-            clear_output()
             structure_gui["Fraction"].disabled = False
             structure_gui["Elevation"].disabled = False
             structure_gui["Azimuthal"].disabled = False
             structure_gui["Roll"].disabled = False
             structure_gui["hidegrid"].disabled = False
-            active_widgets["label_5"] = None
-            active_widgets["Fraction"] = None
-            active_widgets["label_4"] = None
-            active_widgets["hidegrid"] = None
-            active_widgets["Elevation"] = None
-            active_widgets["Azimuthal"] = None
-            active_widgets["Roll"] = None
-            for widgetname in active_widgets:
-                display(structure_gui[widgetname])
+            widgets_visibility["label_5"] = True
+            widgets_visibility["Fraction"] = True
+            widgets_visibility["label_4"] = True
+            widgets_visibility["hidegrid"] = True
+            widgets_visibility["Elevation"] = True
+            widgets_visibility["Azimuthal"] = True
+            widgets_visibility["Roll"] = True
+            widgets_visibility["image_output"] = True
+            self._update_widgets(structure_gui, widgets_visibility)
             fraction = structure_gui["Fraction"].value
             el = structure_gui["Elevation"].value
             az = structure_gui["Azimuthal"].value
             rll = structure_gui["Roll"].value
             axes_off = structure_gui["hidegrid"].value
-            self.my_experiment.structure.show_assembly_atoms(
-                assembly_fraction=fraction, view_init=[el, az, rll], axesoff=axes_off
-            )
+            structure_gui["image_output"].clear_output()
+            with structure_gui["image_output"]:
+                display(
+                    self.my_experiment.structure.show_assembly_atoms(
+                        assembly_fraction=fraction,
+                        view_init=[el, az, rll],
+                        axesoff=axes_off,
+                    )
+                )
 
         def upload_file(b):
             structure_gui["Upload"].disabled = True
-            active_widgets["label_2"] = None
-            plt.clf()
-            clear_output()
-            for widgetname in active_widgets:
-                display(structure_gui[widgetname])
+            widgets_visibility["label_2"] = True
+            self._update_widgets(structure_gui, widgets_visibility)
             filepath = structure_gui["File"].selected
             filename = structure_gui["File"].selected_filename
             structure = build_structure_cif(
@@ -123,39 +130,40 @@ class jupyter_gui:
             self.my_experiment.structure = structure
             self.my_experiment.objects_created["structure"] = True
             structure_param = data_format.structural_format.struct_params_format()
-            active_widgets["label_3"] = None
-            active_widgets["View"] = None
-            plt.clf()
-            clear_output()
-            for widgetname in active_widgets:
-                display(structure_gui[widgetname])
+            widgets_visibility["label_3"] = True
+            widgets_visibility["View"] = True
+            widgets_visibility["label_2"] = False
+            self._update_widgets(structure_gui, widgets_visibility)
             structure_gui._widgets["label_2"].layout = widgets.Layout()
             structure_gui._widgets["label_2"].layout.display = "None"
             structure_gui["View"].disabled = False
 
         def activate_demos(b):
-            plt.clf()
-            clear_output()
-            active_widgets["label_1"] = None
-            active_widgets["struct_dropdown"] = None
-            active_widgets["Select"] = None
-            for widgetname in active_widgets.keys():
-                display(structure_gui[widgetname])
+            widgets_visibility["Demos"] = False
+            widgets_visibility["Fileupload"] = False
+            #
+            widgets_visibility["label_1"] = True
+            widgets_visibility["struct_dropdown"] = True
+            widgets_visibility["Select"] = True
+            self._update_widgets(structure_gui, widgets_visibility)
 
         def activate_upload(b):
-            plt.clf()
-            clear_output()
-            active_widgets["label_6"] = None
-            active_widgets["File"] = None
-            active_widgets["Upload"] = None
-            for widgetname in active_widgets.keys():
-                display(structure_gui[widgetname])
+            widgets_visibility["Demos"] = False
+            widgets_visibility["Fileupload"] = False
+            widgets_visibility["label_6"] = True
+            widgets_visibility["File"] = True
+            widgets_visibility["Upload"] = True
+            self._update_widgets(structure_gui, widgets_visibility)
 
         structure_gui.add_button("Demos", description="Example structures")
         structure_gui.add_button("Fileupload", description="Upload CIF file")
         structure_gui.add_label("Select an example structure from the dropdown menu")
-        structure_gui.add_label("Loading structure. This will take a few seconds...") # "Text_loading"]
-        structure_gui.add_label("Structure Loaded! Use the panels below to visualise your structure.") # "Text_loading"]
+        structure_gui.add_label(
+            "Loading structure. This will take a few seconds..."
+        )  # "Text_loading"]
+        structure_gui.add_label(
+            "Structure Loaded! Use the panels below to visualise your structure."
+        )  # "Text_loading"]
         structure_gui.add_dropdown("struct_dropdown", options=self.demo_structures)
         structure_gui.add_button("Select", description="Load structure")
         structure_gui.add_file_upload(
@@ -213,7 +221,18 @@ class jupyter_gui:
         structure_gui["Upload"].on_click(upload_file)
         structure_gui["Demos"].on_click(activate_demos)
         structure_gui["Fileupload"].on_click(activate_upload)
-        display(structure_gui["Demos"], structure_gui["Fileupload"])
+        structure_gui._widgets["image_output"] = widgets.Output()
+        widgets_visibility = {}
+        for wgt in structure_gui._widgets.keys():
+            widgets_visibility[wgt] = False
+            structure_gui._widgets[wgt].layout = widgets.Layout(
+                width="50%", display="None"
+            )
+        #
+        structure_gui.show()
+        widgets_visibility["Demos"] = True
+        widgets_visibility["Fileupload"] = True
+        self._update_widgets(structure_gui, widgets_visibility)
 
     def structural_model_gui(self):
         # ensure that structure has no labels associated
@@ -221,8 +240,6 @@ class jupyter_gui:
         particle_created = False
         current_labels = dict()
         probe_widgets = dict()
-        #generic_labels = []
-        #structure_labels = []
         vlab_probes = []
         mock_labels = []
         fluorophores_list = []
@@ -233,9 +250,11 @@ class jupyter_gui:
                 fluorophores_list.append(os.path.splitext(fluoid)[0])
         for file in os.listdir(self.config_directories["probes"]):
             if os.path.splitext(file)[-1] == ".yaml" and "_template" not in file:
-                label_config_path = os.path.join(self.config_directories["probes"], file)
+                label_config_path = os.path.join(
+                    self.config_directories["probes"], file
+                )
                 label_parmeters = supramolsim.load_yaml(label_config_path)
-                #print(label_parmeters)
+                # print(label_parmeters)
                 lablname = os.path.splitext(file)[0]
                 if "Mock" in label_parmeters["known_targets"]:
                     mock_labels.append(lablname)
@@ -257,7 +276,7 @@ class jupyter_gui:
                 tmp_label = {
                     "probe_name": label_id,
                     "probe_fluorophore": fluorophore_id,
-                    "labelling_efficiency": lab_eff
+                    "labelling_efficiency": lab_eff,
                 }
                 unique_name = label_id + "_conjugated_" + fluorophore_id
                 if unique_name in current_labels.keys():
@@ -271,48 +290,43 @@ class jupyter_gui:
             label_id = labels_gui["mock_label_dropdown"].value
             fluorophore_id = labels_gui["mock_fluo_dropdown"].value
             lab_eff = labels_gui["mock_Labelling_efficiency"].value
-            probe_distance_to_epitope = labels_gui["mock_distance_to_epitope"].value 
+            probe_distance_to_epitope = labels_gui["mock_distance_to_epitope"].value
             mock_type = options_dictionary[labels_gui["mock_type"].value]
             if mock_type == "Atom_residue":
-                #atom, residue = labels_gui["mock_value"].value.split(".")
                 residue = labels_gui["mock_type_options1"].value
                 atom = labels_gui["mock_type_options2"].value
-                target_value = dict(
-                    atoms=atom,
-                    residues=residue
-                )
-            elif mock_type == "Sequence": 
-                #target_value = labels_gui["mock_value"].value
+                target_value = dict(atoms=atom, residues=residue)
+            elif mock_type == "Sequence":
                 chain_name = labels_gui["mock_type_options1"].value
                 position = labels_gui["mock_type_options2"].value
-                protein_name, _1, site, sequence = self.my_experiment.structure.get_peptide_motif(
-                    chain_name=chain_name,
-                    position=position)
+                protein_name, _1, site, sequence = (
+                    self.my_experiment.structure.get_peptide_motif(
+                        chain_name=chain_name, position=position
+                    )
+                )
                 target_value = sequence
             elif mock_type == "Primary":
                 target_value = labels_gui["mock_type_options1"].value
-            target_info=dict(
-                type=mock_type,
-                value=target_value
-            )
+            target_info = dict(type=mock_type, value=target_value)
             as_linker = labels_gui["as_linker"].value
             if as_linker:
-                options_per_type1["Primary_Probe"] = [label_id,]
-                #labels_gui["mock_type_options1"].options = options_per_type1
+                options_per_type1["Primary_Probe"] = [
+                    label_id,
+                ]
 
             enable_wobble = labels_gui["wobble"].value
             wobble_theta = labels_gui["wobble_theta"].value
 
             tmp_label = {
-                    "probe_name": label_id,
-                    "probe_fluorophore": fluorophore_id,
-                    "labelling_efficiency": lab_eff,
-                    "probe_target_type": target_info["type"],
-                    "probe_target_value": target_info["value"],
-                    "probe_distance_to_epitope": probe_distance_to_epitope,
-                    "as_primary": as_linker,
-                    "probe_wobbling": enable_wobble,
-                    "wobble_theta": wobble_theta
+                "probe_name": label_id,
+                "probe_fluorophore": fluorophore_id,
+                "labelling_efficiency": lab_eff,
+                "probe_target_type": target_info["type"],
+                "probe_target_value": target_info["value"],
+                "probe_distance_to_epitope": probe_distance_to_epitope,
+                "as_primary": as_linker,
+                "probe_wobbling": enable_wobble,
+                "wobble_theta": wobble_theta,
             }
 
             unique_name = label_id + "_conjugated_" + fluorophore_id
@@ -335,9 +349,11 @@ class jupyter_gui:
                 self.nlabels = len(current_labels)
                 for keys, values in current_labels.items():
                     self.my_experiment.add_probe(**values)
-                self.my_experiment.build(modules=["particle",])
-                probe_names = list(self.my_experiment.probe_parameters.keys())
-                display(probe_names)
+                self.my_experiment.build(
+                    modules=[
+                        "particle",
+                    ]
+                )
                 labels_gui["Label"].disabled = True
                 labels_gui["Add"].disabled = True
                 labels_gui["Add_mock"].disabled = True
@@ -346,40 +362,35 @@ class jupyter_gui:
 
         # buttons to select preset probes or customise
         def activate_demos(b):
-            plt.clf()
-            clear_output()
-            for key, val in probe_widgets.items():
-                probe_widgets[key] = False
-            def get_info(labels_gui):
-                def show_probe_info(message, probe_name):
-                        probe_type = probe_parameters[probe_name]["target"]["type"]
-                        probe_value = probe_parameters[probe_name]["target"]["value"]
-                        if probe_type == "Sequence":
-                            print(f"This probe will label the amino acid sequence: {probe_value}")
-                        elif probe_type == "Atom_residue":
-                            print(f"This probe will label all available residue(s): {probe_value['residues']}")
-                        elif probe_type == "Primary":
-                            print(f"This is a secondary probe that labels this probe: {probe_value}")
-
-                widgets.interact(
-                    show_probe_info, message=labels_gui["label_1"],  probe_name=labels_gui["label_dropdown"]
-                )
-            get_info(labels_gui)
-            
-            #probe_widgets["label_dropdown"] = True
-            #probe_widgets["fluo_dropdown"] = True
+            probe_widgets["label_dropdown"] = True
+            probe_widgets["label_message"] = True
+            probe_widgets["label_1"] = True
             probe_widgets["Labelling_efficiency"] = True
             probe_widgets["Add"] = True
             probe_widgets["label_7"] = True
             probe_widgets["Label"] = True
-            for widgetname, value in probe_widgets.items():
-                if value:
-                    display(labels_gui[widgetname])
+            self._update_widgets(labels_gui, probe_widgets)
+
+        def update_label_message(change):
+            probe_type = probe_parameters[change.new]["target"]["type"]
+            probe_value = probe_parameters[change.new]["target"]["value"]
+            if probe_type == "Sequence":
+                # print(f"This probe will label the amino acid sequence: {probe_value}")
+                new_message = "This probe will label the amino acid sequence: " + str(
+                    probe_value
+                )
+            elif probe_type == "Atom_residue":
+                new_message = "This probe will label all available residue(s): " + str(
+                    probe_value["residues"]
+                )
+            elif probe_type == "Primary":
+                new_message = (
+                    "This is a secondary probe that labels this probe: "
+                    + str(probe_value)
+                )
+            labels_gui["label_message"].value = new_message
 
         def activate_custom(b):
-            probe_widgets = dict()
-            plt.clf()
-            clear_output()
             for key, val in probe_widgets.items():
                 probe_widgets[key] = False
             probe_widgets["label_3"] = True
@@ -389,43 +400,45 @@ class jupyter_gui:
             probe_widgets["mock_type"] = True
             probe_widgets["mock_type_options1"] = True
             probe_widgets["mock_type_options2"] = True
-            # widgets for advace setting
-            #probe_widgets["label_5"] = True
-            #probe_widgets["Suggestion"] = True
-            #probe_widgets["mock_value"] = True
-            #probe_widgets["radnom_value"] = True
-            
-            #probe_widgets["mock_fluo_dropdown"] = True
             probe_widgets["mock_Labelling_efficiency"] = True
             probe_widgets["mock_distance_to_epitope"] = True
             probe_widgets["wobble"] = True
             probe_widgets["wobble_theta"] = True
             probe_widgets["Add_mock"] = True
             probe_widgets["Label"] = True
-            for widgetname, value in probe_widgets.items():
-                if value:
-                    display(labels_gui[widgetname])
-        
+            self._update_widgets(labels_gui, probe_widgets)
+
         def random_sequence(b):
-            protein_name, _1, site, sequence = self.my_experiment.structure.get_peptide_motif()
-            hint_message = "Our suggestion: C-terminal of " + protein_name + " (" + sequence + ")"
+            protein_name, _1, site, sequence = (
+                self.my_experiment.structure.get_peptide_motif()
+            )
+            hint_message = (
+                "Our suggestion: C-terminal of " + protein_name + " (" + sequence + ")"
+            )
             labels_gui["Suggestion"].value = hint_message
             labels_gui["mock_value"].value = sequence
 
         def type_dropdown_change(change):
-            labels_gui["mock_type_options1"].options = options_per_type1[change.new] 
+            labels_gui["mock_type_options1"].options = options_per_type1[change.new]
             labels_gui["mock_type_options1"].value = options_per_type1[change.new][0]
             labels_gui["mock_type_options2"].options = options_per_type2[change.new]
             labels_gui["mock_type_options2"].value = options_per_type2[change.new][0]
 
-        labels_gui.add_label("Use the dropdown menu to select an existing probe for your structure.")
+        labels_gui.add_label(
+            "Use the dropdown menu to select an existing probe for your structure."
+        )
         # initial buttons
         labels_gui.add_button("Demos", description="VLab4Mic probes")
         labels_gui.add_button("Customise", description="Customise your probe")
         # DEMOS
         labels_gui.add_label("Structure specific labels")
         if self.my_experiment.structure is not None:
-            labels_gui.add_dropdown("label_dropdown", options=vlab_probes)
+            labels_gui.add_dropdown(
+                "label_dropdown", options=vlab_probes, value=vlab_probes[1]
+            )
+            labels_gui._widgets["label_message"] = widgets.HTML(value="")
+            labels_gui["label_dropdown"].observe(update_label_message, names="value")
+            labels_gui["label_dropdown"].value = vlab_probes[0]
             labels_gui.add_dropdown("fluo_dropdown", options=fluorophores_list)
             labels_gui.add_float_slider(
                 "Labelling_efficiency",
@@ -440,43 +453,86 @@ class jupyter_gui:
             )
             labels_gui["Add"].on_click(build_label)
         # CUSTOM
-        labels_gui.add_label("Customise your probe. First, select a probe model from the dropdown menu.")
+        labels_gui.add_label(
+            "Customise your probe. First, select a probe model from the dropdown menu."
+        )
         labels_gui.add_dropdown("mock_label_dropdown", options=mock_labels)
         labels_gui.add_label("Define the type of target for this probe.")
         options_dictionary = dict(
-            Protein="Sequence",
-            Residue="Atom_residue",
-            Primary_Probe="Primary"
+            Protein="Sequence", Residue="Atom_residue", Primary_Probe="Primary"
         )
-        labels_gui.add_dropdown("mock_type", options=list(options_dictionary.keys()),description="I want this probe to target a: ")
+        labels_gui.add_dropdown(
+            "mock_type",
+            options=list(options_dictionary.keys()),
+            description="I want this probe to target a: ",
+        )
         list_of_proteins = self.my_experiment.structure.list_protein_names()
-        list_of_residues = ["ALA", "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "GLY", "HIS", "ILE", "LEU", "LYS", "MET", "PHE", "PRO", "SER", "THR", "TRP", "TYR", "VAL"]
-        options_per_type1= dict(
+        list_of_residues = [
+            "ALA",
+            "ARG",
+            "ASN",
+            "ASP",
+            "CYS",
+            "GLN",
+            "GLU",
+            "GLY",
+            "HIS",
+            "ILE",
+            "LEU",
+            "LYS",
+            "MET",
+            "PHE",
+            "PRO",
+            "SER",
+            "THR",
+            "TRP",
+            "TYR",
+            "VAL",
+        ]
+        options_per_type1 = dict(
             Protein=list_of_proteins,
             Residue=list_of_residues,
-            Primary_Probe=[None,]
+            Primary_Probe=[
+                None,
+            ],
         )
-        options_per_type2= dict(
+        options_per_type2 = dict(
             Protein=["cterminal", "nterminal"],
             Residue=["CA"],
-            Primary_Probe=[None,]
+            Primary_Probe=[
+                None,
+            ],
         )
 
-        labels_gui.add_dropdown("mock_type_options1", options=options_per_type1[labels_gui["mock_type"].value],description="Which one: ")
-        labels_gui.add_dropdown("mock_type_options2", options=options_per_type2[labels_gui["mock_type"].value],description="Where: ")
-        labels_gui["mock_type"].observe(type_dropdown_change, names='value')
-        labels_gui.add_label("Type in a sequence motif, Residue names or name of a primary probe")
+        labels_gui.add_dropdown(
+            "mock_type_options1",
+            options=options_per_type1[labels_gui["mock_type"].value],
+            description="Which one: ",
+        )
+        labels_gui.add_dropdown(
+            "mock_type_options2",
+            options=options_per_type2[labels_gui["mock_type"].value],
+            description="Where: ",
+        )
+        labels_gui["mock_type"].observe(type_dropdown_change, names="value")
+        labels_gui.add_label(
+            "Type in a sequence motif, Residue names or name of a primary probe"
+        )
         protein_name = None
         sequence = None
-        protein_name, _1, site, sequence = self.my_experiment.structure.get_peptide_motif()
-        hint_message = "Our suggestion: C-terminal of " + protein_name + " (" + sequence + ")"
-        labels_gui._widgets["Suggestion"] = widgets.HTML(value = hint_message)
-        mock_value_suggestions = dict(
-            Protein=sequence,
-            Residue="LYS.CA",
-            Primary_Probe=None
+        protein_name, _1, site, sequence = (
+            self.my_experiment.structure.get_peptide_motif()
         )
-        labels_gui.add_textarea("mock_value", description="At this position:", value=sequence)
+        hint_message = (
+            "Our suggestion: C-terminal of " + protein_name + " (" + sequence + ")"
+        )
+        labels_gui._widgets["Suggestion"] = widgets.HTML(value=hint_message)
+        mock_value_suggestions = dict(
+            Protein=sequence, Residue="LYS.CA", Primary_Probe=None
+        )
+        labels_gui.add_textarea(
+            "mock_value", description="At this position:", value=sequence
+        )
         labels_gui.add_button("radnom_value", description="Give me another suggestion")
         labels_gui["radnom_value"].on_click(random_sequence)
         labels_gui.add_dropdown("mock_fluo_dropdown", options=fluorophores_list)
@@ -496,11 +552,15 @@ class jupyter_gui:
             step=1,
             description="Distance from probe to epitope (A)",
         )
-        labels_gui.add_label("Activate this option if you intent to use a secondary that recognises the current probe")
-        labels_gui.add_checkbox("as_linker", description = "Model as primary with epitope for secondary probe",
-                        value = False)
-        labels_gui.add_checkbox("wobble", description = "Enable wobble",
-                        value = False)
+        labels_gui.add_label(
+            "Activate this option if you intent to use a secondary that recognises the current probe"
+        )
+        labels_gui.add_checkbox(
+            "as_linker",
+            description="Model as primary with epitope for secondary probe",
+            value=False,
+        )
+        labels_gui.add_checkbox("wobble", description="Enable wobble", value=False)
         labels_gui.add_float_slider(
             "wobble_theta",
             value=10,
@@ -512,39 +572,52 @@ class jupyter_gui:
         labels_gui.add_button("Add_mock", description="Add custom probe")
         labels_gui["Add_mock"].on_click(build_mock_label)
 
-
         labels_gui.add_button("Clear", description="Clear Labels")
         labels_gui.add_button("Show", description="Display current labels")
-        labels_gui.add_label(
-            "After adding your probes, click on 'Done' to continue"
-        )
-        labels_gui.add_button("Label", description="Done", disabled = True)
+        labels_gui.add_label("After adding your probes, click on 'Done' to continue")
+        labels_gui.add_button("Label", description="Done", disabled=True)
         labels_gui["Demos"].on_click(activate_demos)
         labels_gui["Customise"].on_click(activate_custom)
         labels_gui["Clear"].on_click(clear)
         labels_gui["Show"].on_click(show)
         labels_gui["Label"].on_click(label_struct)
+        probe_widgets = {}
+        for wgt in labels_gui._widgets.keys():
+            probe_widgets[wgt] = False
+            labels_gui._widgets[wgt].layout = widgets.Layout(
+                width="50%", display="None"
+            )
+        labels_gui.show()
+        probe_widgets["Demos"] = True
+        probe_widgets["Customise"] = True
         if self.my_experiment.structure is None:
             print("No structure has been loaded")
         else:
             self.my_experiment.remove_probes()
-            display(labels_gui["Demos"], labels_gui["Customise"])
+            probe_widgets["Demos"] = True
+            probe_widgets["Customise"] = True
+            self._update_widgets(labels_gui, probe_widgets)
+            probe_widgets["Demos"] = False
+            probe_widgets["Customise"] = False
 
     def refine_model_gui(self):
         width = "50%"
         style = {"description_width": "initial"}
-        structural_model_gui = easy_gui_jupyter.EasyGUI("StructuralModel",width=width)
+        structural_model_gui = easy_gui_jupyter.EasyGUI("StructuralModel", width=width)
+
         def show_model(b):
-            plt.clf()
-            clear_output()
-            # plot
             emitter_plotsize = structural_model_gui["emitterplotsize"].value
             source_size = structural_model_gui["sourceplotsize"].value
             plot_size = structural_model_gui["plot_size"].value
             structural_model_gui.show()
             if self.my_experiment.particle:
                 particle = self.my_experiment.particle
-                fig, axs = plt.subplots(1, 3, subplot_kw={"projection": "3d"}, figsize = [plot_size, plot_size/2])
+                fig, axs = plt.subplots(
+                    1,
+                    3,
+                    subplot_kw={"projection": "3d"},
+                    figsize=[plot_size, plot_size / 2],
+                )
                 particle.gen_axis_plot(
                     with_sources=structural_model_gui["WTarget"].value,
                     source_plotsize=source_size,
@@ -570,19 +643,23 @@ class jupyter_gui:
                     emitter_plotsize=emitter_plotsize,
                 )
                 plt.subplots_adjust(wspace=0.5)
-                plt.show()
+                plt.close()
+                structural_model_gui["image_output"].clear_output()
+                with structural_model_gui["image_output"]:
+                    display(fig)
             else:
                 print(
                     "You have not created a labelled structure. "
                     "Make sure you select 'Label structure' button on previous cell"
                 )
+
         def activate_visualisation_options(b):
             # show hidden widgets
             structural_model_gui["show_preview"].layout.display = "None"
             structural_model_gui["label_1"].layout.display = "block"
-            structural_model_gui["plot_size"].layout.display = 'inline-flex'
-            structural_model_gui["emitterplotsize"].layout.display = 'inline-flex'
-            structural_model_gui["sourceplotsize"].layout.display = 'inline-flex'
+            structural_model_gui["plot_size"].layout.display = "inline-flex"
+            structural_model_gui["emitterplotsize"].layout.display = "inline-flex"
+            structural_model_gui["sourceplotsize"].layout.display = "inline-flex"
             structural_model_gui["WTarget"].layout.display = "block"
             structural_model_gui["Axes"].layout.display = "block"
             structural_model_gui["update_plot"].layout.display = "block"
@@ -591,14 +668,14 @@ class jupyter_gui:
             structural_model_gui["enable_defects"].layout.display = "block"
             show_model(b)
 
-
         def activate_defects(b):
             structural_model_gui._widgets["eps1"].layout.display = "block"
-            structural_model_gui._widgets["xmer_neigh_distance"].layout.display = "block"
+            structural_model_gui._widgets["xmer_neigh_distance"].layout.display = (
+                "block"
+            )
             structural_model_gui._widgets["Defect"].layout.display = "block"
             structural_model_gui._widgets["use_defects"].layout.display = "block"
             structural_model_gui["enable_defects"].disabled = True
-
 
         def add_defects(b):
             if self.nlabels == 1:
@@ -625,9 +702,13 @@ class jupyter_gui:
             self.my_experiment.particle.generate_instance()
             show_model(b)
 
-        structural_model_gui.add_button("show_preview", description="Preview your model")
+        structural_model_gui.add_button(
+            "show_preview", description="Preview your model"
+        )
         structural_model_gui.add_label("Visualisation parameters")
-        structural_model_gui["label_1"].layout = widgets.Layout(width=width, display = "None")
+        structural_model_gui["label_1"].layout = widgets.Layout(
+            width=width, display="None"
+        )
         structural_model_gui.add_int_slider(
             "plot_size",
             value=10,
@@ -636,7 +717,9 @@ class jupyter_gui:
             step=1,
             description="Figure size",
         )
-        structural_model_gui["plot_size"].layout = widgets.Layout(width=width, display = "None")
+        structural_model_gui["plot_size"].layout = widgets.Layout(
+            width=width, display="None"
+        )
         structural_model_gui.add_float_slider(
             "emitterplotsize",
             value=24,
@@ -645,27 +728,41 @@ class jupyter_gui:
             step=1,
             description="Emitter size",
         )
-        structural_model_gui["emitterplotsize"].layout = widgets.Layout(width=width, display = "None")
+        structural_model_gui["emitterplotsize"].layout = widgets.Layout(
+            width=width, display="None"
+        )
         structural_model_gui["emitterplotsize"].style = style
         structural_model_gui.add_float_slider(
             "sourceplotsize", value=1, min=0, max=50, step=1, description="Target size"
         )
-        structural_model_gui["sourceplotsize"].layout = widgets.Layout(width=width, display = "None")
+        structural_model_gui["sourceplotsize"].layout = widgets.Layout(
+            width=width, display="None"
+        )
         structural_model_gui["sourceplotsize"].style = style
         structural_model_gui.add_checkbox(
             "WTarget", description="With target site", value=True
         )
-        structural_model_gui["WTarget"].layout = widgets.Layout(width=width, display = "None")
+        structural_model_gui["WTarget"].layout = widgets.Layout(
+            width=width, display="None"
+        )
         structural_model_gui.add_checkbox("Axes", description="Hide Axes", value=True)
-        structural_model_gui["Axes"].layout = widgets.Layout(width=width, display = "None")
+        structural_model_gui["Axes"].layout = widgets.Layout(
+            width=width, display="None"
+        )
         structural_model_gui.add_button("update_plot", description="Update figure")
-        structural_model_gui["update_plot"].layout = widgets.Layout(width=width, display = "None")
+        structural_model_gui["update_plot"].layout = widgets.Layout(
+            width=width, display="None"
+        )
         structural_model_gui.add_button(
             "Relabel", description="Relabel particle and update figure"
         )
-        structural_model_gui["Relabel"].layout = widgets.Layout(width=width, display = "None")
+        structural_model_gui["Relabel"].layout = widgets.Layout(
+            width=width, display="None"
+        )
         structural_model_gui.add_label("Model defects parameters (optional):")
-        structural_model_gui["label_2"].layout = widgets.Layout(width=width, display = "None")
+        structural_model_gui["label_2"].layout = widgets.Layout(
+            width=width, display="None"
+        )
         structural_model_gui._widgets["eps1"] = widgets.BoundedIntText(
             value=300,
             min=0,
@@ -675,7 +772,9 @@ class jupyter_gui:
             style=structural_model_gui._style,
             remember_value=True,
         )
-        structural_model_gui._widgets["eps1"].layout = widgets.Layout(width=width, display = "None")
+        structural_model_gui._widgets["eps1"].layout = widgets.Layout(
+            width=width, display="None"
+        )
         structural_model_gui._widgets["xmer_neigh_distance"] = widgets.BoundedIntText(
             value=600,
             min=0,
@@ -685,7 +784,9 @@ class jupyter_gui:
             style=structural_model_gui._style,
             remember_value=True,
         )
-        structural_model_gui._widgets["xmer_neigh_distance"].layout = widgets.Layout(width=width, display = "None")
+        structural_model_gui._widgets["xmer_neigh_distance"].layout = widgets.Layout(
+            width=width, display="None"
+        )
         structural_model_gui._widgets["Defect"] = widgets.BoundedFloatText(
             value=0.5,
             min=0,
@@ -695,21 +796,28 @@ class jupyter_gui:
             style=structural_model_gui._style,
             remember_value=True,
         )
-        structural_model_gui._widgets["Defect"].layout = widgets.Layout(width=width, display = "None")
+        structural_model_gui._widgets["Defect"].layout = widgets.Layout(
+            width=width, display="None"
+        )
         structural_model_gui.add_button(
             "use_defects", description="Apply defects and update figure"
         )
-        structural_model_gui._widgets["use_defects"].layout = widgets.Layout(width=width, display = "None")
+        structural_model_gui._widgets["use_defects"].layout = widgets.Layout(
+            width=width, display="None"
+        )
         #
         structural_model_gui.add_button(
             "enable_defects", description="Enable particle defects"
         )
-        structural_model_gui["enable_defects"].layout = widgets.Layout(width=width, display = "None")
+        structural_model_gui["enable_defects"].layout = widgets.Layout(
+            width=width, display="None"
+        )
         structural_model_gui["enable_defects"].on_click(activate_defects)
         structural_model_gui["show_preview"].on_click(activate_visualisation_options)
         structural_model_gui["update_plot"].on_click(update_plot)
         structural_model_gui["use_defects"].on_click(add_defects)
         structural_model_gui["Relabel"].on_click(relabel)
+        structural_model_gui._widgets["image_output"] = widgets.Output()
         if self.my_experiment.particle:
             structural_model_gui.show()
         else:
@@ -719,23 +827,22 @@ class jupyter_gui:
         field_gui = easy_gui_jupyter.EasyGUI("field")
         width = "50%"
         style = {"description_width": "initial"}
+
         def createmin(b):
             random_pl = field_gui["random"].value
             nparticles = field_gui["nparticles"].value
             min_distance = field_gui["mindist"].value
             # set parameters for virtual samle
-            #self.virtualsample_params
             # then create the field
             self.my_experiment._build_coordinate_field(
                 keep=True,
                 nparticles=nparticles,
                 use_self_particle=False,
                 random_placing=random_pl,
-                minimal_distance=min_distance
+                minimal_distance=min_distance,
             )
             field_gui["Use_Upload"].disabled = True
             field_gui["show"].layout.display = "block"
-            #field_gui["show"].disabled = False
 
         def createmin_particles(b):
             random_pl = field_gui["random"].value
@@ -750,8 +857,8 @@ class jupyter_gui:
                 nparticles=nparticles,
                 random_placing=random_pl,
                 minimal_distance=min_distance,
-                random_orientations = random_orientations
-                )
+                random_orientations=random_orientations,
+            )
             field_gui["Use_Upload"].disabled = True
             field_gui["show"].layout.display = "block"
 
@@ -765,41 +872,46 @@ class jupyter_gui:
                 background=field_gui["background"].value,
                 threshold=field_gui["threshold"].value,
                 pixelsize=field_gui["pixelsize"].value,
-                min_distance=field_gui["min_distance"].value)
+                min_distance=field_gui["min_distance"].value,
+            )
             coordinates_field = field.create_min_field(relative_positions=xyz_relative)
             if particle is not None:
                 coordinates_field.create_molecules_from_InstanceObject(particle)
             coordinates_field.construct_static_field()
             exported_field = coordinates_field.export_field()
-            #display(field_gui["show"])
+            # display(field_gui["show"])
             field_gui["minimal"].disabled = True
             field_gui["minimal_particles"].disabled = True
             field_gui["show"].layout.display = "block"
-        
+
         def useimage(b):
-            plt.clf()
-            display(
-                field_gui["File"],
-                field_gui["pixelsize"],
-                field_gui["background"],
-                field_gui["min_distance"],
-                field_gui["sigma"],
-                field_gui["threshold"],
-                field_gui["Mode"],
-                field_gui["Upload"],
-                field_gui["show"]
-            )
+            field_widgets["File"] = True
+            field_widgets["pixelsize"] = True
+            field_widgets["background"] = True
+            field_widgets["min_distance"] = True
+            field_widgets["sigma"] = True
+            field_widgets["threshold"] = True
+            field_widgets["Mode"] = True
+            field_widgets["Upload"] = True
+            field_widgets["show"] = True
+            self._update_widgets(field_gui, field_widgets)
 
         def showfield(b):
-            #plt.clf()
-            plt.close()
+            field_widgets["image_output"] = True
+            self._update_widgets(field_gui, field_widgets)
             field_gui["show"].disabled = True
-            self.my_experiment.coordinate_field.show_field(view_init=[90, 0, 0], initial_pos=False)
-
+            field_gui["image_output"].clear_output()
+            with field_gui["image_output"]:
+                display(
+                    self.my_experiment.coordinate_field.show_field(
+                        view_init=[90, 0, 0], initial_pos=False, return_fig=True
+                    )
+                )
+            plt.close()
 
         field_gui.add_file_upload(
-                "File", description="Select from file", accept="*.tif", save_settings=False
-            )
+            "File", description="Select from file", accept="*.tif", save_settings=False
+        )
         field_gui._widgets["pixelsize"] = widgets.BoundedIntText(
             value=15,
             description="Image pixelsize",
@@ -836,61 +948,79 @@ class jupyter_gui:
             style=field_gui._style,
             remember_value=True,
         )
-        field_gui.add_dropdown("Mode", options=["mask", "localmaxima"]) 
-        field_gui.add_button("Upload", description="Load image")
-        field_gui.add_button("minimal", description="Create field")
-        field_gui.add_checkbox("random", value=True, description="Randomise positions (enforced when there is more than one particle)")
-        field_gui.add_checkbox("random_orientations", value=True, description="Randomise orientation")
-        field_gui.add_checkbox("distance_from_particle", value=True, description="Use minimal distance of particle")
-        field_gui.add_button("show", description="Show field", disabled=False)
-        field_gui["show"].layout = widgets.Layout(width=width, display = "None")
-        field_gui.add_button("minimal_particles", description="Create field with particle")
-        field_gui.add_button("Use_Upload", description="Use image for positioning")
+        field_gui.add_dropdown("Mode", options=["mask", "localmaxima"])
+        field_gui.add_checkbox(
+            "random",
+            value=True,
+            description="Randomise positions (enforced when there is more than one particle)",
+        )
+        field_gui.add_checkbox(
+            "random_orientations", value=True, description="Randomise orientation"
+        )
+        field_gui.add_checkbox(
+            "distance_from_particle",
+            value=True,
+            description="Use minimal distance of particle",
+        )
+
+        # field_gui["show"].layout = widgets.Layout(width=width, display = "None")
         field_gui.add_int_slider(
-                "nparticles",
-                value=1,
-                min=1,
-                max=20,
-                step=1,
-                description="Number of Particles in field",
-                disabled=False,
-            )
+            "nparticles",
+            value=1,
+            min=1,
+            max=20,
+            step=1,
+            description="Number of Particles in field",
+            disabled=False,
+        )
         field_gui._widgets["mindist"] = widgets.BoundedIntText(
             value=100,
             min=1,
             max=1000,
             description="Minimal distance from particle center (nanometers)",
             layout=field_gui._layout,
-            style=field_gui._style
+            style=field_gui._style,
         )
+        field_gui.add_button(
+            "minimal_particles", description="Create field with particle"
+        )
+        field_gui.add_button("Use_Upload", description="Use image for positioning")
+        field_gui.add_button("Upload", description="Load image")
+        field_gui.add_button("minimal", description="Create field")
+        field_gui.add_button("show", description="Show field", disabled=False)
         field_gui["minimal"].on_click(createmin)
         field_gui["show"].on_click(showfield)
         field_gui["minimal_particles"].on_click(createmin_particles)
         field_gui["Use_Upload"].on_click(useimage)
         field_gui["Upload"].on_click(upload)
-
+        field_gui._widgets["image_output"] = widgets.Output()
+        field_widgets = {}
+        for wgt in field_gui._widgets.keys():
+            field_widgets[wgt] = False
+            field_gui._widgets[wgt].layout = widgets.Layout(width="50%", display="None")
+        field_gui.show()
         if self.my_experiment.generators_status("particle"):
             print("Using particle model")
-            display(field_gui["nparticles"],
-                    field_gui["random"],
-                    field_gui["random_orientations"],
-                    field_gui["distance_from_particle"],
-                    field_gui["mindist"],
-                    field_gui["minimal_particles"],
-                    field_gui["Use_Upload"],
-                    field_gui["show"]
-                    )
+            field_widgets["nparticles"] = True
+            field_widgets["random"] = True
+            field_widgets["random_orientations"] = True
+            field_widgets["distance_from_particle"] = True
+            field_widgets["mindist"] = True
+            field_widgets["minimal_particles"] = True
+            field_widgets["Use_Upload"] = True
         else:
             print("No particle available")
-            display(field_gui["nparticles"],
-                    field_gui["random"],
-                    field_gui["mindist"],
-                    field_gui["minimal"],
-                    field_gui["Use_Upload"],
-                    field_gui["show"]
-            )
+            field_widgets["nparticles"] = True
+            field_widgets["random"] = True
+            field_widgets["mindist"] = True
+            field_widgets["minimal"] = True
+            field_widgets["Use_Upload"] = True
+        self._update_widgets(field_gui, field_widgets)
+        field_widgets["Use_Upload"] = False
+        field_widgets["minimal_particles"] = False
+        field_widgets["minimal"] = False
 
-    def set_image_modalities(self, mode = "default"):
+    def set_image_modalities(self, mode="default"):
         imager_created = False
         modalities_options = []
         if mode == "default":
@@ -900,7 +1030,6 @@ class jupyter_gui:
         modalities_options = copy.copy(modalities_list)
         modalities_options.append("All")
         imaging_gui = easy_gui_jupyter.EasyGUI("imaging", width="70%")
-        selected_mods = []
         modality_info = {}
         for mod in modalities_list:
             mod_info = data_format.configuration_format.compile_modality_parameters(
@@ -916,21 +1045,18 @@ class jupyter_gui:
         def add_mod(b):
             if "All" == imaging_gui["modalities_dropdown"].value:
                 for mod_names in modalities_list:
-                    self.my_experiment.add_modality(
-                        modality_name=mod_names,
-                        save=True
-                    )
-                imaging_gui["Add"].disabled=True
+                    self.my_experiment.add_modality(modality_name=mod_names, save=True)
+                imaging_gui["Add"].disabled = True
             else:
                 self.my_experiment.add_modality(
-                    modality_name=imaging_gui["modalities_dropdown"].value,
-                    save=True
+                    modality_name=imaging_gui["modalities_dropdown"].value, save=True
                 )
-            
-            imaging_gui["label_4"].value = str(list(self.my_experiment.imaging_modalities.keys()))
+
+            imaging_gui["label_4"].value = str(
+                list(self.my_experiment.imaging_modalities.keys())
+            )
 
         def clear(b):
-            #selected_mods.clear()
             mods = list(self.my_experiment.imaging_modalities.keys())
             for mod_name in mods:
                 self.my_experiment.update_modality(mod_name, remove=True)
@@ -938,7 +1064,11 @@ class jupyter_gui:
 
         def create_imager(b):
             if self.my_experiment.exported_coordinate_field is not None:
-                self.my_experiment.build(modules=["imager",])
+                self.my_experiment.build(
+                    modules=[
+                        "imager",
+                    ]
+                )
                 print("Imaging system created")
                 imaging_gui["Show"].disabled = False
                 imaging_gui["modalities_dropdown"].disabled = True
@@ -954,14 +1084,13 @@ class jupyter_gui:
                     if Modality != "All":
                         pixelsize = modality_info[Modality]["detector"]["pixelsize"]
                         pixelsize_nm = pixelsize * 1000
-                        psf_sd = np.array(modality_info[Modality]["psf_params"]["std_devs"])
+                        psf_sd = np.array(
+                            modality_info[Modality]["psf_params"]["std_devs"]
+                        )
                         psf_voxel = np.array(
                             modality_info[Modality]["psf_params"]["voxelsize"]
                         )
                         psf_sd_metric = np.multiply(psf_voxel, psf_sd)
-                        print(f"Detector pixelsize (nm): {pixelsize_nm}")
-                        print(f"PSF sd (nm): {psf_sd_metric}")
-                        print(f"PSF preview (on a 1x1 µm field of view): ")
                         # show PSF
                         fig, axs = plt.subplots()
                         modality_preview = temp_imager.modalities[Modality]["psf"][
@@ -978,19 +1107,34 @@ class jupyter_gui:
                         )
                         axs.set_xticks([])
                         axs.set_yticks([])
+                        plt.close()
+                        imaging_gui["image_output"].clear_output()
+                        with imaging_gui["image_output"]:
+                            display(fig)
+                            print(f"Detector pixelsize (nm): {pixelsize_nm}")
+                            print(f"PSF sd (nm): {psf_sd_metric}")
+                            print(f"PSF preview (on a 1x1 µm field of view)")
 
-                widgets.interact(
-                    preview_info, message=imaging_gui["label_1"], Modality=imaging_gui["modalities_dropdown"]
+                widgets.interactive(
+                    preview_info,
+                    message=imaging_gui["label_1"],
+                    Modality=imaging_gui["modalities_dropdown"],
                 )
 
             get_info(imaging_gui)
 
         def showfov(b):
-            self.my_experiment.imager.show_field()
+            imaging_gui["image_output"].clear_output()
+            with imaging_gui["image_output"]:
+                display(self.my_experiment.imager.show_field(return_fig=True))
 
-        imaging_gui.add_label("Use the dropdown menu to get a preview of the selected imaging modality")
+        imaging_gui.add_label(
+            "Use the dropdown menu to get a preview of the selected imaging modality"
+        )
         imaging_gui.add_dropdown("modalities_dropdown", options=modalities_options)
-        imaging_gui.add_label("Click on Add modality to include the selected modality to the virtual microscope")
+        imaging_gui.add_label(
+            "Click on Add modality to include the selected modality to the virtual microscope"
+        )
         imaging_gui.add_button("Add", description="Add modality")
         imaging_gui.add_label("Selected modalities:")
         imaging_gui.add_label("No modality selected")
@@ -1000,10 +1144,10 @@ class jupyter_gui:
         else:
             disable_button = False
         imaging_gui.add_label("Click 'Done!' after selecting your modalities ")
+        imaging_gui.add_button("Create", description="Done!", disabled=disable_button)
         imaging_gui.add_button(
-            "Create", description="Done!", disabled=disable_button
+            "Show", description="Show field of view (yellow)", disabled=True
         )
-        imaging_gui.add_button("Show", description="Show field of view (yellow)", disabled=True)
         imaging_gui.add_int_slider(
             "PSF_nslice", min=0, max=400, continuous_update=False
         )
@@ -1011,18 +1155,27 @@ class jupyter_gui:
         imaging_gui["Clear"].on_click(clear)
         imaging_gui["Create"].on_click(create_imager)
         imaging_gui["Show"].on_click(showfov)
+        imaging_gui._widgets["image_output"] = widgets.Output()
+        mod_widgets = {}
+        for wgt in imaging_gui._widgets.keys():
+            mod_widgets[wgt] = False
+            imaging_gui._widgets[wgt].layout = widgets.Layout(
+                width="50%", display="None"
+            )
+        imaging_gui.show()
         preview(True)
-        display(
-            imaging_gui["label_2"],
-            imaging_gui["Add"],
-            imaging_gui["label_3"],
-            imaging_gui["label_4"],
-            imaging_gui["Clear"],
-            imaging_gui["label_5"],
-            imaging_gui["Create"],
-            imaging_gui["Show"],
-        )
-
+        mod_widgets["label_2"] = True
+        mod_widgets["Add"] = True
+        mod_widgets["label_3"] = True
+        mod_widgets["label_4"] = True
+        mod_widgets["Clear"] = True
+        mod_widgets["label_5"] = True
+        mod_widgets["Create"] = True
+        mod_widgets["Show"] = True
+        mod_widgets["label_1"] = True
+        mod_widgets["modalities_dropdown"] = True
+        mod_widgets["image_output"] = True
+        self._update_widgets(imaging_gui, mod_widgets)
 
     def set_acq_params(self):
         acquisition_gui = easy_gui_jupyter.EasyGUI("acquisition_params")
@@ -1040,7 +1193,9 @@ class jupyter_gui:
             nframes = acquisition_gui["Frames"].value
             if acquisition_gui["Channels"].value:
                 channels = []
-                for chann in self.my_experiment.imager.modalities[mod_id]["filters"].keys():
+                for chann in self.my_experiment.imager.modalities[mod_id][
+                    "filters"
+                ].keys():
                     channels.append(chann)
                 print(f"using all channels: {channels}")
             else:
@@ -1053,16 +1208,17 @@ class jupyter_gui:
                 noise=noise,
                 save=True,
                 nframes=nframes,
-                channels=channels
+                channels=channels,
             )
             acq_per_modalities[mod_id] = "Custom"
-            output_str = '<br>'.join(f"{name}: {val}" for name, val in self.my_experiment.selected_mods.items())
+            output_str = "<br>".join(
+                f"{name}: {val}"
+                for name, val in self.my_experiment.selected_mods.items()
+            )
             acquisition_gui["message"].value = output_str
             acquisition_gui.save_settings()
 
         def preview_mod(b):
-            preview_image = None
-
             def get_preview(imaging_system, acq_gui):
 
                 def preview_exposure(message, Modality, Exposure, Noise):
@@ -1087,11 +1243,14 @@ class jupyter_gui:
                             channel=single_channel,
                         )
                         with io.capture_output() as captured:
-                            timeseries, calibration_beads = imaging_system.generate_imaging(
-                                modality=Modality, **single_mod_acq_params
+                            timeseries, calibration_beads = (
+                                imaging_system.generate_imaging(
+                                    modality=Modality, **single_mod_acq_params
+                                )
                             )
                             min_val = np.min(timeseries[0])
                             max_val = np.max(timeseries[0])
+
                         preview_image = grid[i].imshow(
                             timeseries[0],
                             cmap="gray",
@@ -1104,31 +1263,34 @@ class jupyter_gui:
                         grid[i].set_title("preview channel:" + single_channel)
                         grid.cbar_axes[i].colorbar(preview_image)
                         i = i + 1
+                        # grid[i].set_visible(False)
+                    return fig
 
-                def preview_parameters(Settings):
-                    pass
-
-                widgets.interact(
-                    preview_exposure,
-                    message = acq_gui["label_1"],
-                    Modality=acq_gui["modalities_dropdown"],
-                    Exposure=acq_gui["Exposure"],
-                    Noise=acq_gui["Noise"]
+                figure = preview_exposure(
+                    message=acq_gui["label_1"].value,
+                    Modality=acq_gui["modalities_dropdown"].value,
+                    Exposure=acq_gui["Exposure"].value,
+                    Noise=acq_gui["Noise"].value,
                 )
-                widgets.interact(
-                    preview_parameters,
-                    Settings = acq_gui["message"]
-                )
-
+                plt.close()
+                acquisition_gui["image_output"].clear_output()
+                with acquisition_gui["image_output"]:
+                    display(figure)
 
             get_preview(self.my_experiment.imager, acquisition_gui)
 
         def clear(b):
             print("Acquisition parameters cleared")
-            self.my_experiment.reset_to_defaults(module="acquisitions",save=True)
-            output_str = '<br>'.join(f"{name}: {val}" for name, val in self.my_experiment.selected_mods.items())
+            self.my_experiment.reset_to_defaults(module="acquisitions", save=True)
+            output_str = "<br>".join(
+                f"{name}: {val}"
+                for name, val in self.my_experiment.selected_mods.items()
+            )
             acquisition_gui["message"].value = output_str
             acquisition_gui.save_settings()
+
+        def preview_params_chage(change):
+            preview_mod(True)
 
         acquisition_gui.add_label("Set acquisition parameters")
         acquisition_gui.add_label("Acquisition parameters per modality:")
@@ -1136,12 +1298,16 @@ class jupyter_gui:
         for mods_selected in self.my_experiment.selected_mods.keys():
             acq_per_modalities[mods_selected] = "Default"
         output_str = ""
-        output_str = '<br>'.join(f"{name}: {val}" for name, val in self.my_experiment.selected_mods.items())
-        acquisition_gui._widgets["message"] = widgets.HTML(value = output_str)
+        output_str = "<br>".join(
+            f"{name}: {val}" for name, val in self.my_experiment.selected_mods.items()
+        )
+        acquisition_gui._widgets["message"] = widgets.HTML(value=output_str)
         selected_mods = list(self.my_experiment.imaging_modalities.keys())
         acquisition_gui.add_dropdown("modalities_dropdown", options=selected_mods)
         acquisition_gui.add_checkbox("Noise", description="Use Noise", value=True)
-        acquisition_gui.add_checkbox("Channels", description="Use all channels", value=True)
+        acquisition_gui.add_checkbox(
+            "Channels", description="Use all channels", value=True
+        )
         ## bounded int Text
         acquisition_gui._widgets["Frames"] = widgets.BoundedIntText(
             value=1,
@@ -1161,16 +1327,37 @@ class jupyter_gui:
             style=acquisition_gui._style,
             remember_value=True,
         )
+        acquisition_gui["modalities_dropdown"].observe(
+            preview_params_chage, names="value"
+        )
+        acquisition_gui["Noise"].observe(preview_params_chage, names="value")
+        acquisition_gui["Exposure"].observe(preview_params_chage, names="value")
         acquisition_gui.add_button("Set", description="Update acquisition parameters")
-        acquisition_gui.add_button("Preview", description="Preview (Expermiental feature)")
+        acquisition_gui.add_button(
+            "Preview", description="Preview (Expermiental feature)"
+        )
         acquisition_gui.add_button("Clear", description="Reset params")
         acquisition_gui["Preview"].on_click(preview_mod)
         acquisition_gui["Set"].on_click(set_params)
         acquisition_gui["Clear"].on_click(clear)
-        display(acquisition_gui["Frames"])
+        acquisition_gui._widgets["image_output"] = widgets.Output()
+        acq_widgets = {}
+        for wgt in acquisition_gui._widgets.keys():
+            acq_widgets[wgt] = False
+            acquisition_gui._widgets[wgt].layout = widgets.Layout(
+                width="50%", display="None"
+            )
+        acquisition_gui.show()
+        acq_widgets["Frames"] = True
+        acq_widgets["Set"] = True
+        acq_widgets["image_output"] = True
+        acq_widgets["label_1"] = True
+        acq_widgets["modalities_dropdown"] = True
+        acq_widgets["Exposure"] = True
+        acq_widgets["Noise"] = True
+        acq_widgets["Clear"] = True
+        self._update_widgets(acquisition_gui, acq_widgets)
         preview_mod(True)
-        display(acquisition_gui["Set"], acquisition_gui["Clear"])
-
 
     def acquire_images(self):
         experiment_gui = easy_gui_jupyter.EasyGUI("experiment")
@@ -1180,12 +1367,9 @@ class jupyter_gui:
             sav_dir = experiment_gui["saving_directory"].value
             if sav_dir is not None:
                 self.my_experiment.output_directory = sav_dir
-                save=True
+                save = True
             exp_name = experiment_gui["experiment_name"].value
-            self.my_experiment.run_simulation(
-                name=exp_name,
-                save=save
-            )
+            self.my_experiment.run_simulation(name=exp_name, save=save)
             experiment_gui.save_settings()
 
         experiment_gui.add_label("Set experiment name")
@@ -1193,7 +1377,13 @@ class jupyter_gui:
             "experiment_name", value="Exp_name", remember_value=True
         )
         experiment_gui.add_label("Set saving directory")
-        experiment_gui.add_textarea("saving_directory", remember_value=True)
+        experiment_gui._widgets["saving_directory"] = FileChooser(
+            os.getcwd(),
+            title="<b>Select output directory</b>",
+            show_hidden=False,
+            select_default=True,
+            show_only_dirs=False,
+        )
         experiment_gui.add_button("Acquire", description="Run Simulation")
         experiment_gui["Acquire"].on_click(run_simulation)
         experiment_gui.show()
