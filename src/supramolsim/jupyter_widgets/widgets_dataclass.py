@@ -17,6 +17,12 @@ import tifffile as tif
 import copy
 import mpl_toolkits.axes_grid1 as axes_grid1
 from ipyfilechooser import FileChooser
+from pathlib import Path
+
+output_path = Path.home() / "vlab4mic_outputs"
+
+if not os.path.exists(output_path):
+    os.makedirs(output_path)
 
 
 @dataclass
@@ -1378,7 +1384,7 @@ class jupyter_gui:
         )
         experiment_gui.add_label("Set saving directory")
         experiment_gui._widgets["saving_directory"] = FileChooser(
-            os.getcwd(),
+            output_path,
             title="<b>Select output directory</b>",
             show_hidden=False,
             select_default=True,
