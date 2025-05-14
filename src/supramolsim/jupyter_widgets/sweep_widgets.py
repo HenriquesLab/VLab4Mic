@@ -8,6 +8,7 @@ import supramolsim
 from supramolsim.utils.io import yaml_functions
 import copy
 from ezinput import EZInput
+from ipyfilechooser import FileChooser
 
 class Sweep_gui(jupyter_gui):
     sweep_gen = sweep_generator()
@@ -256,6 +257,13 @@ class Sweep_gui(jupyter_gui):
             
             self.sweep_gen.run_analysis()
             self.sweep_gen.gen_analysis_dataframe()
+            analysis_widget["saving_directory"].disabled = False
+            analysis_widget["save"].disabled = False
+        def save_results(b):
+            results = self.sweep_gen.get_analysis_output()
+            title = "results"
+            file_name = title + "_dataframe.csv"
+            results.to_csv(os.path.join(self.ouput_directory, file_name), index=False)
         analysis_widget.add_dropdown(
             "metric", options=["SSIM",], 
             description="Metric for image comparison",
@@ -264,5 +272,17 @@ class Sweep_gui(jupyter_gui):
         analysis_widget.add_button(
             "analyse", description="Run analysis"
         )
+        analysis_widget.elements["saving_directory"] = FileChooser(
+            self.ouput_directory,
+            title="<b>Select output directory</b>",
+            show_hidden=False,
+            select_default=True,
+            show_only_dirs=True,
+            disabled=True
+        )
+        analysis_widget.add_button(
+            "save", description="save analysis", disabled=True
+        )
         analysis_widget["analyse"].on_click(analyse_sweep)
+        analysis_widget["save"].on_click(save_results)
         analysis_widget.show()
