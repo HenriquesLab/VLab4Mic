@@ -269,6 +269,7 @@ class Sweep_gui(jupyter_gui):
             title = "results"
             file_name = title + "_dataframe.csv"
             results.to_csv(os.path.join(self.ouput_directory, file_name), index=False)
+            analysis_widget["save"].disabled = True
         analysis_widget.add_dropdown(
             "metric", options=["SSIM",], 
             description="Metric for image comparison",
