@@ -111,19 +111,28 @@ class Sweep_gui(jupyter_gui):
             )
         if include_probe_models:
             probes2show.extend(copy.copy(self.targetless_probes))
-        ez_sweep.elements["probes"] = widgets.SelectMultiple(
-            description="probes", options=probes2show
+        # create muliple options widgets
+        widget_modules = {}
+        widget_modules["probes"] = widgets.SelectMultiple(
+            description="", options=probes2show
         )
-        ez_sweep.elements["modalities"] = widgets.SelectMultiple(
-            description="Modalities", options=self.modalities_default
+        widget_modules["modalities"] = widgets.SelectMultiple(
+            description="", options=self.modalities_default
         )
+        # create tabs
+        tab_name = list(widget_modules.keys())
+        children = [widget_modules[name] for name in tab_name]
+        ez_sweep.elements["tabs"] = widgets.Tab()
+        ez_sweep.elements["tabs"].children = children
+        ez_sweep.elements["tabs"].titles = tab_name
 
         # on clicks
         def select_str(b):
-            self.selected_modalities = ez_sweep["modalities"].value
-            self.selected_probes = ez_sweep["probes"].value
-            ez_sweep["modalities"].disabled = True
-            ez_sweep["probes"].disabled = True
+            self.selected_modalities = widget_modules["modalities"].value
+            self.selected_probes = widget_modules["probes"].value
+            ez_sweep["Select"].disabled = True
+            #ez_sweep["modalities"].disabled = True
+            #ez_sweep["probes"].disabled = True
 
         ez_sweep.add_button("Select", description="Select")
         ez_sweep["Select"].on_click(select_str)
