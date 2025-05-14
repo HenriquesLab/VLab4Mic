@@ -162,3 +162,7 @@ class sweep_generator:
             mod_acq=self.acquisition_parameters,
             mod_names=self.modalities,
             mod_params=self.modality_parameters)
+        
+    # methods to retrieve attributes    
+    def get_analysis_output(self, keyname="extended_dataframe"):
+        return self.analysis[keyname]
