@@ -4,7 +4,7 @@ import os
 
 
 def compile_modality_parameters(
-    modality_id: list, congifuration_directory, fluo_emissions=None
+    modality_id: list, congifuration_directory, fluo_emissions=None, prints=False
 ):
     """
     args:
@@ -71,11 +71,13 @@ def compile_modality_parameters(
         if (
             "filters" not in mod_pars.keys()
         ):  # each fluorophore will be assign and independent channel
-            print("Creating channel for each fluorophore")
+            if prints:
+                print("Creating channel for each fluorophore")
             ch = 0
             filter_dictionary = dict()
             for fluoname in list(fluo_emissions.keys()):
-                print(fluoname)
+                if prints:
+                    print(fluoname)
                 channel_name = "ch" + str(ch)
                 fluorophores_in_chanel = []
                 fluorophores_in_chanel.append(

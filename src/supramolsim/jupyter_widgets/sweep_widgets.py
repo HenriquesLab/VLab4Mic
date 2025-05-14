@@ -217,7 +217,8 @@ class Sweep_gui(jupyter_gui):
             simulate["Run"].disabled = True
             self.sweep_gen.sweep_repetitions = simulate["reps"].value
             self.sweep_gen.create_parameters_iterables()
-            self.sweep_gen.generate_acquisitions()
+            with simulate["outputs"]:
+                self.sweep_gen.generate_acquisitions()
         simulate.elements["reps"] = self.wgen.gen_bound_int(
                 value=3, description="Repeats per parameter combination",
                 style={'description_width': 'initial'}
@@ -225,6 +226,7 @@ class Sweep_gui(jupyter_gui):
         simulate.add_button(
             "Run", description="Run"
         )
+        simulate.elements["outputs"] = widgets.Output()
         simulate["Run"].on_click(run_sweeps)
         simulate.show()
 

@@ -197,12 +197,13 @@ class Imager:
         detector: dict,
         emission="blinking",
         modality: str = "modality1",
+        prints=False,
         **kwargs,
     ):
         self._create_modality(modality)
-        self._set_modality_channels(modality, filters)
+        self._set_modality_channels(modality, filters, prints=prints)
         self._set_modality_emission(modality, emission)
-        self._set_modality_psf(modality, **psf_params)
+        self._set_modality_psf(modality, **psf_params, prints=prints)
         self._set_modality_detector(modality, **detector)
 
     def _create_modality(self, modality: str):
@@ -210,13 +211,15 @@ class Imager:
             filters=None, detector=None, psf=None, emission=None
         )
 
-    def _set_modality_channels(self, modality, fluorophores_in_channel):
+    def _set_modality_channels(self, modality, fluorophores_in_channel, prints=False):
         if fluorophores_in_channel is None:
-            print("Creating channel for each fluorophore")
+            if prints:
+                print("Creating channel for each fluorophore")
             ch = 0
             filter_dictionary = dict()
             for fluoname in list(self.emitters_by_fluorophore.keys()):
-                print(fluoname)
+                if prints:
+                    print(fluoname)
                 channel_name = "ch" + str(ch)
                 fluorophores_in_chanel = []
                 fluorophores_in_chanel.append(
@@ -229,14 +232,15 @@ class Imager:
             self.modalities[modality]["filters"] = fluorophores_in_channel
 
     def _set_modality_psf(
-        self, modality: str, stack_source: str = "generate", **kwargs
+        self, modality: str, stack_source: str = "generate", prints=False, **kwargs
     ):
         if stack_source == "generate":
-            psf_stack, convolution_type = self._generate_analytical_PSF_stack(**kwargs)
+            psf_stack, convolution_type = self._generate_analytical_PSF_stack(**kwargs, prints=prints)
             focus_plane = int((psf_stack.shape)[2] / 2)
             # print(f"focus plane: {focus_plane}")
         else:
-            print(f"Loading PSF from file path: {stack_source}")
+            if prints:
+                print(f"Loading PSF from file path: {stack_source}")
             psf_stack, convolution_type = self._load_PSF_from_file(
                 stack_source, **kwargs
             )
@@ -254,7 +258,8 @@ class Imager:
         # define the psf depth
         if "depth" not in self.modalities[modality]["psf"]:
             depth_default = int((psf_stack.shape)[2] / 2)
-            print("No depth parameter found for psf, asigning default")
+            if prints:
+                print("No depth parameter found for psf, asigning default")
             self.modalities[modality]["psf"]["depth"] = depth_default
 
     def _set_modality_emission(self, modality, emission):
@@ -336,17 +341,18 @@ class Imager:
 
     # generate and load PSFs
     def _generate_analytical_PSF_stack(
-        self, shape=[24, 24, 24], std_devs=[1, 1, 1], **kwargs
+        self, shape=[24, 24, 24], std_devs=[1, 1, 1], prints=False, **kwargs
     ):
         """
         Generate a eliptical 3D Gaussian PSF
         Shape: in units of pixels
         std_devs: list of standard deviations per dimension
         """
-        print(
-            f"Generating unitary analytical PSF stack with shape {shape} "
-            f"and standard deviations {std_devs}"
-        )
+        if prints:
+            print(
+                f"Generating unitary analytical PSF stack with shape {shape} "
+                f"and standard deviations {std_devs}"
+            )
         psf_stack = elliptical_gaussian_3sigmas(shape=shape, std_devs=std_devs)
         convolution_type = "3Dvolume"
         return psf_stack, convolution_type
