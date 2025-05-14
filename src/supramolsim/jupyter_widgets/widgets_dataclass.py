@@ -30,7 +30,7 @@ class jupyter_gui:
     my_experiment = ExperimentParametrisation()
     structures_to_show = ["3J3Y", "7R5K", "1XI5"]
     modalities_default = ["Widefield", "Confocal", "STED", "SMLM"]
-
+    ouput_directory = output_path
     def __post_init__(self):
         self.demo_structures = []
         # get available structure IDs
@@ -1384,7 +1384,7 @@ class jupyter_gui:
         )
         experiment_gui.add_label("Set saving directory")
         experiment_gui.elements["saving_directory"] = FileChooser(
-            output_path,
+            self.ouput_directory,
             title="<b>Select output directory</b>",
             show_hidden=False,
             select_default=True,
