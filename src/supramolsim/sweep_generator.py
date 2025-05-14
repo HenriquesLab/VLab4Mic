@@ -1,7 +1,7 @@
 from .experiments import ExperimentParametrisation
 from .analysis import sweep
 import matplotlib.pyplot as plt
-
+from IPython.utils import io
 
 class sweep_generator:
     #sweep parameters
@@ -59,8 +59,11 @@ class sweep_generator:
         )
 
     def generate_acquisitions(self):
-        if self.virtual_samples is None:
-            self.generate_virtual_samples()
+        # generate virtual samples
+        with io.capture_output() as captured:
+            if self.virtual_samples is None:
+                self.generate_virtual_samples()
+        # acquisition of virtual samples
         (
             self.experiment,
             self.acquisition_outputs,
