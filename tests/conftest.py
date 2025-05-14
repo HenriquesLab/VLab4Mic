@@ -1,5 +1,6 @@
 import supramolsim
-from supramolsim import workflows, data_format
+from supramolsim import workflows
+from supramolsim.utils import data_format
 from supramolsim import experiments 
 import pytest
 import os

@@ -1,5 +1,6 @@
 import pytest
-from supramolsim import workflows, data_format, experiments
+from supramolsim import workflows, experiments
+from supramolsim.utils import data_format
 
 
 probes_1XI5_primaries = []

@@ -1,5 +1,6 @@
 import supramolsim.generate.labelled_instance as lp
-from supramolsim import workflows, data_format
+from supramolsim import workflows
+from supramolsim.utils import data_format
 import pytest
 
 

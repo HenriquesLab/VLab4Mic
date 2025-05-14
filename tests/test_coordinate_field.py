@@ -1,5 +1,6 @@
 import supramolsim.generate.coordinates_field as field
-from supramolsim import workflows, data_format
+from supramolsim import workflows
+from supramolsim.utils import data_format
 
 
 def test_create_minimal_field():
