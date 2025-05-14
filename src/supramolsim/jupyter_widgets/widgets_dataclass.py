@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field, fields
 from typing import List, Dict
 from ..experiments import ExperimentParametrisation
-#import easy_gui_jupyter
 import os
 from ..utils import data_format
 from ..utils.io.yaml_functions import load_yaml
