@@ -80,7 +80,10 @@ class Sweep_gui(jupyter_gui):
                         value=settings["nintervals"], description="Total values"
                     )
                     self.range_widgets[parameter_name] = self.wgen.gen_box(
-                        slider, inttext, layout = widgets.Layout(width="70%")
+                        widget1=slider,
+                        widget2=inttext,
+                        orientation="vertical",
+                        layout = widgets.Layout(width="70%")
                     )
                 elif settings["wtype"] == "logical":
                     self.range_widgets[parameter_name] = self.wgen.gen_logicals()
@@ -132,6 +135,8 @@ class Sweep_gui(jupyter_gui):
             self.selected_modalities = widget_modules["modalities"].value
             self.selected_probes = widget_modules["probes"].value
             ez_sweep["Select"].disabled = True
+            for name in tab_name:
+                widget_modules[name].disabled = True
             #ez_sweep["modalities"].disabled = True
             #ez_sweep["probes"].disabled = True
 
