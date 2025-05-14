@@ -3,12 +3,11 @@ from ..sweep_generator import sweep_generator
 import ipywidgets as widgets
 from .widget_generator import widgen
 from .widgets_dataclass import jupyter_gui
-import easy_gui_jupyter
 import os
 import supramolsim
 from supramolsim.utils.io import yaml_functions
 import copy
-
+from ezinput import EZInput
 
 class Sweep_gui(jupyter_gui):
     sweep_gen = sweep_generator()
@@ -86,7 +85,7 @@ class Sweep_gui(jupyter_gui):
                     self.range_widgets[parameter_name] = self.wgen.gen_logicals()
 
     def select_structure(self):
-        ez_sweep_structure = easy_gui_jupyter.EasyGUI("structure")
+        ez_sweep_structure = EZInput(title="structure")
         ez_sweep_structure.add_dropdown("structures", options=self.demo_structures)
         ez_sweep_structure.add_button("Select", description="Select")
 
@@ -100,7 +99,7 @@ class Sweep_gui(jupyter_gui):
         ez_sweep_structure.show()
 
     def select_probes_and_mods(self, include_probe_models=False):
-        ez_sweep = easy_gui_jupyter.EasyGUI("Sweep")
+        ez_sweep = EZInput(title="Sweep")
         probes2show = []
         if self.selected_structure:
             probe_list = self.probes_per_structure[self.selected_structure]
@@ -112,10 +111,10 @@ class Sweep_gui(jupyter_gui):
             )
         if include_probe_models:
             probes2show.extend(copy.copy(self.targetless_probes))
-        ez_sweep._widgets["probes"] = widgets.SelectMultiple(
+        ez_sweep.elements["probes"] = widgets.SelectMultiple(
             description="probes", options=probes2show
         )
-        ez_sweep._widgets["modalities"] = widgets.SelectMultiple(
+        ez_sweep.elements["modalities"] = widgets.SelectMultiple(
             description="Modalities", options=self.modalities_default
         )
 
@@ -131,7 +130,7 @@ class Sweep_gui(jupyter_gui):
         ez_sweep.show()
 
     def add_parameters_ranges(self):
-        param_ranges = easy_gui_jupyter.EasyGUI("ranges")
+        param_ranges = EZInput(title="ranges")
 
         def change_param_list(change):
             new_options = list(self.param_settings[change.new].keys())
@@ -177,8 +176,8 @@ class Sweep_gui(jupyter_gui):
         )
         # add the widgets to list
         for wname, wgt in self.range_widgets.items():
-            param_ranges._widgets[wname] = wgt
-            param_ranges._widgets[wname].layout.display = "None"
+            param_ranges.elements[wname] = wgt
+            param_ranges.elements[wname].layout.display = "None"
         # show the first one
         param_ranges[param_ranges["parms_per_group"].value].layout.display = (
             "inline-flex"
@@ -198,13 +197,13 @@ class Sweep_gui(jupyter_gui):
 
 
     def generate_simulations(self):
-        simulate = easy_gui_jupyter.EasyGUI("simulate")
+        simulate = EZInput(title="simulate")
         def run_sweeps(b):
             simulate["Run"].disabled = True
             self.sweep_gen.sweep_repetitions = simulate["reps"].value
             self.sweep_gen.create_parameters_iterables()
             self.sweep_gen.generate_acquisitions()
-        simulate._widgets["reps"] = self.wgen.gen_bound_int(
+        simulate.elements["reps"] = self.wgen.gen_bound_int(
                 value=3, description="Repeats per parameter combination",
                 style={'description_width': 'initial'}
             )
@@ -215,7 +214,7 @@ class Sweep_gui(jupyter_gui):
         simulate.show()
 
     def set_reference(self):
-        reference = easy_gui_jupyter.EasyGUI("reference")
+        reference = EZInput(title="reference")
         def gen_ref(b):
             reference["set"].disabled = True
             self.reference_structure = self.select_structure
@@ -242,7 +241,7 @@ class Sweep_gui(jupyter_gui):
         reference.show()
         
     def analyse_sweep(self):
-        analysis_widget = easy_gui_jupyter.EasyGUI("analysis")
+        analysis_widget = EZInput(title="analysis")
         def analyse_sweep(b):
             analysis_widget["analyse"].disabled = True
             
