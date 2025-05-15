@@ -48,6 +48,7 @@ class sweep_generator:
 
     # generators
     def generate_virtual_samples(self):
+        self.create_parameters_iterables()
         self.experiment, self.virtual_samples, self.virtual_samples_parameters = (
             sweep.sweep_vasmples(
                 structures=self.structures,
@@ -73,6 +74,20 @@ class sweep_generator:
             modalities=self.modalities,
             modality_acq_prams=self.acquisition_parameters,
         )
+
+    def set_reference_parameters(
+            self,
+            reference_structure: str = None,
+            reference_probe: str = None,
+            reference_probe_parameters: dict = None,
+            **kwargs):
+        if reference_structure is not None:
+            self.reference_structure = reference_structure
+        if reference_probe is not None:
+            self.reference_probe = reference_probe
+        if reference_probe_parameters is not None:
+            self.reference_probe_parameters = reference_probe_parameters
+        
 
     def generate_reference_sample(self):
         self.reference_virtual_sample, self.reference_virtual_sample_params = (
@@ -162,3 +177,6 @@ class sweep_generator:
             mod_acq=self.acquisition_parameters,
             mod_names=self.modalities,
             mod_params=self.modality_parameters)
+        
+    def save_analysis(self):
+        pass
