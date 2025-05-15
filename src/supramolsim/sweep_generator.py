@@ -112,7 +112,7 @@ class sweep_generator:
             print(self.reference_image_parameters)
 
     # set and change parameters
-    def _set_param_range(self, param_group, param_name, param_type, first=None, last=None, option=None):
+    def set_param_range(self, param_group, param_name, param_type, first=None, last=None, option=None):
         if param_type == "numeric":
             self.params_by_group[param_group][param_name] = [first, last, option]
         if param_type == "logical":
