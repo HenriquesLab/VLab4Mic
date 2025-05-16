@@ -191,7 +191,7 @@ class sweep_generator:
         return self.analysis[keyname]
             
     def save_analysis(self, keyname="extended_dataframe", output_name="results", output_directory=None):
-        if output_dir is None:
+        if output_directory is None:
             output_directory = self.ouput_directory
         if keyname == "extended_dataframe":
             results = self.get_analysis_output(keyname)
