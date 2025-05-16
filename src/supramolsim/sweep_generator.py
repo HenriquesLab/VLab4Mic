@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from IPython.utils import io
 import os
 from pathlib import Path
+from .utils.io.yaml_functions import load_yaml
 
 output_dir = Path.home() / "vlab4mic_outputs"
 
@@ -50,6 +51,12 @@ class sweep_generator:
         self.params_by_group["particle_defect"] = {}
         self.params_by_group["modality"] = {}
         self.params_by_group["acquisition"] = {}
+        self.configuration_directory = self.experiment.configuration_path
+        param_settings_file = os.path.join(
+            self.configuration_directory, "parameter_settings.yaml"
+        )
+        self.param_settings = load_yaml(param_settings_file)
+        
 
     # generators
     def generate_virtual_samples(self):
