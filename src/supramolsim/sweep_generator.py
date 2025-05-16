@@ -55,7 +55,7 @@ class sweep_generator:
         param_settings_file = os.path.join(
             self.configuration_directory, "parameter_settings.yaml"
         )
-        self.param_settings = load_yaml(param_settings_file)
+        self.parameter_settings = load_yaml(param_settings_file)
         
 
     # generators
@@ -142,7 +142,8 @@ class sweep_generator:
             print(self.reference_image_parameters)
 
     # set and change parameters
-    def set_param_range(self, param_group, param_name, param_type, first=None, last=None, option=None):
+    def set_param_range(self, param_group, param_name, first=None, last=None, option=None):
+        param_type = self.parameter_settings[param_group][param_name]["ptype"]
         if param_type == "numeric":
             self.params_by_group[param_group][param_name] = [first, last, option]
         if param_type == "logical":
