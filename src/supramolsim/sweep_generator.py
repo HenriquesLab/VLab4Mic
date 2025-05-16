@@ -196,5 +196,5 @@ class sweep_generator:
         if keyname == "extended_dataframe":
             results = self.get_analysis_output(keyname)
             title = output_name
-            file_name = title + "_analysis_dataframe.csv"
+            file_name = title + "_dataframe.csv"
             results.to_csv(os.path.join(output_directory, file_name), index=False)
