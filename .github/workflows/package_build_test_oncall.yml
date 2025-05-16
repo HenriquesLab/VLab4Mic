@@ -9,7 +9,6 @@ on:
       # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#onpushpull_requestpull_request_targetpathspaths-ignore
       - "src/**"
       - "tests/**"
-      - "setup.cfg"
       - "pyproject.toml"
   pull_request:
     branches: ["main"]
@@ -41,7 +40,7 @@ jobs:
             3.10
             3.11
             3.12
-      - name: Run Nox Quick-Tests
+      - name: Run Pytest
         run: |
           make install-all
           make pytest
