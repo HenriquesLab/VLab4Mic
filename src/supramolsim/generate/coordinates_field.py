@@ -595,8 +595,9 @@ class Field:
         return export_field
 
 
-def create_min_field(nparticles=1, random_placing=False, random_orientations=False, **kwargs):
-    print("Initialising default field")
+def create_min_field(nparticles=1, random_placing=False, random_orientations=False, prints=False, **kwargs):
+    if prints:
+        print("Initialising default field")
     coordinates_field = Field()
     #if molecule_pars:
     #    for key, value in molecule_pars.items():

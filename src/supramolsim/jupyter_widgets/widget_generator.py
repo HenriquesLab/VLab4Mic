@@ -1,5 +1,4 @@
 import ipywidgets as widgets
-import easy_gui_jupyter
 from dataclasses import dataclass, field, fields
 import numpy as np
 
