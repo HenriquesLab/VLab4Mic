@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field, fields
 from typing import List, Dict
 from ..experiments import ExperimentParametrisation
-import easy_gui_jupyter
 import os
 from ..utils import data_format
 from ..utils.io.yaml_functions import load_yaml
@@ -18,6 +17,7 @@ import copy
 import mpl_toolkits.axes_grid1 as axes_grid1
 from ipyfilechooser import FileChooser
 from pathlib import Path
+from ezinput import EZInput
 
 output_path = Path.home() / "vlab4mic_outputs"
 
@@ -30,7 +30,7 @@ class jupyter_gui:
     my_experiment = ExperimentParametrisation()
     structures_to_show = ["3J3Y", "7R5K", "1XI5"]
     modalities_default = ["Widefield", "Confocal", "STED", "SMLM"]
-
+    ouput_directory = output_path
     def __post_init__(self):
         self.demo_structures = []
         # get available structure IDs
@@ -70,7 +70,7 @@ class jupyter_gui:
                 container[widgetname].layout.display = "None"
 
     def structure_gui(self):
-        structure_gui = easy_gui_jupyter.EasyGUI("Structure")
+        structure_gui = EZInput(title="Structure")
         active_widgets = dict()
         nostructure = True
 
@@ -90,8 +90,8 @@ class jupyter_gui:
             # plt.clf()
             # clear_output()
             self._update_widgets(structure_gui, widgets_visibility)
-            structure_gui._widgets["label_2"].layout = widgets.Layout()
-            structure_gui._widgets["label_2"].layout.display = "None"
+            structure_gui.elements["label_2"].layout = widgets.Layout()
+            structure_gui.elements["label_2"].layout.display = "None"
             structure_gui["View"].disabled = False
 
         def view_structure(b):
@@ -140,8 +140,8 @@ class jupyter_gui:
             widgets_visibility["View"] = True
             widgets_visibility["label_2"] = False
             self._update_widgets(structure_gui, widgets_visibility)
-            structure_gui._widgets["label_2"].layout = widgets.Layout()
-            structure_gui._widgets["label_2"].layout.display = "None"
+            structure_gui.elements["label_2"].layout = widgets.Layout()
+            structure_gui.elements["label_2"].layout.display = "None"
             structure_gui["View"].disabled = False
 
         def activate_demos(b):
@@ -227,11 +227,11 @@ class jupyter_gui:
         structure_gui["Upload"].on_click(upload_file)
         structure_gui["Demos"].on_click(activate_demos)
         structure_gui["Fileupload"].on_click(activate_upload)
-        structure_gui._widgets["image_output"] = widgets.Output()
+        structure_gui.elements["image_output"] = widgets.Output()
         widgets_visibility = {}
-        for wgt in structure_gui._widgets.keys():
+        for wgt in structure_gui.elements.keys():
             widgets_visibility[wgt] = False
-            structure_gui._widgets[wgt].layout = widgets.Layout(
+            structure_gui.elements[wgt].layout = widgets.Layout(
                 width="50%", display="None"
             )
         #
@@ -242,7 +242,7 @@ class jupyter_gui:
 
     def structural_model_gui(self):
         # ensure that structure has no labels associated
-        labels_gui = easy_gui_jupyter.EasyGUI("Labels")
+        labels_gui = EZInput(title="Labels")
         particle_created = False
         current_labels = dict()
         probe_widgets = dict()
@@ -442,7 +442,7 @@ class jupyter_gui:
             labels_gui.add_dropdown(
                 "label_dropdown", options=vlab_probes, value=vlab_probes[1]
             )
-            labels_gui._widgets["label_message"] = widgets.HTML(value="")
+            labels_gui.elements["label_message"] = widgets.HTML(value="")
             labels_gui["label_dropdown"].observe(update_label_message, names="value")
             labels_gui["label_dropdown"].value = vlab_probes[0]
             labels_gui.add_dropdown("fluo_dropdown", options=fluorophores_list)
@@ -532,11 +532,11 @@ class jupyter_gui:
         hint_message = (
             "Our suggestion: C-terminal of " + protein_name + " (" + sequence + ")"
         )
-        labels_gui._widgets["Suggestion"] = widgets.HTML(value=hint_message)
+        labels_gui.elements["Suggestion"] = widgets.HTML(value=hint_message)
         mock_value_suggestions = dict(
             Protein=sequence, Residue="LYS.CA", Primary_Probe=None
         )
-        labels_gui.add_textarea(
+        labels_gui.add_text_area(
             "mock_value", description="At this position:", value=sequence
         )
         labels_gui.add_button("radnom_value", description="Give me another suggestion")
@@ -588,9 +588,9 @@ class jupyter_gui:
         labels_gui["Show"].on_click(show)
         labels_gui["Label"].on_click(label_struct)
         probe_widgets = {}
-        for wgt in labels_gui._widgets.keys():
+        for wgt in labels_gui.elements.keys():
             probe_widgets[wgt] = False
-            labels_gui._widgets[wgt].layout = widgets.Layout(
+            labels_gui.elements[wgt].layout = widgets.Layout(
                 width="50%", display="None"
             )
         labels_gui.show()
@@ -609,7 +609,7 @@ class jupyter_gui:
     def refine_model_gui(self):
         width = "50%"
         style = {"description_width": "initial"}
-        structural_model_gui = easy_gui_jupyter.EasyGUI("StructuralModel", width=width)
+        structural_model_gui = EZInput(title="StructuralModel", width=width)
 
         def show_model(b):
             emitter_plotsize = structural_model_gui["emitterplotsize"].value
@@ -675,12 +675,12 @@ class jupyter_gui:
             show_model(b)
 
         def activate_defects(b):
-            structural_model_gui._widgets["eps1"].layout.display = "block"
-            structural_model_gui._widgets["xmer_neigh_distance"].layout.display = (
+            structural_model_gui.elements["eps1"].layout.display = "block"
+            structural_model_gui.elements["xmer_neigh_distance"].layout.display = (
                 "block"
             )
-            structural_model_gui._widgets["Defect"].layout.display = "block"
-            structural_model_gui._widgets["use_defects"].layout.display = "block"
+            structural_model_gui.elements["Defect"].layout.display = "block"
+            structural_model_gui.elements["use_defects"].layout.display = "block"
             structural_model_gui["enable_defects"].disabled = True
 
         def add_defects(b):
@@ -769,7 +769,7 @@ class jupyter_gui:
         structural_model_gui["label_2"].layout = widgets.Layout(
             width=width, display="None"
         )
-        structural_model_gui._widgets["eps1"] = widgets.BoundedIntText(
+        structural_model_gui.elements["eps1"] = widgets.BoundedIntText(
             value=300,
             min=0,
             max=100000,
@@ -778,10 +778,10 @@ class jupyter_gui:
             style=structural_model_gui._style,
             remember_value=True,
         )
-        structural_model_gui._widgets["eps1"].layout = widgets.Layout(
+        structural_model_gui.elements["eps1"].layout = widgets.Layout(
             width=width, display="None"
         )
-        structural_model_gui._widgets["xmer_neigh_distance"] = widgets.BoundedIntText(
+        structural_model_gui.elements["xmer_neigh_distance"] = widgets.BoundedIntText(
             value=600,
             min=0,
             max=100000,
@@ -790,10 +790,10 @@ class jupyter_gui:
             style=structural_model_gui._style,
             remember_value=True,
         )
-        structural_model_gui._widgets["xmer_neigh_distance"].layout = widgets.Layout(
+        structural_model_gui.elements["xmer_neigh_distance"].layout = widgets.Layout(
             width=width, display="None"
         )
-        structural_model_gui._widgets["Defect"] = widgets.BoundedFloatText(
+        structural_model_gui.elements["Defect"] = widgets.BoundedFloatText(
             value=0.5,
             min=0,
             max=1,
@@ -802,13 +802,13 @@ class jupyter_gui:
             style=structural_model_gui._style,
             remember_value=True,
         )
-        structural_model_gui._widgets["Defect"].layout = widgets.Layout(
+        structural_model_gui.elements["Defect"].layout = widgets.Layout(
             width=width, display="None"
         )
         structural_model_gui.add_button(
             "use_defects", description="Apply defects and update figure"
         )
-        structural_model_gui._widgets["use_defects"].layout = widgets.Layout(
+        structural_model_gui.elements["use_defects"].layout = widgets.Layout(
             width=width, display="None"
         )
         #
@@ -823,14 +823,14 @@ class jupyter_gui:
         structural_model_gui["update_plot"].on_click(update_plot)
         structural_model_gui["use_defects"].on_click(add_defects)
         structural_model_gui["Relabel"].on_click(relabel)
-        structural_model_gui._widgets["image_output"] = widgets.Output()
+        structural_model_gui.elements["image_output"] = widgets.Output()
         if self.my_experiment.particle:
             structural_model_gui.show()
         else:
             print("No particle has been created")
 
     def create_field(self):
-        field_gui = easy_gui_jupyter.EasyGUI("field")
+        field_gui = EZInput(title="field")
         width = "50%"
         style = {"description_width": "initial"}
 
@@ -918,14 +918,14 @@ class jupyter_gui:
         field_gui.add_file_upload(
             "File", description="Select from file", accept="*.tif", save_settings=False
         )
-        field_gui._widgets["pixelsize"] = widgets.BoundedIntText(
+        field_gui.elements["pixelsize"] = widgets.BoundedIntText(
             value=15,
             description="Image pixelsize",
             layout=field_gui._layout,
             style=field_gui._style,
             remember_value=True,
         )
-        field_gui._widgets["background"] = widgets.BoundedIntText(
+        field_gui.elements["background"] = widgets.BoundedIntText(
             value=0,
             max=100000,
             description="Background",
@@ -933,21 +933,21 @@ class jupyter_gui:
             style=field_gui._style,
             remember_value=True,
         )
-        field_gui._widgets["min_distance"] = widgets.BoundedIntText(
+        field_gui.elements["min_distance"] = widgets.BoundedIntText(
             value=1,
             description="min_distance",
             layout=field_gui._layout,
             style=field_gui._style,
             remember_value=True,
         )
-        field_gui._widgets["sigma"] = widgets.BoundedIntText(
+        field_gui.elements["sigma"] = widgets.BoundedIntText(
             value=2,
             description="sigma",
             layout=field_gui._layout,
             style=field_gui._style,
             remember_value=True,
         )
-        field_gui._widgets["threshold"] = widgets.BoundedIntText(
+        field_gui.elements["threshold"] = widgets.BoundedIntText(
             value=2,
             description="threshold",
             layout=field_gui._layout,
@@ -979,7 +979,7 @@ class jupyter_gui:
             description="Number of Particles in field",
             disabled=False,
         )
-        field_gui._widgets["mindist"] = widgets.BoundedIntText(
+        field_gui.elements["mindist"] = widgets.BoundedIntText(
             value=100,
             min=1,
             max=1000,
@@ -999,11 +999,11 @@ class jupyter_gui:
         field_gui["minimal_particles"].on_click(createmin_particles)
         field_gui["Use_Upload"].on_click(useimage)
         field_gui["Upload"].on_click(upload)
-        field_gui._widgets["image_output"] = widgets.Output()
+        field_gui.elements["image_output"] = widgets.Output()
         field_widgets = {}
-        for wgt in field_gui._widgets.keys():
+        for wgt in field_gui.elements.keys():
             field_widgets[wgt] = False
-            field_gui._widgets[wgt].layout = widgets.Layout(width="50%", display="None")
+            field_gui.elements[wgt].layout = widgets.Layout(width="50%", display="None")
         field_gui.show()
         if self.my_experiment.generators_status("particle"):
             print("Using particle model")
@@ -1035,7 +1035,7 @@ class jupyter_gui:
             modalities_list = self.my_experiment.local_modalities_names
         modalities_options = copy.copy(modalities_list)
         modalities_options.append("All")
-        imaging_gui = easy_gui_jupyter.EasyGUI("imaging", width="70%")
+        imaging_gui = EZInput(title="imaging", width="70%")
         modality_info = {}
         for mod in modalities_list:
             mod_info = data_format.configuration_format.compile_modality_parameters(
@@ -1154,18 +1154,18 @@ class jupyter_gui:
         imaging_gui.add_button(
             "Show", description="Show field of view (yellow)", disabled=True
         )
-        imaging_gui.add_int_slider(
-            "PSF_nslice", min=0, max=400, continuous_update=False
-        )
+        #imaging_gui.add_int_slider(
+        #    "PSF_nslice", min=0, max=400, continuous_update=False
+        #)
         imaging_gui["Add"].on_click(add_mod)
         imaging_gui["Clear"].on_click(clear)
         imaging_gui["Create"].on_click(create_imager)
         imaging_gui["Show"].on_click(showfov)
-        imaging_gui._widgets["image_output"] = widgets.Output()
+        imaging_gui.elements["image_output"] = widgets.Output()
         mod_widgets = {}
-        for wgt in imaging_gui._widgets.keys():
+        for wgt in imaging_gui.elements.keys():
             mod_widgets[wgt] = False
-            imaging_gui._widgets[wgt].layout = widgets.Layout(
+            imaging_gui.elements[wgt].layout = widgets.Layout(
                 width="50%", display="None"
             )
         imaging_gui.show()
@@ -1184,7 +1184,7 @@ class jupyter_gui:
         self._update_widgets(imaging_gui, mod_widgets)
 
     def set_acq_params(self):
-        acquisition_gui = easy_gui_jupyter.EasyGUI("acquisition_params")
+        acquisition_gui = EZInput(title="acquisition_params")
         imager_channels = []
         anymod = list(self.my_experiment.imager.modalities.keys())[0]
         for chann in self.my_experiment.imager.modalities[anymod]["filters"].keys():
@@ -1307,7 +1307,7 @@ class jupyter_gui:
         output_str = "<br>".join(
             f"{name}: {val}" for name, val in self.my_experiment.selected_mods.items()
         )
-        acquisition_gui._widgets["message"] = widgets.HTML(value=output_str)
+        acquisition_gui.elements["message"] = widgets.HTML(value=output_str)
         selected_mods = list(self.my_experiment.imaging_modalities.keys())
         acquisition_gui.add_dropdown("modalities_dropdown", options=selected_mods)
         acquisition_gui.add_checkbox("Noise", description="Use Noise", value=True)
@@ -1315,7 +1315,7 @@ class jupyter_gui:
             "Channels", description="Use all channels", value=True
         )
         ## bounded int Text
-        acquisition_gui._widgets["Frames"] = widgets.BoundedIntText(
+        acquisition_gui.elements["Frames"] = widgets.BoundedIntText(
             value=1,
             min=1,
             max=100000,
@@ -1324,7 +1324,7 @@ class jupyter_gui:
             style=acquisition_gui._style,
             remember_value=True,
         )
-        acquisition_gui._widgets["Exposure"] = widgets.BoundedFloatText(
+        acquisition_gui.elements["Exposure"] = widgets.BoundedFloatText(
             value=0.001,
             min=0.000000,
             step=0.0001,
@@ -1346,11 +1346,11 @@ class jupyter_gui:
         acquisition_gui["Preview"].on_click(preview_mod)
         acquisition_gui["Set"].on_click(set_params)
         acquisition_gui["Clear"].on_click(clear)
-        acquisition_gui._widgets["image_output"] = widgets.Output()
+        acquisition_gui.elements["image_output"] = widgets.Output()
         acq_widgets = {}
-        for wgt in acquisition_gui._widgets.keys():
+        for wgt in acquisition_gui.elements.keys():
             acq_widgets[wgt] = False
-            acquisition_gui._widgets[wgt].layout = widgets.Layout(
+            acquisition_gui.elements[wgt].layout = widgets.Layout(
                 width="50%", display="None"
             )
         acquisition_gui.show()
@@ -1366,7 +1366,7 @@ class jupyter_gui:
         preview_mod(True)
 
     def acquire_images(self):
-        experiment_gui = easy_gui_jupyter.EasyGUI("experiment")
+        experiment_gui = EZInput(title="experiment")
 
         def run_simulation(b):
             experiment_gui["Acquire"].disabled = True
@@ -1379,12 +1379,12 @@ class jupyter_gui:
             experiment_gui.save_settings()
 
         experiment_gui.add_label("Set experiment name")
-        experiment_gui.add_textarea(
+        experiment_gui.add_text_area(
             "experiment_name", value="Exp_name", remember_value=True
         )
         experiment_gui.add_label("Set saving directory")
-        experiment_gui._widgets["saving_directory"] = FileChooser(
-            output_path,
+        experiment_gui.elements["saving_directory"] = FileChooser(
+            self.ouput_directory,
             title="<b>Select output directory</b>",
             show_hidden=False,
             select_default=True,

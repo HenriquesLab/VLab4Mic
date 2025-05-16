@@ -243,7 +243,7 @@ class ExperimentParametrisation:
                 self.coordinate_field = fieldobject
                 self.objects_created["coordinate_field"] = True
 
-    def _build_imager(self, use_local_field=False):
+    def _build_imager(self, use_local_field=False, prints=True):
         if self.imaging_modalities:
             #print(f"Using selected mods: {self.imaging_modalities.keys()}")
             mods_list = list(self.imaging_modalities.keys())
@@ -255,7 +255,8 @@ class ExperimentParametrisation:
                     config_dir=self.configuration_path,
                 )
             else:
-                print("Local field missing or unused. Creating imager without particles")
+                if prints:
+                    print("Local field missing or unused. Creating imager without particles")
                 self.imager, modality_parameters = create_imaging_system(
                     modalities_id_list=mods_list,
                     mod_params=self.imaging_modalities,
