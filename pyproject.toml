@@ -1,3 +1,77 @@
 [build-system]
 requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "supramolsim"
+version = "0.1.0"
+description = ""
+authors = [
+    { name = "Damián Martinez", email = "jdmartinez@igc.gulbenkian.pt" },
+    { name = "Bruno Saraiva", email = "bruno.msaraiva2@gmail.com" },
+    { name = "Ricardo Henriques", email = "ricardo@henriqueslab.org" }
+]
+readme = { file = "README.md", content-type = "text/markdown" }
+license = { text = "MIT" }
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
+]
+dependencies = [
+    "numpy>=1.26.4",
+    "matplotlib>=3.9.0",
+    "scipy>=1.13.1",
+    "biopython>=1.83",
+    "plotly>=5.22.0",
+    "trimesh>=4.4.0",
+    "ipympl>=0.9.4",
+    "pyyaml>=6.0.1",
+    "tifffile>=2024.5.22",
+    "tqdm>=4.66.4",
+    "scikit-image>=0.23.2",
+    "requests>=2.32.3",
+    "ipykernel>=6.29.5",
+    "scikit-learn>=1.5.0",
+    "pandas>=2.2.3",
+    "seaborn>=0.13.2",
+    "ezinput>=0.0.6",
+    "opencv-python>=4.11",
+    "jupyterlab>=4.3.4",
+    "ipywidgets>=8.1.5"
+]
+
+[project.optional-dependencies]
+all = ["supramolsim[dev,test,jupyter]"]
+dev = [
+    "pre-commit>=3.7.0",
+    "ipykernel>=6.29.4",
+    "ruff>=0.4.3",
+    "gptrepo>=1.0.3",
+    "pdoc>=12.3.1",
+    "build"
+]
+test = [
+    "pytest>=8.2.0",
+    "pytest-xdist>=3.6.1",
+    "pytest-cov>=5.0.0",
+    "nbmake>=1.5.3",
+    "mypy>=1.10.0"
+]
+jupyter = [
+    "jupyterlab>=4.3.4",
+    "ipywidgets>=8.1.5"
+]
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"*" = ["*.yaml"]
+
+[project.scripts]
+download-structures = "supramolsim.download:download_suggested_structures"
