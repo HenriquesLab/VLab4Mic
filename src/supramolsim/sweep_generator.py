@@ -2,6 +2,10 @@ from .experiments import ExperimentParametrisation
 from .analysis import sweep
 import matplotlib.pyplot as plt
 from IPython.utils import io
+import os
+from pathlib import Path
+
+output_dir = Path.home() / "vlab4mic_outputs"
 
 class sweep_generator:
     #sweep parameters
@@ -26,6 +30,7 @@ class sweep_generator:
     reference_probe = "NHS_ester"
     reference_probe_parameters = {"labelling_efficiency": 1.0}
     ####  outputs
+    ouput_directory = output_dir
     reference_virtual_sample = None
     reference_virtual_sample_params = None
     reference_image = None
@@ -185,5 +190,11 @@ class sweep_generator:
     def get_analysis_output(self, keyname="extended_dataframe"):
         return self.analysis[keyname]
             
-    def save_analysis(self):
-        pass
+    def save_analysis(self, keyname="extended_dataframe", output_name="results", output_directory=None):
+        if output_dir is None:
+            output_directory = self.ouput_directory
+        if keyname == "extended_dataframe":
+            results = self.get_analysis_output(keyname)
+            title = output_name
+            file_name = title + "_analysis_dataframe.csv"
+            results.to_csv(os.path.join(output_directory, file_name), index=False)

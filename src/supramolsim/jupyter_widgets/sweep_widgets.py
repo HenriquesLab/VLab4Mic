@@ -267,10 +267,7 @@ class Sweep_gui(jupyter_gui):
             analysis_widget["saving_directory"].disabled = False
             analysis_widget["save"].disabled = False
         def save_results(b):
-            results = self.sweep_gen.get_analysis_output()
-            title = "results"
-            file_name = title + "_dataframe.csv"
-            results.to_csv(os.path.join(self.ouput_directory, file_name), index=False)
+            self.sweep_gen.save_analysis(output_directory=self.ouput_directory)
             analysis_widget["save"].disabled = True
         analysis_widget.add_dropdown(
             "metric", options=["SSIM",], 
