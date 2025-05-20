@@ -18,6 +18,13 @@ import numpy as np
 import os
 import copy
 
+from pathlib import Path
+
+output_path = Path.home() / "vlab4mic_outputs"
+
+if not os.path.exists(output_path):
+    os.makedirs(output_path)
+
 @dataclass
 class ExperimentParametrisation:
     experiment_id: str = ""
@@ -32,7 +39,7 @@ class ExperimentParametrisation:
     defect_eps: Dict[str, int] = field(default_factory=dict)
     sweep_pars: Dict[str, int] = field(default_factory=dict)
     objects_created: Dict[str, int] = field(default_factory=dict)
-    output_directory: str = None
+    output_directory: str = str(output_path)
 
 
     def __post_init__(self):
