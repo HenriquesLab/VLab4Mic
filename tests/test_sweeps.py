@@ -34,16 +34,6 @@ def test_sweep_vasmples_directprobes():
     assert len(outputs.keys()) > 0
     assert len(params.keys()) > 0
 
-
-indirectprobes = [
-    "Antibody",
-    "Linker",
-]
-labelling_efficiency = np.linspace(0.5, 1, 3)
-distance_to_epitope = np.linspace(10, 200, 3)
-
-
-
 def test_sweep_modalities_updatemod():
     myexperiment, vsmpl_output, vsampl_pars = sweep.sweep_vasmples()
     myexperiment, mod_outputs, mod_params, mod_pixelsizes  = sweep.sweep_modalities_updatemod(
