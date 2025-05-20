@@ -38,6 +38,8 @@ class sweep_generator:
     analysis["measurements"] = None
     analysis["inputs"] = None
     analysis["extended_dataframe"] = None
+    # saving
+    output_directory: str = None
 
     def __init__(self):
         self.params_by_group["probe"] = {}
@@ -45,6 +47,7 @@ class sweep_generator:
         self.params_by_group["particle_defect"] = {}
         self.params_by_group["modality"] = {}
         self.params_by_group["acquisition"] = {}
+        self.output_directory = self.experiment.output_directory
 
     # generators
     def generate_virtual_samples(self):
