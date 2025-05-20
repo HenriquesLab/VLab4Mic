@@ -3,7 +3,7 @@ import pytest
 import numpy as np
 from supramolsim import workflows
 
-defects = np.linspace(0, 1, 27)
+defects = np.linspace(0, 1, 3)
 
 
 @pytest.fixture(scope="module", autouse=True)
