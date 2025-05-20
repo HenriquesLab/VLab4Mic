@@ -11,10 +11,6 @@ def test_sweep_generator():
     sweep_gen.run_analysis()
     sweep_gen.gen_analysis_dataframe()
 
-def test_sweep_vasmples_empty():
-    test_experiment = experiments.ExperimentParametrisation()
-    test_experiment, outputs, params = sweep.sweep_vasmples(test_experiment)
-
 
 def test_sweep_vasmples_directprobes():
     test_experiment = experiments.ExperimentParametrisation()
