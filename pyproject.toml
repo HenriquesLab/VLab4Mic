@@ -73,5 +73,13 @@ where = ["src"]
 [tool.setuptools.package-data]
 "*" = ["*.yaml"]
 
+[tool.coverage.run]
+source = ["src/supramolsim"]
+omit = [
+    "src/supramolsim/jupyter_widgets",
+    "*__init__.py",
+    "*__*.py"
+]
+
 [project.scripts]
 download-structures = "supramolsim.download:download_suggested_structures"
