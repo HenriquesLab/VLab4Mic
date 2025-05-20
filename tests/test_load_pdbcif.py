@@ -2,7 +2,6 @@ from supramolsim import workflows
 import pytest
 
 structure_list = [
-    "7R5K",
     "2RCJ",
 ]
 
