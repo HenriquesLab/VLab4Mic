@@ -1,7 +1,7 @@
 import supramolsim
 from supramolsim import workflows
 from supramolsim.utils import data_format
-from supramolsim import experiments 
+from supramolsim import experiments, sweep_generator
 import pytest
 import os
 
@@ -68,3 +68,9 @@ def experiment_7r5k_base():
     myexperiment.selected_mods = selected_mods
     myexperiment.build(use_locals=True)
     return myexperiment
+
+
+@pytest.fixture(scope="module")
+def sweep_gen():
+    sweep_object = sweep_generator.sweep_generator()
+    return sweep_object
