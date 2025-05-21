@@ -11,6 +11,7 @@ def test_create_minimal_field():
     test_field.molecules_params["nMolecules"] == nparticles
     test_field.change_number_of_molecules(25)
     test_field.show_field()
+    test_field.expand_isotropically(factor=2)
 
 def test_gen_positions_from_image():
     img_mask = np.random.rand(24,24)
