@@ -176,12 +176,19 @@ class sweep_generator:
                 **self.params_by_group["acquisition"]
             )
 
-    def run_analysis(self):
+    def run_analysis(self, save=False, output_name = None, output_directory=None):
+        if self.acquisition_outputs is None:
+            self.generate_acquisitions()
+        if self.reference_image is None:
+            self.generate_reference_image()
         self.analysis["measurements"], self.analysis["inputs"] = sweep.analyse_sweep_single_reference(
             self.acquisition_outputs, 
             self.acquisition_outputs_parameters, 
             self.reference_image[0], 
             self.reference_image_parameters)
+        self.gen_analysis_dataframe()
+        if save:
+            self.save_analysis(output_name=output_name, output_directory=output_directory)
     
 
     def gen_analysis_dataframe(self):
@@ -198,7 +205,9 @@ class sweep_generator:
     def get_analysis_output(self, keyname="extended_dataframe"):
         return self.analysis[keyname]
             
-    def save_analysis(self, keyname="extended_dataframe", output_name="results", output_directory=None):
+    def save_analysis(self, keyname="extended_dataframe", output_name=None, output_directory=None):
+        if output_name is None:
+            output_name = "vLab4mic_results"
         if output_directory is None:
             output_directory = self.ouput_directory
         if keyname == "extended_dataframe":
