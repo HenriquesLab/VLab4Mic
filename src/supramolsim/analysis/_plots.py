@@ -34,7 +34,7 @@ def pivot_dataframes(dataframe, axes_param_names):
 
 
 def sns_heatmap_pivots(
-    df_pivots, titles = None, conditions_cmaps=None, annotations=False, cmaps_range="same", figsize = [12,10], **kwargs
+    df_pivots, titles = None, conditions_cmaps=None, annotations=False, cmaps_range="same", figsize = [12,10], return_figure = False, **kwargs
 ):
     conditions = list(df_pivots.keys())
     nconditions = len(conditions)
@@ -77,6 +77,9 @@ def sns_heatmap_pivots(
         )
         axes[n, 1].set_title(titles["category"]+ ": " + cond + ". Std Dev Metric")
     f.tight_layout()
+    if return_figure:
+        plt.close()
+        return f
 
 
 def show_references(references):
