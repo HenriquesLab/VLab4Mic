@@ -456,7 +456,7 @@ class ExperimentParametrisation:
 
 def generate_virtual_sample(
         structure: str = "1XI5",
-        probe_name: str = "NHS_ester",
+        probe_name: str = None,
         probe_target_type: str = None,
         probe_target_value: str = None,
         probe_distance_to_epitope: float = None,
@@ -483,8 +483,11 @@ def generate_virtual_sample(
     myexperiment = ExperimentParametrisation()
     # load default configuration for probe
     if not clear_probes:
+        if probe_name is None:
+            probe_name = "NHS_ester"
         probe_configuration_file = os.path.join(myexperiment.configuration_path, "probes", probe_name + ".yaml")
         probe_configuration = load_yaml(probe_configuration_file)
+        probe_configuration["probe_name"] = probe_name
         if probe_target_type and probe_target_value:
             probe_configuration["target_info"] = dict(type=probe_target_type, value=probe_target_value)
         if probe_distance_to_epitope is not None:
