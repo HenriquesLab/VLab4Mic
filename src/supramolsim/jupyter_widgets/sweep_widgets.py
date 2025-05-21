@@ -266,11 +266,13 @@ class Sweep_gui(jupyter_gui):
             self.sweep_gen.gen_analysis_dataframe()
             analysis_widget["saving_directory"].disabled = False
             analysis_widget["save"].disabled = False
+            analysis_widget["output_name"].disabled = False
         def save_results(b):
-            results = self.sweep_gen.get_analysis_output()
-            title = "results"
-            file_name = title + "_dataframe.csv"
-            results.to_csv(os.path.join(self.ouput_directory, file_name), index=False)
+            output_name = analysis_widget["output_name"].value
+            self.sweep_gen.save_analysis(
+                output_directory=self.ouput_directory,
+                output_name=output_name
+                )
             analysis_widget["save"].disabled = True
         analysis_widget.add_dropdown(
             "metric", options=["SSIM",], 
@@ -288,6 +290,10 @@ class Sweep_gui(jupyter_gui):
             show_only_dirs=True,
             disabled=True
         )
+        analysis_widget.add_text_area(
+            "output_name", 
+            value="vlab4mic_analysis", 
+            description="Output name")
         analysis_widget.add_button(
             "save", description="save analysis", disabled=True
         )
