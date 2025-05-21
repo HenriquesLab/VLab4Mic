@@ -53,21 +53,13 @@ def experiment_7r5k_base():
     fluorophore_id = "AF647"
     virtual_sample = "square1x1um_randomised" 
     modalities = ["Widefield", "Confocal", "SMLM", "STED", "AiryScan"]
-    selected_mods = {}
-    default_aqc = dict(
-        nframes=2,
-        exp_time=0.005
+    vsample7r5k, exp7r5k = experiments.generate_virtual_sample(
+        structure=structure_id,
+        probe_name=probe,
+        virtual_sample_template=virtual_sample, 
     )
-    for mod in modalities:
-        selected_mods[mod] = default_aqc
-    myexperiment = experiments.ExperimentParametrisation()
-    myexperiment.structure_id = structure_id
-    myexperiment.structure_label = probe
-    myexperiment.fluorophore_id = fluorophore_id
-    myexperiment.coordinate_field_id = virtual_sample
-    myexperiment.selected_mods = selected_mods
-    myexperiment.build(use_locals=True)
-    return myexperiment
+
+    return exp7r5k
 
 
 @pytest.fixture(scope="module")
