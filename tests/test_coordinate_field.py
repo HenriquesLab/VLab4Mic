@@ -1,12 +1,22 @@
 import supramolsim.generate.coordinates_field as field
 from supramolsim import workflows
 from supramolsim.utils import data_format
+import numpy as np
+import copy
 
 
 def test_create_minimal_field():
     nparticles = 24
     test_field = field.create_min_field(nparticles=nparticles)
     test_field.molecules_params["nMolecules"] == nparticles
+
+
+def test_gen_positions_from_image():
+    img_mask = np.random.rand(24,24)
+    p = 0.9
+    img_mask[img_mask >= p] = 1
+    img_mask[img_mask < p] = 0
+    xyz_relative, image_physical_size = field.gen_positions_from_image(img_mask, pixelsize = 100)
 
 
 def test_minfield_with_particles(configuration_directory):
