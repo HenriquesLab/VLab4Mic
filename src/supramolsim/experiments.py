@@ -18,6 +18,13 @@ import numpy as np
 import os
 import copy
 
+from pathlib import Path
+
+output_path = Path.home() / "vlab4mic_outputs"
+
+if not os.path.exists(output_path):
+    os.makedirs(output_path)
+
 @dataclass
 class ExperimentParametrisation:
     experiment_id: str = ""
@@ -32,7 +39,7 @@ class ExperimentParametrisation:
     defect_eps: Dict[str, int] = field(default_factory=dict)
     sweep_pars: Dict[str, int] = field(default_factory=dict)
     objects_created: Dict[str, int] = field(default_factory=dict)
-    output_directory: str = None
+    output_directory: str = str(output_path)
 
 
     def __post_init__(self):
@@ -449,7 +456,7 @@ class ExperimentParametrisation:
 
 def generate_virtual_sample(
         structure: str = "1XI5",
-        probe_name: str = "NHS_ester",
+        probe_name: str = None,
         probe_target_type: str = None,
         probe_target_value: str = None,
         probe_distance_to_epitope: float = None,
@@ -476,8 +483,11 @@ def generate_virtual_sample(
     myexperiment = ExperimentParametrisation()
     # load default configuration for probe
     if not clear_probes:
+        if probe_name is None:
+            probe_name = "NHS_ester"
         probe_configuration_file = os.path.join(myexperiment.configuration_path, "probes", probe_name + ".yaml")
         probe_configuration = load_yaml(probe_configuration_file)
+        probe_configuration["probe_name"] = probe_name
         if probe_target_type and probe_target_value:
             probe_configuration["target_info"] = dict(type=probe_target_type, value=probe_target_value)
         if probe_distance_to_epitope is not None:
@@ -559,6 +569,7 @@ def image_vsample(
         **kwargs
         ):
     vsample_exp = None
+    imaging_output = dict()
     if multimodal is not None:
         vmicroscope, experiment = build_virtual_microscope(
             multimodal=multimodal,
@@ -572,9 +583,15 @@ def image_vsample(
             use_local_field=True,
             **kwargs)
     if vsample is None:
-        vsample, vsample_exp_ = generate_virtual_sample(**kwargs)
-    experiment.imager.import_field(**vsample)
-    imaging_output = dict()
-    if run_simulation:
-        imaging_output = experiment.run_simulation()
-    return imaging_output, experiment
+        vsample, vsample_exp = generate_virtual_sample(**kwargs)
+        vsample_exp.imager = vmicroscope
+        vsample_exp.objects_created["imager"] = True
+        vsample_exp.selected_mods = experiment.selected_mods
+        if run_simulation:
+            imaging_output = vsample_exp.run_simulation()
+        return imaging_output, vsample_exp
+    else:
+        experiment.imager.import_field(**vsample)
+        if run_simulation:
+            imaging_output = experiment.run_simulation()
+        return imaging_output, experiment

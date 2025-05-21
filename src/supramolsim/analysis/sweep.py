@@ -1,5 +1,4 @@
 from ..experiments import ExperimentParametrisation
-from ..utils.data_format import configuration_format
 from ..utils.io.yaml_functions import load_yaml
 import os
 import supramolsim
@@ -125,76 +124,6 @@ def sweep_vasmples(
                 probe_n += 1
     return experiment, vsample_outputs, vsample_params
 
-
-def sweep_modalities(
-    experiment: ExperimentParametrisation = None,
-    vsample_outputs=None,
-    vsampl_pars=None,
-    modalities: list = None,
-    modality_params=None
-):
-    default_mod = "Confocal"
-    default_aqc = dict(
-        nframes=2,
-        exp_time=0.005
-    )
-    default_vsample = "None"
-    mod_outputs = dict()
-    mod_params = dict()
-    if experiment is None:
-        experiment = ExperimentParametrisation()
-    if vsample_outputs is None:
-        vsample_outputs = [
-            default_vsample,
-        ]
-        # needs default sample. can be a minimal field with a single emitter
-    if modalities == "all":
-        list_of_locals = ["Widefield", "Confocal", "SMLM", "STED"]
-        for local_mode in list_of_locals:
-            experiment.add_modality(local_mode)
-    elif modalities is None:
-        experiment.add_modality("STED")
-    else:
-        for modality_name in modalities:
-            experiment.add_modality(modality_name)
-    experiment._build_imager(use_local_field=False)
-    print(experiment.objects_created["imager"])
-    pixelsizes = dict()
-    imager_scale = experiment.imager.roi_params["scale"]
-    scalefactor = np.ceil(imager_scale / 1e-9)  # in nanometers
-    for mod_name, parameters in experiment.imaging_modalities.items():
-        pixelsizes[mod_name] = np.array(
-            parameters["detector"]["pixelsize"] * scalefactor
-        )
-    for vsmpl_id in tqdm(
-        list(vsampl_pars.keys()),
-        position=0,
-        leave=True,
-        desc="Unique parameter combination",
-    ):
-        for virtualsample in tqdm(
-            list(vsample_outputs[vsmpl_id]), position=1, leave=False, desc="Repeats"
-        ):
-            with io.capture_output() as captured:
-                experiment.imager.import_field(**virtualsample)
-                # iteration_name = combination
-                iteration_output = experiment.run_simulation(name="", save=False)
-                mod_outputs
-                mod_n = 0
-                for mod, acq in experiment.selected_mods.items():
-                    print(f"modality and acq: {mod}, {acq}")
-                    mod_comb = vsmpl_id + "_" + str(mod_n)
-                    mod_parameters = copy.copy(vsampl_pars[vsmpl_id])
-                    mod_parameters.append(mod)
-                    mod_parameters.append(acq)
-                    # mod_parameters = [vsampl_pars[vsmpl_id], mod, acq]
-                    if mod_comb not in mod_params.keys():
-                        mod_params[mod_comb] = mod_parameters
-                        mod_outputs[mod_comb] = []
-                    mod_outputs[mod_comb].append(iteration_output[mod])
-                    mod_n += 1
-                    mod_parameters = None
-    return experiment, mod_outputs, mod_params, pixelsizes
 
 def sweep_modalities_updatemod(
     experiment: ExperimentParametrisation = None,
@@ -359,25 +288,6 @@ def generate_global_reference_modality(
     return reference_output[modality], reference_parameters
 
 
-def analyse_image_sweep(img_outputs, img_params, reference, analysis_case_params=None):
-    measurement_vectors = []
-    # ref_pixelsize = analysis_case_params["ref_pixelsize"]
-    inputs = dict()
-    for params_id in img_params.keys():
-        inputs[params_id] = dict()
-        rep_number = 0
-        mod_name = img_params[params_id][5]  # 5th item corresponds to Modality
-        for img_r in img_outputs[params_id]:
-            im1 = img_r[0]
-            im_ref = reference[0]
-            rep_measurement, ref_used, qry_used = metrics.img_compare(
-                im_ref, im1, **analysis_case_params[mod_name]
-            )
-            measurement_vectors.append([params_id, rep_number, rep_measurement])
-            inputs[params_id][rep_number] = [qry_used, im1]
-            rep_number += 1
-    return measurement_vectors, inputs
-
 def analyse_sweep_single_reference(img_outputs, img_params, reference_image, reference_params, zoom_in=0, **kwargs):
     measurement_vectors = []
     # ref_pixelsize = analysis_case_params["ref_pixelsize"]
@@ -513,28 +423,6 @@ def create_param_combinations(**kwargs):
             for i, combination in enumerate(combinations)
         }
         return combinations_dict
-
-
-def pivot_dataframe(dataframe, param1, param2):
-    # extract individual dataframe per condition
-    summarised_df = None
-    summarised_df = (
-        dataframe.groupby([param1, param2])
-        .agg(
-            Mean_Value=("Metric", "mean"),
-            Std_Dev=("Metric", "std"),
-            Replicas_Count=("Replica", "count"),
-        )
-        .reset_index()
-    )
-    # get mean and std accross parameter combinations of axes_param_names
-    condition_mean_pivot = summarised_df.pivot(
-        index=param1, columns=param2, values="Mean_Value"
-    ).round(4)
-    condition_sd_pivot = summarised_df.pivot(
-        index=param1, columns=param2, values="Std_Dev"
-    ).round(4)
-    return condition_mean_pivot, condition_sd_pivot
 
 
 def pivot_dataframes_byCategory(dataframe, category_name, param1, param2, **kwargs):

@@ -1,7 +1,7 @@
 import supramolsim
 from supramolsim import workflows
 from supramolsim.utils import data_format
-from supramolsim import experiments 
+from supramolsim import experiments, sweep_generator
 import pytest
 import os
 
@@ -52,19 +52,18 @@ def experiment_7r5k_base():
     probe = "NPC_Nup96_Cterminal_direct"
     fluorophore_id = "AF647"
     virtual_sample = "square1x1um_randomised" 
-    modalities = ["Widefield", "Confocal", "SMLM", "STED", "AiryScan"]
-    selected_mods = {}
-    default_aqc = dict(
-        nframes=2,
-        exp_time=0.005
+    modalities = ["Widefield", "Confocal", "SMLM", "STED"]
+    imaging_output7r5k, exp7r5k = experiments.image_vsample(
+        structure=structure_id,
+        probe_name=probe,
+        virtual_sample_template=virtual_sample,
+        multimodal=modalities,
+        run_simulation=False 
     )
-    for mod in modalities:
-        selected_mods[mod] = default_aqc
-    myexperiment = experiments.ExperimentParametrisation()
-    myexperiment.structure_id = structure_id
-    myexperiment.structure_label = probe
-    myexperiment.fluorophore_id = fluorophore_id
-    myexperiment.coordinate_field_id = virtual_sample
-    myexperiment.selected_mods = selected_mods
-    myexperiment.build(use_locals=True)
-    return myexperiment
+    return exp7r5k
+
+
+@pytest.fixture(scope="module")
+def sweep_gen():
+    sweep_object = sweep_generator.sweep_generator()
+    return sweep_object

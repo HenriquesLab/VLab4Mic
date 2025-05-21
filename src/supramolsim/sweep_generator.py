@@ -2,6 +2,12 @@ from .experiments import ExperimentParametrisation
 from .analysis import sweep
 import matplotlib.pyplot as plt
 from IPython.utils import io
+import os
+from pathlib import Path
+from .utils.io.yaml_functions import load_yaml
+from .analysis import _plots
+
+output_dir = Path.home() / "vlab4mic_outputs"
 
 class sweep_generator:
     #sweep parameters
@@ -26,6 +32,7 @@ class sweep_generator:
     reference_probe = "NHS_ester"
     reference_probe_parameters = {"labelling_efficiency": 1.0}
     ####  outputs
+    ouput_directory = output_dir
     reference_virtual_sample = None
     reference_virtual_sample_params = None
     reference_image = None
@@ -35,9 +42,14 @@ class sweep_generator:
     acquisition_outputs_parameters = None
     # analysis
     analysis = {}
-    analysis["measurements"] = None
-    analysis["inputs"] = None
-    analysis["extended_dataframe"] = None
+    #analysis["measurements"] = None
+    #analysis["inputs"] = None
+    #analysis["extended_dataframe"] = None
+    analysis["unsorted"] = {}
+    analysis["dataframes"] = None
+    analysis["plots"] = None
+    # saving
+    output_directory: str = None
 
     def __init__(self):
         self.params_by_group["probe"] = {}
@@ -45,9 +57,20 @@ class sweep_generator:
         self.params_by_group["particle_defect"] = {}
         self.params_by_group["modality"] = {}
         self.params_by_group["acquisition"] = {}
+        self.output_directory = self.experiment.output_directory
+        self.configuration_directory = self.experiment.configuration_path
+        param_settings_file = os.path.join(
+            self.configuration_directory, "parameter_settings.yaml"
+        )
+        self.parameter_settings = load_yaml(param_settings_file)
+        
 
     # generators
     def generate_virtual_samples(self):
+        if self.probe_parameters is None:
+            #default example 
+            self.set_param_range("probe", "labelling_efficiency", first=0.5, last=1, option=2)
+        self.create_parameters_iterables()
         self.experiment, self.virtual_samples, self.virtual_samples_parameters = (
             sweep.sweep_vasmples(
                 structures=self.structures,
@@ -76,6 +99,20 @@ class sweep_generator:
             modalities=self.modalities,
             modality_acq_prams=self.acquisition_parameters,
         )
+
+    def set_reference_parameters(
+            self,
+            reference_structure: str = None,
+            reference_probe: str = None,
+            reference_probe_parameters: dict = None,
+            **kwargs):
+        if reference_structure is not None:
+            self.reference_structure = reference_structure
+        if reference_probe is not None:
+            self.reference_probe = reference_probe
+        if reference_probe_parameters is not None:
+            self.reference_probe_parameters = reference_probe_parameters
+        
 
     def generate_reference_sample(self):
         self.reference_virtual_sample, self.reference_virtual_sample_params = (
@@ -115,7 +152,8 @@ class sweep_generator:
             print(self.reference_image_parameters)
 
     # set and change parameters
-    def _set_param_range(self, param_group, param_name, param_type, first=None, last=None, option=None):
+    def set_param_range(self, param_group, param_name, first=None, last=None, option=None):
+        param_type = self.parameter_settings[param_group][param_name]["ptype"]
         if param_type == "numeric":
             self.params_by_group[param_group][param_name] = [first, last, option]
         if param_type == "logical":
@@ -148,24 +186,73 @@ class sweep_generator:
                 **self.params_by_group["acquisition"]
             )
 
-    def run_analysis(self):
-        self.analysis["measurements"], self.analysis["inputs"] = sweep.analyse_sweep_single_reference(
+    def run_analysis(self, save=False, output_name = None, output_directory=None, plots=True):
+        if self.acquisition_outputs is None:
+            self.generate_acquisitions()
+        if self.reference_image is None:
+            self.generate_reference_image()
+        measurement_vectors, input_images = sweep.analyse_sweep_single_reference(
             self.acquisition_outputs, 
             self.acquisition_outputs_parameters, 
             self.reference_image[0], 
             self.reference_image_parameters)
+        self.analysis["unsorted"]["measurement_vectors"] = measurement_vectors
+        self.analysis["unsorted"]["inputs"] = input_images
+        self.gen_analysis_dataframe()
+        if plots:
+            results_plot = self.generate_analysis_plots(return_figure = True)
+            self.analysis["plots"] = results_plot
+        if save:
+            self.save_analysis(output_name=output_name, output_directory=output_directory)
     
 
     def gen_analysis_dataframe(self):
-        self.analysis["dframe"], self.analysis["extended_dataframe"] = sweep.measurements_dataframe(
-            measurement_vectors=self.analysis["measurements"],
+        unformatted_df , self.analysis["dataframes"] = sweep.measurements_dataframe(
+            measurement_vectors= self.analysis["unsorted"]["measurement_vectors"],
             probe_parameters=self.probe_parameters,
             p_defects=self.defect_parameters,
             sample_params=self.vsample_parameters,
             mod_acq=self.acquisition_parameters,
             mod_names=self.modalities,
             mod_params=self.modality_parameters)
-        
+
     # methods to retrieve attributes    
-    def get_analysis_output(self, keyname="extended_dataframe"):
+    def get_analysis_output(self, keyname="dataframes"):
         return self.analysis[keyname]
+    
+    def generate_analysis_plots(self, category:str = None, param1:str =None, param2:str = None, return_figure = False, **kwargs):
+        if category is None:
+            category = "modality_name"
+        if param1 is None:
+            param1 = "labelling_efficiency"
+        if param2 is None:
+            param2 = "probe_n"
+        analysis_resut_df = self.get_analysis_output(keyname="dataframes")
+        df_categories, titles = sweep.pivot_dataframes_byCategory(
+            dataframe = analysis_resut_df, 
+            category_name=category,
+            param1=param1,
+            param2=param2
+            )
+        if return_figure:
+            plot = _plots.sns_heatmap_pivots(df_categories, titles, annotations=True, return_figure=return_figure)
+            return plot
+        else:
+            _plots.sns_heatmap_pivots(df_categories, titles, annotations=True)
+            
+    def save_analysis(self, output_name=None, output_directory=None, analysis_type=None):
+        if analysis_type is None:
+            analysis_type = ["dataframes", "plots"]
+        if output_name is None:
+            output_name = "vLab4mic_results"
+        if output_directory is None:
+            output_directory = self.ouput_directory
+        for keyname in analysis_type:
+            if keyname == "dataframes":
+                df = self.get_analysis_output(keyname)
+                df_name = output_name + "_dataframe.csv"
+                df.to_csv(os.path.join(output_directory, df_name), index=False)
+            elif keyname == "plots":
+                figure = self.get_analysis_output(keyname)
+                figure_name = output_name + "_figure.png"
+                figure.savefig(os.path.join(output_directory, figure_name))

@@ -37,9 +37,7 @@ dependencies = [
     "pandas>=2.2.3",
     "seaborn>=0.13.2",
     "ezinput>=0.0.6",
-    "opencv-python>=4.11",
-    "jupyterlab>=4.3.4",
-    "ipywidgets>=8.1.5"
+    "opencv-python>=4.11"
 ]
 
 [project.optional-dependencies]
@@ -72,6 +70,14 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "*" = ["*.yaml"]
+
+[tool.coverage.run]
+source = ["src/supramolsim"]
+omit = [
+    "src/supramolsim/jupyter_widgets/*",
+    "*__init__.py",
+    "*__*.py"
+]
 
 [project.scripts]
 download-structures = "supramolsim.download:download_suggested_structures"
