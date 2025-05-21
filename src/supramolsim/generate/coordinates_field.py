@@ -339,35 +339,6 @@ class Field:
         self.relabel_molecules()
         
 
-
-    def create_molecules_from_files(self, cif_file, structure_id, label_file):
-        """
-        Creates a list to handle copies of LabelledInstance objects
-
-        Uses the high level funciton "create_instances_from_pdb"
-        to design the prototype. This prototype is then copied nMolecules times
-
-        The resulting molecules are exact copies. But they are independent
-        so they can be relabelled, rotated, translated if needed
-
-        Returns: save a list containing each independent copies
-        """
-        reps = self.get_molecule_param("nMolecules")
-        self.molecules_params["absolute_positions"]
-        labelled_prototype = self._create_instances_from_pdb(
-            cif_file, structure_id, label_file
-        )
-        labelled_prototype.scale_coordinates_system(self.get_field_param("scale"))
-        # prepare plotting params
-        self.labels_plotting_params = dict(labelled_prototype.plotting_params)
-        self.fluo2labels = dict(labelled_prototype.fluo2labels)
-        self._set_plotting_params()
-        molecules = []
-        for r in range(reps):
-            molecules.append(copy.deepcopy(labelled_prototype))
-            print(molecules[r])
-        self.molecules = molecules
-
     def _create_instances_from_pdb(self, cif_f, structure_id, label_file):
         # this is exactly the same as the high level function
         structure_dictionary = {
