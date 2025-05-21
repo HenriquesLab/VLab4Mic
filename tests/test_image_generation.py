@@ -1,60 +1,18 @@
-from supramolsim import workflows
+from supramolsim import workflows, experiments
 from supramolsim.utils import data_format
 import pytest
+import copy
 
 
-def test_simple_imaging_system(configuration_directory):
-    configuration_path = configuration_directory
-    selected_mods = [
-        "STED",
-    ]
-    fluorophore_id = "AF647"
-    structure_id = "2RCJ"
-    generic_label = "NHS_ester"
-    # loading structure
-    structure, structure_param = workflows.load_structure(
-        structure_id, configuration_path
-    )
-    labels_list = []
-    labels_list.append(
-        data_format.structural_format.label_builder_format(
-            generic_label, fluorophore_id
-        )
-    )
-    particle, label_params_list = workflows.particle_from_structure(
-        structure, labels_list, configuration_path
-    )
-    exported_field, coordinates_field = workflows.field_from_particle(particle)
-    imaging_system, modality_parameters = workflows.create_imaging_system(
-        exported_field, selected_mods, configuration_path
-    )
-    assert imaging_system.get_absoulte_reference_point().shape == (1, 3)
+def test_simple_imaging_system():
+    imager, _ = experiments.build_virtual_microscope()
+    assert imager.get_absoulte_reference_point().shape == (1, 3)
 
 
-def test_multi_imaging_system(configuration_directory):
-    configuration_path = configuration_directory
-    selected_mods = ["STED", "Confocal"]
-    fluorophore_id = "AF647"
-    structure_id = "2RCJ"
-    generic_label = "NHS_ester"
-    # loading structure
-    structure, structure_param = workflows.load_structure(
-        structure_id, configuration_path
-    )
-    labels_list = []
-    labels_list.append(
-        data_format.structural_format.label_builder_format(
-            generic_label, fluorophore_id
-        )
-    )
-    particle, label_params_list = workflows.particle_from_structure(
-        structure, labels_list, configuration_path
-    )
-    exported_field, coordinates_field = workflows.field_from_particle(particle)
-    imaging_system, modality_parameters = workflows.create_imaging_system(
-        exported_field, selected_mods, configuration_path
-    )
-    assert imaging_system.get_absoulte_reference_point().shape == (1, 3)
+def test_multi_imaging_system():
+    imager, _ = experiments.build_virtual_microscope(
+        multimodal=["STED", "Confocal"])
+    assert imager.get_absoulte_reference_point().shape == (1, 3)
 
 
 def test_image_from_field(configuration_directory, gt_structural_model_field):
@@ -66,3 +24,13 @@ def test_image_from_field(configuration_directory, gt_structural_model_field):
         gt_structural_model_field, selected_mods, configuration_path
     )
     assert imaging_system.get_absoulte_reference_point().shape == (1, 3)
+
+
+def test_imager_optional_methods(experiment_7r5k_base):
+    imager  = copy.deepcopy(experiment_7r5k_base.imager)
+    imager.set_experiment_name("test")
+    imager.set_focus(0.23)
+    imager.set_roi_position(x=0.1, y=0.2)
+    imager.set_roi_sizes(x=2, y=2)
+    imager.recenter_roi()
+    imager.show_field()
