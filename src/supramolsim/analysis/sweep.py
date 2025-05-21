@@ -1,5 +1,4 @@
 from ..experiments import ExperimentParametrisation
-from ..utils.data_format import configuration_format
 from ..utils.io.yaml_functions import load_yaml
 import os
 import supramolsim
@@ -288,25 +287,6 @@ def generate_global_reference_modality(
     )
     return reference_output[modality], reference_parameters
 
-
-def analyse_image_sweep(img_outputs, img_params, reference, analysis_case_params=None):
-    measurement_vectors = []
-    # ref_pixelsize = analysis_case_params["ref_pixelsize"]
-    inputs = dict()
-    for params_id in img_params.keys():
-        inputs[params_id] = dict()
-        rep_number = 0
-        mod_name = img_params[params_id][5]  # 5th item corresponds to Modality
-        for img_r in img_outputs[params_id]:
-            im1 = img_r[0]
-            im_ref = reference[0]
-            rep_measurement, ref_used, qry_used = metrics.img_compare(
-                im_ref, im1, **analysis_case_params[mod_name]
-            )
-            measurement_vectors.append([params_id, rep_number, rep_measurement])
-            inputs[params_id][rep_number] = [qry_used, im1]
-            rep_number += 1
-    return measurement_vectors, inputs
 
 def analyse_sweep_single_reference(img_outputs, img_params, reference_image, reference_params, zoom_in=0, **kwargs):
     measurement_vectors = []
