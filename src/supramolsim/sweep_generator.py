@@ -5,6 +5,7 @@ from IPython.utils import io
 import os
 from pathlib import Path
 from .utils.io.yaml_functions import load_yaml
+from .analysis import _plots
 
 output_dir = Path.home() / "vlab4mic_outputs"
 
@@ -41,9 +42,12 @@ class sweep_generator:
     acquisition_outputs_parameters = None
     # analysis
     analysis = {}
-    analysis["measurements"] = None
-    analysis["inputs"] = None
-    analysis["extended_dataframe"] = None
+    #analysis["measurements"] = None
+    #analysis["inputs"] = None
+    #analysis["extended_dataframe"] = None
+    analysis["unsorted"] = {}
+    analysis["dataframes"] = None
+    analysis["plots"] = None
     # saving
     output_directory: str = None
 
@@ -63,6 +67,9 @@ class sweep_generator:
 
     # generators
     def generate_virtual_samples(self):
+        if self.probe_parameters is None:
+            #default example 
+            self.set_param_range("probe", "labelling_efficiency", first=0.5, last=1, option=2)
         self.create_parameters_iterables()
         self.experiment, self.virtual_samples, self.virtual_samples_parameters = (
             sweep.sweep_vasmples(
@@ -179,24 +186,29 @@ class sweep_generator:
                 **self.params_by_group["acquisition"]
             )
 
-    def run_analysis(self, save=False, output_name = None, output_directory=None):
+    def run_analysis(self, save=False, output_name = None, output_directory=None, plots=True):
         if self.acquisition_outputs is None:
             self.generate_acquisitions()
         if self.reference_image is None:
             self.generate_reference_image()
-        self.analysis["measurements"], self.analysis["inputs"] = sweep.analyse_sweep_single_reference(
+        measurement_vectors, input_images = sweep.analyse_sweep_single_reference(
             self.acquisition_outputs, 
             self.acquisition_outputs_parameters, 
             self.reference_image[0], 
             self.reference_image_parameters)
+        self.analysis["unsorted"]["measurement_vectors"] = measurement_vectors
+        self.analysis["unsorted"]["inputs"] = input_images
         self.gen_analysis_dataframe()
+        if plots:
+            results_plot = self.generate_analysis_plots(return_figure = True)
+            self.analysis["plots"] = results_plot
         if save:
             self.save_analysis(output_name=output_name, output_directory=output_directory)
     
 
     def gen_analysis_dataframe(self):
-        self.analysis["dframe"], self.analysis["extended_dataframe"] = sweep.measurements_dataframe(
-            measurement_vectors=self.analysis["measurements"],
+        unformatted_df , self.analysis["dataframes"] = sweep.measurements_dataframe(
+            measurement_vectors= self.analysis["unsorted"]["measurement_vectors"],
             probe_parameters=self.probe_parameters,
             p_defects=self.defect_parameters,
             sample_params=self.vsample_parameters,
@@ -205,16 +217,42 @@ class sweep_generator:
             mod_params=self.modality_parameters)
 
     # methods to retrieve attributes    
-    def get_analysis_output(self, keyname="extended_dataframe"):
+    def get_analysis_output(self, keyname="dataframes"):
         return self.analysis[keyname]
+    
+    def generate_analysis_plots(self, category:str = None, param1:str =None, param2:str = None, return_figure = False, **kwargs):
+        if category is None:
+            category = "modality_name"
+        if param1 is None:
+            param1 = "labelling_efficiency"
+        if param2 is None:
+            param2 = "probe_n"
+        analysis_resut_df = self.get_analysis_output(keyname="dataframes")
+        df_categories, titles = sweep.pivot_dataframes_byCategory(
+            dataframe = analysis_resut_df, 
+            category_name=category,
+            param1=param1,
+            param2=param2
+            )
+        if return_figure:
+            plot = _plots.sns_heatmap_pivots(df_categories, titles, annotations=True, return_figure=return_figure)
+            return plot
+        else:
+            _plots.sns_heatmap_pivots(df_categories, titles, annotations=True)
             
-    def save_analysis(self, keyname="extended_dataframe", output_name=None, output_directory=None):
+    def save_analysis(self, output_name=None, output_directory=None, analysis_type=None):
+        if analysis_type is None:
+            analysis_type = ["dataframes", "plots"]
         if output_name is None:
             output_name = "vLab4mic_results"
         if output_directory is None:
             output_directory = self.ouput_directory
-        if keyname == "extended_dataframe":
-            results = self.get_analysis_output(keyname)
-            title = output_name
-            file_name = title + "_dataframe.csv"
-            results.to_csv(os.path.join(output_directory, file_name), index=False)
+        for keyname in analysis_type:
+            if keyname == "dataframes":
+                df = self.get_analysis_output(keyname)
+                df_name = output_name + "_dataframe.csv"
+                df.to_csv(os.path.join(output_directory, df_name), index=False)
+            elif keyname == "plots":
+                figure = self.get_analysis_output(keyname)
+                figure_name = output_name + "_figure.png"
+                figure.savefig(os.path.join(output_directory, figure_name))
