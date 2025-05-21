@@ -445,28 +445,6 @@ def create_param_combinations(**kwargs):
         return combinations_dict
 
 
-def pivot_dataframe(dataframe, param1, param2):
-    # extract individual dataframe per condition
-    summarised_df = None
-    summarised_df = (
-        dataframe.groupby([param1, param2])
-        .agg(
-            Mean_Value=("Metric", "mean"),
-            Std_Dev=("Metric", "std"),
-            Replicas_Count=("Replica", "count"),
-        )
-        .reset_index()
-    )
-    # get mean and std accross parameter combinations of axes_param_names
-    condition_mean_pivot = summarised_df.pivot(
-        index=param1, columns=param2, values="Mean_Value"
-    ).round(4)
-    condition_sd_pivot = summarised_df.pivot(
-        index=param1, columns=param2, values="Std_Dev"
-    ).round(4)
-    return condition_mean_pivot, condition_sd_pivot
-
-
 def pivot_dataframes_byCategory(dataframe, category_name, param1, param2, **kwargs):
     df_categories = dict()
     for category, group in dataframe.groupby(category_name):
