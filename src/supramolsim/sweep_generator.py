@@ -69,6 +69,11 @@ class sweep_generator:
         self.analysis_parameters = {}
         self.analysis_parameters["zoom_in"] = 0
         self.analysis_parameters["metrics_list"] = ["ssim", ]
+        self.plot_parameters = {}
+        self.plot_parameters["heatmaps"] = {}
+        self.plot_parameters["heatmaps"]["category"] = "modality_name"
+        self.plot_parameters["heatmaps"]["param1"] = None
+        self.plot_parameters["heatmaps"]["param2"] = None
 
     # generators
     def generate_virtual_samples(self):
@@ -224,8 +229,10 @@ class sweep_generator:
         self.gen_analysis_dataframe()
         if plots:
             for metric_name in self.analysis_parameters["metrics_list"]:
-                results_plot = self.generate_analysis_plots(return_figure=True, metric_name=metric_name)
-                self.analysis["plots"][metric_name] = results_plot
+                self.generate_analysis_plots(
+                    plot_type="heatmaps",
+                    return_figure=True,
+                    metric_name=metric_name)
         if save:
             self.save_analysis(
                 output_name=output_name, output_directory=output_directory
@@ -249,13 +256,31 @@ class sweep_generator:
 
     def generate_analysis_plots(
         self,
-        category: str = None,
-        param1: str = None,
-        param2: str = None,
-        return_figure=False,
-        metric_name=None,
+        plot_type=None,
+        metric_name = None,
         **kwargs,
     ):
+        if plot_type is None:
+            plot_type = "heatmaps"
+        plot_params = self.plot_parameters[plot_type]
+        if plot_type == "heatmaps":
+            metric_plot = self._gen_heatmaps(
+                metric_name=metric_name,
+                return_figure=True,
+                **plot_params)
+            self.analysis["plots"][metric_name] = metric_plot
+        else:
+            pass
+        
+    def _gen_heatmaps(
+            self,
+            metric_name=None,
+            category: str = None,
+            param1: str = None,
+            param2: str = None,
+            return_figure = False,
+            **kwargs):
+        print("into heatmaps")
         if metric_name is None:
             metric_name = self.analysis_parameters["metrics_list"][0]
         if category is None:
@@ -272,13 +297,10 @@ class sweep_generator:
             param2=param2,
             metric_name=metric_name
         )
-        if return_figure:
-            plot = _plots.sns_heatmap_pivots(
+        plot = _plots.sns_heatmap_pivots(
                 df_categories, titles, annotations=True, return_figure=return_figure
             )
-            return plot
-        else:
-            _plots.sns_heatmap_pivots(df_categories, titles, annotations=True)
+        return plot
 
     def save_analysis(
         self, output_name=None, output_directory=None, analysis_type=None
