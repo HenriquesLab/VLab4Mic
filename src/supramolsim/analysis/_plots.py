@@ -21,8 +21,12 @@ def sns_heatmap_pivots(
         hist_params = dict()
     if conditions_cmaps is None:
         conditions_cmaps = ["mako"] * nconditions
+    if "metric_name" in kwargs.keys():
+        metric_name = kwargs["metric_name"]
+    else:
+        metric_name = "Metric"
     for n, cond in enumerate(conditions):
-        print(cond, n)
+        #print(cond, n)
         # mean
         sns.heatmap(
             df_pivots[cond][0],
@@ -34,7 +38,7 @@ def sns_heatmap_pivots(
             #yticklabels=df_pivots[cond][0].index.values.round(3),
             **hist_params,
         )
-        axes[n, 0].set_title(titles["category"]+ ": " + cond + ". Mean Metric")
+        axes[n, 0].set_title(titles["category"]+ ": " + cond + ". Mean " + metric_name)
         # std
         sns.heatmap(
             df_pivots[cond][1],
@@ -45,7 +49,7 @@ def sns_heatmap_pivots(
             #xticklabels=df_pivots[cond][1].columns.values.round(3),
             #yticklabels=df_pivots[cond][1].index.values.round(3),
         )
-        axes[n, 1].set_title(titles["category"]+ ": " + cond + ". Std Dev Metric")
+        axes[n, 1].set_title(titles["category"]+ ": " + cond + ". Std Dev " + metric_name)
     f.tight_layout()
     if return_figure:
         plt.close()
