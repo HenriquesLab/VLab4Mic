@@ -33,6 +33,7 @@ class Sweep_gui(jupyter_gui):
         )
         self.param_settings = yaml_functions.load_yaml(param_settings_file)
         self._create_param_widgets()
+        self.parameters_with_set_values = []
         for file in os.listdir(self.config_directories["probes"]):
             if os.path.splitext(file)[-1] == ".yaml" and "_template" not in file:
                 label_config_path = os.path.join(
@@ -147,7 +148,7 @@ class Sweep_gui(jupyter_gui):
 
     def add_parameters_values(self):
         param_ranges = EZInput(title="ranges")
-
+        
         def change_param_list(change):
             new_options = list(self.param_settings[change.new].keys())
             param_ranges["parms_per_group"].options = new_options
@@ -159,17 +160,18 @@ class Sweep_gui(jupyter_gui):
         def set_param_range(b):
             param_group = param_ranges["groups"].value
             param_name = param_ranges["parms_per_group"].value
+            self.parameters_with_set_values.append(param_name)
             if self.param_settings[param_group][param_name]["wtype"] != "logical":
                 start, end = param_ranges[param_name].children[0].value
                 steps = param_ranges[param_name].children[1].value
                 param_values = (start, end, steps)
             else:
                 param_values = []
-                if "Both" in list(param_ranges[param_name].value):
+                if param_ranges[param_name].value == "Both":
                     param_values = [True, False,]
-                elif "True" in list(param_ranges[param_name].value):
+                elif param_ranges[param_name].value ==  "True":
                     param_values = [True,]
-                if "False" in list(param_ranges[param_name].value):
+                if param_ranges[param_name].value == "False":
                     param_values = [False,]
 
             self.sweep_gen.set_parameter_values(
@@ -244,6 +246,12 @@ class Sweep_gui(jupyter_gui):
         def analyse_sweep(b):
             analysis_widget["analyse"].disabled = True
             plots = analysis_widget["plots"].value
+            param_names_set = self.parameters_with_set_values
+            if len(param_names_set) >= 2:
+                self.sweep_gen.set_plot_parameters(
+                    "heatmaps", 
+                    param1=param_names_set[0], 
+                    param2=param_names_set[1])
             if analysis_widget["metric"].value == "All":
                 metric_list = ["ssim", "pearson"]
             elif analysis_widget["metric"].value == "SSIM":
