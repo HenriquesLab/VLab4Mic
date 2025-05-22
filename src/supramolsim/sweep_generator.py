@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 from .utils.io.yaml_functions import load_yaml
 from .analysis import _plots
+import numpy as np
 
 output_dir = Path.home() / "vlab4mic_outputs"
 
@@ -25,8 +26,7 @@ class sweep_generator:
     vsample_parameters = None
     modality_parameters = None
     acquisition_parameters = None
-    # parameter dictionary
-    params_by_group = {}
+
     # reference parameters
     reference_structure = "1XI5"
     reference_probe = "NHS_ester"
@@ -52,6 +52,8 @@ class sweep_generator:
     output_directory: str = None
 
     def __init__(self):
+        # parameter dictionary
+        self.params_by_group = {}
         self.params_by_group["probe"] = {}
         self.params_by_group["virtual_sample"] = {}
         self.params_by_group["particle_defect"] = {}
@@ -67,9 +69,6 @@ class sweep_generator:
 
     # generators
     def generate_virtual_samples(self):
-        if self.probe_parameters is None:
-            #default example 
-            self.set_param_range("probe", "labelling_efficiency", first=0.5, last=1, option=2)
         self.create_parameters_iterables()
         self.experiment, self.virtual_samples, self.virtual_samples_parameters = (
             sweep.sweep_vasmples(
@@ -152,39 +151,49 @@ class sweep_generator:
             print(self.reference_image_parameters)
 
     # set and change parameters
-    def set_param_range(self, param_group, param_name, first=None, last=None, option=None):
-        param_type = self.parameter_settings[param_group][param_name]["ptype"]
-        if param_type == "numeric":
-            self.params_by_group[param_group][param_name] = [first, last, option]
-        if param_type == "logical":
-            logic_list = []
-            if option == "True":
-                logic_list = [True,]
-            elif option == "True":
-                logic_list = [False,]
-            elif option == "Both":
-                logic_list = [True, False,]
-            self.params_by_group[param_group][param_name] = logic_list
+    def set_parameter_values(self, param_group, param_name, values=None):
+        if param_group in list(self.params_by_group.keys()):
+            if values is None:
+                # create defaults or ignore this parameter for it to not be used
+                pass
+            elif type(values) == list:
+                # set list directly as the params to use
+                self.params_by_group[param_group][param_name] = values
+            elif type(values) == tuple:
+                # 3 values are expected: min, max, steps
+                # generate a linspace
+                param_iterables = np.linspace(values[0], values[1], values[2])
+                self.params_by_group[param_group][param_name] = param_iterables
+            #param_type = self.parameter_settings[param_group][param_name]["ptype"]
+            #if param_type == "numeric":
+            #    self.params_by_group[param_group][param_name] = [first, last, option]
+            #if param_type == "logical":
+            #    logic_list = []
+            #    if option == "True":
+            #        logic_list = [True,]
+            #    elif option == "True":
+            #        logic_list = [False,]
+            #    elif option == "Both":
+            #        logic_list = [True, False,]
+            #    self.params_by_group[param_group][param_name] = logic_list
+        else:
+            print(f"{param_group} is not a valid parameter group")
 
     def create_parameters_iterables(self):
-        if self.params_by_group["probe"]:
-            self.probe_parameters = sweep.probe_parameters_sweep(
-                **self.params_by_group["probe"]
-            )
-        if self.params_by_group["particle_defect"]:
-            pass
-        if self.params_by_group["virtual_sample"]:
-            self.vsample_parameters = sweep.virtual_sample_parameters_sweep(
-                **self.params_by_group["virtual_sample"]
-            )
-        if self.params_by_group["modality"]:
-            self.modality_parameters = sweep.acquisition_parameters_sweep(
-                **self.params_by_group["modality"]
-            )
-        if self.params_by_group["acquisition"]:
-            self.acquisition_parameters = sweep.acquisition_parameters_sweep(
-                **self.params_by_group["acquisition"]
-            )
+        param_groups = list(self.params_by_group.keys())
+        no_params_set = True
+        for group_name in param_groups:
+            if len(self.params_by_group[group_name]) > 0:
+                no_params_set = False
+        if no_params_set:
+            # set default with minimal options to iterate
+            self.set_param_range("probe", "labelling_efficiency", values=(0.5,1,2))
+
+        self.probe_parameters = sweep.create_param_combinations(**self.params_by_group["probe"])
+        self.defect_parameters = sweep.create_param_combinations(**self.params_by_group["particle_defect"])
+        self.vsample_parameters = sweep.create_param_combinations(**self.params_by_group["virtual_sample"])
+        self.acquisition_parameters = sweep.create_param_combinations(**self.params_by_group["acquisition"])
+        self.modality_parameters = sweep.create_param_combinations(**self.params_by_group["modality"])
 
     def run_analysis(self, save=False, output_name = None, output_directory=None, plots=True):
         if self.acquisition_outputs is None:
