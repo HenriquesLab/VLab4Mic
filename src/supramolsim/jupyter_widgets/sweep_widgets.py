@@ -9,6 +9,7 @@ from supramolsim.utils.io import yaml_functions
 import copy
 from ezinput import EZInput
 from ipyfilechooser import FileChooser
+from IPython.utils import io
 
 class Sweep_gui(jupyter_gui):
     sweep_gen = sweep_generator()
@@ -144,7 +145,7 @@ class Sweep_gui(jupyter_gui):
         ez_sweep["Select"].on_click(select_str)
         ez_sweep.show()
 
-    def add_parameters_ranges(self):
+    def add_parameters_values(self):
         param_ranges = EZInput(title="ranges")
 
         def change_param_list(change):
@@ -211,26 +212,6 @@ class Sweep_gui(jupyter_gui):
         param_ranges["done"].on_click(disable_widgets)
         param_ranges.show()
 
-
-    def generate_simulations(self):
-        simulate = EZInput(title="simulate")
-        def run_sweeps(b):
-            simulate["Run"].disabled = True
-            self.sweep_gen.sweep_repetitions = simulate["reps"].value
-            self.sweep_gen.create_parameters_iterables()
-            with simulate["outputs"]:
-                self.sweep_gen.generate_acquisitions()
-        simulate.elements["reps"] = self.wgen.gen_bound_int(
-                value=3, description="Repeats per parameter combination",
-                style={'description_width': 'initial'}
-            )
-        simulate.add_button(
-            "Run", description="Run"
-        )
-        simulate.elements["outputs"] = widgets.Output()
-        simulate["Run"].on_click(run_sweeps)
-        simulate.show()
-
     def set_reference(self):
         reference = EZInput(title="reference")
         def gen_ref(b):
@@ -262,9 +243,20 @@ class Sweep_gui(jupyter_gui):
         analysis_widget = EZInput(title="analysis")
         def analyse_sweep(b):
             analysis_widget["analyse"].disabled = True
-            
-            self.sweep_gen.run_analysis()
-            self.sweep_gen.gen_analysis_dataframe()
+            plots = analysis_widget["plots"].value
+            if analysis_widget["metric"].value == "All":
+                metric_list = ["ssim", "pearson"]
+            elif analysis_widget["metric"].value == "SSIM":
+                metric_list = ["ssim", ]
+            elif analysis_widget["metric"].value == "Pearson":
+                metric_list = ["pearson", ]
+            self.sweep_gen.set_number_of_repetitions(analysis_widget["reps"].value)
+            self.sweep_gen.set_analysis_parameters("metrics_list", metric_list)
+            with io.capture_output() as captured:
+                if self.sweep_gen.reference_image is None:
+                    self.sweep_gen.generate_reference_image()
+            with analysis_widget["outputs"]:
+                self.sweep_gen.run_analysis(plots=plots, save=False)
             analysis_widget["saving_directory"].disabled = False
             analysis_widget["save"].disabled = False
             analysis_widget["output_name"].disabled = False
@@ -275,14 +267,20 @@ class Sweep_gui(jupyter_gui):
                 output_name=output_name
                 )
             analysis_widget["save"].disabled = True
+        analysis_widget.elements["reps"] = self.wgen.gen_bound_int(
+                value=3, description="Repeats per parameter combination",
+                style={'description_width': 'initial'}
+            )
         analysis_widget.add_dropdown(
-            "metric", options=["SSIM",], 
+            "metric", options=["SSIM", "Pearson", "All"], 
             description="Metric for image comparison",
-            disabled = True
+            disabled = False
         )
+        analysis_widget.add_checkbox("plots", description="Generate plots", value=True)
         analysis_widget.add_button(
             "analyse", description="Run analysis"
         )
+        analysis_widget.elements["outputs"] = widgets.Output()
         analysis_widget.elements["saving_directory"] = FileChooser(
             self.ouput_directory,
             title="<b>Select output directory</b>",
