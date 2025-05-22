@@ -66,6 +66,9 @@ class sweep_generator:
             self.configuration_directory, "parameter_settings.yaml"
         )
         self.parameter_settings = load_yaml(param_settings_file)
+        self.analysis_parameters = {}
+        self.analysis_parameters["zoom_in"] = 0
+        self.analysis_parameters["metrics_list"] = ["ssim", ]
 
     # generators
     def generate_virtual_samples(self):
@@ -195,21 +198,29 @@ class sweep_generator:
             **self.params_by_group["modality"]
         )
 
+    def set_analysis_parameters(self, param_name, value):
+        if param_name in list(self.analysis_parameters.keys()):
+            self.analysis_parameters[param_name] = value
+        else:
+            print(f"input name {param_name} is not a valid analysis parameter")
+
+
     def run_analysis(
-        self, save=False, output_name=None, output_directory=None, plots=True
+        self, save=False, output_name=None, output_directory=None, plots=False
     ):
         if self.acquisition_outputs is None:
             self.generate_acquisitions()
         if self.reference_image is None:
             self.generate_reference_image()
-        measurement_vectors, input_images = sweep.analyse_sweep_single_reference(
-            self.acquisition_outputs,
-            self.acquisition_outputs_parameters,
-            self.reference_image[0],
-            self.reference_image_parameters,
+        measurement_vectors, inputs, metric = sweep.analyse_sweep_single_reference(
+            img_outputs=self.acquisition_outputs,
+            img_params=self.acquisition_outputs_parameters,
+            reference_image=self.reference_image[0],
+            reference_params=self.reference_image_parameters,
+            **self.analysis_parameters
         )
         self.analysis["unsorted"]["measurement_vectors"] = measurement_vectors
-        self.analysis["unsorted"]["inputs"] = input_images
+        self.analysis["unsorted"]["inputs"] = inputs
         self.gen_analysis_dataframe()
         if plots:
             results_plot = self.generate_analysis_plots(return_figure=True)
@@ -228,6 +239,7 @@ class sweep_generator:
             mod_acq=self.acquisition_parameters,
             mod_names=self.modalities,
             mod_params=self.modality_parameters,
+            metric_names=self.analysis_parameters["metrics_list"]
         )
 
     # methods to retrieve attributes
