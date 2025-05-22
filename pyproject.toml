@@ -74,7 +74,7 @@ where = ["src"]
 [tool.coverage.run]
 source = ["src/supramolsim"]
 omit = [
-    "src/supramolsim/jupyter_widgets/*",
+    "*/supramolsim/jupyter_widgets/*",
     "*__init__.py",
     "*__*.py"
 ]
