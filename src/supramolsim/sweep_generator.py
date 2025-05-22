@@ -76,6 +76,10 @@ class sweep_generator:
         self.plot_parameters["heatmaps"]["param1"] = None
         self.plot_parameters["heatmaps"]["param2"] = None
 
+
+    def set_number_of_repetitions(self, repeats: int = 3 ):
+        self.sweep_repetitions = repeats
+
     # generators
     def generate_virtual_samples(self):
         self.create_parameters_iterables()
@@ -311,7 +315,7 @@ class sweep_generator:
         self, output_name=None, output_directory=None, analysis_type=None
     ):
         now = datetime.now()  # dd/mm/YY H:M:S
-        dt_string = now.strftime("%Y%m%d") + "_"
+        dt_string = now.strftime("%Y%m%d")
         if analysis_type is None:
             analysis_type = ["dataframes", "plots"]
         if output_name is None:
