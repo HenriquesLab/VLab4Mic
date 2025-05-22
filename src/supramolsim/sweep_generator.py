@@ -7,6 +7,7 @@ from pathlib import Path
 from .utils.io.yaml_functions import load_yaml
 from .analysis import _plots
 import numpy as np
+from datetime import datetime
 
 output_dir = Path.home() / "vlab4mic_outputs"
 
@@ -216,7 +217,7 @@ class sweep_generator:
 
 
     def run_analysis(
-        self, save=False, output_name=None, output_directory=None, plots=False
+        self, save=True, output_name=None, output_directory=None, plots=False
     ):
         if self.acquisition_outputs is None:
             self.generate_acquisitions()
@@ -285,7 +286,6 @@ class sweep_generator:
             param2: str = None,
             return_figure = False,
             **kwargs):
-        print("into heatmaps")
         if metric_name is None:
             metric_name = self.analysis_parameters["metrics_list"][0]
         if category is None:
@@ -303,17 +303,20 @@ class sweep_generator:
             metric_name=metric_name
         )
         plot = _plots.sns_heatmap_pivots(
-                df_categories, titles, annotations=True, return_figure=return_figure
+                df_categories, titles, annotations=True, return_figure=return_figure, metric_name=metric_name
             )
         return plot
 
     def save_analysis(
         self, output_name=None, output_directory=None, analysis_type=None
     ):
+        now = datetime.now()  # dd/mm/YY H:M:S
+        dt_string = now.strftime("%Y%m%d") + "_"
         if analysis_type is None:
             analysis_type = ["dataframes", "plots"]
         if output_name is None:
-            output_name = "vLab4mic_results"
+            output_name = "vLab4mic_results_"
+        output_name = output_name + dt_string
         if output_directory is None:
             output_directory = self.ouput_directory
         for keyname in analysis_type:
