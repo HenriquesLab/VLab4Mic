@@ -48,7 +48,7 @@ class sweep_generator:
     # analysis["extended_dataframe"] = None
     analysis["unsorted"] = {}
     analysis["dataframes"] = None
-    analysis["plots"] = None
+    analysis["plots"] = {}
     # saving
     output_directory: str = None
 
@@ -223,8 +223,9 @@ class sweep_generator:
         self.analysis["unsorted"]["inputs"] = inputs
         self.gen_analysis_dataframe()
         if plots:
-            results_plot = self.generate_analysis_plots(return_figure=True)
-            self.analysis["plots"] = results_plot
+            for metric_name in self.analysis_parameters["metrics_list"]:
+                results_plot = self.generate_analysis_plots(return_figure=True, metric_name=metric_name)
+                self.analysis["plots"][metric_name] = results_plot
         if save:
             self.save_analysis(
                 output_name=output_name, output_directory=output_directory
@@ -252,8 +253,11 @@ class sweep_generator:
         param1: str = None,
         param2: str = None,
         return_figure=False,
+        metric_name=None,
         **kwargs,
     ):
+        if metric_name is None:
+            metric_name = self.analysis_parameters["metrics_list"][0]
         if category is None:
             category = "modality_name"
         if param1 is None:
@@ -266,6 +270,7 @@ class sweep_generator:
             category_name=category,
             param1=param1,
             param2=param2,
+            metric_name=metric_name
         )
         if return_figure:
             plot = _plots.sns_heatmap_pivots(
@@ -290,6 +295,7 @@ class sweep_generator:
                 df_name = output_name + "_dataframe.csv"
                 df.to_csv(os.path.join(output_directory, df_name), index=False)
             elif keyname == "plots":
-                figure = self.get_analysis_output(keyname)
-                figure_name = output_name + "_figure.png"
-                figure.savefig(os.path.join(output_directory, figure_name))
+                plots_dictionary = self.get_analysis_output(keyname)
+                for metric, plot in plots_dictionary.items():
+                    figure_name = output_name + "_" + metric + "_figure.png"
+                    plot.savefig(os.path.join(output_directory, figure_name))
