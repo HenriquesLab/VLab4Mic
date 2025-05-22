@@ -187,7 +187,7 @@ class sweep_generator:
                 no_params_set = False
         if no_params_set:
             # set default with minimal options to iterate
-            self.set_param_range("probe", "labelling_efficiency", values=(0.5,1,2))
+            self.set_parameter_values("probe", "labelling_efficiency", values=(0.5,1,2))
 
         self.probe_parameters = sweep.create_param_combinations(**self.params_by_group["probe"])
         self.defect_parameters = sweep.create_param_combinations(**self.params_by_group["particle_defect"])
