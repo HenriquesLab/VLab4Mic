@@ -159,21 +159,22 @@ class Sweep_gui(jupyter_gui):
             param_group = param_ranges["groups"].value
             param_name = param_ranges["parms_per_group"].value
             if self.param_settings[param_group][param_name]["wtype"] != "logical":
-                param_type = "numeric"
-                first, last = param_ranges[param_name].children[0].value
-                option = param_ranges[param_name].children[1].value
+                start, end = param_ranges[param_name].children[0].value
+                steps = param_ranges[param_name].children[1].value
+                param_values = (start, end, steps)
             else:
-                param_type = "logical"
-                first = None
-                last = None
-                option = param_ranges[param_name].value
-            self.sweep_gen._set_param_range(
+                param_values = []
+                if "Both" in list(param_ranges[param_name].value):
+                    param_values = [True, False,]
+                elif "True" in list(param_ranges[param_name].value):
+                    param_values = [True,]
+                if "False" in list(param_ranges[param_name].value):
+                    param_values = [False,]
+
+            self.sweep_gen.set_parameter_values(
                 param_group=param_group,
                 param_name=param_name,
-                param_type=param_type,
-                first=first,
-                last=last,
-                option=option,
+                values=param_values,
             )
         
         def disable_widgets(b):
