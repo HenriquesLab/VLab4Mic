@@ -209,6 +209,11 @@ class sweep_generator:
         else:
             print(f"input name {param_name} is not a valid analysis parameter")
 
+    def set_plot_parameters(self, plot_type, **kwargs):
+        if plot_type in self.plot_parameters.keys():
+            for key, val in kwargs.items():
+                self.plot_parameters[plot_type][key] = val
+
 
     def run_analysis(
         self, save=False, output_name=None, output_directory=None, plots=False
