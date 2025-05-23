@@ -33,7 +33,7 @@ class Sweep_gui(jupyter_gui):
         )
         self.param_settings = yaml_functions.load_yaml(param_settings_file)
         self._create_param_widgets()
-        self.parameters_with_set_values = []
+        #self.parameters_with_set_values = []
         for file in os.listdir(self.config_directories["probes"]):
             if os.path.splitext(file)[-1] == ".yaml" and "_template" not in file:
                 label_config_path = os.path.join(
@@ -160,7 +160,7 @@ class Sweep_gui(jupyter_gui):
         def set_param_range(b):
             param_group = param_ranges["groups"].value
             param_name = param_ranges["parms_per_group"].value
-            self.parameters_with_set_values.append(param_name)
+            #self.parameters_with_set_values.append(param_name)
             if self.param_settings[param_group][param_name]["wtype"] != "logical":
                 start, end = param_ranges[param_name].children[0].value
                 steps = param_ranges[param_name].children[1].value
@@ -246,7 +246,7 @@ class Sweep_gui(jupyter_gui):
         def analyse_sweep(b):
             analysis_widget["analyse"].disabled = True
             plots = analysis_widget["plots"].value
-            param_names_set = self.parameters_with_set_values
+            param_names_set = self.sweep_gen.parameters_with_set_values
             if len(param_names_set) >= 2:
                 self.sweep_gen.set_plot_parameters(
                     "heatmaps", 
