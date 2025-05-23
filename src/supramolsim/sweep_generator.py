@@ -75,6 +75,7 @@ class sweep_generator:
         self.plot_parameters["heatmaps"]["category"] = "modality_name"
         self.plot_parameters["heatmaps"]["param1"] = None
         self.plot_parameters["heatmaps"]["param2"] = None
+        self.parameters_with_set_values = []
 
 
     def set_number_of_repetitions(self, repeats: int = 3 ):
@@ -177,6 +178,7 @@ class sweep_generator:
                 # generate a linspace
                 param_iterables = np.linspace(values[0], values[1], values[2])
                 self.params_by_group[param_group][param_name] = param_iterables
+            self.parameters_with_set_values.append(param_name)
         else:
             print(f"{param_group} is not a valid parameter group")
 
@@ -310,6 +312,9 @@ class sweep_generator:
                 df_categories, titles, annotations=True, return_figure=return_figure, metric_name=metric_name
             )
         return plot
+    
+    def _gen_lineplots(self,):
+        pass
 
     def save_analysis(
         self, output_name=None, output_directory=None, analysis_type=None
