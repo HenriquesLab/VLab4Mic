@@ -451,6 +451,28 @@ class ExperimentParametrisation:
             self.structure_label = None
         else: 
             self.structure_label = list(self.probe_parameters.keys())
+    
+    def use_image_for_positioning(self,
+                                  img,
+                                  mode="localmaxima",
+                                  sigma=None,
+                                  background=None,
+                                  threshold=None,
+                                  pixelsize=None,
+                                  min_distance=None,
+                                  **kwargs):
+        xyz_relative, image_physical_size = coordinates_field.gen_positions_from_image(
+            img=img,
+            mode=mode,
+            sigma=sigma,
+            background=background,
+            threshold=threshold,
+            pixelsize=pixelsize,
+            min_distance=min_distance
+            )
+        self.virtualsample_params["relative_positions"] = xyz_relative
+        self.virtualsample_params["sample_dimensions"] = [image_physical_size[0],image_physical_size[1], 100]
+        self.build(modules=["coordinate_field", "imager"])
 
 def generate_virtual_sample(
         structure: str = "1XI5",
