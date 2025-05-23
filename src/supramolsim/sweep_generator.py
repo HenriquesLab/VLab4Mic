@@ -364,7 +364,10 @@ class sweep_generator:
                      estimator=estimator,
                      errorbar=errorbar,
                      ax=axes)
-        title = estimator + " " + metric_name + " for " + x_param + "per " + style
+        
+        title = estimator + " " + metric_name + " for " + x_param
+        if style is not None:
+            title = title + "per " + style
         plt.title(title)
         plt.close()  
         return fig
