@@ -8,6 +8,9 @@ from .utils.io.yaml_functions import load_yaml
 from .analysis import _plots
 import numpy as np
 from datetime import datetime
+import seaborn as sns
+
+
 
 output_dir = Path.home() / "vlab4mic_outputs"
 
@@ -313,8 +316,41 @@ class sweep_generator:
             )
         return plot
     
-    def _gen_lineplots(self,):
-        pass
+    def _gen_lineplots(self,
+                       data=None,
+                       x_param=None,
+                       metric_name=None,
+                       hue='modality_name',
+                       style=None,
+                       markers=None, 
+                       estimator = "mean", 
+                       errorbar="ci",
+                       figsize=[10,10],
+                       **kwargs):
+        if data is None:
+            data = self.analysis["dataframes"]
+        if x_param is None and len(self.parameters_with_set_values) > 0:
+            x_param = self.parameters_with_set_values[0]
+        else: 
+            x_param = "labelling_efficiency"
+        if metric_name is None:
+            metric_name = self.analysis_parameters["metrics_list"][0]
+        if style is None and len(self.parameters_with_set_values) > 1:
+            style = self.parameters_with_set_values[1]
+        fig, axes = plt.subplots(figsize=figsize)
+        sns.lineplot(data=data,
+                     x=x_param,
+                     y=metric_name,
+                     hue=hue,
+                     style=style,
+                     markers=markers, 
+                     estimator=estimator,
+                     errorbar=errorbar,
+                     ax=axes)
+        title = estimator + " " + metric_name + " for " + x_param + "per " + style
+        plt.title(title)
+        plt.close()  
+        return fig
 
     def save_analysis(
         self, output_name=None, output_directory=None, analysis_type=None
