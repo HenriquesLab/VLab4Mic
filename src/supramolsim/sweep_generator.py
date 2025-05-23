@@ -79,6 +79,12 @@ class sweep_generator:
         self.plot_parameters["heatmaps"]["param1"] = None
         self.plot_parameters["heatmaps"]["param2"] = None
         self.parameters_with_set_values = []
+        self.plot_parameters["lineplots"] = {}
+        self.plot_parameters["lineplots"]["x_param"] = None
+        self.plot_parameters["lineplots"]["hue"] = 'modality_name'
+        self.plot_parameters["lineplots"]["style"] = None
+        self.plot_parameters["lineplots"]["estimator"] = "mean"
+        self.plot_parameters["lineplots"]["errorbar"] = "ci"
 
 
     def set_number_of_repetitions(self, repeats: int = 3 ):
@@ -244,10 +250,11 @@ class sweep_generator:
         self.gen_analysis_dataframe()
         if plots:
             for metric_name in self.analysis_parameters["metrics_list"]:
-                self.generate_analysis_plots(
-                    plot_type="heatmaps",
-                    return_figure=True,
-                    metric_name=metric_name)
+                for plot_type in self.plot_parameters.keys():
+                    self.generate_analysis_plots(
+                        plot_type=plot_type,
+                        return_figure=True,
+                        metric_name=metric_name)
         if save:
             self.save_analysis(
                 output_name=output_name, output_directory=output_directory
@@ -275,17 +282,27 @@ class sweep_generator:
         metric_name = None,
         **kwargs,
     ):
+        data = self.get_analysis_output(keyname="dataframes")
         if plot_type is None:
             plot_type = "heatmaps"
+        if plot_type not in self.analysis["plots"].keys():
+            self.analysis["plots"][plot_type] = {}
         plot_params = self.plot_parameters[plot_type]
+        print(plot_type)
+        print(plot_params)
         if plot_type == "heatmaps":
             metric_plot = self._gen_heatmaps(
                 metric_name=metric_name,
                 return_figure=True,
                 **plot_params)
-            self.analysis["plots"][metric_name] = metric_plot
-        else:
-            pass
+            self.analysis["plots"][plot_type][metric_name] = metric_plot
+        elif plot_type == "lineplots":
+            metric_plot = self._gen_lineplots(
+                data=data,
+                metric_name=metric_name,
+                **plot_params 
+                )
+            self.analysis["plots"][plot_type][metric_name] = metric_plot
         
     def _gen_heatmaps(
             self,
@@ -371,6 +388,7 @@ class sweep_generator:
                 df.to_csv(os.path.join(output_directory, df_name), index=False)
             elif keyname == "plots":
                 plots_dictionary = self.get_analysis_output(keyname)
-                for metric, plot in plots_dictionary.items():
-                    figure_name = output_name + "_" + metric + "_figure.png"
-                    plot.savefig(os.path.join(output_directory, figure_name))
+                for plot_type, plots_by_metric in plots_dictionary.items():
+                    for metric, plot in plots_by_metric.items():
+                        figure_name = output_name + "_" + metric + "_" + plot_type + ".png"
+                        plot.savefig(os.path.join(output_directory, figure_name))
