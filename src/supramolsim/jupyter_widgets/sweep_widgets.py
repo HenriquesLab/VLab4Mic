@@ -589,23 +589,26 @@ class Sweep_gui(jupyter_gui):
         grid[0,1] = wgt2
 
 
-        def preview_acquisition(widget):
+        def preview_acquisition(widget, exp_time, noise):
 
             selected_mod = widget.children[0].children[0].value
             print(f"Preview for {selected_mod}")
             fig = plt.figure()
             ax = fig.add_subplot(111)
             with io.capture_output() as captured:
+                self.my_experiment.update_modality(modality_name=selected_mod,remove=True)
                 self.my_experiment.add_modality(modality_name=selected_mod, save=False)
+                self.my_experiment.set_modality_acq(modality_name=selected_mod, exp_time=exp_time, noise=noise)
                 self.my_experiment.build(modules=["imager",])
+                # consider using run_simulation
                 timeseries, calibration_beads = (
                     self.my_experiment.imager.generate_imaging(
-                        modality=selected_mod
+                        modality=selected_mod, exp_time=exp_time, noise=noise
                     )
                 )
             min_val = np.min(timeseries[0])
             max_val = np.max(timeseries[0])
-            ax.imshow(
+            preview_image=ax.imshow(
                 timeseries[0],
                 cmap="gray",
                 interpolation="none",
@@ -615,7 +618,7 @@ class Sweep_gui(jupyter_gui):
             ax.set_xticks([])
             ax.set_yticks([])
             #ax.set_title("preview channel:" + single_channel)
-            #grid.cbar_axes[i].colorbar(preview_image)
+            #ax.cbar_axes.colorbar(preview_image)
             # grid[i].set_visible(False)
             plt.close()
             return fig
@@ -623,6 +626,8 @@ class Sweep_gui(jupyter_gui):
         static = self.wgen.gen_action_with_options(
             param_widget=wgt2, 
             routine=preview_acquisition,
+            exp_time = ["float_slider", [0.01,0,0.05,0.001]],
+            noise = ["checkbox", True],
             options=None,
             action_name="Preview acquisition",
             height=height)
