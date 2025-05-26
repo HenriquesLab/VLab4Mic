@@ -120,17 +120,18 @@ class Sweep_gui(jupyter_gui):
         # create muliple options widgets
         widget_modules = {}
         widget_modules["probes"] = widgets.SelectMultiple(
-            description="", options=probes2show
+            description="probes", options=probes2show
         )
         widget_modules["modalities"] = widgets.SelectMultiple(
-            description="", options=self.modalities_default
+            description="modalities", options=self.modalities_default
         )
         # create tabs
         tab_name = list(widget_modules.keys())
         children = [widget_modules[name] for name in tab_name]
-        ez_sweep.elements["tabs"] = widgets.Tab()
-        ez_sweep.elements["tabs"].children = children
-        ez_sweep.elements["tabs"].titles = tab_name
+        ez_sweep.elements["tabs"] = widgets.HBox(children)
+
+        #ez_sweep.elements["tabs"].children = children
+        #ez_sweep.elements["tabs"].titles = tab_name
 
         # on clicks
         def select_str(b):
@@ -274,7 +275,7 @@ class Sweep_gui(jupyter_gui):
                 output_directory=self.ouput_directory,
                 output_name=output_name
                 )
-            analysis_widget["save"].disabled = True
+            #analysis_widget["save"].disabled = True
         analysis_widget.elements["reps"] = self.wgen.gen_bound_int(
                 value=3, description="Repeats per parameter combination",
                 style={'description_width': 'initial'}
