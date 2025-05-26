@@ -612,6 +612,70 @@ class LabeledInstance:
         return pulled
 
     # Visualisation methods
+    def show_probe(self, 
+                probe_name = None, 
+                axesoff=False,
+                return_plot = False,
+                view_init = [30,0,0],
+                xlims = [-100,100],
+                ylims = [-100,100],
+                zlims = None,
+                **kwargs):
+        if probe_name is None:
+            first_probe = self.labelnames[0]
+            probe_name = self.emitters[first_probe]
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection="3d")
+        probe_plotting_params = self._get_label_plotting_params(probe_name)
+        total_coordinates = copy.copy(self.labels[probe_name]["emitters"])
+        total_number_coordinates = total_coordinates.shape[0]
+        center = np.mean(total_coordinates, axis=0)
+        probe_emitters = total_coordinates[2:,:].reshape( total_number_coordinates - 2 ,3)
+        probe_axis =total_coordinates[0:2,:]
+        centered_emitters, translation_vector1 = transform_displace_set(probe_emitters, center, np.array([0,0,0]))
+        centered_axis, translation_vector2 = transform_displace_set(probe_axis, center, np.array([0,0,0]))
+        add_ax_scatter(
+                    ax,
+                    format_coordinates(
+                        centered_emitters, 
+                            plotmarker="o",
+                            plotcolour="#984ea3",
+                            plotsize=20
+                    ),
+                )
+        add_ax_scatter(
+                    ax,
+                        format_coordinates(
+                            centered_axis,
+                            plotmarker="x",
+                            plotcolour="k",
+                            plotsize=20
+                        ),
+                    )
+        ax.set_xlim(xlims)
+        ax.set_ylim(ylims)
+        if zlims is None:
+            zlims = [np.min(centered_axis[:,2]), np.min(centered_emitters[:,2])]
+            ax.set_zlim(zlims)
+        else:
+            ax.set_zlim(zlims)
+        ax.view_init(elev=view_init[0], azim=view_init[1], roll=view_init[2])
+        ax.set_box_aspect(
+            [ub - lb for lb, ub in (getattr(ax, f"get_{a}lim")() for a in "xyz")]
+        )
+        if axesoff:
+            ax.set_axis_off()
+        else:
+            ax.set_xlabel("X (Angstroms)")
+            ax.set_ylabel("Y (Angstroms)")
+            ax.set_zlabel("Z (Angstroms)")
+        if return_plot:
+            return ax
+        else:
+            fig.show()
+
+
+
     def show_instance(
         self,
         labelnames="All",
