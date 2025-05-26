@@ -455,21 +455,21 @@ class Sweep_gui(jupyter_gui):
             probe_params = options[structure]
             #print(structure, probe_name, probe_params)
             with io.capture_output() as captured2:
-                vsample, experiment = experiments.generate_virtual_sample(
-                structure=structure,
-                clear_probes=True)
-                experiment.add_probe(probe_name, **probe_params)
-                experiment.build(modules=["particle",])
+                #vsample, experiment = .generate_virtual_sample(
+                self.my_experiment.remove_probes()
+                self.my_experiment.structure_id = structure
+                self.my_experiment.add_probe(probe_name, **probe_params)
+                self.my_experiment.build()
                 fig = plt.figure()
                 ax = fig.add_subplot(111, projection="3d")
-                experiment.particle.gen_axis_plot(
+                self.my_experiment.particle.gen_axis_plot(
                     axis_object=ax,
                     with_sources=True, 
                     axesoff=True,
                     emitter_plotsize=emitter_plotsize,
                     source_plotsize=source_plotsize
                     )
-                print(experiment.particle.emitters)
+                #print(experiment.particle.emitters)
                 plt.close()
                 return fig
 
