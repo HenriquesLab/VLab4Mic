@@ -144,3 +144,57 @@ class widgen:
         out.layout.height = height
         box = self.gen_box(widget1=params, widget2=out, orientation=orientation)
         return box
+    
+
+    def gen_action_with_options(self, param_widget = None, options = None, routine=None, action_name = "action", height = '400px', **kwargs):
+        params_widgets = dict()
+        action_result = None
+        for keyname, val in kwargs.items():
+            wtype = val[0]
+            wparams = val[1]
+            if wtype == "float_slider":
+                params_widgets[keyname] = widgets.FloatSlider(
+                    value=wparams[0],
+                    min=wparams[1],
+                    max=wparams[2],
+                    step=wparams[3],
+                    description = keyname
+                )
+            if wtype == "int_slider":
+                params_widgets[keyname] = widgets.IntSlider(
+                    value=wparams[0],
+                    min=wparams[1],
+                    max=wparams[2],
+                    step=wparams[3],
+                    description = keyname
+                )
+        list_of_paramwidgets = []
+        if len(params_widgets.keys()) > 0:
+            for key, wid in params_widgets.items():
+                #funct_dictionary[key] = wid
+                list_of_paramwidgets.append(wid)
+        
+        def action(b):
+            widget_values = {}
+            if len(params_widgets.keys()) > 0:
+                for key, wid in params_widgets.items():
+                    widget_values[key] = wid.value
+            out_static.clear_output()
+            with out_static:
+                if options:
+                    r_out = routine(param_widget, options, **widget_values)
+                    display(r_out)
+                else:
+                    r_out = routine(param_widget, **widget_values)
+                    display(r_out)
+        out_static = widgets.Output()
+        out_static.layout.height = height
+        trigger = widgets.Button(description=action_name)
+        list_of_paramwidgets.append(trigger)
+        params = widgets.VBox(list_of_paramwidgets)
+        trigger.on_click(action)
+        preview_area = self.gen_box(
+            widget1=params,
+            widget2=out_static,
+            orientation="vertical")
+        return preview_area
