@@ -498,8 +498,8 @@ class Sweep_gui(jupyter_gui):
     
 
 
-    def vsample_vmicroscope_ui(self, mode = "default"):
-        grid = GridspecLayout(1, 3)
+    def vsample_vmicroscope_ui(self, mode = "default", height = "500px"):
+        grid = GridspecLayout(1, 3, height=height)
         
         def create_field(field_config = None,
                          nparticles = 1,
@@ -524,7 +524,8 @@ class Sweep_gui(jupyter_gui):
                     options=["option1",],
                     orientation="vertical",
                     routine=create_field,
-                    nparticles=["int_slider", [1,0,20,1]]
+                    nparticles=["int_slider", [1,0,20,1]],
+                    height=height
         )
         grid[0,0] = wgt1
         # modalities
@@ -583,6 +584,7 @@ class Sweep_gui(jupyter_gui):
                     options=modalities_options,
                     orientation="vertical",
                     routine=show_modality,
+                    height=height
         )
         grid[0,1] = wgt2
 
@@ -622,6 +624,7 @@ class Sweep_gui(jupyter_gui):
             param_widget=wgt2, 
             routine=preview_acquisition,
             options=None,
-            action_name="Preview acquisition")
+            action_name="Preview acquisition",
+            height=height)
         grid[0,2] = static
         return grid
