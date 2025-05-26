@@ -14,7 +14,7 @@ from IPython.utils import io
 from ..generate.labels import construct_label
 from ..workflows import probe_model
 import matplotlib.pyplot as plt
-
+from ipywidgets import GridspecLayout
 
 class Sweep_gui(jupyter_gui):
     sweep_gen = sweep_generator()
@@ -479,6 +479,10 @@ class Sweep_gui(jupyter_gui):
             source_plotsize=["int_slider", [1,0,30,1]],
             options=structure_target_suggestion)
         
-        main_widget = self.wgen.gen_box(widget1=left_parameters_linkd, widget2=static)
-        main_widget.layout = widgets.Layout(width='100%',display='inline-flex')
+        #main_widget = self.wgen.gen_box(widget1=left_parameters_linkd, widget2=static)
+        main_widget = GridspecLayout(1, 3)
+        main_widget[0,0] = left_parameters_linkd.children[0]
+        main_widget[0,1] = left_parameters_linkd.children[1]
+        main_widget[0,2] = static
+        #main_widget.layout = widgets.Layout(width='100%',display='inline-flex')
         return main_widget
