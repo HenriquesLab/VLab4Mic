@@ -13,12 +13,13 @@ def test_create_minimal_field():
     test_field.show_field()
     test_field.expand_isotropically(factor=2)
 
-def test_gen_positions_from_image():
+def test_gen_positions_from_image(experiment_7r5k_base):
+    copy_exp = copy.deepcopy(experiment_7r5k_base)
     img_mask = np.random.rand(24,24)
     p = 0.9
     img_mask[img_mask >= p] = 1
     img_mask[img_mask < p] = 0
-    xyz_relative, image_physical_size = field.gen_positions_from_image(img_mask, pixelsize = 100)
+    copy_exp.use_image_for_positioning(img_mask, mode="mask", pixelsize=100)
 
 
 def test_minfield_with_particles(configuration_directory):

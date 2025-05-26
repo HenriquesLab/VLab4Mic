@@ -288,7 +288,26 @@ def generate_global_reference_modality(
     return reference_output[modality], reference_parameters
 
 
-def analyse_sweep_single_reference(img_outputs, img_params, reference_image, reference_params, zoom_in=0, **kwargs):
+def analyse_image_sweep(img_outputs, img_params, reference, analysis_case_params=None):
+    measurement_vectors = []
+    # ref_pixelsize = analysis_case_params["ref_pixelsize"]
+    inputs = dict()
+    for params_id in img_params.keys():
+        inputs[params_id] = dict()
+        rep_number = 0
+        mod_name = img_params[params_id][5]  # 5th item corresponds to Modality
+        for img_r in img_outputs[params_id]:
+            im1 = img_r[0]
+            im_ref = reference[0]
+            rep_measurement, ref_used, qry_used = metrics.img_compare(
+                im_ref, im1, **analysis_case_params[mod_name]
+            )
+            measurement_vectors.append([params_id, rep_number, rep_measurement])
+            inputs[params_id][rep_number] = [qry_used, im1]
+            rep_number += 1
+    return measurement_vectors, inputs
+
+def analyse_sweep_single_reference(img_outputs, img_params, reference_image, reference_params, zoom_in=0, metrics_list:list =["ssim",], **kwargs):
     measurement_vectors = []
     # ref_pixelsize = analysis_case_params["ref_pixelsize"]
     inputs = dict()
@@ -305,18 +324,21 @@ def analyse_sweep_single_reference(img_outputs, img_params, reference_image, ref
                 modality_pixelsize = modality_pixelsize,
                 ref_pixelsize = reference_params["ref_pixelsize"],
                 force_match=True,
-                zoom_in=zoom_in
+                zoom_in=zoom_in,
+                metric=metrics_list
             )
-            measurement_vectors.append([params_id, rep_number, rep_measurement])
+            r_vector = list([params_id, rep_number]) + list([*rep_measurement])
+            measurement_vectors.append(r_vector)
+            #measurement_vectors = measurement_vectors + rep_measurement[0]
             inputs[params_id][rep_number] = [qry_used, im1, ref_used]
             rep_number += 1
-    return measurement_vectors, inputs
+    return measurement_vectors, inputs, metrics_list
 
 
 
 
 def measurements_dataframe(
-    measurement_vectors, probe_parameters=None, p_defects=None, mod_names = None, sample_params=None, mod_params=None, mod_acq=None
+    measurement_vectors, probe_parameters=None, p_defects=None, mod_names = None, sample_params=None, mod_params=None, mod_acq=None, metric_names=None
 ):
     measurement_array = np.array(measurement_vectors)
     nrows = len(measurement_array[:, 1])
@@ -332,11 +354,18 @@ def measurements_dataframe(
             "modality": ids_array[:, 4],
             "modality_parameters": ids_array[:, 5],
             "modality_acqusition": ids_array[:, 6],
-            "Replica": measurement_array[:, 1],
-            "Metric": np.array(measurement_array[:, 2], dtype=np.float32),
+            "Replica": measurement_array[:, 1]
         }
     )
     df_combined = data_frame
+    # 
+    nmetrics = len(metric_names)
+    metrics_dictionary = dict()
+    for metric_number in range(nmetrics):
+        metricvector = measurement_array[:, 2+metric_number]
+        metrics_dictionary[metric_names[metric_number]] = np.array(metricvector, dtype=np.float64)
+    metrics_df = pd.DataFrame(metrics_dictionary)
+    df_combined = df_combined.join(metrics_df)
     if probe_parameters:
         probe_param_names = probe_parameters[0].keys()
         tmp_df1 = dict()
@@ -425,15 +454,15 @@ def create_param_combinations(**kwargs):
         return combinations_dict
 
 
-def pivot_dataframes_byCategory(dataframe, category_name, param1, param2, **kwargs):
+def pivot_dataframes_byCategory(dataframe, category_name, param1, param2, metric_name, **kwargs):
     df_categories = dict()
     for category, group in dataframe.groupby(category_name):
         summarised_group = None
         summarised_group = (
             group.groupby([param1, param2])
             .agg(
-                Mean_Value=("Metric", "mean"),
-                Std_Dev=("Metric", "std"),
+                Mean_Value=(metric_name, "mean"),
+                Std_Dev=(metric_name, "std"),
                 Replicas_Count=("Replica", "count"),
             )
             .reset_index()

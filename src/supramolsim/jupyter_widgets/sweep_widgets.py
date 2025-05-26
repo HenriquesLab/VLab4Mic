@@ -9,6 +9,7 @@ from supramolsim.utils.io import yaml_functions
 import copy
 from ezinput import EZInput
 from ipyfilechooser import FileChooser
+from IPython.utils import io
 
 class Sweep_gui(jupyter_gui):
     sweep_gen = sweep_generator()
@@ -32,6 +33,7 @@ class Sweep_gui(jupyter_gui):
         )
         self.param_settings = yaml_functions.load_yaml(param_settings_file)
         self._create_param_widgets()
+        #self.parameters_with_set_values = []
         for file in os.listdir(self.config_directories["probes"]):
             if os.path.splitext(file)[-1] == ".yaml" and "_template" not in file:
                 label_config_path = os.path.join(
@@ -118,17 +120,18 @@ class Sweep_gui(jupyter_gui):
         # create muliple options widgets
         widget_modules = {}
         widget_modules["probes"] = widgets.SelectMultiple(
-            description="", options=probes2show
+            description="probes", options=probes2show
         )
         widget_modules["modalities"] = widgets.SelectMultiple(
-            description="", options=self.modalities_default
+            description="modalities", options=self.modalities_default
         )
         # create tabs
         tab_name = list(widget_modules.keys())
         children = [widget_modules[name] for name in tab_name]
-        ez_sweep.elements["tabs"] = widgets.Tab()
-        ez_sweep.elements["tabs"].children = children
-        ez_sweep.elements["tabs"].titles = tab_name
+        ez_sweep.elements["tabs"] = widgets.HBox(children)
+
+        #ez_sweep.elements["tabs"].children = children
+        #ez_sweep.elements["tabs"].titles = tab_name
 
         # on clicks
         def select_str(b):
@@ -144,9 +147,9 @@ class Sweep_gui(jupyter_gui):
         ez_sweep["Select"].on_click(select_str)
         ez_sweep.show()
 
-    def add_parameters_ranges(self):
+    def add_parameters_values(self):
         param_ranges = EZInput(title="ranges")
-
+        
         def change_param_list(change):
             new_options = list(self.param_settings[change.new].keys())
             param_ranges["parms_per_group"].options = new_options
@@ -158,22 +161,24 @@ class Sweep_gui(jupyter_gui):
         def set_param_range(b):
             param_group = param_ranges["groups"].value
             param_name = param_ranges["parms_per_group"].value
+            #self.parameters_with_set_values.append(param_name)
             if self.param_settings[param_group][param_name]["wtype"] != "logical":
-                param_type = "numeric"
-                first, last = param_ranges[param_name].children[0].value
-                option = param_ranges[param_name].children[1].value
+                start, end = param_ranges[param_name].children[0].value
+                steps = param_ranges[param_name].children[1].value
+                param_values = (start, end, steps)
             else:
-                param_type = "logical"
-                first = None
-                last = None
-                option = param_ranges[param_name].value
-            self.sweep_gen._set_param_range(
+                param_values = []
+                if param_ranges[param_name].value == "Both":
+                    param_values = [True, False,]
+                elif param_ranges[param_name].value ==  "True":
+                    param_values = [True,]
+                if param_ranges[param_name].value == "False":
+                    param_values = [False,]
+
+            self.sweep_gen.set_parameter_values(
                 param_group=param_group,
                 param_name=param_name,
-                param_type=param_type,
-                first=first,
-                last=last,
-                option=option,
+                values=param_values,
             )
         
         def disable_widgets(b):
@@ -210,26 +215,6 @@ class Sweep_gui(jupyter_gui):
         param_ranges["done"].on_click(disable_widgets)
         param_ranges.show()
 
-
-    def generate_simulations(self):
-        simulate = EZInput(title="simulate")
-        def run_sweeps(b):
-            simulate["Run"].disabled = True
-            self.sweep_gen.sweep_repetitions = simulate["reps"].value
-            self.sweep_gen.create_parameters_iterables()
-            with simulate["outputs"]:
-                self.sweep_gen.generate_acquisitions()
-        simulate.elements["reps"] = self.wgen.gen_bound_int(
-                value=3, description="Repeats per parameter combination",
-                style={'description_width': 'initial'}
-            )
-        simulate.add_button(
-            "Run", description="Run"
-        )
-        simulate.elements["outputs"] = widgets.Output()
-        simulate["Run"].on_click(run_sweeps)
-        simulate.show()
-
     def set_reference(self):
         reference = EZInput(title="reference")
         def gen_ref(b):
@@ -261,9 +246,26 @@ class Sweep_gui(jupyter_gui):
         analysis_widget = EZInput(title="analysis")
         def analyse_sweep(b):
             analysis_widget["analyse"].disabled = True
-            
-            self.sweep_gen.run_analysis()
-            self.sweep_gen.gen_analysis_dataframe()
+            plots = analysis_widget["plots"].value
+            param_names_set = self.sweep_gen.parameters_with_set_values
+            if len(param_names_set) >= 2:
+                self.sweep_gen.set_plot_parameters(
+                    "heatmaps", 
+                    param1=param_names_set[0], 
+                    param2=param_names_set[1])
+            if analysis_widget["metric"].value == "All":
+                metric_list = ["ssim", "pearson"]
+            elif analysis_widget["metric"].value == "SSIM":
+                metric_list = ["ssim", ]
+            elif analysis_widget["metric"].value == "Pearson":
+                metric_list = ["pearson", ]
+            self.sweep_gen.set_number_of_repetitions(analysis_widget["reps"].value)
+            self.sweep_gen.set_analysis_parameters("metrics_list", metric_list)
+            with io.capture_output() as captured:
+                if self.sweep_gen.reference_image is None:
+                    self.sweep_gen.generate_reference_image()
+            with analysis_widget["outputs"]:
+                self.sweep_gen.run_analysis(plots=plots, save=False)
             analysis_widget["saving_directory"].disabled = False
             analysis_widget["save"].disabled = False
             analysis_widget["output_name"].disabled = False
@@ -273,15 +275,21 @@ class Sweep_gui(jupyter_gui):
                 output_directory=self.ouput_directory,
                 output_name=output_name
                 )
-            analysis_widget["save"].disabled = True
+            #analysis_widget["save"].disabled = True
+        analysis_widget.elements["reps"] = self.wgen.gen_bound_int(
+                value=3, description="Repeats per parameter combination",
+                style={'description_width': 'initial'}
+            )
         analysis_widget.add_dropdown(
-            "metric", options=["SSIM",], 
+            "metric", options=["SSIM", "Pearson", "All"], 
             description="Metric for image comparison",
-            disabled = True
+            disabled = False
         )
+        analysis_widget.add_checkbox("plots", description="Generate plots", value=True)
         analysis_widget.add_button(
             "analyse", description="Run analysis"
         )
+        analysis_widget.elements["outputs"] = widgets.Output()
         analysis_widget.elements["saving_directory"] = FileChooser(
             self.ouput_directory,
             title="<b>Select output directory</b>",

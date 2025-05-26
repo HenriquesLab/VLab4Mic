@@ -3,9 +3,10 @@ from scipy.ndimage import zoom
 import numpy as np
 from scipy.ndimage import gaussian_filter
 from skimage.feature import peak_local_max
+from scipy.stats import pearsonr
 import cv2
 
-def img_compare(ref, query, metric="ssim", force_match=False, zoom_in=0, **kwargs):
+def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, **kwargs):
     if force_match:
         if 'ref_pixelsize' in kwargs and 'modality_pixelsize' in kwargs:
             ref, query = resize_images_interpolation(
@@ -21,9 +22,15 @@ def img_compare(ref, query, metric="ssim", force_match=False, zoom_in=0, **kwarg
                 img2=query,
                 zoom_in=zoom_in
             )
-    if metric == "ssim":
-        similarity = ssim(ref, query, data_range=query.max() - query.min())
-    return similarity, ref, query
+    similarity_vector = []
+    for method in metric:
+        if method == "ssim":
+            similarity = ssim(ref, query, data_range=query.max() - query.min())
+            similarity_vector.append(similarity)
+        elif method == "pearson":
+            similarity, pval = pearsonr(ref.flatten(), query.flatten())
+            similarity_vector.append(similarity)
+    return similarity_vector, ref, query, 
 
 
 def _padding(img1, img2, zoom_in=0, **kwargs):
