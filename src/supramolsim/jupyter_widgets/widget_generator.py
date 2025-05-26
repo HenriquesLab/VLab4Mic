@@ -158,7 +158,8 @@ class widgen:
                     min=wparams[1],
                     max=wparams[2],
                     step=wparams[3],
-                    description = keyname
+                    description = keyname,
+                    style = {'description_width': 'initial'}
                 )
             if wtype == "int_slider":
                 params_widgets[keyname] = widgets.IntSlider(
@@ -166,7 +167,8 @@ class widgen:
                     min=wparams[1],
                     max=wparams[2],
                     step=wparams[3],
-                    description = keyname
+                    description = keyname,
+                    style = {'description_width': 'initial'}
                 )
         list_of_paramwidgets = []
         if len(params_widgets.keys()) > 0:
@@ -189,7 +191,7 @@ class widgen:
                     display(r_out)
         out_static = widgets.Output()
         out_static.layout.height = height
-        trigger = widgets.Button(description=action_name)
+        trigger = widgets.Button(description=action_name, layout=widgets.Layout(width='100%'))
         list_of_paramwidgets.append(trigger)
         params = widgets.VBox(list_of_paramwidgets)
         trigger.on_click(action)
