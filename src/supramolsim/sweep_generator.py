@@ -219,11 +219,11 @@ class sweep_generator:
             **self.params_by_group["modality"]
         )
 
-    def set_analysis_parameters(self, param_name, value):
-        if param_name in list(self.analysis_parameters.keys()):
-            self.analysis_parameters[param_name] = value
-        else:
-            print(f"input name {param_name} is not a valid analysis parameter")
+    def set_analysis_parameters(self, metrics_list: list[str] = None, zoom_in: float = None, **kwargs):
+        if metrics_list is not None and type(metrics_list) == list:
+            self.analysis_parameters["metrics_list"] = metrics_list
+        if zoom_in is not None:
+            self.analysis_parameters["zoom_in"] = zoom_in
 
     def set_plot_parameters(self, plot_type, **kwargs):
         if plot_type in self.plot_parameters.keys():
