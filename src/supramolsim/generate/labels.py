@@ -202,7 +202,7 @@ class Label:
 
 def construct_label(
     label_config_path: str,
-    fluorophore_id: str,
+    fluorophore_id: str = "AF647",
     lab_eff: float = None,
     target_info=None,
     as_linker=False,
