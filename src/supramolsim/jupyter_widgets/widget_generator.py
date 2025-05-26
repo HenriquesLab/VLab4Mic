@@ -159,6 +159,7 @@ class widgen:
                     max=wparams[2],
                     step=wparams[3],
                     description = keyname,
+                    readout_format='.4f',
                     style = {'description_width': 'initial'}
                 )
             if wtype == "int_slider":
@@ -169,6 +170,10 @@ class widgen:
                     step=wparams[3],
                     description = keyname,
                     style = {'description_width': 'initial'}
+                )
+            if wtype == "checkbox":
+                params_widgets[keyname] = widgets.Checkbox(
+                    value=wparams
                 )
         list_of_paramwidgets = []
         if len(params_widgets.keys()) > 0:
