@@ -459,7 +459,7 @@ class Sweep_gui(jupyter_gui):
                 self.my_experiment.remove_probes()
                 self.my_experiment.structure_id = structure
                 self.my_experiment.add_probe(probe_name, **probe_params)
-                self.my_experiment.build()
+                self.my_experiment.build(modules=["structure", "particle"])
                 fig = plt.figure()
                 ax = fig.add_subplot(111, projection="3d")
                 self.my_experiment.particle.gen_axis_plot(
