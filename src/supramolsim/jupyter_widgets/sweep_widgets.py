@@ -315,7 +315,7 @@ class Sweep_gui(jupyter_gui):
         analysis_widget.show()
 
 
-    def minimal_ui(self):
+    def minimal_ui(self, height = '400px'):
         structures = ["9I0K", "1XI5"]
         #structures = ["7R5K", "1XI5"]
         list_of_experiments = dict()
@@ -351,7 +351,8 @@ class Sweep_gui(jupyter_gui):
             routine=plot_structure2,
             n_atoms=["int_slider", [1e4,0,1e5,100]],
             h_rotation=["int_slider", [0,-90,90,1]],
-            v_rotation=["int_slider", [0,-90,90,1]])
+            v_rotation=["int_slider", [0,-90,90,1]],
+            height=height)
         # 
         vlabprobes = []
         unspecific_probes = copy.copy(self.probes_per_structure["Mock"])
@@ -429,7 +430,8 @@ class Sweep_gui(jupyter_gui):
             orientation="vertical", routine=show_probe,
             n_atoms=["int_slider", [100,0,10000,1]],
             h_rotation=["int_slider", [0,-90,90,1]],
-            v_rotation=["int_slider", [0,-90,90,1]])
+            v_rotation=["int_slider", [0,-90,90,1]],
+            height=height)
         
         def my_update(new_value, dependant, update_params):
             #print("change")
@@ -477,7 +479,9 @@ class Sweep_gui(jupyter_gui):
             routine=calculate_labelled_particle, 
             emitter_plotsize=["int_slider", [1,0,30,1]], 
             source_plotsize=["int_slider", [1,0,30,1]],
-            options=structure_target_suggestion)
+            options=structure_target_suggestion,
+            action_name="Generate labelled particle",
+            height=height)
         
         #main_widget = self.wgen.gen_box(widget1=left_parameters_linkd, widget2=static)
         main_widget = GridspecLayout(1, 3)
