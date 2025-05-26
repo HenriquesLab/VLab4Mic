@@ -490,3 +490,36 @@ class Sweep_gui(jupyter_gui):
         main_widget[0,2] = static
         #main_widget.layout = widgets.Layout(width='100%',display='inline-flex')
         return main_widget
+    
+
+
+    def vsample_vmicroscope_ui(self):
+        grid = GridspecLayout(1, 3)
+        
+        def create_field(field_config = None,
+                         nparticles = 1,
+                         random_pl = None,
+                         min_distance = None,
+                         random_orientations = None,
+                         **kwargs):
+            with io.capture_output() as captured:
+                self.my_experiment._build_coordinate_field(
+                    keep=True,
+                    nparticles=nparticles,
+                    random_placing=random_pl,
+                    minimal_distance=min_distance,
+                    random_orientations=random_orientations,
+                )
+                plot = self.my_experiment.coordinate_field.show_field(
+                    return_fig=True
+                    )
+            plot.show()
+        
+        wgt1 = self.wgen.gen_interactive_dropdown(
+                    options=["option1",],
+                    orientation="vertical",
+                    routine=create_field,
+                    nparticles=["int_slider", [1,0,20,1]]
+        )
+        grid[0,0] = wgt1
+        return grid
