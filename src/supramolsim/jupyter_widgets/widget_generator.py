@@ -96,3 +96,51 @@ class widgen:
         else:
             box = widgets.VBox(items, **kwargs)
         return box
+
+    def gen_interactive_dropdown(self,
+                                 options=None,
+                                 orientation="horizontal",
+                                 routine=None,
+                                 height = '400px',
+                                 **kwargs
+                                 ):
+        params_widgets = dict()
+        list_of_paramwidgets = []
+        for keyname, val in kwargs.items():
+            wtype = val[0]
+            wparams = val[1]
+            if wtype == "float_slider":
+                params_widgets[keyname] = widgets.FloatSlider(
+                    value=wparams[0],
+                    min=wparams[1],
+                    max=wparams[2],
+                    step=wparams[3],
+                    description = keyname,
+                    continuous_update=False
+                )
+            if wtype == "int_slider":
+                params_widgets[keyname] = widgets.IntSlider(
+                    value=wparams[0],
+                    min=wparams[1],
+                    max=wparams[2],
+                    step=wparams[3],
+                    description = keyname,
+                    continuous_update=False
+                )
+        drop = self.gen_dropdown(options=options)
+        list_of_paramwidgets.append(drop)
+        #
+        def func(dropdown, **kwargs2):
+            r_out = routine(dropdown, **kwargs2)
+        
+        funct_dictionary = {'dropdown': drop}
+        #
+        if len(params_widgets.keys()) > 0:
+            for key, wid in params_widgets.items():
+                funct_dictionary[key] = wid
+                list_of_paramwidgets.append(wid)
+        params = widgets.VBox(list_of_paramwidgets)
+        out = widgets.interactive_output(func, funct_dictionary) 
+        out.layout.height = height
+        box = self.gen_box(widget1=params, widget2=out, orientation=orientation)
+        return box
