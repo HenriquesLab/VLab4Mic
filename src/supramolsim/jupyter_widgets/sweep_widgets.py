@@ -549,7 +549,19 @@ class Sweep_gui(jupyter_gui):
 
         def show_modality(modality_name):
             if modality_name != "All":
+                pixelsize = modality_info[modality_name]["detector"]["pixelsize"]
+                pixelsize_nm = pixelsize * 1000
+                psf_sd = np.array(
+                    modality_info[modality_name]["psf_params"]["std_devs"]
+                )
+                psf_voxel = np.array(
+                    modality_info[modality_name]["psf_params"]["voxelsize"]
+                )
+                psf_sd_metric = np.multiply(psf_voxel, psf_sd)
                 fig, axs = plt.subplots()
+                print(f"Detector pixelsize (nm): {pixelsize_nm}")
+                print(f"PSF sd (nm): {psf_sd_metric}")
+                print(f"PSF preview (on a 1x1 µm field of view)")
                 modality_preview = temp_imager.modalities[modality_name]["psf"][
                     "psf_stack"
                 ]
