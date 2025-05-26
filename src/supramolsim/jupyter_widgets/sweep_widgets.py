@@ -260,7 +260,7 @@ class Sweep_gui(jupyter_gui):
             elif analysis_widget["metric"].value == "Pearson":
                 metric_list = ["pearson", ]
             self.sweep_gen.set_number_of_repetitions(analysis_widget["reps"].value)
-            self.sweep_gen.set_analysis_parameters("metrics_list", metric_list)
+            self.sweep_gen.set_analysis_parameters(metrics_list = metric_list)
             with io.capture_output() as captured:
                 if self.sweep_gen.reference_image is None:
                     self.sweep_gen.generate_reference_image()
