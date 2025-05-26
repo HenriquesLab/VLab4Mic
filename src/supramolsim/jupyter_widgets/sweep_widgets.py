@@ -1,6 +1,7 @@
 import supramolsim.utils
 from ..sweep_generator import sweep_generator
 import ipywidgets as widgets
+from .. import experiments
 from .widget_generator import widgen
 from .widgets_dataclass import jupyter_gui
 import os
@@ -10,6 +11,10 @@ import copy
 from ezinput import EZInput
 from ipyfilechooser import FileChooser
 from IPython.utils import io
+from ..generate.labels import construct_label
+from ..workflows import probe_model
+import matplotlib.pyplot as plt
+
 
 class Sweep_gui(jupyter_gui):
     sweep_gen = sweep_generator()
