@@ -173,7 +173,8 @@ class widgen:
                 )
             if wtype == "checkbox":
                 params_widgets[keyname] = widgets.Checkbox(
-                    value=wparams
+                    value=wparams,
+                    description = keyname,
                 )
         list_of_paramwidgets = []
         if len(params_widgets.keys()) > 0:

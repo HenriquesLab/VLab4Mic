@@ -629,7 +629,6 @@ class Sweep_gui(jupyter_gui):
             exp_time = ["float_slider", [0.01,0,0.05,0.001]],
             noise = ["checkbox", True],
             options=None,
-            action_name="Preview acquisition",
-            height=height)
+            action_name="Preview acquisition")
         grid[0,2] = static
         return grid
