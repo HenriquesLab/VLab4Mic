@@ -308,3 +308,172 @@ class Sweep_gui(jupyter_gui):
         analysis_widget["analyse"].on_click(analyse_sweep)
         analysis_widget["save"].on_click(save_results)
         analysis_widget.show()
+
+
+    def minimal_ui(self):
+        structures = ["9I0K", "1XI5"]
+        #structures = ["7R5K", "1XI5"]
+        list_of_experiments = dict()
+        structure_target_suggestion = dict()
+        with io.capture_output() as captured:
+            for struct in structures:
+                list_of_experiments[struct] = experiments.ExperimentParametrisation()
+                list_of_experiments[struct].structure_id = struct
+                list_of_experiments[struct]._build_structure()
+                protein_name = None
+                sequence = None
+                protein_name, _1, site, sequence = (
+                    list_of_experiments[struct].structure.get_peptide_motif(position="cterminal")
+                )
+                structure_target_suggestion[struct] = {}
+                structure_target_suggestion[struct]["probe_target_type"] = "Sequence"
+                structure_target_suggestion[struct]["probe_target_value"] = sequence
+
+        def plot_structure2(structure_id, n_atoms=1000, h_rotation=0, v_rotation=0):
+            total = list_of_experiments[structure_id].structure.num_assembly_atoms
+            if total > n_atoms:
+                fraction = n_atoms/total
+            else:
+                fraction = 1.0
+            list_of_experiments[structure_id].structure.show_assembly_atoms(
+                assembly_fraction=fraction,
+                view_init = [v_rotation,h_rotation,0]
+
+            )
+        structure_widget = self.wgen.gen_interactive_dropdown(
+            options=structures,
+            orientation="vertical",
+            routine=plot_structure2,
+            n_atoms=["int_slider", [1e4,0,1e5,100]],
+            h_rotation=["int_slider", [0,-90,90,1]],
+            v_rotation=["int_slider", [0,-90,90,1]])
+        # 
+        vlabprobes = []
+        unspecific_probes = copy.copy(self.probes_per_structure["Mock"])
+        list_of_probe_objects = {}
+        for structurename, probe_names in  self.probes_per_structure.items():
+            if structurename != "Mock":
+                vlabprobes = vlabprobes + probe_names
+        with io.capture_output() as captured:
+            vsample, experiment = experiments.generate_virtual_sample(
+                clear_probes=True,
+                )
+            for probe_name in unspecific_probes:
+                print(probe_name)
+                label_config_path = os.path.join(experiment.configuration_path, "probes", probe_name + ".yaml")
+                probe_obj, probe_parameters = construct_label(label_config_path)
+                if probe_obj.model:
+                    (
+                        probe_structure_obj,
+                        probe_emitter_sites,
+                        anchor_point,
+                        direction_point,
+                        probe_epitope,
+                    ) = probe_model(
+                        model=probe_obj.model,
+                        binding=probe_obj.binding,
+                        conjugation_sites=probe_obj.conjugation,
+                        epitope=probe_obj.epitope,
+                        config_dir=experiment.configuration_path,
+                    )
+                    if anchor_point.shape == (3,):
+                            print("setting new axis")
+                            probe_obj.set_axis(pivot=anchor_point, direction=direction_point)
+                    if (
+                        probe_epitope["coordinates"] is not None
+                        and probe_parameters["as_linker"]
+                    ):
+                        print("Generating linker from epitope site")
+                        # TODO: this decision needs to take into account if there is a 
+                        # secondary label for this specific probe
+                        probe_obj.set_emitters(probe_epitope["coordinates"])
+                    else:
+                        probe_obj.set_emitters(probe_emitter_sites)
+                    probe_parameters["coordinates"] = probe_obj.gen_labeling_entity()
+                    list_of_probe_objects[probe_name] = {}
+                    list_of_probe_objects[probe_name]["probe_object"] = probe_obj
+                    list_of_probe_objects[probe_name]["probe_structure"] = probe_structure_obj
+                else:
+                    list_of_probe_objects[probe_name] = {}
+                    list_of_probe_objects[probe_name]["probe_object"] = probe_obj
+
+
+        def show_probe(probe, n_atoms, h_rotation=0, v_rotation=0):
+            if probe == "Linker":
+                list_of_probe_objects[probe_name]["probe_object"].plot_emitters()
+            else:
+                total = list_of_probe_objects[probe]["probe_structure"].num_assembly_atoms
+                if total > n_atoms:
+                    fraction = n_atoms/total
+                else:
+                    fraction = 1.0
+                list_of_probe_objects[probe]["probe_structure"].plotting_params["assemblyatoms"]["plotalpha"] = 0.3
+                #list_of_probe_objects[probe]["probe_structure"].show_assembly_atoms(
+                #assembly_fraction=fraction,
+                #view_init = [30,degree,0]
+                #)
+                list_of_probe_objects[probe]["probe_structure"].show_target_labels(
+                    with_assembly_atoms = True,
+                    assembly_fraction=fraction,
+                    view_init = [v_rotation, h_rotation,0],
+                    show_axis = False 
+                )
+
+        probes_widget_2 = self.wgen.gen_interactive_dropdown(
+            options=list(list_of_probe_objects.keys()),
+            orientation="vertical", routine=show_probe,
+            n_atoms=["int_slider", [100,0,10000,1]],
+            h_rotation=["int_slider", [0,-90,90,1]],
+            v_rotation=["int_slider", [0,-90,90,1]])
+        
+        def my_update(new_value, dependant, update_params):
+            #print("change")
+            #dependant.options = update_params["options"][new_value]
+            pass
+
+
+        left_parameters_linkd = self.wgen.gen_box_linked(
+            w1=structure_widget, 
+            w2=probes_widget_2, 
+            observed=structure_widget.children[0].children[0],
+            dependant=probes_widget_2.children[0].children[0],
+            update_method = my_update,
+            update_params = copy.copy(self.probes_per_structure)
+            )
+        left_parameters_linkd.layout = widgets.Layout(width='50%',display='inline-flex')
+
+        def calculate_labelled_particle(widget, options, emitter_plotsize, source_plotsize):
+            structure = widget.children[0].children[0].children[0].value
+            probe_name = widget.children[1].children[0].children[0].value
+            probe_params = options[structure]
+            #print(structure, probe_name, probe_params)
+            with io.capture_output() as captured2:
+                vsample, experiment = experiments.generate_virtual_sample(
+                structure=structure,
+                clear_probes=True)
+                experiment.add_probe(probe_name, **probe_params)
+                experiment.build(modules=["particle",])
+                fig = plt.figure()
+                ax = fig.add_subplot(111, projection="3d")
+                experiment.particle.gen_axis_plot(
+                    axis_object=ax,
+                    with_sources=True, 
+                    axesoff=True,
+                    emitter_plotsize=emitter_plotsize,
+                    source_plotsize=source_plotsize
+                    )
+                print(experiment.particle.emitters)
+                plt.close()
+                return fig
+
+
+        static = self.wgen.gen_action_with_options(
+            param_widget=left_parameters_linkd, 
+            routine=calculate_labelled_particle, 
+            emitter_plotsize=["int_slider", [1,0,30,1]], 
+            source_plotsize=["int_slider", [1,0,30,1]],
+            options=structure_target_suggestion)
+        
+        main_widget = self.wgen.gen_box(widget1=left_parameters_linkd, widget2=static)
+        main_widget.layout = widgets.Layout(width='100%',display='inline-flex')
+        return main_widget
