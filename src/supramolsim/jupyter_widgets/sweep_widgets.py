@@ -15,6 +15,10 @@ from ..generate.labels import construct_label
 from ..workflows import probe_model
 import matplotlib.pyplot as plt
 from ipywidgets import GridspecLayout
+from ..utils import data_format
+from supramolsim.workflows import create_imaging_system
+import numpy as np
+
 
 class Sweep_gui(jupyter_gui):
     sweep_gen = sweep_generator()
@@ -493,7 +497,7 @@ class Sweep_gui(jupyter_gui):
     
 
 
-    def vsample_vmicroscope_ui(self):
+    def vsample_vmicroscope_ui(self, mode = "default"):
         grid = GridspecLayout(1, 3)
         
         def create_field(field_config = None,
@@ -522,4 +526,51 @@ class Sweep_gui(jupyter_gui):
                     nparticles=["int_slider", [1,0,20,1]]
         )
         grid[0,0] = wgt1
+        # modalities
+        modalities_options = []
+        if mode == "default":
+            modalities_list = self.modalities_default
+        else:
+            modalities_list = self.my_experiment.local_modalities_names
+        modalities_options = copy.copy(modalities_list)
+        modalities_options.append("All")
+        modality_info = {}
+        for mod in modalities_list:
+            mod_info = data_format.configuration_format.compile_modality_parameters(
+                mod, self.config_directories["base"]
+            )
+            modality_info[mod] = mod_info
+        with io.capture_output() as captured:
+            temp_imager, tmp_modality_parameters = create_imaging_system(
+                modalities_id_list=modalities_list,
+                config_dir=self.config_directories["base"],
+            )
+
+
+        def show_modality(modality_name):
+            if modality_name != "All":
+                fig, axs = plt.subplots()
+                modality_preview = temp_imager.modalities[modality_name]["psf"][
+                    "psf_stack"
+                ]
+                psf_shapes = modality_preview.shape
+                stack_max = np.max(modality_preview)
+                axs.imshow(
+                    modality_preview[:, :, int(psf_shapes[2] / 2)],
+                    cmap="gray",
+                    interpolation="none",
+                    vmin=0,
+                    vmax=stack_max,
+                )
+                axs.set_xticks([])
+                axs.set_yticks([])
+
+
+        wgt2 = self.wgen.gen_interactive_dropdown(
+                    options=modalities_options,
+                    orientation="vertical",
+                    routine=show_modality,
+        )
+        grid[0,1] = wgt2
+
         return grid
