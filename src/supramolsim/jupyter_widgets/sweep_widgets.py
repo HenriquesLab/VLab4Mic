@@ -629,9 +629,10 @@ class Sweep_gui(jupyter_gui):
             return fig
 
         def button_method(b):
-            selected_mod = wgt2.children[0].children[0].value
-            self.my_experiment.add_modality(modality_name=selected_mod, save=False)
-            self.my_experiment.set_modality_acq(modality_name=selected_mod, **current_acq)
+            selected_mod = list(preview_exp.imaging_modalities.keys())[0]
+            mod_acq =copy.deepcopy(preview_exp.selected_mods[selected_mod])
+            self.my_experiment.add_modality(modality_name=selected_mod, save=True)
+            self.my_experiment.set_modality_acq(modality_name=selected_mod, **mod_acq)
 
         def button_method2(b):
             modalities_set = list(self.my_experiment.imaging_modalities.keys())
@@ -644,8 +645,8 @@ class Sweep_gui(jupyter_gui):
             routine=preview_acquisition,
             exp_time = ["float_slider", [0.01,0,0.05,0.001]],
             noise = ["checkbox", True],
-            button1 = ["button", ["Set acquisition parameters", button_method]],
-            button2 = ["button", ["Clear modalities", button_method2]],
+            button1 = ["button", ["Set parameters of preview", button_method]],
+            button2 = ["button", ["Clear all modalities", button_method2]],
             options=None,
             action_name="Preview acquisition")
         grid[0,2] = static
