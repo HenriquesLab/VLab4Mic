@@ -348,7 +348,6 @@ class Sweep_gui(jupyter_gui):
             list_of_experiments[structure_id].structure.show_assembly_atoms(
                 assembly_fraction=fraction,
                 view_init = [v_rotation,h_rotation,0]
-
             )
         structure_widget = self.wgen.gen_interactive_dropdown(
             options=structures,
@@ -489,10 +488,18 @@ class Sweep_gui(jupyter_gui):
             height=height)
         
         #main_widget = self.wgen.gen_box(widget1=left_parameters_linkd, widget2=static)
-        main_widget = GridspecLayout(1, 3)
-        main_widget[0,0] = left_parameters_linkd.children[0]
-        main_widget[0,1] = left_parameters_linkd.children[1]
-        main_widget[0,2] = static
+        main_widget = GridspecLayout(7, 3, height=height)
+        main_widget[:2, 0]  = left_parameters_linkd.children[0].children[0]
+        main_widget[2:, 0] = left_parameters_linkd.children[0].children[1]
+        main_widget[:2, 1]  = left_parameters_linkd.children[1].children[0]
+        main_widget[2:, 1] = left_parameters_linkd.children[1].children[1]
+        main_widget[:2, 2]  = static.children[0]
+        main_widget[2:, 2] = static.children[1]
+
+
+        #main_widget[0,0] = left_parameters_linkd.children[0]
+        #main_widget[0,1] = left_parameters_linkd.children[1]
+        #main_widget[0,2] = static
         #main_widget.layout = widgets.Layout(width='100%',display='inline-flex')
         return main_widget
     
