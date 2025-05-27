@@ -530,10 +530,10 @@ class Sweep_gui(jupyter_gui):
             return plot
         
         wgt1 = self.wgen.gen_interactive_dropdown(
-                    options=["option1",],
+                    options=["Square 1x1 µm",],
                     orientation="vertical",
                     routine=create_field,
-                    nparticles=["int_slider", [1,0,20,1]],
+                    nparticles=["int_slider", [1,1,20,1]],
                     angle=["int_slider", [20,-90,90,1]],
                     height=height
         )
