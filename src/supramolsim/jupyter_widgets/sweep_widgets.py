@@ -499,7 +499,7 @@ class Sweep_gui(jupyter_gui):
 
 
     def vsample_vmicroscope_ui(self, mode = "default", height = "500px"):
-        grid = GridspecLayout(5, 3, height=height)
+        grid = GridspecLayout(7, 3, height=height)
         preview_exp = copy.deepcopy(self.my_experiment)
         def create_field(field_config = None,
                          nparticles = 1,
@@ -563,9 +563,6 @@ class Sweep_gui(jupyter_gui):
                 )
                 psf_sd_metric = np.multiply(psf_voxel, psf_sd)
                 fig, axs = plt.subplots()
-                print(f"Detector pixelsize (nm): {pixelsize_nm}")
-                print(f"PSF sd (nm): {psf_sd_metric}")
-                print(f"PSF preview (on a 1x1 µm field of view)")
                 modality_preview = temp_imager.modalities[modality_name]["psf"][
                     "psf_stack"
                 ]
@@ -580,6 +577,12 @@ class Sweep_gui(jupyter_gui):
                 )
                 axs.set_xticks([])
                 axs.set_yticks([])
+                s1 = "Detector pixelsize (nm): " + str(pixelsize_nm)
+                s2 = "PSF sd (nm): " + str(psf_sd_metric)
+                s3 = "PSF preview (on a 1x1 µm field of view)"
+                axs.text(0.05, 0.1, s1, transform=axs.transAxes, size = 10, color = "w")
+                axs.text(0.05, 0.15, s2, transform=axs.transAxes, size = 10, color = "w")
+                axs.text(0.05, 0.2, s3, transform=axs.transAxes, size = 10, color = "w")
 
 
         wgt2 = self.wgen.gen_interactive_dropdown(
