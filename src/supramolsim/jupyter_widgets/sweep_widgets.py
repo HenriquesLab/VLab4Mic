@@ -607,7 +607,7 @@ class Sweep_gui(jupyter_gui):
 
         current_acq = dict()
 
-        def preview_acquisition(widget, exp_time, noise):
+        def preview_acquisition(widget, exposure_time, noise):
             field = self.my_experiment.coordinate_field.export_field()
             preview_exp.exported_coordinate_field = field
             preview_exp.objects_created["exported_coordinate_field"] = True
@@ -617,12 +617,12 @@ class Sweep_gui(jupyter_gui):
             with io.capture_output() as captured:
                 preview_exp.update_modality(modality_name=selected_mod,remove=True)
                 preview_exp.add_modality(modality_name=selected_mod, save=False)
-                preview_exp.set_modality_acq(modality_name=selected_mod, exp_time=exp_time, noise=noise)
+                preview_exp.set_modality_acq(modality_name=selected_mod, exp_time=exposure_time, noise=noise)
                 preview_exp.build(modules=["imager",])
                 # consider using run_simulation
                 timeseries, calibration_beads = (
                     preview_exp.imager.generate_imaging(
-                        modality=selected_mod, exp_time=exp_time, noise=noise
+                        modality=selected_mod, exp_time=exposure_time, noise=noise
                     )
                 )
                 current_acq = preview_exp.selected_mods[selected_mod]
@@ -658,7 +658,7 @@ class Sweep_gui(jupyter_gui):
         static = self.wgen.gen_action_with_options(
             param_widget=wgt2, 
             routine=preview_acquisition,
-            exp_time = ["float_slider", [0.01,0,0.05,0.001]],
+            exposure_time = ["float_slider", [0.01,0,0.05,0.001]],
             noise = ["checkbox", True],
             button1 = ["button", ["Set parameters of preview", button_method]],
             button2 = ["button", ["Clear all modalities", button_method2]],
