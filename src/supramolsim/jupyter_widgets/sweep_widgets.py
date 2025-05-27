@@ -499,7 +499,7 @@ class Sweep_gui(jupyter_gui):
 
 
     def vsample_vmicroscope_ui(self, mode = "default", height = "500px"):
-        grid = GridspecLayout(1, 3, height=height)
+        grid = GridspecLayout(5, 3, height=height)
         preview_exp = copy.deepcopy(self.my_experiment)
         def create_field(field_config = None,
                          nparticles = 1,
@@ -518,7 +518,7 @@ class Sweep_gui(jupyter_gui):
                 plot = self.my_experiment.coordinate_field.show_field(
                     return_fig=True
                     )
-            plot.show()
+            return plot
         
         wgt1 = self.wgen.gen_interactive_dropdown(
                     options=["option1",],
@@ -527,7 +527,9 @@ class Sweep_gui(jupyter_gui):
                     nparticles=["int_slider", [1,0,20,1]],
                     height=height
         )
-        grid[0,0] = wgt1
+        grid[:2, 0]  = wgt1.children[0]
+        grid[2:, 0] = wgt1.children[1]
+
         # modalities
         modalities_options = []
         if mode == "default":
@@ -586,7 +588,8 @@ class Sweep_gui(jupyter_gui):
                     routine=show_modality,
                     height=height
         )
-        grid[0,1] = wgt2
+        grid[:2, 1]  = wgt2.children[0]
+        grid[2:, 1] = wgt2.children[1]
 
 
         current_acq = dict()
@@ -649,5 +652,6 @@ class Sweep_gui(jupyter_gui):
             button2 = ["button", ["Clear all modalities", button_method2]],
             options=None,
             action_name="Preview acquisition")
-        grid[0,2] = static
+        grid[:2, 2]  = static.children[0]
+        grid[2:, 2] = static.children[1]
         return grid
