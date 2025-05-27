@@ -192,7 +192,8 @@ class widgen:
             widget_values = {}
             if len(params_widgets.keys()) > 0:
                 for key, wid in params_widgets.items():
-                    widget_values[key] = wid.value
+                    if wid._model_name != 'ButtonModel':
+                        widget_values[key] = wid.value
             out_static.clear_output()
             with out_static:
                 if options:
