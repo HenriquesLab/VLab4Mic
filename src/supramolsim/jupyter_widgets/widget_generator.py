@@ -140,8 +140,9 @@ class widgen:
                 funct_dictionary[key] = wid
                 list_of_paramwidgets.append(wid)
         params = widgets.VBox(list_of_paramwidgets)
+        params.layout = widgets.Layout(height='auto', width='auto')
         out = widgets.interactive_output(func, funct_dictionary) 
-        out.layout.height = height
+        out.layout = widgets.Layout(height='auto', width='auto')
         box = self.gen_box(widget1=params, widget2=out, orientation=orientation)
         return box
     
@@ -203,10 +204,11 @@ class widgen:
                     r_out = routine(param_widget, **widget_values)
                     display(r_out)
         out_static = widgets.Output()
-        out_static.layout.height = height
+        out_static.layout=widgets.Layout(height='auto', width='auto')
         trigger = widgets.Button(description=action_name, layout=widgets.Layout(width='100%'))
         list_of_paramwidgets.append(trigger)
         params = widgets.VBox(list_of_paramwidgets)
+        params.layout=widgets.Layout(height='auto', width='auto')
         trigger.on_click(action)
         preview_area = self.gen_box(
             widget1=params,
