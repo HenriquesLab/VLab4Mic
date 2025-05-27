@@ -99,6 +99,7 @@ class ExperimentParametrisation:
                         ):
         if remove:
             self.imaging_modalities.pop(modality_name, None)
+            self.selected_mods.pop(modality_name, None)
         else:
             changes = False
             if pixelsize_nm is not None:
