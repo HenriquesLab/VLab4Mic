@@ -320,7 +320,7 @@ class Sweep_gui(jupyter_gui):
         analysis_widget.show()
 
 
-    def minimal_ui(self, height = '400px'):
+    def structure_probe_ui(self, height = '400px'):
         structures = ["9I0K", "1XI5"]
         #structures = ["7R5K", "1XI5"]
         list_of_experiments = dict()
