@@ -633,12 +633,19 @@ class Sweep_gui(jupyter_gui):
             self.my_experiment.add_modality(modality_name=selected_mod, save=False)
             self.my_experiment.set_modality_acq(modality_name=selected_mod, **current_acq)
 
+        def button_method2(b):
+            modalities_set = list(self.my_experiment.imaging_modalities.keys())
+            for mod in modalities_set:
+                self.my_experiment.update_modality(modality_name=mod, remove=True)
+
+
         static = self.wgen.gen_action_with_options(
             param_widget=wgt2, 
             routine=preview_acquisition,
             exp_time = ["float_slider", [0.01,0,0.05,0.001]],
             noise = ["checkbox", True],
-            button = ["button", ["Set acquisition parameters", button_method]],
+            button1 = ["button", ["Set acquisition parameters", button_method]],
+            button2 = ["button", ["Clear modalities", button_method2]],
             options=None,
             action_name="Preview acquisition")
         grid[0,2] = static
