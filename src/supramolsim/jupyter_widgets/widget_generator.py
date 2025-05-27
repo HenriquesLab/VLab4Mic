@@ -176,6 +176,12 @@ class widgen:
                     value=wparams,
                     description = keyname,
                 )
+            if wtype == "button":
+                params_widgets[keyname] = widgets.Button(
+                    description = wparams[0],
+                    layout=widgets.Layout(width='100%')
+                )
+                params_widgets[keyname].on_click(wparams[1])
         list_of_paramwidgets = []
         if len(params_widgets.keys()) > 0:
             for key, wid in params_widgets.items():
