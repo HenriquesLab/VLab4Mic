@@ -500,7 +500,7 @@ class Sweep_gui(jupyter_gui):
 
     def vsample_vmicroscope_ui(self, mode = "default", height = "500px"):
         grid = GridspecLayout(1, 3, height=height)
-        
+        preview_exp = copy.deepcopy(self.my_experiment)
         def create_field(field_config = None,
                          nparticles = 1,
                          random_pl = None,
@@ -589,23 +589,28 @@ class Sweep_gui(jupyter_gui):
         grid[0,1] = wgt2
 
 
-        def preview_acquisition(widget, exp_time, noise):
+        current_acq = dict()
 
+        def preview_acquisition(widget, exp_time, noise):
+            field = self.my_experiment.coordinate_field.export_field()
+            preview_exp.exported_coordinate_field = field
+            preview_exp.objects_created["exported_coordinate_field"] = True
             selected_mod = widget.children[0].children[0].value
             print(f"Preview for {selected_mod}")
             fig = plt.figure()
             ax = fig.add_subplot(111)
             with io.capture_output() as captured:
-                self.my_experiment.update_modality(modality_name=selected_mod,remove=True)
-                self.my_experiment.add_modality(modality_name=selected_mod, save=False)
-                self.my_experiment.set_modality_acq(modality_name=selected_mod, exp_time=exp_time, noise=noise)
-                self.my_experiment.build(modules=["imager",])
+                preview_exp.update_modality(modality_name=selected_mod,remove=True)
+                preview_exp.add_modality(modality_name=selected_mod, save=False)
+                preview_exp.set_modality_acq(modality_name=selected_mod, exp_time=exp_time, noise=noise)
+                preview_exp.build(modules=["imager",])
                 # consider using run_simulation
                 timeseries, calibration_beads = (
-                    self.my_experiment.imager.generate_imaging(
+                    preview_exp.imager.generate_imaging(
                         modality=selected_mod, exp_time=exp_time, noise=noise
                     )
                 )
+                current_acq = preview_exp.selected_mods[selected_mod]
             min_val = np.min(timeseries[0])
             max_val = np.max(timeseries[0])
             preview_image=ax.imshow(
@@ -623,11 +628,17 @@ class Sweep_gui(jupyter_gui):
             plt.close()
             return fig
 
+        def button_method(b):
+            selected_mod = wgt2.children[0].children[0].value
+            self.my_experiment.add_modality(modality_name=selected_mod, save=False)
+            self.my_experiment.set_modality_acq(modality_name=selected_mod, **current_acq)
+
         static = self.wgen.gen_action_with_options(
             param_widget=wgt2, 
             routine=preview_acquisition,
             exp_time = ["float_slider", [0.01,0,0.05,0.001]],
             noise = ["checkbox", True],
+            button = ["button", ["Set acquisition parameters", button_method]],
             options=None,
             action_name="Preview acquisition")
         grid[0,2] = static
