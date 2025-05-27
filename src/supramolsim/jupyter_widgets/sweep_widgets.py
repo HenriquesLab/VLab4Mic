@@ -506,6 +506,7 @@ class Sweep_gui(jupyter_gui):
                          random_pl = None,
                          min_distance = None,
                          random_orientations = None,
+                         angle=20,
                          **kwargs):
             with io.capture_output() as captured:
                 self.my_experiment._build_coordinate_field(
@@ -516,7 +517,8 @@ class Sweep_gui(jupyter_gui):
                     random_orientations=random_orientations,
                 )
                 plot = self.my_experiment.coordinate_field.show_field(
-                    return_fig=True
+                    return_fig=True,
+                    view_init=[angle,0,0]
                     )
             return plot
         
@@ -525,6 +527,7 @@ class Sweep_gui(jupyter_gui):
                     orientation="vertical",
                     routine=create_field,
                     nparticles=["int_slider", [1,0,20,1]],
+                    angle=["int_slider", [20,-90,90,1]],
                     height=height
         )
         grid[:2, 0]  = wgt1.children[0]
