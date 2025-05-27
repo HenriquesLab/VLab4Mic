@@ -513,7 +513,7 @@ class Sweep_gui(jupyter_gui):
                          random_pl = None,
                          min_distance = None,
                          random_orientations = None,
-                         angle=20,
+                         angle_view=20,
                          **kwargs):
             with io.capture_output() as captured:
                 self.my_experiment._build_coordinate_field(
@@ -525,7 +525,7 @@ class Sweep_gui(jupyter_gui):
                 )
                 plot = self.my_experiment.coordinate_field.show_field(
                     return_fig=True,
-                    view_init=[angle,0,0]
+                    view_init=[angle_view,0,0]
                     )
             return plot
         
@@ -534,7 +534,7 @@ class Sweep_gui(jupyter_gui):
                     orientation="vertical",
                     routine=create_field,
                     nparticles=["int_slider", [1,1,20,1]],
-                    angle=["int_slider", [20,-90,90,1]],
+                    angle_view=["int_slider", [20,-90,90,1]],
                     height=height
         )
         grid[:2, 0]  = wgt1.children[0]
@@ -612,7 +612,6 @@ class Sweep_gui(jupyter_gui):
             preview_exp.exported_coordinate_field = field
             preview_exp.objects_created["exported_coordinate_field"] = True
             selected_mod = widget.children[0].children[0].value
-            print(f"Preview for {selected_mod}")
             fig = plt.figure()
             ax = fig.add_subplot(111)
             with io.capture_output() as captured:
