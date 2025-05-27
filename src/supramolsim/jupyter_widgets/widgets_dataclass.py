@@ -1367,7 +1367,7 @@ class jupyter_gui:
 
     def acquire_images(self):
         experiment_gui = EZInput(title="experiment")
-
+        self.my_experiment.build(modules=["imager",])
         def run_simulation(b):
             experiment_gui["Acquire"].disabled = True
             sav_dir = experiment_gui["saving_directory"].value
