@@ -548,8 +548,8 @@ class LabeledInstance:
                             nori,
                             self.get_ref_point(),
                         )
-                    self.emitters[trgt] = reoriented
-                self.axis["direction"] = nori
+                        self.emitters[trgt] = reoriented
+                        self.axis["direction"] = nori
 
     def transform_rotate_around_axis(self, degree: float):
         pass
@@ -558,9 +558,9 @@ class LabeledInstance:
         nref = copy.copy(newcenter)
         # move labels
         for labeltype in self.emitters.keys():
-            if self.emitters[labeltype] is not None:
+            if self.get_emitter_by_target(labeltype) is not None:
                 self.emitters[labeltype], _ = transform_displace_set(
-                    self.emitters[labeltype], self.get_ref_point(), nref
+                    self.get_emitter_by_target(labeltype), self.get_ref_point(), nref
                 )
         # then replace reference point
         self._set_ref_point(nref)
@@ -595,7 +595,10 @@ class LabeledInstance:
             self._set_scale(new_scale)
 
     def get_emitter_by_target(self, targetname: str):
-        return self.emitters[targetname]
+        if len(self.emitters[targetname]) == 0:
+            return None
+        else:
+            return self.emitters[targetname]
 
     def _gen_fluo2labels(self):
         inv_map = {}
