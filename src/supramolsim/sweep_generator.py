@@ -98,6 +98,7 @@ class sweep_generator:
                 structures=self.structures,
                 probes=self.probes,
                 probe_parameters=self.probe_parameters,
+                particle_defects=self.defect_parameters,
                 virtual_samples=self.vsample_parameters,
                 repetitions=self.sweep_repetitions,
             )
