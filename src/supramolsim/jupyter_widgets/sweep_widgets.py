@@ -1,6 +1,7 @@
 import supramolsim.utils
 from ..sweep_generator import sweep_generator
 import ipywidgets as widgets
+from .. import experiments
 from .widget_generator import widgen
 from .widgets_dataclass import jupyter_gui
 import os
@@ -10,6 +11,15 @@ import copy
 from ezinput import EZInput
 from ipyfilechooser import FileChooser
 from IPython.utils import io
+from ..generate.labels import construct_label
+from ..workflows import probe_model
+import matplotlib.pyplot as plt
+from ipywidgets import GridspecLayout
+from ..utils import data_format
+from supramolsim.workflows import create_imaging_system
+import numpy as np
+import mpl_toolkits.axes_grid1 as axes_grid1
+
 
 class Sweep_gui(jupyter_gui):
     sweep_gen = sweep_generator()
@@ -308,3 +318,352 @@ class Sweep_gui(jupyter_gui):
         analysis_widget["analyse"].on_click(analyse_sweep)
         analysis_widget["save"].on_click(save_results)
         analysis_widget.show()
+
+
+    def structure_probe_ui(self, height = '400px'):
+        structures = ["9I0K", "1XI5"]
+        #structures = ["7R5K", "1XI5"]
+        list_of_experiments = dict()
+        structure_target_suggestion = dict()
+        with io.capture_output() as captured:
+            for struct in structures:
+                list_of_experiments[struct] = experiments.ExperimentParametrisation()
+                list_of_experiments[struct].structure_id = struct
+                list_of_experiments[struct]._build_structure()
+                protein_name = None
+                sequence = None
+                protein_name, _1, site, sequence = (
+                    list_of_experiments[struct].structure.get_peptide_motif(position="cterminal")
+                )
+                structure_target_suggestion[struct] = {}
+                structure_target_suggestion[struct]["probe_target_type"] = "Sequence"
+                structure_target_suggestion[struct]["probe_target_value"] = sequence
+
+        def plot_structure2(structure_id, n_atoms=1000, h_rotation=0, v_rotation=0):
+            total = list_of_experiments[structure_id].structure.num_assembly_atoms
+            if total > n_atoms:
+                fraction = n_atoms/total
+            else:
+                fraction = 1.0
+            list_of_experiments[structure_id].structure.show_assembly_atoms(
+                assembly_fraction=fraction,
+                view_init = [v_rotation,h_rotation,0]
+            )
+        structure_widget = self.wgen.gen_interactive_dropdown(
+            options=structures,
+            orientation="vertical",
+            routine=plot_structure2,
+            n_atoms=["int_slider", [1e4,0,1e5,100]],
+            h_rotation=["int_slider", [0,-90,90,1]],
+            v_rotation=["int_slider", [0,-90,90,1]],
+            height=height)
+        # 
+        vlabprobes = []
+        unspecific_probes = copy.copy(self.probes_per_structure["Mock"])
+        list_of_probe_objects = {}
+        for structurename, probe_names in  self.probes_per_structure.items():
+            if structurename != "Mock":
+                vlabprobes = vlabprobes + probe_names
+        with io.capture_output() as captured:
+            vsample, experiment = experiments.generate_virtual_sample(
+                clear_probes=True,
+                )
+            for probe_name in unspecific_probes:
+                print(probe_name)
+                label_config_path = os.path.join(experiment.configuration_path, "probes", probe_name + ".yaml")
+                probe_obj, probe_parameters = construct_label(label_config_path)
+                if probe_obj.model:
+                    (
+                        probe_structure_obj,
+                        probe_emitter_sites,
+                        anchor_point,
+                        direction_point,
+                        probe_epitope,
+                    ) = probe_model(
+                        model=probe_obj.model,
+                        binding=probe_obj.binding,
+                        conjugation_sites=probe_obj.conjugation,
+                        epitope=probe_obj.epitope,
+                        config_dir=experiment.configuration_path,
+                    )
+                    if anchor_point.shape == (3,):
+                            print("setting new axis")
+                            probe_obj.set_axis(pivot=anchor_point, direction=direction_point)
+                    if (
+                        probe_epitope["coordinates"] is not None
+                        and probe_parameters["as_linker"]
+                    ):
+                        print("Generating linker from epitope site")
+                        # TODO: this decision needs to take into account if there is a 
+                        # secondary label for this specific probe
+                        probe_obj.set_emitters(probe_epitope["coordinates"])
+                    else:
+                        probe_obj.set_emitters(probe_emitter_sites)
+                    probe_parameters["coordinates"] = probe_obj.gen_labeling_entity()
+                    list_of_probe_objects[probe_name] = {}
+                    list_of_probe_objects[probe_name]["probe_object"] = probe_obj
+                    list_of_probe_objects[probe_name]["probe_structure"] = probe_structure_obj
+                else:
+                    list_of_probe_objects[probe_name] = {}
+                    list_of_probe_objects[probe_name]["probe_object"] = probe_obj
+
+
+        def show_probe(probe, n_atoms, h_rotation=0, v_rotation=0):
+            if probe == "Linker":
+                list_of_probe_objects[probe_name]["probe_object"].plot_emitters()
+            else:
+                total = list_of_probe_objects[probe]["probe_structure"].num_assembly_atoms
+                if total > n_atoms:
+                    fraction = n_atoms/total
+                else:
+                    fraction = 1.0
+                list_of_probe_objects[probe]["probe_structure"].plotting_params["assemblyatoms"]["plotalpha"] = 0.3
+                #list_of_probe_objects[probe]["probe_structure"].show_assembly_atoms(
+                #assembly_fraction=fraction,
+                #view_init = [30,degree,0]
+                #)
+                list_of_probe_objects[probe]["probe_structure"].show_target_labels(
+                    with_assembly_atoms = True,
+                    assembly_fraction=fraction,
+                    view_init = [v_rotation, h_rotation,0],
+                    show_axis = False 
+                )
+
+        probes_widget_2 = self.wgen.gen_interactive_dropdown(
+            options=list(list_of_probe_objects.keys()),
+            orientation="vertical", routine=show_probe,
+            n_atoms=["int_slider", [100,0,10000,1]],
+            h_rotation=["int_slider", [0,-90,90,1]],
+            v_rotation=["int_slider", [0,-90,90,1]],
+            height=height)
+        
+        def my_update(new_value, dependant, update_params):
+            #print("change")
+            #dependant.options = update_params["options"][new_value]
+            pass
+
+
+        left_parameters_linkd = self.wgen.gen_box_linked(
+            w1=structure_widget, 
+            w2=probes_widget_2, 
+            observed=structure_widget.children[0].children[0],
+            dependant=probes_widget_2.children[0].children[0],
+            update_method = my_update,
+            update_params = copy.copy(self.probes_per_structure)
+            )
+        left_parameters_linkd.layout = widgets.Layout(width='50%',display='inline-flex')
+
+        def calculate_labelled_particle(widget, options, emitter_plotsize, source_plotsize):
+            structure = widget.children[0].children[0].children[0].value
+            probe_name = widget.children[1].children[0].children[0].value
+            probe_params = options[structure]
+            #print(structure, probe_name, probe_params)
+            with io.capture_output() as captured2:
+                #vsample, experiment = .generate_virtual_sample(
+                self.my_experiment.remove_probes()
+                self.my_experiment.structure_id = structure
+                self.my_experiment.add_probe(probe_name, **probe_params)
+                self.my_experiment.build(modules=["structure", "particle"])
+                fig = plt.figure()
+                ax = fig.add_subplot(111, projection="3d")
+                self.my_experiment.particle.gen_axis_plot(
+                    axis_object=ax,
+                    with_sources=True, 
+                    axesoff=True,
+                    emitter_plotsize=emitter_plotsize,
+                    source_plotsize=source_plotsize
+                    )
+                #print(experiment.particle.emitters)
+                plt.close()
+                return fig
+
+
+        static = self.wgen.gen_action_with_options(
+            param_widget=left_parameters_linkd, 
+            routine=calculate_labelled_particle, 
+            emitter_plotsize=["int_slider", [1,0,30,1]], 
+            source_plotsize=["int_slider", [1,0,30,1]],
+            options=structure_target_suggestion,
+            action_name="Generate labelled particle",
+            height=height)
+        
+        #main_widget = self.wgen.gen_box(widget1=left_parameters_linkd, widget2=static)
+        main_widget = GridspecLayout(7, 3, height=height)
+        main_widget[:2, 0]  = left_parameters_linkd.children[0].children[0]
+        main_widget[2:, 0] = left_parameters_linkd.children[0].children[1]
+        main_widget[:2, 1]  = left_parameters_linkd.children[1].children[0]
+        main_widget[2:, 1] = left_parameters_linkd.children[1].children[1]
+        main_widget[:2, 2]  = static.children[0]
+        main_widget[2:, 2] = static.children[1]
+
+
+        #main_widget[0,0] = left_parameters_linkd.children[0]
+        #main_widget[0,1] = left_parameters_linkd.children[1]
+        #main_widget[0,2] = static
+        #main_widget.layout = widgets.Layout(width='100%',display='inline-flex')
+        return main_widget
+    
+
+
+    def vsample_vmicroscope_ui(self, mode = "default", height = "500px"):
+        grid = GridspecLayout(7, 3, height=height)
+        preview_exp = copy.deepcopy(self.my_experiment)
+        def create_field(field_config = None,
+                         nparticles = 1,
+                         random_pl = None,
+                         min_distance = None,
+                         random_orientations = None,
+                         angle_view=20,
+                         **kwargs):
+            with io.capture_output() as captured:
+                self.my_experiment._build_coordinate_field(
+                    keep=True,
+                    nparticles=nparticles,
+                    random_placing=random_pl,
+                    minimal_distance=min_distance,
+                    random_orientations=random_orientations,
+                )
+                plot = self.my_experiment.coordinate_field.show_field(
+                    return_fig=True,
+                    view_init=[angle_view,0,0]
+                    )
+            return plot
+        
+        wgt1 = self.wgen.gen_interactive_dropdown(
+                    options=["Square 1x1 µm",],
+                    orientation="vertical",
+                    routine=create_field,
+                    nparticles=["int_slider", [1,1,20,1]],
+                    angle_view=["int_slider", [20,-90,90,1]],
+                    height=height
+        )
+        grid[:2, 0]  = wgt1.children[0]
+        grid[2:, 0] = wgt1.children[1]
+
+        # modalities
+        modalities_options = []
+        if mode == "default":
+            modalities_list = self.modalities_default
+        else:
+            modalities_list = self.my_experiment.local_modalities_names
+        modalities_options = copy.copy(modalities_list)
+        modalities_options.append("All")
+        modality_info = {}
+        for mod in modalities_list:
+            mod_info = data_format.configuration_format.compile_modality_parameters(
+                mod, self.config_directories["base"]
+            )
+            modality_info[mod] = mod_info
+        with io.capture_output() as captured:
+            temp_imager, tmp_modality_parameters = create_imaging_system(
+                modalities_id_list=modalities_list,
+                config_dir=self.config_directories["base"],
+            )
+
+
+        def show_modality(modality_name):
+            if modality_name != "All":
+                pixelsize = modality_info[modality_name]["detector"]["pixelsize"]
+                pixelsize_nm = pixelsize * 1000
+                psf_sd = np.array(
+                    modality_info[modality_name]["psf_params"]["std_devs"]
+                )
+                psf_voxel = np.array(
+                    modality_info[modality_name]["psf_params"]["voxelsize"]
+                )
+                psf_sd_metric = np.multiply(psf_voxel, psf_sd)
+                fig, axs = plt.subplots()
+                modality_preview = temp_imager.modalities[modality_name]["psf"][
+                    "psf_stack"
+                ]
+                psf_shapes = modality_preview.shape
+                stack_max = np.max(modality_preview)
+                axs.imshow(
+                    modality_preview[:, :, int(psf_shapes[2] / 2)],
+                    cmap="gray",
+                    interpolation="none",
+                    vmin=0,
+                    vmax=stack_max,
+                )
+                axs.set_xticks([])
+                axs.set_yticks([])
+                s1 = "Detector pixelsize (nm): " + str(pixelsize_nm)
+                s2 = "PSF sd (nm): " + str(psf_sd_metric)
+                s3 = "PSF preview (on a 1x1 µm field of view)"
+                axs.text(0.05, 0.1, s1, transform=axs.transAxes, size = 10, color = "w")
+                axs.text(0.05, 0.15, s2, transform=axs.transAxes, size = 10, color = "w")
+                axs.text(0.05, 0.2, s3, transform=axs.transAxes, size = 10, color = "w")
+
+
+        wgt2 = self.wgen.gen_interactive_dropdown(
+                    options=modalities_options,
+                    orientation="vertical",
+                    routine=show_modality,
+                    height=height
+        )
+        grid[:2, 1]  = wgt2.children[0]
+        grid[2:, 1] = wgt2.children[1]
+
+
+        current_acq = dict()
+
+        def preview_acquisition(widget, exposure_time, noise):
+            field = self.my_experiment.coordinate_field.export_field()
+            preview_exp.exported_coordinate_field = field
+            preview_exp.objects_created["exported_coordinate_field"] = True
+            selected_mod = widget.children[0].children[0].value
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            with io.capture_output() as captured:
+                preview_exp.update_modality(modality_name=selected_mod,remove=True)
+                preview_exp.add_modality(modality_name=selected_mod, save=False)
+                preview_exp.set_modality_acq(modality_name=selected_mod, exp_time=exposure_time, noise=noise)
+                preview_exp.build(modules=["imager",])
+                # consider using run_simulation
+                timeseries, calibration_beads = (
+                    preview_exp.imager.generate_imaging(
+                        modality=selected_mod, exp_time=exposure_time, noise=noise
+                    )
+                )
+                current_acq = preview_exp.selected_mods[selected_mod]
+            min_val = np.min(timeseries[0])
+            max_val = np.max(timeseries[0])
+            preview_image=ax.imshow(
+                timeseries[0],
+                cmap="gray",
+                interpolation="none",
+                vmin=min_val,
+                vmax=max_val,
+            )
+            ax.set_xticks([])
+            ax.set_yticks([])
+            #ax.set_title("preview channel:" + single_channel)
+            #ax.cbar_axes.colorbar(preview_image)
+            # grid[i].set_visible(False)
+            plt.close()
+            return fig
+
+        def button_method(b):
+            selected_mod = list(preview_exp.imaging_modalities.keys())[0]
+            mod_acq =copy.deepcopy(preview_exp.selected_mods[selected_mod])
+            self.my_experiment.add_modality(modality_name=selected_mod, save=True)
+            self.my_experiment.set_modality_acq(modality_name=selected_mod, **mod_acq)
+
+        def button_method2(b):
+            modalities_set = list(self.my_experiment.imaging_modalities.keys())
+            for mod in modalities_set:
+                self.my_experiment.update_modality(modality_name=mod, remove=True)
+
+
+        static = self.wgen.gen_action_with_options(
+            param_widget=wgt2, 
+            routine=preview_acquisition,
+            exposure_time = ["float_slider", [0.01,0,0.05,0.001]],
+            noise = ["checkbox", True],
+            button1 = ["button", ["Set parameters of preview", button_method]],
+            button2 = ["button", ["Clear all modalities", button_method2]],
+            options=None,
+            action_name="Preview acquisition")
+        grid[:2, 2]  = static.children[0]
+        grid[2:, 2] = static.children[1]
+        return grid

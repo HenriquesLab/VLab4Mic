@@ -9,7 +9,7 @@ from .analysis import _plots
 import numpy as np
 from datetime import datetime
 import seaborn as sns
-
+from matplotlib.ticker import FormatStrFormatter
 
 
 output_dir = Path.home() / "vlab4mic_outputs"
@@ -280,8 +280,13 @@ class sweep_generator:
         self,
         plot_type=None,
         metric_name = None,
+        decimals:int = None,
         **kwargs,
     ):
+        if decimals is None:
+            decimals = "%.3f"
+        else:
+            decimals = "%." + str(decimals) + "f"
         data = self.get_analysis_output(keyname="dataframes")
         if plot_type is None:
             plot_type = "heatmaps"
@@ -294,12 +299,14 @@ class sweep_generator:
             metric_plot = self._gen_heatmaps(
                 metric_name=metric_name,
                 return_figure=True,
+                decimals=decimals,
                 **plot_params)
             self.analysis["plots"][plot_type][metric_name] = metric_plot
         elif plot_type == "lineplots":
             metric_plot = self._gen_lineplots(
                 data=data,
                 metric_name=metric_name,
+                decimals=decimals,
                 **plot_params 
                 )
             self.analysis["plots"][plot_type][metric_name] = metric_plot
@@ -311,6 +318,7 @@ class sweep_generator:
             param1: str = None,
             param2: str = None,
             return_figure = False,
+            decimals='%.4f',
             **kwargs):
         if metric_name is None:
             metric_name = self.analysis_parameters["metrics_list"][0]
@@ -329,7 +337,11 @@ class sweep_generator:
             metric_name=metric_name
         )
         plot = _plots.sns_heatmap_pivots(
-                df_categories, titles, annotations=True, return_figure=return_figure, metric_name=metric_name
+                df_categories, titles, 
+                annotations=True, 
+                return_figure=return_figure, 
+                metric_name=metric_name, 
+                decimals=decimals
             )
         return plot
     
@@ -343,6 +355,7 @@ class sweep_generator:
                        estimator = "mean", 
                        errorbar="ci",
                        figsize=[10,10],
+                       decimals='%.4f',
                        **kwargs):
         if data is None:
             data = self.analysis["dataframes"]
@@ -364,7 +377,8 @@ class sweep_generator:
                      estimator=estimator,
                      errorbar=errorbar,
                      ax=axes)
-        
+        axes.yaxis.set_major_formatter(FormatStrFormatter(decimals))
+        axes.xaxis.set_major_formatter(FormatStrFormatter(decimals))
         title = estimator + " " + metric_name + " for " + x_param
         if style is not None:
             title = title + "per " + style
