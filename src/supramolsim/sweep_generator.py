@@ -10,7 +10,7 @@ import numpy as np
 from datetime import datetime
 import seaborn as sns
 from matplotlib.ticker import FormatStrFormatter
-
+import copy
 
 output_dir = Path.home() / "vlab4mic_outputs"
 
@@ -330,8 +330,11 @@ class sweep_generator:
         if param2 is None:
             param2 = "probe_n"
         analysis_resut_df = self.get_analysis_output(keyname="dataframes")
+        df = copy.deepcopy(self.analysis["dataframes"])
+        df[param1] = df[param1].round(3)
+        df[param2] = df[param2].round(3)
         df_categories, titles = sweep.pivot_dataframes_byCategory(
-            dataframe=analysis_resut_df,
+            dataframe=df,
             category_name=category,
             param1=param1,
             param2=param2,
