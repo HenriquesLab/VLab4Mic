@@ -14,7 +14,7 @@ def test_run_default_analysis(sweep_gen):
 def test_parameters_combinations():
     test_sweep = sweep_generator.sweep_generator()
     test_sweep.probes = ["CCP_heavy_chain_Cterminal",]
-    test_sweep.set_parameter_values("probe", "labelling_efficiency", values=(0.1,1 ,5))
+    test_sweep.set_parameter_values("probe", "labelling_efficiency", values=(0,1 ,5))
     test_sweep.set_parameter_values("particle_defect", "defect", values=(0.1,0.5,4))
     test_sweep.set_parameter_values("particle_defect", "defect_small_cluster", values=[300,])
     test_sweep.set_parameter_values("particle_defect", "defect_large_cluster", values=[600,])
