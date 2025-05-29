@@ -409,6 +409,14 @@ class Sweep_gui(jupyter_gui):
                     list_of_probe_objects[probe_name] = {}
                     list_of_probe_objects[probe_name]["probe_structure"] = None
                     list_of_probe_objects[probe_name]["probe_object"] = probe_obj
+                    if probe_parameters["target"]["type"] is not None:
+                        if probe_parameters["target"]["type"] == "Sequence":
+                            text = "This probe targets the sequence: "
+                            text = text + probe_parameters["target"]["value"]
+                        else:
+                            text = "This probe targets a residue: "
+                            text = text + probe_parameters["target"]["value"]["residues"]
+                        list_of_probe_objects[probe_name]["probe_info_text"] = text
 
         def show_probe(probe, n_atoms, h_rotation=0, v_rotation=0):
             if probe in list_of_probe_objects.keys():
@@ -429,8 +437,8 @@ class Sweep_gui(jupyter_gui):
                             show_axis = False 
                         )
                     else:
-                        fig, ax = plt.subplots()
-                        ax.text(0.5, 0.5, 'Direct probe', fontsize=14, ha='center')
+                        fig, ax = plt.subplots(figsize=[4,4])
+                        ax.text(0.5, 0.5, list_of_probe_objects[probe]["probe_info_text"], fontsize=14, ha='center')
                         ax.set_axis_off()  # This hides the axes
                         plt.show()
 
@@ -444,7 +452,8 @@ class Sweep_gui(jupyter_gui):
             height=height)
         
         def my_update(observed_change, update_params):
-            probes_widget_2.children[0].children[0].options = update_params[observed_change]
+            #probes_widget_2.children[0].children[0].options = update_params[observed_change]
+            pass
  
 
 
@@ -461,17 +470,22 @@ class Sweep_gui(jupyter_gui):
         def calculate_labelled_particle(widget, options, emitter_plotsize, source_plotsize):
             structure = widget.children[0].children[0].children[0].value
             probe_name = widget.children[1].children[0].children[0].value
-            probe_params = options[structure]
+            target_probe_params = options[structure]
             #print(structure, probe_name, probe_params)
             with io.capture_output() as captured2:
                 #vsample, experiment = .generate_virtual_sample(
                 list_of_experiments[struct].remove_probes()
                 self.my_experiment.structure_id = structure
                 self.my_experiment.remove_probes()
-                self.my_experiment.add_probe(probe_name, **probe_params)
+                if self.probe_parameters[probe_name]["target"]["type"] is None:
+                    self.my_experiment.add_probe(probe_name, **target_probe_params)
+                    list_of_experiments[struct].add_probe(probe_name, **target_probe_params)
+                else:
+                    self.my_experiment.add_probe(probe_name, **self.probe_parameters[probe_name])
+                    list_of_experiments[struct].add_probe(probe_name, **self.probe_parameters[probe_name])
                 #self.my_experiment.structure = copy.copy(list_of_experiments[struct].structure)
                 #self.my_experiment.objects_created["structure"] = True
-                list_of_experiments[struct].add_probe(probe_name, **probe_params)
+                #list_of_experiments[struct].add_probe(probe_name, **probe_params)
                 list_of_experiments[struct].build(modules=["particle",])
                 fig = plt.figure()
                 ax = fig.add_subplot(111, projection="3d")
