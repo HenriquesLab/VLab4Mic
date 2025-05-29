@@ -439,7 +439,8 @@ class Sweep_gui(jupyter_gui):
         def show_probe(probe, n_atoms, h_rotation=0, v_rotation=0):
             if probe in list_of_probe_objects.keys():
                 if probe == "Linker":
-                    list_of_probe_objects[probe]["probe_object"].plot_emitters()
+                    plot = list_of_probe_objects[probe]["probe_object"].plot_emitters(return_plot = True)
+                    return plot
                 else:
                     if list_of_probe_objects[probe]["probe_structure"] is not None:
                         total = list_of_probe_objects[probe]["probe_structure"].num_assembly_atoms
@@ -448,13 +449,14 @@ class Sweep_gui(jupyter_gui):
                         else:
                             fraction = 1.0
                         list_of_probe_objects[probe]["probe_structure"].plotting_params["assemblyatoms"]["plotalpha"] = 0.3
-                        plot = list_of_probe_objects[probe]["probe_structure"].show_target_labels(
-                            with_assembly_atoms = True,
-                            assembly_fraction=fraction,
-                            view_init = [v_rotation, h_rotation,0],
-                            show_axis = False,
-                            return_plot=True 
-                        )
+                        with io.capture_output() as captured:
+                            plot = list_of_probe_objects[probe]["probe_structure"].show_target_labels(
+                                with_assembly_atoms = True,
+                                assembly_fraction=fraction,
+                                view_init = [v_rotation, h_rotation,0],
+                                show_axis = False,
+                                return_plot=True 
+                            )
                         plt.close()
                         return plot
                     else:
@@ -473,7 +475,7 @@ class Sweep_gui(jupyter_gui):
         probes2show.extend(copy.copy(self.vlab_probes))
 
         w_probe_name = widgets.Dropdown(options=probes2show)
-        w_probe_n_atoms = widgets.IntSlider(value=1e4, min=0, max=1e5, steps = 100, description="Atoms to display", style = {'description_width': 'initial'}, continuous_update=False)
+        w_probe_n_atoms = widgets.IntSlider(value=1e2, min=0, max=1e4, steps = 10, description="Atoms to display", style = {'description_width': 'initial'}, continuous_update=False)
         w_probe_h_rotaiton = widgets.IntSlider(value=0, min=-90, max=90, description="Horizontal view",  style = {'description_width': 'initial'}, continuous_update=False)
         w_probe_v_rotation = widgets.IntSlider(value=0, min=-90, max=90, description="Vertical view",  style = {'description_width': 'initial'}, continuous_update=False)
         w_probe_params = [w_probe_name, w_probe_n_atoms, w_probe_h_rotaiton, w_probe_v_rotation]
@@ -494,14 +496,6 @@ class Sweep_gui(jupyter_gui):
         w_probe_n_atoms.observe(probe_on_change, names="value")
         w_probe_h_rotaiton.observe(probe_on_change, names="value")
         w_probe_v_rotation.observe(probe_on_change, names="value")
-
-        probes_widget_2 = self.wgen.gen_interactive_dropdown(
-            options=probes2show,
-            orientation="vertical", routine=show_probe,
-            n_atoms=["int_slider", [100,0,10000,1]],
-            h_rotation=["int_slider", [0,-90,90,1]],
-            v_rotation=["int_slider", [0,-90,90,1]],
-            height=height)
         
         def my_update(change):
             probes2show = []
@@ -521,7 +515,7 @@ class Sweep_gui(jupyter_gui):
         ## show particle
         def calculate_labelled_particle(b):
             struct = structure_name.value
-            probe_name = probes_widget_2.children[0].children[0].value
+            probe_name = w_probe_name.value
             probe_target_type=None
             probe_target_value=None
 
