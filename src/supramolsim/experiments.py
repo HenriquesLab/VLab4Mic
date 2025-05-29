@@ -74,6 +74,30 @@ class ExperimentParametrisation:
             modality_parameters[mod] = mod_info
         self.local_modalities_names = modalities_names_list
         self.local_modalities_parameters = modality_parameters
+        probes_dir = os.path.join(local_dir, "probes")
+        structure_dir = os.path.join(local_dir, "structures")
+        self.config_probe_params = {}
+        self.config_global_probes_names = []
+        self.config_probe_per_structure_names = {}
+        for p_file in os.listdir(probes_dir):
+            if os.path.splitext(p_file)[-1] == ".yaml" and "_template" not in p_file:
+                label_config_path = os.path.join(
+                    probes_dir, p_file
+                )
+                label_parmeters = supramolsim.load_yaml(label_config_path)
+                # print(label_parmeters)
+                lablname = os.path.splitext(p_file)[0]
+                if "Mock" in label_parmeters["known_targets"]:
+                    self.config_global_probes_names.append(lablname)
+                    self.config_probe_params[lablname] = label_parmeters
+                elif "Generic" in label_parmeters["known_targets"]:
+                    self.config_global_probes_names.append(lablname)
+                    self.config_probe_params[lablname] = label_parmeters
+                else:
+                    self.config_probe_params[lablname] = label_parmeters
+                    for struct in label_parmeters["known_targets"]:
+                        self.config_probe_per_structure_names[struct] = lablname
+
         #self.imaging_modalities = dict()
 
     def add_modality(self, modality_name, save=False, **kwargs):
