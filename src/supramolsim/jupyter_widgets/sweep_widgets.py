@@ -44,31 +44,35 @@ class Sweep_gui(jupyter_gui):
         self.param_settings = yaml_functions.load_yaml(param_settings_file)
         self._create_param_widgets()
         #self.parameters_with_set_values = []
-        for file in os.listdir(self.config_directories["probes"]):
-            if os.path.splitext(file)[-1] == ".yaml" and "_template" not in file:
-                label_config_path = os.path.join(
-                    self.config_directories["probes"], file
-                )
-                label_parmeters = supramolsim.load_yaml(label_config_path)
-                lablname = os.path.splitext(file)[0]
-                # self.vlab_probes.append(lablname)
-                # self.probe_parameters[lablname] = label_parmeters
-                if "Mock" in label_parmeters["known_targets"]:
-                    self.targetless_probes.append(lablname)
-                    self.probe_parameters[lablname] = label_parmeters
-                if "Generic" in label_parmeters["known_targets"]:
-                    self.vlab_probes.append(lablname)
-                    self.probe_parameters[lablname] = label_parmeters
-                else:
-                    #self.vlab_probes.append(lablname)
-                    self.probe_parameters[lablname] = label_parmeters
-                    for known_structures in label_parmeters["known_targets"]:
-                        if known_structures in self.probes_per_structure.keys():
-                            self.probes_per_structure[known_structures].append(lablname)
-                        else:
-                            self.probes_per_structure[known_structures] = [
-                                lablname,
-                            ]
+        self.probes_per_structure = copy.copy(self.my_experiment.config_probe_per_structure_names)
+        self.probe_parameters = copy.copy(self.my_experiment.config_probe_params)
+        self.vlab_probes = copy.copy(self.my_experiment.config_global_probes_names)
+        
+        #for file in os.listdir(self.config_directories["probes"]):
+        #    if os.path.splitext(file)[-1] == ".yaml" and "_template" not in file:
+        #        label_config_path = os.path.join(
+        #            self.config_directories["probes"], file
+        #        )
+        #        label_parmeters = supramolsim.load_yaml(label_config_path)
+        #        lablname = os.path.splitext(file)[0]
+        #        # self.vlab_probes.append(lablname)
+        #        # self.probe_parameters[lablname] = label_parmeters
+        #        if "Mock" in label_parmeters["known_targets"]:
+        #            self.targetless_probes.append(lablname)
+        #            self.probe_parameters[lablname] = label_parmeters
+        #        if "Generic" in label_parmeters["known_targets"]:
+        #            self.vlab_probes.append(lablname)
+        #            self.probe_parameters[lablname] = label_parmeters
+        #        else:
+        #            #self.vlab_probes.append(lablname)
+        #            self.probe_parameters[lablname] = label_parmeters
+        #            for known_structures in label_parmeters["known_targets"]:
+        #                if known_structures in self.probes_per_structure.keys():
+        #                    self.probes_per_structure[known_structures].append(lablname)
+        #                else:
+        #                    self.probes_per_structure[known_structures] = [
+        #                        lablname,
+        #                    ]
 
     def _create_param_widgets(self):
         for groupname, group_parameters in self.param_settings.items():
@@ -117,7 +121,7 @@ class Sweep_gui(jupyter_gui):
     def select_probes_and_mods(self, include_probe_models=False):
         ez_sweep = EZInput(title="Sweep")
         probes2show = []
-        if self.selected_structure:
+        if self.selected_structure in self.probes_per_structure.keys():
             probe_list = self.probes_per_structure[self.selected_structure]
             probes2show.extend(
                 copy.copy(probe_list)
@@ -321,7 +325,8 @@ class Sweep_gui(jupyter_gui):
 
 
     def structure_probe_ui(self, height = '400px'):
-        structures = ["9I0K", "1XI5", "8GMO"]
+        #structures = ["9I0K", "1XI5", "8GMO"]
+        structures = ["9I0K", "1XI5"]
         #structures = ["7R5K", "1XI5"]
         list_of_experiments = dict()
         structure_target_suggestion = dict()
@@ -338,6 +343,7 @@ class Sweep_gui(jupyter_gui):
                 structure_target_suggestion[struct] = {}
                 structure_target_suggestion[struct]["probe_target_type"] = "Sequence"
                 structure_target_suggestion[struct]["probe_target_value"] = sequence
+                
 
         def plot_structure2(structure_id, n_atoms=1000, h_rotation=0, v_rotation=0):
             total = list_of_experiments[structure_id].structure.num_assembly_atoms
@@ -409,25 +415,27 @@ class Sweep_gui(jupyter_gui):
 
 
         def show_probe(probe, n_atoms, h_rotation=0, v_rotation=0):
-            if probe == "Linker":
-                list_of_probe_objects[probe_name]["probe_object"].plot_emitters()
-            else:
-                total = list_of_probe_objects[probe]["probe_structure"].num_assembly_atoms
-                if total > n_atoms:
-                    fraction = n_atoms/total
+            if probe in list_of_probe_objects.keys():
+                if probe == "Linker":
+                    list_of_probe_objects[probe]["probe_object"].plot_emitters()
                 else:
-                    fraction = 1.0
-                list_of_probe_objects[probe]["probe_structure"].plotting_params["assemblyatoms"]["plotalpha"] = 0.3
-                #list_of_probe_objects[probe]["probe_structure"].show_assembly_atoms(
-                #assembly_fraction=fraction,
-                #view_init = [30,degree,0]
-                #)
-                list_of_probe_objects[probe]["probe_structure"].show_target_labels(
-                    with_assembly_atoms = True,
-                    assembly_fraction=fraction,
-                    view_init = [v_rotation, h_rotation,0],
-                    show_axis = False 
-                )
+                    total = list_of_probe_objects[probe]["probe_structure"].num_assembly_atoms
+                    if total > n_atoms:
+                        fraction = n_atoms/total
+                    else:
+                        fraction = 1.0
+                    list_of_probe_objects[probe]["probe_structure"].plotting_params["assemblyatoms"]["plotalpha"] = 0.3
+                    #list_of_probe_objects[probe]["probe_structure"].show_assembly_atoms(
+                    #assembly_fraction=fraction,
+                    #view_init = [30,degree,0]
+                    #)
+                    list_of_probe_objects[probe]["probe_structure"].show_target_labels(
+                        with_assembly_atoms = True,
+                        assembly_fraction=fraction,
+                        view_init = [v_rotation, h_rotation,0],
+                        show_axis = False 
+                    )
+
 
         probes_widget_2 = self.wgen.gen_interactive_dropdown(
             options=list(list_of_probe_objects.keys()),
@@ -437,17 +445,16 @@ class Sweep_gui(jupyter_gui):
             v_rotation=["int_slider", [0,-90,90,1]],
             height=height)
         
-        def my_update(new_value, dependant, update_params):
-            #print("change")
-            #dependant.options = update_params["options"][new_value]
-            pass
+        def my_update(observed_change, update_params):
+            probes_widget_2.children[0].children[0].options = update_params[observed_change]
+ 
 
 
         left_parameters_linkd = self.wgen.gen_box_linked(
             w1=structure_widget, 
             w2=probes_widget_2, 
             observed=structure_widget.children[0].children[0],
-            dependant=probes_widget_2.children[0].children[0],
+            dependant=None,
             update_method = my_update,
             update_params = copy.copy(self.probes_per_structure)
             )
@@ -494,7 +501,7 @@ class Sweep_gui(jupyter_gui):
             source_plotsize=["int_slider", [1,0,30,1]],
             select_model = ["button", ["Use this model", select_model_action]],
             options=structure_target_suggestion,
-            action_name="Generate labelled particle",
+            action_name="Preview labelled particle",
             height=height)
         
         #main_widget = self.wgen.gen_box(widget1=left_parameters_linkd, widget2=static)
