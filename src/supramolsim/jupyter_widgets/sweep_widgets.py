@@ -364,17 +364,13 @@ class Sweep_gui(jupyter_gui):
             v_rotation=["int_slider", [0,-90,90,1]],
             height=height)
         # 
-        vlabprobes = []
-        unspecific_probes = copy.copy(self.probes_per_structure["Mock"])
+        #unspecific_probes = copy.copy(self.probes_per_structure["Mock"])
         list_of_probe_objects = {}
-        for structurename, probe_names in  self.probes_per_structure.items():
-            if structurename != "Mock":
-                vlabprobes = vlabprobes + probe_names
         with io.capture_output() as captured:
             vsample, experiment = experiments.generate_virtual_sample(
                 clear_probes=True,
                 )
-            for probe_name in unspecific_probes:
+            for probe_name in self.probe_parameters.keys():
                 print(probe_name)
                 label_config_path = os.path.join(experiment.configuration_path, "probes", probe_name + ".yaml")
                 probe_obj, probe_parameters = construct_label(label_config_path)
@@ -411,30 +407,32 @@ class Sweep_gui(jupyter_gui):
                     list_of_probe_objects[probe_name]["probe_structure"] = probe_structure_obj
                 else:
                     list_of_probe_objects[probe_name] = {}
+                    list_of_probe_objects[probe_name]["probe_structure"] = None
                     list_of_probe_objects[probe_name]["probe_object"] = probe_obj
-
 
         def show_probe(probe, n_atoms, h_rotation=0, v_rotation=0):
             if probe in list_of_probe_objects.keys():
                 if probe == "Linker":
                     list_of_probe_objects[probe]["probe_object"].plot_emitters()
                 else:
-                    total = list_of_probe_objects[probe]["probe_structure"].num_assembly_atoms
-                    if total > n_atoms:
-                        fraction = n_atoms/total
+                    if list_of_probe_objects[probe]["probe_structure"] is not None:
+                        total = list_of_probe_objects[probe]["probe_structure"].num_assembly_atoms
+                        if total > n_atoms:
+                            fraction = n_atoms/total
+                        else:
+                            fraction = 1.0
+                        list_of_probe_objects[probe]["probe_structure"].plotting_params["assemblyatoms"]["plotalpha"] = 0.3
+                        list_of_probe_objects[probe]["probe_structure"].show_target_labels(
+                            with_assembly_atoms = True,
+                            assembly_fraction=fraction,
+                            view_init = [v_rotation, h_rotation,0],
+                            show_axis = False 
+                        )
                     else:
-                        fraction = 1.0
-                    list_of_probe_objects[probe]["probe_structure"].plotting_params["assemblyatoms"]["plotalpha"] = 0.3
-                    #list_of_probe_objects[probe]["probe_structure"].show_assembly_atoms(
-                    #assembly_fraction=fraction,
-                    #view_init = [30,degree,0]
-                    #)
-                    list_of_probe_objects[probe]["probe_structure"].show_target_labels(
-                        with_assembly_atoms = True,
-                        assembly_fraction=fraction,
-                        view_init = [v_rotation, h_rotation,0],
-                        show_axis = False 
-                    )
+                        fig, ax = plt.subplots()
+                        ax.text(0.5, 0.5, 'Direct probe', fontsize=14, ha='center')
+                        ax.set_axis_off()  # This hides the axes
+                        plt.show()
 
 
         probes_widget_2 = self.wgen.gen_interactive_dropdown(
