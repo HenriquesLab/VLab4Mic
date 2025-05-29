@@ -326,6 +326,7 @@ class Sweep_gui(jupyter_gui):
 
     def structure_probe_ui(self, height = '400px', structures=["9I0K", "1XI5"]):
         main_widget = GridspecLayout(7, 3, height=height)
+        params_section = 2
         list_of_experiments = dict()
         structure_target_suggestion = dict()
         with io.capture_output() as captured:
@@ -379,8 +380,8 @@ class Sweep_gui(jupyter_gui):
         n_atoms.observe(on_changes, names="value")
         h_rotaiton.observe(on_changes, names="value")
         v_rotation.observe(on_changes, names="value")
-        main_widget[:2, 0]  = widgets.VBox(structure_params)
-        main_widget[2:, 0] = structure_output
+        main_widget[:params_section, 0]  = widgets.VBox(structure_params)
+        main_widget[params_section:, 0] = structure_output
         # probes 
         list_of_probe_objects = {}
         with io.capture_output() as captured:
@@ -486,8 +487,8 @@ class Sweep_gui(jupyter_gui):
         
         structure_name.observe(my_update, names="value")
         
-        main_widget[:2, 1] = probes_widget_2.children[0]
-        main_widget[2:, 1] = probes_widget_2.children[1]
+        main_widget[:params_section, 1] = probes_widget_2.children[0]
+        main_widget[params_section:, 1] = probes_widget_2.children[1]
         ## show particle
 
 
@@ -525,11 +526,25 @@ class Sweep_gui(jupyter_gui):
             struct = structure_name.value
             particle_output.clear_output()
             with particle_output:
-                figure = show_particle(struct = struct)
+                psize1 = emitter_plotsize.value
+                psize2 = epitope_plotsize.value
+                hview = particle_h_rotation.value
+                vview = particle_v_rotation.value
+                figure = show_particle(
+                    struct = struct,
+                    emitter_plotsize=psize1,
+                    source_plotsize=psize2,
+                    hview=hview,
+                    vview=vview
+                    )
                 plt.close()
                 display(figure)
         
-        def show_particle(struct= None, emitter_plotsize = 1, source_plotsize = 1):
+        def show_particle(struct= None,
+                          emitter_plotsize = 1, 
+                          source_plotsize = 1, 
+                          hview=0,
+                          vview=0):
             particle_output.clear_output()
             with io.capture_output() as captured:   
                 fig = plt.figure()
@@ -539,7 +554,8 @@ class Sweep_gui(jupyter_gui):
                             with_sources=True, 
                             axesoff=True,
                             emitter_plotsize=emitter_plotsize,
-                            source_plotsize=source_plotsize
+                            source_plotsize=source_plotsize,
+                            view_init=[vview, hview, 0]
                             )
                 plt.close()
                 return fig
@@ -550,14 +566,23 @@ class Sweep_gui(jupyter_gui):
             self.my_experiment.objects_created["structure"] = True
             self.my_experiment.build(modules=["particle",])
         
+        emitter_plotsize = widgets.IntSlider(value=1, min=1, max=24, description="Emitters size",  style = {'description_width': 'initial'}, continuous_update=False)
+        epitope_plotsize = widgets.IntSlider(value=1, min=1, max=24, description="Epitope size",  style = {'description_width': 'initial'}, continuous_update=False)
+        particle_h_rotation = widgets.IntSlider(value=0, min=-90, max=90, description="Horizontal view",  style = {'description_width': 'initial'}, continuous_update=False)
+        particle_v_rotation = widgets.IntSlider(value=0, min=-90, max=90, description="Vertical view",  style = {'description_width': 'initial'}, continuous_update=False)
         particle_output = widgets.Output()
         preview_button = widgets.Button(description = "Preview labelling")
         set_button = widgets.Button(description = "Use this model")
         preview_button.on_click(calculate_labelled_particle)
         set_button.on_click(select_model_action)
-
-        main_widget[:2, 2]  = widgets.VBox([preview_button, set_button])
-        main_widget[2:, 2] = particle_output
+        #
+        emitter_plotsize.observe(update_plot, names="value")
+        epitope_plotsize.observe(update_plot, names="value")
+        particle_h_rotation.observe(update_plot, names="value")
+        particle_v_rotation.observe(update_plot, names="value")
+        buttons_widget = widgets.HBox([preview_button, set_button])
+        main_widget[:params_section, 2]  = widgets.VBox([buttons_widget, emitter_plotsize, epitope_plotsize, particle_h_rotation , particle_v_rotation])
+        main_widget[params_section:, 2] = particle_output
 
 
         #static = self.wgen.gen_action_with_options(
