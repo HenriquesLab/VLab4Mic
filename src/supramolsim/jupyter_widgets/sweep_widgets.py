@@ -517,7 +517,7 @@ class Sweep_gui(jupyter_gui):
                 
 
         def select_model_action(b):
-            self.my_experiment.structure = copy.deepcopy(list_of_experiments[struct].structure)
+            self.my_experiment.structure = copy.deepcopy(list_of_experiments[self.my_experiment.structure_id].structure)
             self.my_experiment.objects_created["structure"] = True
             self.my_experiment.build(modules=["particle",])
 
@@ -553,38 +553,43 @@ class Sweep_gui(jupyter_gui):
     def vsample_vmicroscope_ui(self, mode = "default", height = "500px"):
         grid = GridspecLayout(7, 3, height=height)
         preview_exp = copy.deepcopy(self.my_experiment)
-        def create_field(field_config = None,
-                         nparticles = 1,
-                         random_pl = None,
-                         min_distance = None,
-                         random_orientations = None,
-                         angle_view=20,
-                         **kwargs):
-            with io.capture_output() as captured:
-                self.my_experiment._build_coordinate_field(
+        self.my_experiment._build_coordinate_field(
                     keep=True,
-                    nparticles=nparticles,
-                    random_placing=random_pl,
-                    minimal_distance=min_distance,
-                    random_orientations=random_orientations,
+                    nparticles=1
                 )
-                plot = self.my_experiment.coordinate_field.show_field(
-                    return_fig=True,
-                    view_init=[angle_view,0,0]
-                    )
-            return plot
-        
-        wgt1 = self.wgen.gen_interactive_dropdown(
-                    options=["Square 1x1 µm",],
-                    orientation="vertical",
-                    routine=create_field,
-                    nparticles=["int_slider", [1,1,20,1]],
-                    angle_view=["int_slider", [20,-90,90,1]],
-                    height=height
-        )
-        grid[:2, 0]  = wgt1.children[0]
-        grid[2:, 0] = wgt1.children[1]
-
+        nparticles = widgets.IntSlider(value=1, min=1, max=20, description="Number of particles",  style = {'description_width': 'initial'},continuous_update=False)
+        angle_view = widgets.IntSlider(value=20, min=-90, max=90, description="Angle view",  style = {'description_width': 'initial'},continuous_update=False)
+        vsample_params = [nparticles, angle_view]
+        vsample_output = widgets.Output()
+        def on_changes(change):
+            vsample_output.clear_output()
+            with vsample_output:
+                index = vsample_params.index(change.owner)
+                if index == 1:
+                    with io.capture_output() as captured:
+                        plot = self.my_experiment.coordinate_field.show_field(
+                            return_fig=True,
+                            view_init=[change.new,0,0]
+                            )
+                        plt.close()
+                    display(plot)
+                elif index == 0:
+                    with io.capture_output() as captured:
+                        self.my_experiment._build_coordinate_field(
+                            keep=True,
+                            nparticles=change.new
+                        )
+                        plot = self.my_experiment.coordinate_field.show_field(
+                            return_fig=True,
+                            view_init=[angle_view.value,0,0]
+                        )
+                        plt.close()
+                    display(plot)
+        nparticles.observe(on_changes, names="value")
+        angle_view.observe(on_changes, names="value")
+        grid[:2, 0]  = widgets.VBox(vsample_params)
+        grid[2:, 0] = vsample_output
+        angle_view.value = 22
         # modalities
         modalities_options = []
         if mode == "default":
