@@ -448,17 +448,22 @@ class Sweep_gui(jupyter_gui):
                         else:
                             fraction = 1.0
                         list_of_probe_objects[probe]["probe_structure"].plotting_params["assemblyatoms"]["plotalpha"] = 0.3
-                        list_of_probe_objects[probe]["probe_structure"].show_target_labels(
+                        plot = list_of_probe_objects[probe]["probe_structure"].show_target_labels(
                             with_assembly_atoms = True,
                             assembly_fraction=fraction,
                             view_init = [v_rotation, h_rotation,0],
-                            show_axis = False 
+                            show_axis = False,
+                            return_plot=True 
                         )
+                        plt.close()
+                        return plot
                     else:
-                        fig, ax = plt.subplots(figsize=[4,4])
+                        fig, ax = plt.subplots()
                         ax.text(0.5, 0.5, list_of_probe_objects[probe]["probe_info_text"], fontsize=14, ha='center')
                         ax.set_axis_off()  # This hides the axes
-                        plt.show()
+                        plt.close()
+                        return fig
+                        
         probes2show = []
         current_structure = structure_name.value
         if current_structure in self.probes_per_structure.keys():
@@ -466,6 +471,29 @@ class Sweep_gui(jupyter_gui):
                 copy.copy(self.probes_per_structure[current_structure])
             )
         probes2show.extend(copy.copy(self.vlab_probes))
+
+        w_probe_name = widgets.Dropdown(options=probes2show)
+        w_probe_n_atoms = widgets.IntSlider(value=1e4, min=0, max=1e5, steps = 100, description="Atoms to display", style = {'description_width': 'initial'}, continuous_update=False)
+        w_probe_h_rotaiton = widgets.IntSlider(value=0, min=-90, max=90, description="Horizontal view",  style = {'description_width': 'initial'}, continuous_update=False)
+        w_probe_v_rotation = widgets.IntSlider(value=0, min=-90, max=90, description="Vertical view",  style = {'description_width': 'initial'}, continuous_update=False)
+        w_probe_params = [w_probe_name, w_probe_n_atoms, w_probe_h_rotaiton, w_probe_v_rotation]
+        w_probe_model_output = widgets.Output()
+        
+        def probe_on_change(change):
+            w_probe_model_output.clear_output()
+            with w_probe_model_output:
+                plot = show_probe(
+                    probe = w_probe_name.value, 
+                    n_atoms = w_probe_n_atoms.value,
+                    h_rotation = w_probe_h_rotaiton.value,
+                    v_rotation = w_probe_v_rotation.value)
+                plt.close()
+                display(plot)
+        
+        w_probe_name.observe(probe_on_change, names="value")
+        w_probe_n_atoms.observe(probe_on_change, names="value")
+        w_probe_h_rotaiton.observe(probe_on_change, names="value")
+        w_probe_v_rotation.observe(probe_on_change, names="value")
 
         probes_widget_2 = self.wgen.gen_interactive_dropdown(
             options=probes2show,
@@ -483,15 +511,14 @@ class Sweep_gui(jupyter_gui):
                     copy.copy(probe_list)
                 )
             probes2show.extend(copy.copy(self.vlab_probes))
-            probes_widget_2.children[0].children[0].options = probes2show
+            w_probe_name.options = probes2show
         
         structure_name.observe(my_update, names="value")
         
-        main_widget[:params_section, 1] = probes_widget_2.children[0]
-        main_widget[params_section:, 1] = probes_widget_2.children[1]
+        main_widget[:params_section, 1] = widgets.VBox(w_probe_params)
+        main_widget[params_section:, 1] = w_probe_model_output
+        
         ## show particle
-
-
         def calculate_labelled_particle(b):
             struct = structure_name.value
             probe_name = probes_widget_2.children[0].children[0].value
