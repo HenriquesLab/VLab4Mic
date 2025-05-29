@@ -96,7 +96,10 @@ class ExperimentParametrisation:
                 else:
                     self.config_probe_params[lablname] = label_parmeters
                     for struct in label_parmeters["known_targets"]:
-                        self.config_probe_per_structure_names[struct] = lablname
+                        if struct in self.config_probe_per_structure_names.keys():
+                            self.config_probe_per_structure_names[struct].append(lablname)
+                        else:
+                            self.config_probe_per_structure_names[struct] = [lablname, ]
 
         #self.imaging_modalities = dict()
 
