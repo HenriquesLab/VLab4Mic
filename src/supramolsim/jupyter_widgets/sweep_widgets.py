@@ -441,10 +441,16 @@ class Sweep_gui(jupyter_gui):
                         ax.text(0.5, 0.5, list_of_probe_objects[probe]["probe_info_text"], fontsize=14, ha='center')
                         ax.set_axis_off()  # This hides the axes
                         plt.show()
-
+        probes2show = []
+        current_structure = structure_widget.children[0].children[0].value
+        if current_structure in self.probes_per_structure.keys():
+            probes2show.extend(
+                copy.copy(self.probes_per_structure[current_structure])
+            )
+        probes2show.extend(copy.copy(self.vlab_probes))
 
         probes_widget_2 = self.wgen.gen_interactive_dropdown(
-            options=list(list_of_probe_objects.keys()),
+            options=probes2show,
             orientation="vertical", routine=show_probe,
             n_atoms=["int_slider", [100,0,10000,1]],
             h_rotation=["int_slider", [0,-90,90,1]],
@@ -452,8 +458,14 @@ class Sweep_gui(jupyter_gui):
             height=height)
         
         def my_update(observed_change, update_params):
-            #probes_widget_2.children[0].children[0].options = update_params[observed_change]
-            pass
+            probes2show = []
+            if observed_change in update_params:
+                probe_list = self.probes_per_structure[observed_change]
+                probes2show.extend(
+                    copy.copy(probe_list)
+                )
+            probes2show.extend(copy.copy(self.vlab_probes))
+            probes_widget_2.children[0].children[0].options = probes2show
  
 
 
