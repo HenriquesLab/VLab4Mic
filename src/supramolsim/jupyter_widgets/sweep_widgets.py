@@ -381,7 +381,6 @@ class Sweep_gui(jupyter_gui):
         v_rotation.observe(on_changes, names="value")
         main_widget[:2, 0]  = widgets.VBox(structure_params)
         main_widget[2:, 0] = structure_output
-        structure_name.value = structures[1]
 
         def plot_structure2(structure_id, n_atoms=1000, h_rotation=0, v_rotation=0):
             total = list_of_experiments[structure_id].structure.num_assembly_atoms
@@ -495,17 +494,20 @@ class Sweep_gui(jupyter_gui):
             v_rotation=["int_slider", [0,-90,90,1]],
             height=height)
         
-        def my_update(observed_change, update_params):
+        def my_update(change):
             probes2show = []
-            if observed_change in update_params:
-                probe_list = self.probes_per_structure[observed_change]
+            if change.new in self.probes_per_structure:
+                probe_list = self.probes_per_structure[change.new]
                 probes2show.extend(
                     copy.copy(probe_list)
                 )
             probes2show.extend(copy.copy(self.vlab_probes))
             probes_widget_2.children[0].children[0].options = probes2show
- 
-
+        
+        structure_name.observe(my_update, names="value")
+        
+        main_widget[:2, 1] = probes_widget_2.children[0]
+        main_widget[2:, 1] = probes_widget_2.children[1]
 
         left_parameters_linkd = self.wgen.gen_box_linked(
             w1=structure_widget, 
@@ -572,8 +574,7 @@ class Sweep_gui(jupyter_gui):
         
         #main_widget = self.wgen.gen_box(widget1=left_parameters_linkd, widget2=static)
 
-        main_widget[:2, 1]  = left_parameters_linkd.children[1].children[0]
-        main_widget[2:, 1] = left_parameters_linkd.children[1].children[1]
+
         main_widget[:2, 2]  = static.children[0]
         main_widget[2:, 2] = static.children[1]
 
@@ -582,6 +583,7 @@ class Sweep_gui(jupyter_gui):
         #main_widget[0,1] = left_parameters_linkd.children[1]
         #main_widget[0,2] = static
         #main_widget.layout = widgets.Layout(width='100%',display='inline-flex')
+        structure_name.value = structures[1]
         return main_widget
     
 
