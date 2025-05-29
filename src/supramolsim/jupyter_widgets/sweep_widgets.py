@@ -461,7 +461,9 @@ class Sweep_gui(jupyter_gui):
             with io.capture_output() as captured2:
                 #vsample, experiment = .generate_virtual_sample(
                 list_of_experiments[struct].remove_probes()
-                #self.my_experiment.structure_id = structure
+                self.my_experiment.structure_id = structure
+                self.my_experiment.remove_probes()
+                self.my_experiment.add_probe(probe_name, **probe_params)
                 #self.my_experiment.structure = copy.copy(list_of_experiments[struct].structure)
                 #self.my_experiment.objects_created["structure"] = True
                 list_of_experiments[struct].add_probe(probe_name, **probe_params)
@@ -479,12 +481,18 @@ class Sweep_gui(jupyter_gui):
                 plt.close()
                 return fig
 
+        def select_model_action(b):
+            self.my_experiment.structure = copy.deepcopy(list_of_experiments[struct].structure)
+            self.my_experiment.objects_created["structure"] = True
+            self.my_experiment.build(modules="particle")
+
 
         static = self.wgen.gen_action_with_options(
             param_widget=left_parameters_linkd, 
             routine=calculate_labelled_particle, 
             emitter_plotsize=["int_slider", [1,0,30,1]], 
             source_plotsize=["int_slider", [1,0,30,1]],
+            select_model = ["button", ["Use this model", select_model_action]],
             options=structure_target_suggestion,
             action_name="Generate labelled particle",
             height=height)
