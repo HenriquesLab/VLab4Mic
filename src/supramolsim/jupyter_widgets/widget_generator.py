@@ -88,7 +88,7 @@ class widgen:
     def gen_box_linked(self, w1=None, w2=None, dependant=None, observed=None, orientation="horizontal", update_method = None, update_params = None, **kwargs):
         def update(change):
             print("updating")
-            update_method(change.new, dependant, update_params)
+            update_method(change.new, update_params)
         observed.observe(update, names="value")
         items = [w1, w2]
         if orientation == "horizontal":
