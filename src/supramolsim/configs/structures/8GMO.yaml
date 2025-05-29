@@ -1,0 +1,9 @@
+model:
+  ID: 8GMO
+  format: CIF
+  database: RCSB
+  title: Bacteriophage T4 capsid shell 
+defects:
+  small_cluster:
+  big_cluster: 
+  
