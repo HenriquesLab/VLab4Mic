@@ -325,9 +325,7 @@ class Sweep_gui(jupyter_gui):
 
 
     def structure_probe_ui(self, height = '400px', structures=["9I0K", "1XI5"]):
-        #structures = ["9I0K", "1XI5", "8GMO"]
-        #structures = ["9I0K", "1XI5"]
-        #structures = ["7R5K", "1XI5"]
+        main_widget = GridspecLayout(7, 3, height=height)
         list_of_experiments = dict()
         structure_target_suggestion = dict()
         with io.capture_output() as captured:
@@ -343,7 +341,47 @@ class Sweep_gui(jupyter_gui):
                 structure_target_suggestion[struct] = {}
                 structure_target_suggestion[struct]["probe_target_type"] = "Sequence"
                 structure_target_suggestion[struct]["probe_target_value"] = sequence
-                
+        structure_name = widgets.Dropdown(options=structures)
+        n_atoms = widgets.IntSlider(value=1e4, min=0, max=1e5, steps = 100, description="Atoms to display", style = {'description_width': 'initial'}, continuous_update=False)
+        h_rotaiton = widgets.IntSlider(value=0, min=-90, max=90, description="Horizontal view",  style = {'description_width': 'initial'}, continuous_update=False)
+        v_rotation = widgets.IntSlider(value=0, min=-90, max=90, description="Vertical view",  style = {'description_width': 'initial'}, continuous_update=False)
+        structure_params = [structure_name, n_atoms, h_rotaiton, v_rotation]
+        structure_output = widgets.Output()
+        def on_changes(change):
+            structure_output.clear_output()
+            with structure_output:
+                p1 = structure_name.value
+                p2 = n_atoms.value
+                p3 = h_rotaiton.value
+                p4 = v_rotation.value
+                index = structure_params.index(change.owner)
+                if index == 0: # structure id
+                    p1 = change.new
+                elif index == 1:
+                    p2 = change.new
+                elif index == 2:
+                    p3 = change.new
+                elif index == 3:
+                    p4 = change.new
+                total = list_of_experiments[p1].structure.num_assembly_atoms
+                if total > p2:
+                    fraction = p2/total
+                else:
+                    fraction = 1.0
+                with io.capture_output() as captured:   
+                    figure = list_of_experiments[p1].structure.show_assembly_atoms(
+                        assembly_fraction=fraction,
+                        view_init = [p4,p3,0]
+                    )
+                plt.close()
+                display(figure)
+        structure_name.observe(on_changes, names="value")
+        n_atoms.observe(on_changes, names="value")
+        h_rotaiton.observe(on_changes, names="value")
+        v_rotation.observe(on_changes, names="value")
+        main_widget[:2, 0]  = widgets.VBox(structure_params)
+        main_widget[2:, 0] = structure_output
+        structure_name.value = structures[1]
 
         def plot_structure2(structure_id, n_atoms=1000, h_rotation=0, v_rotation=0):
             total = list_of_experiments[structure_id].structure.num_assembly_atoms
@@ -533,9 +571,7 @@ class Sweep_gui(jupyter_gui):
             height=height)
         
         #main_widget = self.wgen.gen_box(widget1=left_parameters_linkd, widget2=static)
-        main_widget = GridspecLayout(7, 3, height=height)
-        main_widget[:2, 0]  = left_parameters_linkd.children[0].children[0]
-        main_widget[2:, 0] = left_parameters_linkd.children[0].children[1]
+
         main_widget[:2, 1]  = left_parameters_linkd.children[1].children[0]
         main_widget[2:, 1] = left_parameters_linkd.children[1].children[1]
         main_widget[:2, 2]  = static.children[0]
@@ -553,10 +589,11 @@ class Sweep_gui(jupyter_gui):
     def vsample_vmicroscope_ui(self, mode = "default", height = "500px"):
         grid = GridspecLayout(7, 3, height=height)
         preview_exp = copy.deepcopy(self.my_experiment)
-        self.my_experiment._build_coordinate_field(
-                    keep=True,
-                    nparticles=1
-                )
+        with io.capture_output() as captured:
+            self.my_experiment._build_coordinate_field(
+                        keep=True,
+                        nparticles=1
+                    )
         nparticles = widgets.IntSlider(value=1, min=1, max=20, description="Number of particles",  style = {'description_width': 'initial'},continuous_update=False)
         angle_view = widgets.IntSlider(value=20, min=-90, max=90, description="Angle view",  style = {'description_width': 'initial'},continuous_update=False)
         vsample_params = [nparticles, angle_view]
