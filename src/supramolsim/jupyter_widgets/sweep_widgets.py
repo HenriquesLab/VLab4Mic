@@ -381,27 +381,7 @@ class Sweep_gui(jupyter_gui):
         v_rotation.observe(on_changes, names="value")
         main_widget[:2, 0]  = widgets.VBox(structure_params)
         main_widget[2:, 0] = structure_output
-
-        def plot_structure2(structure_id, n_atoms=1000, h_rotation=0, v_rotation=0):
-            total = list_of_experiments[structure_id].structure.num_assembly_atoms
-            if total > n_atoms:
-                fraction = n_atoms/total
-            else:
-                fraction = 1.0
-            list_of_experiments[structure_id].structure.show_assembly_atoms(
-                assembly_fraction=fraction,
-                view_init = [v_rotation,h_rotation,0]
-            )
-        structure_widget = self.wgen.gen_interactive_dropdown(
-            options=structures,
-            orientation="vertical",
-            routine=plot_structure2,
-            n_atoms=["int_slider", [1e4,0,1e5,100]],
-            h_rotation=["int_slider", [0,-90,90,1]],
-            v_rotation=["int_slider", [0,-90,90,1]],
-            height=height)
-        # 
-        #unspecific_probes = copy.copy(self.probes_per_structure["Mock"])
+        # probes 
         list_of_probe_objects = {}
         with io.capture_output() as captured:
             vsample, experiment = experiments.generate_virtual_sample(
@@ -479,7 +459,7 @@ class Sweep_gui(jupyter_gui):
                         ax.set_axis_off()  # This hides the axes
                         plt.show()
         probes2show = []
-        current_structure = structure_widget.children[0].children[0].value
+        current_structure = structure_name.value
         if current_structure in self.probes_per_structure.keys():
             probes2show.extend(
                 copy.copy(self.probes_per_structure[current_structure])
@@ -508,75 +488,92 @@ class Sweep_gui(jupyter_gui):
         
         main_widget[:2, 1] = probes_widget_2.children[0]
         main_widget[2:, 1] = probes_widget_2.children[1]
+        ## show particle
 
-        left_parameters_linkd = self.wgen.gen_box_linked(
-            w1=structure_widget, 
-            w2=probes_widget_2, 
-            observed=structure_widget.children[0].children[0],
-            dependant=None,
-            update_method = my_update,
-            update_params = copy.copy(self.probes_per_structure)
-            )
-        left_parameters_linkd.layout = widgets.Layout(width='50%',display='inline-flex')
 
-        def calculate_labelled_particle(widget, options, emitter_plotsize, source_plotsize):
-            struct = widget.children[0].children[0].children[0].value
-            probe_name = widget.children[1].children[0].children[0].value
+        def calculate_labelled_particle(b):
+            struct = structure_name.value
+            probe_name = probes_widget_2.children[0].children[0].value
             probe_target_type=None
             probe_target_value=None
+
             if self.probe_parameters[probe_name]["target"]["type"] is None:
-                probe_target_type = options[struct]["probe_target_type"]
-                probe_target_value = options[struct]["probe_target_value"]
-            with io.capture_output() as captured2:
-                #vsample, experiment = .generate_virtual_sample(
-                self.my_experiment.structure_id = struct
-                self.my_experiment.remove_probes()
-                self.my_experiment.add_probe(probe_name,
-                    probe_target_type=probe_target_type,
-                    probe_target_value=probe_target_value
-                    )
-                list_of_experiments[struct].remove_probes()
-                list_of_experiments[struct].add_probe(probe_name,
-                    probe_target_type=probe_target_type,
-                    probe_target_value=probe_target_value
-                    )
-                #list_of_experiments[struct].add_probe(probe_name, **target_probe_params)
-                list_of_experiments[struct].build(modules=["particle",])
+                probe_target_type = structure_target_suggestion[struct]["probe_target_type"]
+                probe_target_value = structure_target_suggestion[struct]["probe_target_value"]
+            particle_output.clear_output()
+            with particle_output:
+                with io.capture_output() as captured:   
+                    #vsample, experiment = .generate_virtual_sample(
+                    self.my_experiment.structure_id = struct
+                    self.my_experiment.remove_probes()
+                    self.my_experiment.add_probe(probe_name,
+                        probe_target_type=probe_target_type,
+                        probe_target_value=probe_target_value
+                        )
+                    list_of_experiments[struct].remove_probes()
+                    list_of_experiments[struct].add_probe(probe_name,
+                        probe_target_type=probe_target_type,
+                        probe_target_value=probe_target_value
+                        )
+                    #list_of_experiments[struct].add_probe(probe_name, **target_probe_params)
+                    list_of_experiments[struct].build(modules=["particle",])    
+                    figure = show_particle(struct = struct)
+                    plt.close()
+                display(figure)
+            
+        def update_plot(change):
+            struct = structure_name.value
+            particle_output.clear_output()
+            with particle_output:
+                figure = show_particle(struct = struct)
+                plt.close()
+                display(figure)
+        
+        def show_particle(struct= None, emitter_plotsize = 1, source_plotsize = 1):
+            particle_output.clear_output()
+            with io.capture_output() as captured:   
                 fig = plt.figure()
                 ax = fig.add_subplot(111, projection="3d")
                 list_of_experiments[struct].particle.gen_axis_plot(
-                    axis_object=ax,
-                    with_sources=True, 
-                    axesoff=True,
-                    emitter_plotsize=emitter_plotsize,
-                    source_plotsize=source_plotsize
-                    )
-                #print(experiment.particle.emitters)
+                            axis_object=ax,
+                            with_sources=True, 
+                            axesoff=True,
+                            emitter_plotsize=emitter_plotsize,
+                            source_plotsize=source_plotsize
+                            )
                 plt.close()
                 return fig
-                
+
 
         def select_model_action(b):
             self.my_experiment.structure = copy.deepcopy(list_of_experiments[self.my_experiment.structure_id].structure)
             self.my_experiment.objects_created["structure"] = True
             self.my_experiment.build(modules=["particle",])
+        
+        particle_output = widgets.Output()
+        preview_button = widgets.Button(description = "Preview labelling")
+        set_button = widgets.Button(description = "Use this model")
+        preview_button.on_click(calculate_labelled_particle)
+        set_button.on_click(select_model_action)
+
+        main_widget[:2, 2]  = widgets.VBox([preview_button, set_button])
+        main_widget[2:, 2] = particle_output
 
 
-        static = self.wgen.gen_action_with_options(
-            param_widget=left_parameters_linkd, 
-            routine=calculate_labelled_particle, 
-            emitter_plotsize=["int_slider", [1,0,30,1]], 
-            source_plotsize=["int_slider", [1,0,30,1]],
-            select_model = ["button", ["Use this model", select_model_action]],
-            options=structure_target_suggestion,
-            action_name="Preview labelled particle",
-            height=height)
+        #static = self.wgen.gen_action_with_options(
+        #    param_widget=left_parameters_linkd, 
+        #    routine=calculate_labelled_particle, 
+        #    emitter_plotsize=["int_slider", [1,0,30,1]], 
+        #    source_plotsize=["int_slider", [1,0,30,1]],
+        #    select_model = ["button", ["Use this model", select_model_action]],
+        #    options=structure_target_suggestion,
+        #    action_name="Preview labelled particle",
+        #    height=height)
         
         #main_widget = self.wgen.gen_box(widget1=left_parameters_linkd, widget2=static)
 
 
-        main_widget[:2, 2]  = static.children[0]
-        main_widget[2:, 2] = static.children[1]
+
 
 
         #main_widget[0,0] = left_parameters_linkd.children[0]
