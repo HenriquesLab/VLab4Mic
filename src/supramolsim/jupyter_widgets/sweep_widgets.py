@@ -324,9 +324,9 @@ class Sweep_gui(jupyter_gui):
         analysis_widget.show()
 
 
-    def structure_probe_ui(self, height = '400px'):
+    def structure_probe_ui(self, height = '400px', structures=["9I0K", "1XI5"]):
         #structures = ["9I0K", "1XI5", "8GMO"]
-        structures = ["9I0K", "1XI5"]
+        #structures = ["9I0K", "1XI5"]
         #structures = ["7R5K", "1XI5"]
         list_of_experiments = dict()
         structure_target_suggestion = dict()
@@ -480,24 +480,27 @@ class Sweep_gui(jupyter_gui):
         left_parameters_linkd.layout = widgets.Layout(width='50%',display='inline-flex')
 
         def calculate_labelled_particle(widget, options, emitter_plotsize, source_plotsize):
-            structure = widget.children[0].children[0].children[0].value
+            struct = widget.children[0].children[0].children[0].value
             probe_name = widget.children[1].children[0].children[0].value
-            target_probe_params = options[structure]
-            #print(structure, probe_name, probe_params)
+            probe_target_type=None
+            probe_target_value=None
+            if self.probe_parameters[probe_name]["target"]["type"] is None:
+                probe_target_type = options[struct]["probe_target_type"]
+                probe_target_value = options[struct]["probe_target_value"]
             with io.capture_output() as captured2:
                 #vsample, experiment = .generate_virtual_sample(
-                list_of_experiments[struct].remove_probes()
-                self.my_experiment.structure_id = structure
+                self.my_experiment.structure_id = struct
                 self.my_experiment.remove_probes()
-                if self.probe_parameters[probe_name]["target"]["type"] is None:
-                    self.my_experiment.add_probe(probe_name, **target_probe_params)
-                    list_of_experiments[struct].add_probe(probe_name, **target_probe_params)
-                else:
-                    self.my_experiment.add_probe(probe_name, **self.probe_parameters[probe_name])
-                    list_of_experiments[struct].add_probe(probe_name, **self.probe_parameters[probe_name])
-                #self.my_experiment.structure = copy.copy(list_of_experiments[struct].structure)
-                #self.my_experiment.objects_created["structure"] = True
-                #list_of_experiments[struct].add_probe(probe_name, **probe_params)
+                self.my_experiment.add_probe(probe_name,
+                    probe_target_type=probe_target_type,
+                    probe_target_value=probe_target_value
+                    )
+                list_of_experiments[struct].remove_probes()
+                list_of_experiments[struct].add_probe(probe_name,
+                    probe_target_type=probe_target_type,
+                    probe_target_value=probe_target_value
+                    )
+                #list_of_experiments[struct].add_probe(probe_name, **target_probe_params)
                 list_of_experiments[struct].build(modules=["particle",])
                 fig = plt.figure()
                 ax = fig.add_subplot(111, projection="3d")
@@ -511,11 +514,12 @@ class Sweep_gui(jupyter_gui):
                 #print(experiment.particle.emitters)
                 plt.close()
                 return fig
+                
 
         def select_model_action(b):
             self.my_experiment.structure = copy.deepcopy(list_of_experiments[struct].structure)
             self.my_experiment.objects_created["structure"] = True
-            self.my_experiment.build(modules="particle")
+            self.my_experiment.build(modules=["particle",])
 
 
         static = self.wgen.gen_action_with_options(
