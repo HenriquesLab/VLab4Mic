@@ -321,7 +321,7 @@ class Sweep_gui(jupyter_gui):
 
 
     def structure_probe_ui(self, height = '400px'):
-        structures = ["9I0K", "1XI5"]
+        structures = ["9I0K", "1XI5", "8GMO"]
         #structures = ["7R5K", "1XI5"]
         list_of_experiments = dict()
         structure_target_suggestion = dict()
@@ -460,13 +460,15 @@ class Sweep_gui(jupyter_gui):
             #print(structure, probe_name, probe_params)
             with io.capture_output() as captured2:
                 #vsample, experiment = .generate_virtual_sample(
-                self.my_experiment.remove_probes()
-                self.my_experiment.structure_id = structure
-                self.my_experiment.add_probe(probe_name, **probe_params)
-                self.my_experiment.build(modules=["structure", "particle"])
+                list_of_experiments[struct].remove_probes()
+                #self.my_experiment.structure_id = structure
+                #self.my_experiment.structure = copy.copy(list_of_experiments[struct].structure)
+                #self.my_experiment.objects_created["structure"] = True
+                list_of_experiments[struct].add_probe(probe_name, **probe_params)
+                list_of_experiments[struct].build(modules=["particle",])
                 fig = plt.figure()
                 ax = fig.add_subplot(111, projection="3d")
-                self.my_experiment.particle.gen_axis_plot(
+                list_of_experiments[struct].particle.gen_axis_plot(
                     axis_object=ax,
                     with_sources=True, 
                     axesoff=True,
