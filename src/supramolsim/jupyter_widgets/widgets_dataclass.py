@@ -439,7 +439,7 @@ class jupyter_gui:
         # DEMOS
         labels_gui.add_label("Structure specific labels")
         if self.my_experiment.structure is not None:
-            if len(vlab_probes) == 0:
+            if len(vlab_probes) != 0:
                 labels_gui.add_dropdown(
                     "label_dropdown", options=vlab_probes, value=vlab_probes[1]
                 )
