@@ -319,8 +319,8 @@ class Sweep_gui(jupyter_gui):
                 structure_target_suggestion[struct]["probe_target_value"] = sequence
         structure_name = widgets.Dropdown(options=structures)
         n_atoms = widgets.IntSlider(value=1e4, min=0, max=1e5, steps = 100, description="Atoms to display", style = {'description_width': 'initial'}, continuous_update=False)
-        h_rotaiton = widgets.IntSlider(value=0, min=-90, max=90, description="Horizontal view",  style = {'description_width': 'initial'}, continuous_update=False)
-        v_rotation = widgets.IntSlider(value=0, min=-90, max=90, description="Vertical view",  style = {'description_width': 'initial'}, continuous_update=False)
+        h_rotaiton = widgets.IntSlider(value=0, min=-90, max=90, description="Horizontal rotation",  style = {'description_width': 'initial'}, continuous_update=False)
+        v_rotation = widgets.IntSlider(value=0, min=-90, max=90, description="Vertical rotation",  style = {'description_width': 'initial'}, continuous_update=False)
         structure_params = [structure_name, n_atoms, h_rotaiton, v_rotation]
         structure_output = widgets.Output()
         def on_changes(change):
@@ -330,15 +330,6 @@ class Sweep_gui(jupyter_gui):
                 p2 = n_atoms.value
                 p3 = h_rotaiton.value
                 p4 = v_rotation.value
-                index = structure_params.index(change.owner)
-                if index == 0: # structure id
-                    p1 = change.new
-                elif index == 1:
-                    p2 = change.new
-                elif index == 2:
-                    p3 = change.new
-                elif index == 3:
-                    p4 = change.new
                 total = list_of_experiments[p1].structure.num_assembly_atoms
                 if total > p2:
                     fraction = p2/total
@@ -450,9 +441,9 @@ class Sweep_gui(jupyter_gui):
         probes2show.extend(copy.copy(self.vlab_probes))
 
         w_probe_name = widgets.Dropdown(options=probes2show)
-        w_probe_n_atoms = widgets.IntSlider(value=1e2, min=0, max=1e4, steps = 10, description="Atoms to display", style = {'description_width': 'initial'}, continuous_update=False)
-        w_probe_h_rotaiton = widgets.IntSlider(value=0, min=-90, max=90, description="Horizontal view",  style = {'description_width': 'initial'}, continuous_update=False)
-        w_probe_v_rotation = widgets.IntSlider(value=0, min=-90, max=90, description="Vertical view",  style = {'description_width': 'initial'}, continuous_update=False)
+        w_probe_n_atoms = widgets.IntSlider(value=1e2, min=0, max=1e3, steps = 10, description="Atoms to display", style = {'description_width': 'initial'}, continuous_update=False)
+        w_probe_h_rotaiton = widgets.IntSlider(value=0, min=-90, max=90, description="Horizontal rotation",  style = {'description_width': 'initial'}, continuous_update=False)
+        w_probe_v_rotation = widgets.IntSlider(value=0, min=-90, max=90, description="Vertical rotation",  style = {'description_width': 'initial'}, continuous_update=False)
         w_probe_params = [w_probe_name, w_probe_n_atoms, w_probe_h_rotaiton, w_probe_v_rotation]
         w_probe_model_output = widgets.Output()
         
@@ -489,6 +480,10 @@ class Sweep_gui(jupyter_gui):
         
         ## show particle
         def calculate_labelled_particle(b):
+            emitter_plotsize.disabled = False 
+            epitope_plotsize.disabled = False 
+            particle_h_rotation.disabled = False 
+            particle_v_rotation.disabled = False 
             struct = structure_name.value
             probe_name = w_probe_name.value
             probe_target_type=None
@@ -562,13 +557,13 @@ class Sweep_gui(jupyter_gui):
             self.my_experiment.objects_created["structure"] = True
             self.my_experiment.build(modules=["particle",])
         
-        emitter_plotsize = widgets.IntSlider(value=1, min=1, max=24, description="Emitters size",  style = {'description_width': 'initial'}, continuous_update=False)
-        epitope_plotsize = widgets.IntSlider(value=1, min=1, max=24, description="Epitope size",  style = {'description_width': 'initial'}, continuous_update=False)
-        particle_h_rotation = widgets.IntSlider(value=0, min=-90, max=90, description="Horizontal view",  style = {'description_width': 'initial'}, continuous_update=False)
-        particle_v_rotation = widgets.IntSlider(value=0, min=-90, max=90, description="Vertical view",  style = {'description_width': 'initial'}, continuous_update=False)
+        emitter_plotsize = widgets.IntSlider(value=1, min=0, max=24, description="Emitters size",  style = {'description_width': 'initial'}, continuous_update=False, disabled=True)
+        epitope_plotsize = widgets.IntSlider(value=1, min=0, max=24, description="Epitope size",  style = {'description_width': 'initial'}, continuous_update=False, disabled=True)
+        particle_h_rotation = widgets.IntSlider(value=0, min=-90, max=90, description="Horizontal rotation",  style = {'description_width': 'initial'}, continuous_update=True, disabled=True)
+        particle_v_rotation = widgets.IntSlider(value=0, min=-90, max=90, description="Vertical rotation",  style = {'description_width': 'initial'}, continuous_update=True, disabled=True)
         particle_output = widgets.Output()
-        preview_button = widgets.Button(description = "Preview labelling")
-        set_button = widgets.Button(description = "Use this model")
+        preview_button = widgets.Button(description = "Update labelling", layout=widgets.Layout(width='auto'))
+        set_button = widgets.Button(description = "Set this model for virtual sample", layout=widgets.Layout(width='auto'))
         preview_button.on_click(calculate_labelled_particle)
         set_button.on_click(select_model_action)
         #
