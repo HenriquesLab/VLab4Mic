@@ -611,7 +611,8 @@ class Sweep_gui(jupyter_gui):
                     )
         nparticles = widgets.IntSlider(value=1, min=1, max=20, description="Number of particles",  style = {'description_width': 'initial'},continuous_update=False)
         angle_view = widgets.IntSlider(value=20, min=-90, max=90, description="Angle view",  style = {'description_width': 'initial'},continuous_update=False)
-        vsample_params = [nparticles, angle_view]
+        random_orientations = widgets.Checkbox(description = "Randomise orientations", value=True)
+        vsample_params = [nparticles,angle_view,random_orientations]
         vsample_output = widgets.Output()
         def on_changes(change):
             vsample_output.clear_output()
@@ -629,7 +630,8 @@ class Sweep_gui(jupyter_gui):
                     with io.capture_output() as captured:
                         self.my_experiment._build_coordinate_field(
                             keep=True,
-                            nparticles=change.new
+                            nparticles=nparticles.value,
+                            random_orientations=random_orientations.value
                         )
                         plot = self.my_experiment.coordinate_field.show_field(
                             return_fig=True,
@@ -637,8 +639,25 @@ class Sweep_gui(jupyter_gui):
                         )
                         plt.close()
                     display(plot)
+                elif index == 2:
+                    with io.capture_output() as captured:
+
+                        if change.new:
+                            self.my_experiment.coordinate_field.generate_random_orientations()
+                            self.my_experiment.coordinate_field.construct_static_field(reorient=True)
+                        else:
+                            default_axis = self.my_experiment.coordinate_field.molecules_default_orientation
+                            self.my_experiment.coordinate_field.generate_global_orientation(global_orientation=default_axis["direction"])
+                            self.my_experiment.coordinate_field.construct_static_field(reorient=True)
+                        plot = self.my_experiment.coordinate_field.show_field(
+                                return_fig=True,
+                                view_init=[angle_view.value,0,0]
+                            )
+                        plt.close()
+                    display(plot)
         nparticles.observe(on_changes, names="value")
         angle_view.observe(on_changes, names="value")
+        random_orientations.observe(on_changes, names="value")
         grid[:2, 0]  = widgets.VBox(vsample_params)
         grid[2:, 0] = vsample_output
         angle_view.value = 22
