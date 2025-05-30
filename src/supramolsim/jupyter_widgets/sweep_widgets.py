@@ -300,7 +300,7 @@ class Sweep_gui(jupyter_gui):
 
 
     def structure_probe_ui(self, height = '400px', structures=["9I0K", "1XI5"]):
-        main_widget = GridspecLayout(7, 3, height=height)
+        main_widget = GridspecLayout(7, 10, height=height)
         params_section = 2
         list_of_experiments = dict()
         structure_target_suggestion = dict()
@@ -346,8 +346,8 @@ class Sweep_gui(jupyter_gui):
         n_atoms.observe(on_changes, names="value")
         h_rotaiton.observe(on_changes, names="value")
         v_rotation.observe(on_changes, names="value")
-        main_widget[:params_section, 0]  = widgets.VBox(structure_params)
-        main_widget[params_section:, 0] = structure_output
+        main_widget[:params_section, :3]  = widgets.VBox(structure_params)
+        main_widget[params_section:, :3] = structure_output
         # probes 
         list_of_probe_objects = {}
         with io.capture_output() as captured:
@@ -475,8 +475,8 @@ class Sweep_gui(jupyter_gui):
         
         structure_name.observe(my_update, names="value")
         
-        main_widget[:params_section, 1] = widgets.VBox(w_probe_params)
-        main_widget[params_section:, 1] = w_probe_model_output
+        main_widget[:params_section, 3:6] = widgets.VBox(w_probe_params)
+        main_widget[params_section:, 3:6] = w_probe_model_output
         
         ## show particle
         def calculate_labelled_particle(b):
@@ -562,6 +562,7 @@ class Sweep_gui(jupyter_gui):
         particle_h_rotation = widgets.IntSlider(value=0, min=-90, max=90, description="Horizontal rotation",  style = {'description_width': 'initial'}, continuous_update=True, disabled=True)
         particle_v_rotation = widgets.IntSlider(value=0, min=-90, max=90, description="Vertical rotation",  style = {'description_width': 'initial'}, continuous_update=True, disabled=True)
         particle_output = widgets.Output()
+        feedback_text = widgets.Label("No model has been selected", style = dict(font_size= "15px", font_weight='bold'))
         preview_button = widgets.Button(description = "Update labelling", layout=widgets.Layout(width='auto'))
         set_button = widgets.Button(description = "Set this model for virtual sample", layout=widgets.Layout(width='auto'))
         preview_button.on_click(calculate_labelled_particle)
@@ -572,8 +573,11 @@ class Sweep_gui(jupyter_gui):
         particle_h_rotation.observe(update_plot, names="value")
         particle_v_rotation.observe(update_plot, names="value")
         buttons_widget = widgets.HBox([preview_button, set_button])
-        main_widget[:params_section, 2]  = widgets.VBox([buttons_widget, emitter_plotsize, epitope_plotsize, particle_h_rotation , particle_v_rotation])
-        main_widget[params_section:, 2] = particle_output
+        size_widgets = widgets.VBox([emitter_plotsize, epitope_plotsize])
+        visualisation_widgets  = widgets.VBox([particle_h_rotation, particle_v_rotation])
+        sliders_box = widgets.HBox([size_widgets, visualisation_widgets])
+        main_widget[:params_section, 6:]  = widgets.VBox([buttons_widget, sliders_box, feedback_text], layout=widgets.Layout(margin='0px'))
+        main_widget[params_section:, 6:] = particle_output
         structure_name.value = structures[1]
         return main_widget
     
