@@ -480,6 +480,7 @@ class Sweep_gui(jupyter_gui):
         
         ## show particle
         def calculate_labelled_particle(b):
+            set_button.disabled = False
             emitter_plotsize.disabled = False 
             epitope_plotsize.disabled = False 
             particle_h_rotation.disabled = False 
@@ -488,7 +489,10 @@ class Sweep_gui(jupyter_gui):
             probe_name = w_probe_name.value
             probe_target_type=None
             probe_target_value=None
-
+            psize1 = emitter_plotsize.value
+            psize2 = epitope_plotsize.value
+            hview = particle_h_rotation.value
+            vview = particle_v_rotation.value
             if self.probe_parameters[probe_name]["target"]["type"] is None:
                 probe_target_type = structure_target_suggestion[struct]["probe_target_type"]
                 probe_target_value = structure_target_suggestion[struct]["probe_target_value"]
@@ -509,7 +513,13 @@ class Sweep_gui(jupyter_gui):
                         )
                     #list_of_experiments[struct].add_probe(probe_name, **target_probe_params)
                     list_of_experiments[struct].build(modules=["particle",])    
-                    figure = show_particle(struct = struct)
+                    figure = show_particle(
+                        struct = struct,
+                        emitter_plotsize=psize1,
+                        source_plotsize=psize2,
+                        hview=hview,
+                        vview=vview
+                        )
                     plt.close()
                 display(figure)
             
@@ -553,18 +563,26 @@ class Sweep_gui(jupyter_gui):
 
 
         def select_model_action(b):
+            set_button.disabled = True
+            preview_button.disabled = True
+            feedback_text.value = "<b>Updating virtual sample model...</b>"
             self.my_experiment.structure = copy.deepcopy(list_of_experiments[self.my_experiment.structure_id].structure)
             self.my_experiment.objects_created["structure"] = True
             self.my_experiment.build(modules=["particle",])
+            structname = self.my_experiment.structure_id
+            probe_name = list(self.my_experiment.probe_parameters.keys())[0]
+            feedback_text.value = "<b>Selected model for virutal sample: " + "<br>" + structname + " with probe " + probe_name + "</b>"
+            set_button.disabled = False
+            preview_button.disabled = False
         
         emitter_plotsize = widgets.IntSlider(value=1, min=0, max=24, description="Emitters size",  style = {'description_width': 'initial'}, continuous_update=False, disabled=True)
         epitope_plotsize = widgets.IntSlider(value=1, min=0, max=24, description="Epitope size",  style = {'description_width': 'initial'}, continuous_update=False, disabled=True)
         particle_h_rotation = widgets.IntSlider(value=0, min=-90, max=90, description="Horizontal rotation",  style = {'description_width': 'initial'}, continuous_update=True, disabled=True)
         particle_v_rotation = widgets.IntSlider(value=0, min=-90, max=90, description="Vertical rotation",  style = {'description_width': 'initial'}, continuous_update=True, disabled=True)
         particle_output = widgets.Output()
-        feedback_text = widgets.Label("No model has been selected", style = dict(font_size= "15px", font_weight='bold'))
+        feedback_text = widgets.HTML("<b>No model has been selected</b>", style = dict(font_size= "15px", font_weight='bold'))
         preview_button = widgets.Button(description = "Update labelling", layout=widgets.Layout(width='auto'))
-        set_button = widgets.Button(description = "Set this model for virtual sample", layout=widgets.Layout(width='auto'))
+        set_button = widgets.Button(description = "Set this model for virtual sample", layout=widgets.Layout(width='auto'), disabled = True)
         preview_button.on_click(calculate_labelled_particle)
         set_button.on_click(select_model_action)
         #
