@@ -47,32 +47,7 @@ class Sweep_gui(jupyter_gui):
         self.probes_per_structure = copy.copy(self.my_experiment.config_probe_per_structure_names)
         self.probe_parameters = copy.copy(self.my_experiment.config_probe_params)
         self.vlab_probes = copy.copy(self.my_experiment.config_global_probes_names)
-        
-        #for file in os.listdir(self.config_directories["probes"]):
-        #    if os.path.splitext(file)[-1] == ".yaml" and "_template" not in file:
-        #        label_config_path = os.path.join(
-        #            self.config_directories["probes"], file
-        #        )
-        #        label_parmeters = supramolsim.load_yaml(label_config_path)
-        #        lablname = os.path.splitext(file)[0]
-        #        # self.vlab_probes.append(lablname)
-        #        # self.probe_parameters[lablname] = label_parmeters
-        #        if "Mock" in label_parmeters["known_targets"]:
-        #            self.targetless_probes.append(lablname)
-        #            self.probe_parameters[lablname] = label_parmeters
-        #        if "Generic" in label_parmeters["known_targets"]:
-        #            self.vlab_probes.append(lablname)
-        #            self.probe_parameters[lablname] = label_parmeters
-        #        else:
-        #            #self.vlab_probes.append(lablname)
-        #            self.probe_parameters[lablname] = label_parmeters
-        #            for known_structures in label_parmeters["known_targets"]:
-        #                if known_structures in self.probes_per_structure.keys():
-        #                    self.probes_per_structure[known_structures].append(lablname)
-        #                else:
-        #                    self.probes_per_structure[known_structures] = [
-        #                        lablname,
-        #                    ]
+
 
     def _create_param_widgets(self):
         for groupname, group_parameters in self.param_settings.items():
@@ -604,28 +579,6 @@ class Sweep_gui(jupyter_gui):
         buttons_widget = widgets.HBox([preview_button, set_button])
         main_widget[:params_section, 2]  = widgets.VBox([buttons_widget, emitter_plotsize, epitope_plotsize, particle_h_rotation , particle_v_rotation])
         main_widget[params_section:, 2] = particle_output
-
-
-        #static = self.wgen.gen_action_with_options(
-        #    param_widget=left_parameters_linkd, 
-        #    routine=calculate_labelled_particle, 
-        #    emitter_plotsize=["int_slider", [1,0,30,1]], 
-        #    source_plotsize=["int_slider", [1,0,30,1]],
-        #    select_model = ["button", ["Use this model", select_model_action]],
-        #    options=structure_target_suggestion,
-        #    action_name="Preview labelled particle",
-        #    height=height)
-        
-        #main_widget = self.wgen.gen_box(widget1=left_parameters_linkd, widget2=static)
-
-
-
-
-
-        #main_widget[0,0] = left_parameters_linkd.children[0]
-        #main_widget[0,1] = left_parameters_linkd.children[1]
-        #main_widget[0,2] = static
-        #main_widget.layout = widgets.Layout(width='100%',display='inline-flex')
         structure_name.value = structures[1]
         return main_widget
     
@@ -769,9 +722,6 @@ class Sweep_gui(jupyter_gui):
             )
             ax.set_xticks([])
             ax.set_yticks([])
-            #ax.set_title("preview channel:" + single_channel)
-            #ax.cbar_axes.colorbar(preview_image)
-            # grid[i].set_visible(False)
             plt.close()
             return fig
 
