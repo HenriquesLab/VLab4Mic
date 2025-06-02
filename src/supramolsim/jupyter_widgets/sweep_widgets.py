@@ -563,17 +563,18 @@ class Sweep_gui(jupyter_gui):
 
 
         def select_model_action(b):
-            set_button.disabled = True
-            preview_button.disabled = True
-            feedback_text.value = "<b>Updating virtual sample model...</b>"
-            self.my_experiment.structure = copy.deepcopy(list_of_experiments[self.my_experiment.structure_id].structure)
-            self.my_experiment.objects_created["structure"] = True
-            self.my_experiment.build(modules=["particle",])
-            structname = self.my_experiment.structure_id
-            probe_name = list(self.my_experiment.probe_parameters.keys())[0]
-            feedback_text.value = "<b>Selected model for virutal sample: " + "<br>" + structname + " with probe " + probe_name + "</b>"
-            set_button.disabled = False
-            preview_button.disabled = False
+            with io.capture_output() as captured: 
+                set_button.disabled = True
+                preview_button.disabled = True
+                feedback_text.value = "<b>Updating virtual sample model...</b>"
+                self.my_experiment.structure = copy.deepcopy(list_of_experiments[self.my_experiment.structure_id].structure)
+                self.my_experiment.objects_created["structure"] = True
+                self.my_experiment.build(modules=["particle",])
+                structname = self.my_experiment.structure_id
+                probe_name = list(self.my_experiment.probe_parameters.keys())[0]
+                feedback_text.value = "<b>Selected model for virutal sample: " + "<br>" + structname + " with probe " + probe_name + "</b>"
+                set_button.disabled = False
+                preview_button.disabled = False
         
         emitter_plotsize = widgets.IntSlider(value=1, min=0, max=24, description="Emitters size",  style = {'description_width': 'initial'}, continuous_update=False, disabled=True)
         epitope_plotsize = widgets.IntSlider(value=1, min=0, max=24, description="Epitope size",  style = {'description_width': 'initial'}, continuous_update=False, disabled=True)
