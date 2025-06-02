@@ -717,29 +717,28 @@ class Sweep_gui(jupyter_gui):
                 axs.text(0.05, 0.2, s3, transform=axs.transAxes, size = 10, color = "w")
 
         modalities_options.pop()
-        modality_and_acq = {}
-        for modality_name in modalities_options:
-            modality_and_acq[modality_name] = None
         wgt2 = self.wgen.gen_interactive_dropdown(
                     options=modalities_options,
                     orientation="vertical",
                     routine=show_modality,
                     height=height
         )
-        mods_text_base = "<b> Current modalities and acquisition parameters: </b>"
+        mods_text_base = "<b> Selected modalities and acquisition parameters: </b>"
         
-        def _mods_text_update(mods_text_base):
-            mods_text = mods_text_base + ": <br>"
-            for modality_name, acq_params in modality_and_acq.items():
+        def _mods_text_update(mods_text_base, mod_acq_params, keys_to_use = ["exp_time", "noise"]):
+            mods_text = mods_text_base + "<br>"
+            for modality_name, acq_params in mod_acq_params.items():
                 if acq_params is None:
                     acq_params = "Default"
-                mods_text +=  modality_name + ": " + "&emsp;" +  str(acq_params) + "<br>"
+                else:
+                    keys_subset = {key: acq_params[key] for key in keys_to_use}
+                    acq_params["exp_time"] = round(keys_subset["exp_time"], 3)
+                mods_text +=  modality_name + ": " + "&emsp;" +  str(keys_subset) + "<br>"
             return mods_text
         
-        selected_mods_feedback = widgets.HTML(_mods_text_update(mods_text_base), 
+        selected_mods_feedback = widgets.HTML(_mods_text_update(mods_text_base, self.my_experiment.selected_mods), 
                                           style = dict(font_size= "15px", font_weight='bold'))
         wgt2.children[0].children += (selected_mods_feedback,)
-        #wgt2.children[0].children.append(selected_mods_text)
         wgt2.children[0].children[0].description = "Modality preview"
         wgt2.children[0].children[0].style = {'description_width': 'initial'}
         grid[:2, 1]  = wgt2.children[0]
@@ -779,18 +778,25 @@ class Sweep_gui(jupyter_gui):
             ax.set_xticks([])
             ax.set_yticks([])
             plt.close()
+            static.children[0].children[2].disabled = False
             return fig
 
         def button_method(b):
-            selected_mod = list(preview_exp.imaging_modalities.keys())[0]
-            mod_acq =copy.deepcopy(preview_exp.selected_mods[selected_mod])
+            selected_mod = wgt2.children[0].children[0].value
+            exp_time= static.children[0].children[0].value
+            noise = static.children[0].children[1].value
             self.my_experiment.add_modality(modality_name=selected_mod, save=True)
-            self.my_experiment.set_modality_acq(modality_name=selected_mod, **mod_acq)
+            self.my_experiment.set_modality_acq(modality_name=selected_mod,
+                                                exp_time=exp_time,
+                                                noise=noise,
+                                                save=True)
+            wgt2.children[0].children[-1].value = _mods_text_update(mods_text_base, self.my_experiment.selected_mods)
 
         def button_method2(b):
             modalities_set = list(self.my_experiment.imaging_modalities.keys())
             for mod in modalities_set:
                 self.my_experiment.update_modality(modality_name=mod, remove=True)
+            wgt2.children[0].children[-1].value = _mods_text_update(mods_text_base, self.my_experiment.selected_mods)
 
 
         static = self.wgen.gen_action_with_options(
@@ -802,6 +808,8 @@ class Sweep_gui(jupyter_gui):
             button2 = ["button", ["Clear all modalities", button_method2]],
             options=None,
             action_name="Preview acquisition")
+        button_method2(True)
+        static.children[0].children[2].disabled = True
         grid[:2, 2]  = static.children[0]
         grid[2:, 2] = static.children[1]
         return grid
