@@ -787,7 +787,7 @@ class Sweep_gui(jupyter_gui):
             exp_time= static.children[0].children[0].value
             noise = static.children[0].children[1].value
             if selected_mod == "All":
-                for mod_names in modalities_options[0:len(modalities_options)]:
+                for mod_names in modalities_options[0:len(modalities_options)-1]:
                     self.my_experiment.add_modality(modality_name=mod_names, save=True)
             else:
                 self.my_experiment.add_modality(modality_name=selected_mod, save=True)
