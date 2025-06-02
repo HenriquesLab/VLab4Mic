@@ -716,7 +716,7 @@ class Sweep_gui(jupyter_gui):
                 axs.text(0.05, 0.15, s2, transform=axs.transAxes, size = 10, color = "w")
                 axs.text(0.05, 0.2, s3, transform=axs.transAxes, size = 10, color = "w")
 
-        modalities_options.pop()
+        
         wgt2 = self.wgen.gen_interactive_dropdown(
                     options=modalities_options,
                     orientation="vertical",
@@ -748,48 +748,53 @@ class Sweep_gui(jupyter_gui):
         current_acq = dict()
 
         def preview_acquisition(widget, exposure_time, noise):
+            
             field = self.my_experiment.coordinate_field.export_field()
             preview_exp.exported_coordinate_field = field
             preview_exp.objects_created["exported_coordinate_field"] = True
             selected_mod = widget.children[0].children[0].value
-            fig = plt.figure()
-            ax = fig.add_subplot(111)
-            with io.capture_output() as captured:
-                preview_exp.update_modality(modality_name=selected_mod,remove=True)
-                preview_exp.add_modality(modality_name=selected_mod, save=False)
-                preview_exp.set_modality_acq(modality_name=selected_mod, exp_time=exposure_time, noise=noise)
-                preview_exp.build(modules=["imager",])
-                # consider using run_simulation
-                timeseries, calibration_beads = (
-                    preview_exp.imager.generate_imaging(
-                        modality=selected_mod, exp_time=exposure_time, noise=noise
+            if selected_mod != "All":
+                fig = plt.figure()
+                ax = fig.add_subplot(111)
+                with io.capture_output() as captured:
+                    preview_exp.update_modality(modality_name=selected_mod,remove=True)
+                    preview_exp.add_modality(modality_name=selected_mod, save=False)
+                    preview_exp.set_modality_acq(modality_name=selected_mod, exp_time=exposure_time, noise=noise)
+                    preview_exp.build(modules=["imager",])
+                    # consider using run_simulation
+                    timeseries, calibration_beads = (
+                        preview_exp.imager.generate_imaging(
+                            modality=selected_mod, exp_time=exposure_time, noise=noise
+                        )
                     )
+                    current_acq = preview_exp.selected_mods[selected_mod]
+                min_val = np.min(timeseries[0])
+                max_val = np.max(timeseries[0])
+                preview_image=ax.imshow(
+                    timeseries[0],
+                    cmap="gray",
+                    interpolation="none",
+                    vmin=min_val,
+                    vmax=max_val,
                 )
-                current_acq = preview_exp.selected_mods[selected_mod]
-            min_val = np.min(timeseries[0])
-            max_val = np.max(timeseries[0])
-            preview_image=ax.imshow(
-                timeseries[0],
-                cmap="gray",
-                interpolation="none",
-                vmin=min_val,
-                vmax=max_val,
-            )
-            ax.set_xticks([])
-            ax.set_yticks([])
-            plt.close()
-            static.children[0].children[2].disabled = False
-            return fig
+                ax.set_xticks([])
+                ax.set_yticks([])
+                plt.close()
+                return fig
 
         def button_method(b):
             selected_mod = wgt2.children[0].children[0].value
             exp_time= static.children[0].children[0].value
             noise = static.children[0].children[1].value
-            self.my_experiment.add_modality(modality_name=selected_mod, save=True)
-            self.my_experiment.set_modality_acq(modality_name=selected_mod,
-                                                exp_time=exp_time,
-                                                noise=noise,
-                                                save=True)
+            if selected_mod == "All":
+                for mod_names in modalities_options[0:len(modalities_options)]:
+                    self.my_experiment.add_modality(modality_name=mod_names, save=True)
+            else:
+                self.my_experiment.add_modality(modality_name=selected_mod, save=True)
+                self.my_experiment.set_modality_acq(modality_name=selected_mod,
+                                                    exp_time=exp_time,
+                                                    noise=noise,
+                                                    save=True)
             wgt2.children[0].children[-1].value = _mods_text_update(mods_text_base, self.my_experiment.selected_mods)
 
         def button_method2(b):
@@ -804,12 +809,12 @@ class Sweep_gui(jupyter_gui):
             routine=preview_acquisition,
             exposure_time = ["float_slider", [0.01,0,0.05,0.001]],
             noise = ["checkbox", True],
-            button1 = ["button", ["Set parameters of preview", button_method]],
+            button1 = ["button", ["Add current parameters", button_method]],
             button2 = ["button", ["Clear all modalities", button_method2]],
             options=None,
             action_name="Preview acquisition")
         button_method2(True)
-        static.children[0].children[2].disabled = True
+
         grid[:2, 2]  = static.children[0]
         grid[2:, 2] = static.children[1]
         return grid
