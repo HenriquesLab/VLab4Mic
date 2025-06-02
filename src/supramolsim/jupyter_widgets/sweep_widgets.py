@@ -716,13 +716,30 @@ class Sweep_gui(jupyter_gui):
                 axs.text(0.05, 0.15, s2, transform=axs.transAxes, size = 10, color = "w")
                 axs.text(0.05, 0.2, s3, transform=axs.transAxes, size = 10, color = "w")
 
-
+        modalities_options.pop()
+        modality_and_acq = {}
+        for modality_name in modalities_options:
+            modality_and_acq[modality_name] = None
         wgt2 = self.wgen.gen_interactive_dropdown(
                     options=modalities_options,
                     orientation="vertical",
                     routine=show_modality,
                     height=height
         )
+        mods_text_base = "<b> Current modalities and acquisition parameters: </b>"
+        
+        def _mods_text_update(mods_text_base):
+            mods_text = mods_text_base + ": <br>"
+            for modality_name, acq_params in modality_and_acq.items():
+                if acq_params is None:
+                    acq_params = "Default"
+                mods_text +=  modality_name + ": " + "&emsp;" +  str(acq_params) + "<br>"
+            return mods_text
+        
+        selected_mods_feedback = widgets.HTML(_mods_text_update(mods_text_base), 
+                                          style = dict(font_size= "15px", font_weight='bold'))
+        wgt2.children[0].children += (selected_mods_feedback,)
+        #wgt2.children[0].children.append(selected_mods_text)
         wgt2.children[0].children[0].description = "Modality preview"
         wgt2.children[0].children[0].style = {'description_width': 'initial'}
         grid[:2, 1]  = wgt2.children[0]
