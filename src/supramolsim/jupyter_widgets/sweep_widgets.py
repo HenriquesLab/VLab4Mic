@@ -723,6 +723,8 @@ class Sweep_gui(jupyter_gui):
                     routine=show_modality,
                     height=height
         )
+        wgt2.children[0].children[0].description = "Modality preview"
+        wgt2.children[0].children[0].style = {'description_width': 'initial'}
         grid[:2, 1]  = wgt2.children[0]
         grid[2:, 1] = wgt2.children[1]
 
