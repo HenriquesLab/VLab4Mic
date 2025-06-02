@@ -164,7 +164,7 @@ class Label:
             yaml.dump(yaml_dict, file)
 
     def plot_emitters(
-        self, view_init=[0, 0, 0], axesoff=True, show_axis=True
+        self, view_init=[0, 0, 0], axesoff=True, show_axis=True, return_plot=False
     ):  # TODO: test
         if self.params["emitters_coords"] is None:
             print(
@@ -192,7 +192,11 @@ class Label:
             ax.set_box_aspect(
                 [ub - lb for lb, ub in (getattr(ax, f"get_{a}lim")() for a in "xyz")]
             )
-            fig.show
+            if return_plot:
+                plt.close()
+                return fig
+            else: 
+                fig.show
 
     def get_notNone_params(self):
         for key, value in self.params.items():

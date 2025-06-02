@@ -221,6 +221,15 @@ class Field:
             orientations.append(np.array(sampl.sample_spherical_normalised(1, ndim=3)))
         self.set_molecule_param("orientations", orientations)
 
+    def generate_global_orientation(self, global_orientation = None):
+        # give new orientation
+        if global_orientation is not None:
+            norientations = self.get_molecule_param("nMolecules")
+            orientations = []
+            for i in range(norientations):
+                orientations.append(global_orientation)
+            self.set_molecule_param("orientations", orientations)
+
     def _set_molecule_minimal_distance(self, dist):
         if dist > 0:
             print(
@@ -311,6 +320,7 @@ class Field:
     def create_molecules_from_InstanceObject(self, InstancePrototype: LabeledInstance):
         reps = self.get_molecule_param("nMolecules")
         particle_copy = copy.deepcopy(InstancePrototype)
+        self.molecules_default_orientation = particle_copy._get_source_parameter("axis")
         particle_copy.scale_coordinates_system(self.get_field_param("scale"))
         if self.molecules_params["minimal_distance"] is None:
             self._set_molecule_minimal_distance(
@@ -408,7 +418,7 @@ class Field:
     # the rationale is, there will be emitters that correspond to one or other emitters
     # and all of them will be able to be visualised if the optics define it
 
-    def construct_static_field(self):
+    def construct_static_field(self, relocate=True, reorient=True):
         if self.molecules:
             # verify absolute positions exist
             if self.get_molecule_param("absolute_positions") is None:
@@ -417,8 +427,10 @@ class Field:
                 self.calculate_absolute_reference()
             # the only thing that will be needed every time is the placing of the particles
             # in the field
-            self.relocate_molecules()
-            self.reorient_molecules()
+            if relocate:
+                self.relocate_molecules()
+            if reorient:
+                self.reorient_molecules()
             # pull emitters by fluorophores
             self._construct_channels_by_fluorophores()
         else:

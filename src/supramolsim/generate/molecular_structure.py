@@ -564,6 +564,7 @@ class MolecularStructureParser:
         axesoff=True,
         show_axis=True,
         with_normals=False,
+        return_plot=False
     ):
         if labelnames is None:
             fig = plt.figure()
@@ -613,7 +614,11 @@ class MolecularStructureParser:
         )
         if axesoff:
             ax.set_axis_off()
-        fig.show
+        if return_plot:
+            plt.close()
+            return fig
+        else:
+            fig.show
 
     def show_assembly_atoms(
         self, assembly_fraction=0.01, view_init=[0, 0, 0], axesoff=True

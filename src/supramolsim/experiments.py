@@ -74,6 +74,33 @@ class ExperimentParametrisation:
             modality_parameters[mod] = mod_info
         self.local_modalities_names = modalities_names_list
         self.local_modalities_parameters = modality_parameters
+        probes_dir = os.path.join(local_dir, "probes")
+        structure_dir = os.path.join(local_dir, "structures")
+        self.config_probe_params = {}
+        self.config_global_probes_names = []
+        self.config_probe_per_structure_names = {}
+        for p_file in os.listdir(probes_dir):
+            if os.path.splitext(p_file)[-1] == ".yaml" and "_template" not in p_file:
+                label_config_path = os.path.join(
+                    probes_dir, p_file
+                )
+                label_parmeters = supramolsim.load_yaml(label_config_path)
+                # print(label_parmeters)
+                lablname = os.path.splitext(p_file)[0]
+                if "Mock" in label_parmeters["known_targets"]:
+                    self.config_global_probes_names.append(lablname)
+                    self.config_probe_params[lablname] = label_parmeters
+                elif "Generic" in label_parmeters["known_targets"]:
+                    self.config_global_probes_names.append(lablname)
+                    self.config_probe_params[lablname] = label_parmeters
+                else:
+                    self.config_probe_params[lablname] = label_parmeters
+                    for struct in label_parmeters["known_targets"]:
+                        if struct in self.config_probe_per_structure_names.keys():
+                            self.config_probe_per_structure_names[struct].append(lablname)
+                        else:
+                            self.config_probe_per_structure_names[struct] = [lablname, ]
+
         #self.imaging_modalities = dict()
 
     def add_modality(self, modality_name, save=False, **kwargs):
@@ -358,24 +385,23 @@ class ExperimentParametrisation:
     def run_simulation(self, name="NONAME", acq_params=None, save=False, modality="All", **kwargs):
         # imager will run regardless, since by default
         # has a minimal coordinate field
+        if not self.generators_status("imager"):
+            self.build(modules="imager")
         if modality == "All":
             print("Simulating all modalities")
             if acq_params is None:
                 acq_params=self.selected_mods
             if self.experiment_id:
                 name = self.experiment_id
-            if self.generators_status("imager"):
-                simulation_output = generate_multi_imaging_modalities(
-                    image_generator=self.imager,
-                    experiment_name=name,
-                    savingdir=self.output_directory,
-                    write=save,
-                    # acq_params is a value in selected mods
-                    acquisition_param=acq_params,
-                )
-                return simulation_output
-            else:
-                print("Missing attributes")
+            simulation_output = generate_multi_imaging_modalities(
+                image_generator=self.imager,
+                experiment_name=name,
+                savingdir=self.output_directory,
+                write=save,
+                # acq_params is a value in selected mods
+                acquisition_param=acq_params,
+            )
+            return simulation_output
         else:
             print(f"Simulating: {modality}")
             acq_p = self.selected_mods[modality]

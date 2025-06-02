@@ -18,8 +18,15 @@ import mpl_toolkits.axes_grid1 as axes_grid1
 from ipyfilechooser import FileChooser
 from pathlib import Path
 from ezinput import EZInput
+import sys
 
-output_path = Path.home() / "vlab4mic_outputs"
+
+IN_COLAB = 'google.colab' in sys.modules
+if IN_COLAB:
+    output_path = "/content/vlab4mic_outputs"
+else:
+    output_path = Path.home() / "vlab4mic_outputs"
+
 
 if not os.path.exists(output_path):
     os.makedirs(output_path)
@@ -28,7 +35,7 @@ if not os.path.exists(output_path):
 @dataclass
 class jupyter_gui:
     my_experiment = ExperimentParametrisation()
-    structures_to_show = ["3J3Y", "7R5K", "1XI5"]
+    structures_to_show = ["3J3Y", "7R5K", "1XI5", "8GMO"]
     modalities_default = ["Widefield", "Confocal", "STED", "SMLM"]
     ouput_directory = output_path
     def __post_init__(self):
@@ -439,12 +446,17 @@ class jupyter_gui:
         # DEMOS
         labels_gui.add_label("Structure specific labels")
         if self.my_experiment.structure is not None:
-            labels_gui.add_dropdown(
-                "label_dropdown", options=vlab_probes, value=vlab_probes[1]
-            )
+            if len(vlab_probes) != 0:
+                labels_gui.add_dropdown(
+                    "label_dropdown", options=vlab_probes, value=vlab_probes[1]
+                )
+                labels_gui["label_dropdown"].value = vlab_probes[0]
+            else:
+                labels_gui.add_dropdown(
+                    "label_dropdown", options=[], dissabled = True
+                )
             labels_gui.elements["label_message"] = widgets.HTML(value="")
             labels_gui["label_dropdown"].observe(update_label_message, names="value")
-            labels_gui["label_dropdown"].value = vlab_probes[0]
             labels_gui.add_dropdown("fluo_dropdown", options=fluorophores_list)
             labels_gui.add_float_slider(
                 "Labelling_efficiency",
