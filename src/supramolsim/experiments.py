@@ -385,24 +385,23 @@ class ExperimentParametrisation:
     def run_simulation(self, name="NONAME", acq_params=None, save=False, modality="All", **kwargs):
         # imager will run regardless, since by default
         # has a minimal coordinate field
+        if not self.generators_status("imager"):
+            self.build(modules="imager")
         if modality == "All":
             print("Simulating all modalities")
             if acq_params is None:
                 acq_params=self.selected_mods
             if self.experiment_id:
                 name = self.experiment_id
-            if self.generators_status("imager"):
-                simulation_output = generate_multi_imaging_modalities(
-                    image_generator=self.imager,
-                    experiment_name=name,
-                    savingdir=self.output_directory,
-                    write=save,
-                    # acq_params is a value in selected mods
-                    acquisition_param=acq_params,
-                )
-                return simulation_output
-            else:
-                print("Missing attributes")
+            simulation_output = generate_multi_imaging_modalities(
+                image_generator=self.imager,
+                experiment_name=name,
+                savingdir=self.output_directory,
+                write=save,
+                # acq_params is a value in selected mods
+                acquisition_param=acq_params,
+            )
+            return simulation_output
         else:
             print(f"Simulating: {modality}")
             acq_p = self.selected_mods[modality]
