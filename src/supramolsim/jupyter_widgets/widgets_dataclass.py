@@ -18,8 +18,15 @@ import mpl_toolkits.axes_grid1 as axes_grid1
 from ipyfilechooser import FileChooser
 from pathlib import Path
 from ezinput import EZInput
+import sys
 
-output_path = Path.home() / "vlab4mic_outputs"
+
+IN_COLAB = 'google.colab' in sys.modules
+if IN_COLAB:
+    output_path = "/content/vlab4mic_outputs"
+else:
+    output_path = Path.home() / "vlab4mic_outputs"
+
 
 if not os.path.exists(output_path):
     os.makedirs(output_path)
