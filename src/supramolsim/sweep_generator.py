@@ -196,6 +196,23 @@ class sweep_generator:
 
     # set and change parameters
     def set_parameter_values(self, param_group, param_name, values=None):
+        """
+        Specify list or range of values to use per parameter
+
+        :param param_group: group of parameter e.g probe, virtual_sample
+        :type save: str
+        :param param_name: name of parameter to use for sweep
+        :type save: str
+        :param values: parameter values to use. 
+            If values is a tuple,
+            a sequence of values will be generated asssuming the tuple contains
+            the parameter for numpy linspace method (start, stop, num)
+            If values is a list, the list is set as the final values to use
+            If values is a None, a default list will be generated 
+            according to the parameter set
+        :type values: [None, tuple, list]
+
+        """
         if param_group in list(self.params_by_group.keys()):
             if values is None:
                 # create defaults or ignore this parameter for it to not be used
