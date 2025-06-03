@@ -587,37 +587,59 @@ def generate_virtual_sample(
     **kwargs,
 ):
     """
-    Create a virtual sample from structure model.
-    Args:
-        structure:  (string) 4 letter ID of PDB/CIF model
-        probe_name: (string) Name ID of probe configuration file (filename)
-        probe_target_type: (string) Options: "Sequence", "Atom_residue", or "Primary"
-        probe_target_value:
-            - (string) For target type "Sequence" or "Primary"
-            - (dict) For Atom_residue, a dictionary with keys "Atom" and "Residue" is needed
-        probe_distance_to_epitope: (float) minimal distance set from epitope and probe paratope
-        probe_model: (string) 4 letter ID of PDB/CIF model
-        probe_fluorophore: (string) Fluorophore name. E.g. "AF647"
-        probe_paratope: (string) Sequence of the paratope site for when probe includes a model
-        probe_conjugation_target_info:
-        probe_conjugation_efficiency: (float) efficiency of conjugation of emitters
-        probe_seconday_epitope: (string) Sequence within probe model to be used as epitope for a secondary
-        probe_wobbling: (Logical): Enable probe wobbling
-        labelling_efficiency: (float) Labelling efficiency of probe
-        defect_small_cluster: (float) In A, distance used to group epitopes into multimers
-        defect_large_cluster: (float) In A, distance within multimers to consider neighbors
-        defect: (float) Fraction of defect to model
-        virtual_sample_template: (string) Name of the configuration file for template
-        sample_dimensions: list[float]. In nanometers, define the X, Y and Z sizes of the field
-        number_of_particles: int Number of independent copies of a particle to create and distribute
-        particle_positions: list[np.array] Relative positions of particles in the field
-        random_orientations: (Logial) If True, each particle will be randomly assign a new orientation
-        random_placing: (Logial) Define if position in field is random or the center of field
-        clear_probe: (Logial) If True, default parameters will be cleared
-    Returns:
-        Virtual sample: (dictionary) Your virtual sample as exported format. This can be used as input for image_vsample method.
-        Experiment: (Experiment Object) The experimment containing all modules that were generated to build the virtual sample, and the virtual sample module itself.
-            This experiment can be further used and tweaked for subsequent analysis or branching workflows.
+    Create a virtual sample from a structure model.
+
+    :param structure: 4-letter ID of PDB/CIF model.
+    :type structure: str
+    :param probe_name: Name ID of probe configuration file (filename).
+    :type probe_name: str
+    :param probe_target_type: Options: "Sequence", "Atom_residue", or "Primary".
+    :type probe_target_type: str
+    :param probe_target_value: For target type "Sequence" or "Primary", a string. For "Atom_residue", a dictionary with keys "Atom" and "Residue".
+    :type probe_target_value: Union[str, dict]
+    :param probe_distance_to_epitope: Minimal distance set from epitope and probe paratope.
+    :type probe_distance_to_epitope: float
+    :param probe_model: 4-letter ID of PDB/CIF model.
+    :type probe_model: str
+    :param probe_fluorophore: Fluorophore name (e.g., "AF647").
+    :type probe_fluorophore: str
+    :param probe_paratope: Sequence of the paratope site for when probe includes a model.
+    :type probe_paratope: str
+    :param probe_conjugation_target_info: Information about the probe conjugation target.
+    :type probe_conjugation_target_info: Any
+    :param probe_conjugation_efficiency: Efficiency of conjugation of emitters.
+    :type probe_conjugation_efficiency: float
+    :param probe_seconday_epitope: Sequence within probe model to be used as epitope for a secondary.
+    :type probe_seconday_epitope: str
+    :param probe_wobbling: Enable probe wobbling.
+    :type probe_wobbling: bool
+    :param labelling_efficiency: Labelling efficiency of probe.
+    :type labelling_efficiency: float
+    :param defect_small_cluster: In Å, distance used to group epitopes into multimers.
+    :type defect_small_cluster: float
+    :param defect_large_cluster: In Å, distance within multimers to consider neighbors.
+    :type defect_large_cluster: float
+    :param defect: Fraction of defect to model.
+    :type defect: float
+    :param virtual_sample_template: Name of the configuration file for template.
+    :type virtual_sample_template: str
+    :param sample_dimensions: In nanometers, define the X, Y, and Z sizes of the field.
+    :type sample_dimensions: List[float]
+    :param number_of_particles: Number of independent copies of a particle to create and distribute.
+    :type number_of_particles: int
+    :param particle_positions: Relative positions of particles in the field.
+    :type particle_positions: List[np.array]
+    :param random_orientations: If True, each particle will be randomly assigned a new orientation.
+    :type random_orientations: bool
+    :param random_placing: Define if position in field is random or the center of field.
+    :type random_placing: bool
+    :param clear_probe: If True, default parameters will be cleared.
+    :type clear_probe: bool
+
+    :return: 
+        - dict: Your virtual sample as exported format. This can be used as input for the `image_vsample` method.
+        - Experiment: The experiment containing all modules that were generated to build the virtual sample, and the virtual sample module itself. This experiment can be further used and tweaked for subsequent analysis or branching workflows.
+    :rtype: Tuple[dict, Experiment]
     """
     myexperiment = ExperimentParametrisation()
     # load default configuration for probe
@@ -693,17 +715,20 @@ def build_virtual_microscope(
     modality="STED", multimodal: list[str] = None, experiment=None, **kwargs
 ):
     """
-    Initialises a virtual microscope for single or multimodal imaging
-    Args:
-        modality: (string) Modality name
-        multimodal (List of strings) List of modality names. Overrides modality parameter
-        experiment: (Experiment object) Optional.
-        **kwargs: arguments of "add_modality"
-    Returns:
-        Virtual microscope (Imager object): The Imager with the specified modalities models. Contains default sample.
-        Experiment: (Experiment Object) The experimment containing the Virtual Microscope. All other modules are not initialised.
-            This experiment can be further used and tweaked for subsequent analysis or branching workflows. 
-    
+    Initialises a virtual microscope for single or multimodal imaging.
+
+    :param modality: Modality name.
+    :type modality: str
+    :param multimodal: List of modality names. Overrides the `modality` parameter if provided.
+    :type multimodal: List[str], optional
+    :param experiment: An Experiment object.
+    :type experiment: Experiment, optional
+    :param kwargs: Additional arguments passed to `add_modality`.
+
+    :return: 
+        - Imager: The virtual microscope with the specified modality models. Contains a default sample.
+        - Experiment: The experiment containing the virtual microscope. All other modules are not initialised. This experiment can be further used and tweaked for subsequent analysis or branching workflows.
+    :rtype: Tuple[Imager, Experiment]
     """
     if experiment is None:
         experiment = ExperimentParametrisation()
@@ -728,24 +753,31 @@ def image_vsample(
     **kwargs,
 ):
     """
-    Generate imaging simulations of the specified virtual sample and imaging modalities
+    Generate imaging simulations of the specified virtual sample and imaging modalities.
+
     If a virtual sample is provided, a virtual microscope is created around it.
-    For this case, the resulting experiment object will only contain the imager and 
+    In this case, the resulting experiment object will only contain the imager and 
     the virtual sample loaded into it.
-    If a virtual sample is not provided, a defualt sample will be created along with 
-    any keyword provided that specifies structure, probes or virtual sample parameters.
-    In this case, the resulting expreriment will also contain initialised modules for
-    structure, probes, particle and coordinates field (generator of the virtual sample).
-    
-    Args:
-        vsample: (dictionary) dictionary specifying sample parameters. Corresponds to Experiment attribute "exported_coordinated_field"
-        modality: (string) Modality name
-        multimodal (List of strings) List of modality names. Overrides modality parameter
-        run_simulation: (Logical) If true, generates image simulation for each modality set
-        **kwargs: arguments of "add_modality"
-    Returns:
-        Image simulations, experiment)
-    
+
+    If a virtual sample is not provided, a default sample will be created along with 
+    any keyword provided that specifies structure, probes, or virtual sample parameters.
+    In this case, the resulting experiment will also contain initialised modules for
+    structure, probes, particle, and coordinates field (generator of the virtual sample).
+
+    :param vsample: Dictionary specifying sample parameters. Corresponds to Experiment attribute "exported_coordinated_field".
+    :type vsample: dict
+    :param modality: Modality name.
+    :type modality: str
+    :param multimodal: List of modality names. Overrides the `modality` parameter if provided.
+    :type multimodal: List[str], optional
+    :param run_simulation: If True, generates image simulation for each modality set.
+    :type run_simulation: bool
+    :param kwargs: Additional arguments passed to `add_modality`.
+
+    :return: 
+        - Image simulations.
+        - Experiment: The experiment object as described above.
+    :rtype: Tuple[Any, Experiment]
     """
     if vsample is None:
         vsample, sample_experiment = generate_virtual_sample(**kwargs)
