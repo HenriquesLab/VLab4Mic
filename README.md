@@ -44,13 +44,18 @@ from choosing a macromolecule of interest, deciding between strategies to label 
 
 Notheless, integrative modules connect these functionalities into a complex workflow that allow us to branch the simulation and analysis.
 
-We provide example configuration data for:
--   Models:
+We also provide example models:
+-   Structure:
     -   Nuclear Pore Complex
-    -   Immunoglobulin M
--   Labelling strategies
-    -   Antibody labelling of Nup96
-    -   NHS-ester direct labelling
+    -   Clathrin Coated Pit
+    -   Matured HIV-capsid core
+-   Probes
+    -   Antibody
+    -   Nanobody
+    -   GFP
+    -   Linker
+    -   NHS-ester
+    -   ... and more!
 -   Imaging modalities
     -   Widefield
     -   Confocal
@@ -58,15 +63,13 @@ We provide example configuration data for:
     -   STED
     -   Single Molecule Localisation Microscopy
 
-Among other parameters for analysis workflows
-
 You can use VLab4Mic library through a jupyter notebook, with a graphical user interphase, or with a python stript according to your coding exprience.
 
 
 # How to use VLab4Mic
 
 VLab4Mic is a python library that can be used directly through our workflows and analysis module.
-For a detail use see see our [script](https://github.com/HenriquesLab/SupraMolecularSimulator/)
+For a detail use see our [script](https://github.com/HenriquesLab/SupraMolecularSimulator/)
 
 ## Codeless Jupyter Notebooks:
 | Category | Description | Last test | Notebook | Colab Link |
@@ -78,9 +81,9 @@ For a detail use see see our [script](https://github.com/HenriquesLab/SupraMolec
 ### 1.- Following the installation instructions, activate your python environment where you installed VLab4Mic.
 ### 2.- Lauch Jupyter Lab by running this command:
 ```shell
-jupyter notebook
+jupyter lab
 ```
-This command will open a  Jupyter in your web browser. In here, locate the folder containing VLab4Mic notebooks. You can download them from [here](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/)
+This command will open a Jupyter Lab interphase in your web browser. Once here, locate the folder containing VLab4Mic notebooks. You can download them from [here](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/)
 
 
 ### 3.- Select the notebook and start using VLab4Mic!
