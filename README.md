@@ -89,10 +89,12 @@ You can use SupraMolSim library through a jupyter notebook, with a graphical use
 SupraMolSim is a python library that can be used directly through our workflows and analysis module.
 For a detail use see see our [script](https://github.com/HenriquesLab/SupraMolecularSimulator/)
 
-## Codeless Jupyter Notebooks
-However, part of experimental design requires a close examination of the models and parameters.
-We provide codeless jupyter notebooks that requires no coding experience and allows to preview each step of the 
-workflow.
+## Codeless Jupyter Notebooks:
+| Category | Description | Last test | Notebook | Colab Link |
+| --- | --- | --- | --- | --- |
+| Main interphase | Create a virtual sample and simulate its image acquisition with multiple imaging modalities |  | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_main.ipynb)
+| Parameter sweep | Generate and analyse simulations over a range of parameter combinatinos  |  | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb)
+
 
 ### 1.- Following the installation instructions, activate your python environment where you installed SupraMolSim.
 ### 2.- Lauch Jupyter Lab by running this command:
