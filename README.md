@@ -72,8 +72,8 @@ For a detail use see our [script](https://github.com/HenriquesLab/SupraMolecular
 ## Codeless Jupyter Notebooks:
 | Category | Description | Last test | Notebook | Colab Link |
 | --- | --- | --- | --- | --- |
-| Main interphase | Create a virtual sample and simulate its image acquisition with multiple imaging modalities |  | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_main.ipynb)
-| Parameter sweep | Generate and analyse simulations over a range of parameter combinatinos  |  | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb)
+| Main interphase | Create a virtual sample and simulate its image acquisition with multiple imaging modalities |  | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_main.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_main.ipynb) |
+| Parameter sweep | Generate and analyse simulations over a range of parameter combinatinos  |  | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb)  | 
 
 
 ### 1.- Following the installation instructions, activate your python environment where you installed VLab4Mic.
