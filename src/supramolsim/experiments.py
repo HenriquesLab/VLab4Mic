@@ -692,6 +692,19 @@ def generate_virtual_sample(
 def build_virtual_microscope(
     modality="STED", multimodal: list[str] = None, experiment=None, **kwargs
 ):
+    """
+    Initialises a virtual microscope for single or multimodal imaging
+    Args:
+        modality: (string) Modality name
+        multimodal (List of strings) List of modality names. Overrides modality parameter
+        experiment: (Experiment object) Optional.
+        **kwargs: arguments of "add_modality"
+    Returns:
+        Virtual microscope (Imager object): The Imager with the specified modalities models. Contains default sample.
+        Experiment: (Experiment Object) The experimment containing the Virtual Microscope. All other modules are not initialised.
+            This experiment can be further used and tweaked for subsequent analysis or branching workflows. 
+    
+    """
     if experiment is None:
         experiment = ExperimentParametrisation()
     if multimodal is not None:
