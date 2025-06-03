@@ -39,12 +39,10 @@ Soon you'll be able to acces it in a goolge colab! Stay tuned!
 
 # Wiki Tutorial
 
-VLab4Mic, at its core, is designed as a collection of independent modules, each focused on a specific task within a typical imaging experiment,
-from choosing a macromolecule of interest, deciding between strategies to label it, to simulating the detection of a virtual sample across imaging modalities.
+VLab4Mic, at its core, is designed as a collection of independent modules that work together via our workflows. An in-depth description of VLab4Mic workflows and modules are covered in our [Wiki Tutorial page](https://github.com/HenriquesLab/SupraMolecularSimulator.git).
 
-Notheless, integrative modules connect these functionalities into a complex workflow that allow us to branch the simulation and analysis.
 
-We also provide example models:
+We provide example models and configurations for each module:
 -   Structure:
     -   Nuclear Pore Complex
     -   Clathrin Coated Pit
