@@ -727,6 +727,26 @@ def image_vsample(
     run_simulation=True,
     **kwargs,
 ):
+    """
+    Generate imaging simulations of the specified virtual sample and imaging modalities
+    If a virtual sample is provided, a virtual microscope is created around it.
+    For this case, the resulting experiment object will only contain the imager and 
+    the virtual sample loaded into it.
+    If a virtual sample is not provided, a defualt sample will be created along with 
+    any keyword provided that specifies structure, probes or virtual sample parameters.
+    In this case, the resulting expreriment will also contain initialised modules for
+    structure, probes, particle and coordinates field (generator of the virtual sample).
+    
+    Args:
+        vsample: (dictionary) dictionary specifying sample parameters. Corresponds to Experiment attribute "exported_coordinated_field"
+        modality: (string) Modality name
+        multimodal (List of strings) List of modality names. Overrides modality parameter
+        run_simulation: (Logical) If true, generates image simulation for each modality set
+        **kwargs: arguments of "add_modality"
+    Returns:
+        Image simulations, experiment)
+    
+    """
     if vsample is None:
         vsample, sample_experiment = generate_virtual_sample(**kwargs)
         if multimodal is not None:
