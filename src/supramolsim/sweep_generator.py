@@ -92,6 +92,10 @@ class sweep_generator:
 
     # generators
     def generate_virtual_samples(self):
+        """
+        Generate virtual samples from the specified parameter combinations
+
+        """
         self.create_parameters_iterables()
         self.experiment, self.virtual_samples, self.virtual_samples_parameters = (
             sweep.sweep_vasmples(
@@ -105,6 +109,10 @@ class sweep_generator:
         )
 
     def generate_acquisitions(self):
+        """
+        Generate image simulation acquisition for all virtual samples
+        generated with generate_virtual_samples
+        """
         # generate virtual samples
         with io.capture_output() as captured:
             if self.virtual_samples is None:
@@ -130,6 +138,18 @@ class sweep_generator:
         reference_probe_parameters: dict = None,
         **kwargs,
     ):
+        """
+        Specify parameters to use for both reference sample and 
+        reference image used at analysis.
+
+        :param reference_structure: 4-letter ID of PDB/CIF model.
+        :type reference_structure: str
+        :param reference_probe: Name ID of probe configuration file (filename).
+        :type reference_probe: str
+        :param reference_probe_parameters: probe parameters to use
+        :type reference_probe: dict
+        
+        """
         if reference_structure is not None:
             self.reference_structure = reference_structure
         if reference_probe is not None:
@@ -176,6 +196,23 @@ class sweep_generator:
 
     # set and change parameters
     def set_parameter_values(self, param_group, param_name, values=None):
+        """
+        Specify list or range of values to use per parameter
+
+        :param param_group: group of parameter e.g probe, virtual_sample
+        :type save: str
+        :param param_name: name of parameter to use for sweep
+        :type save: str
+        :param values: parameter values to use. 
+            If values is a tuple,
+            a sequence of values will be generated asssuming the tuple contains
+            the parameter for numpy linspace method (start, stop, num)
+            If values is a list, the list is set as the final values to use
+            If values is a None, a default list will be generated 
+            according to the parameter set
+        :type values: [None, tuple, list]
+
+        """
         if param_group in list(self.params_by_group.keys()):
             if values is None:
                 # create defaults or ignore this parameter for it to not be used
@@ -235,6 +272,20 @@ class sweep_generator:
     def run_analysis(
         self, save=True, output_name=None, output_directory=None, plots=False
     ):
+        """
+        Analyse image simulations against the specified image reference.
+        This method generates a dataframe containing the calculated metrics
+        per parameter combination
+
+        :param save: specify if output analysis will be saved in output_directory
+        :type save: bool
+        :param output_name: name to identify analysis output files
+        :type save: str
+        :param output_directory: path for writing outputs
+        :type output_directory: str
+        :param plots: Generate heatmas and lineplots from the results dataframe 
+        :type plots: bool
+        """
         if self.acquisition_outputs is None:
             self.generate_acquisitions()
         if self.reference_image is None:
