@@ -588,10 +588,18 @@ class LabeledInstance:
                     self.emitters[labeltype] = (
                         self.get_emitter_by_target(labeltype) * scaling_factor
                     )
+                #scale its source - epitopes
+                self.source["targets"][labeltype]["coordinates"] *= scaling_factor
+                if "normals" in self.source["targets"][labeltype].keys():
+                    self.source["targets"][labeltype]["normals"] *= scaling_factor
+            self.source["reference_pt"] *= scaling_factor
                 # print(f'after: {self.emitters[labeltype]}')
             self.params["ref_point"] = self.params["ref_point"] * scaling_factor
             self.axis["pivot"] = self.axis["pivot"] * scaling_factor
             self.radial_hindance *= scaling_factor
+            # scale source
+            self.source["scale"] = new_scale
+            self.source["axis"]['pivot'] *= new_scale
             self._set_scale(new_scale)
 
     def get_emitter_by_target(self, targetname: str):
@@ -726,9 +734,14 @@ class LabeledInstance:
         if axesoff:
             ax.set_axis_off()
         else:
-            ax.set_xlabel("X (Angstroms)")
-            ax.set_ylabel("Y (Angstroms)")
-            ax.set_zlabel("Z (Angstroms)")
+            if self.get_scale() == 1e-10:
+                ax.set_xlabel("X (Angstroms)")
+                ax.set_ylabel("Y (Angstroms)")
+                ax.set_zlabel("Z (Angstroms)")
+            elif self.get_scale() == 1e-9:
+                ax.set_xlabel("X (Nanometers)")
+                ax.set_ylabel("Y (Nanometers)")
+                ax.set_zlabel("Z (Nanometers)")
         if return_plot:
             return ax
         else:
