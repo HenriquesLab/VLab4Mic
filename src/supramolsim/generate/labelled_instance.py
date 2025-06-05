@@ -592,13 +592,20 @@ class LabeledInstance:
                     )
                 #scale its source - epitopes
                 self.source["targets"][labeltype]["coordinates"] *= scaling_factor_source
-                if "normals" in self.source["targets"][labeltype].keys():
+                if self.source["targets"][labeltype]["normals"] is not None:
+                    print(f"normals not NONE: {scaling_factor_source}")
+                    print(self.source["targets"][labeltype]["normals"], )
                     self.source["targets"][labeltype]["normals"] *= scaling_factor_source
-                self.labels[labeltype]["emitters"] = self.labels[labeltype]["emitters"].astype('float64') * scaling_factor
-                self.labels[labeltype]["minimal_distance"] *= scaling_factor
-                self.labels[labeltype]["coordinates"] = self.labels[labeltype]["coordinates"].astype('float64') * scaling_factor
-                self.labels[labeltype]["binding"]["distance"]["to_target"] *= scaling_factor
-                self.labels[labeltype]["binding"]["distance"]["between_targets"] *= scaling_factor
+                if self.labels[labeltype]["emitters"] is not None:
+                    self.labels[labeltype]["emitters"] = self.labels[labeltype]["emitters"].astype('float64') * scaling_factor
+                if self.labels[labeltype]["minimal_distance"] is not None:
+                    self.labels[labeltype]["minimal_distance"] *= scaling_factor
+                if "coordinates" in self.labels[labeltype].keys():
+                    self.labels[labeltype]["coordinates"] = self.labels[labeltype]["coordinates"].astype('float64') * scaling_factor
+                if self.labels[labeltype]["binding"]["distance"]["to_target"] is not None:
+                    self.labels[labeltype]["binding"]["distance"]["to_target"] *= scaling_factor
+                if self.labels[labeltype]["binding"]["distance"]["between_targets"] is not None:
+                    self.labels[labeltype]["binding"]["distance"]["between_targets"] *= scaling_factor
                 self.labels[labeltype]["scale"] *= new_scale
                 # print(f'after: {self.emitters[labeltype]}')
             self.params["ref_point"] = self.params["ref_point"] * scaling_factor
