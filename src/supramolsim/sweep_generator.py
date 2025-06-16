@@ -11,6 +11,7 @@ from datetime import datetime
 import seaborn as sns
 from matplotlib.ticker import FormatStrFormatter
 import copy
+import tifffile as tiff
 
 output_dir = Path.home() / "vlab4mic_outputs"
 
@@ -470,5 +471,13 @@ class sweep_generator:
         if output_name is None:
             output_name = "vLab4mic_images_"
         if output_directory is None:
-            output_directory = self.ouput_directory
-        pass
+            output_directory = os.path.join(self.ouput_directory, "simulated_images", "")
+            if not os.path.exists(output_directory):
+                os.makedirs(output_directory)
+        for param_combination_id, replicates in self.acquisition_outputs.items():
+            nreps = len(replicates)
+            image = replicates[0]
+            for i in range(1, nreps):
+                image = np.concatenate((image, replicates[i]))
+            name = output_directory + param_combination_id + ".tiff"
+            tiff.imwrite(name, image)
