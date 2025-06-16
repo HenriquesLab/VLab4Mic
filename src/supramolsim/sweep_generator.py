@@ -270,7 +270,7 @@ class sweep_generator:
 
 
     def run_analysis(
-        self, save=True, output_name=None, output_directory=None, plots=False
+        self, save=True, output_name=None, output_directory=None, plots=False, save_images=True, **kwargs
     ):
         """
         Analyse image simulations against the specified image reference.
@@ -464,3 +464,11 @@ class sweep_generator:
                     for metric, plot in plots_by_metric.items():
                         figure_name = output_name + "_" + metric + "_" + plot_type + ".png"
                         plot.savefig(os.path.join(output_directory, figure_name))
+
+
+    def save_images(self, output_name=None, output_directory=None):
+        if output_name is None:
+            output_name = "vLab4mic_images_"
+        if output_directory is None:
+            output_directory = self.ouput_directory
+        pass
