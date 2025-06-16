@@ -85,9 +85,9 @@ class Sweep_gui(jupyter_gui):
         ez_sweep_structure.add_button("Select", description="Select")
 
         def select(b):
-            self.selected_structure = self.structures_info_list[
+            self.sweep_gen.structures = [self.structures_info_list[
                 ez_sweep_structure["structures"].value
-            ]
+            ],]
             ez_sweep_structure["structures"].disabled = True
 
         ez_sweep_structure["Select"].on_click(select)
@@ -208,8 +208,18 @@ class Sweep_gui(jupyter_gui):
         reference = EZInput(title="reference")
         def gen_ref(b):
             reference["set"].disabled = True
-            self.reference_structure = self.select_structure
-            self.sweep_gen.generate_reference_image()
+            reference["feedback"].value = "Generating Reference..."
+            self.sweep_gen.reference_structure = self.sweep_gen.structures[0]
+            with io.capture_output() as captured:
+                self.sweep_gen.generate_reference_image()
+            reference["feedback"].value = "Reference Set"
+            reference["preview"].disabled = False
+
+        def show_reference(b):
+            reference["output"].clear_output()
+            with reference["output"]:
+                self.sweep_gen.preview_reference_image()
+
         reference.add_dropdown(
             "structure", options=["same for parameter sweep",], 
             description="Structure",
@@ -228,7 +238,14 @@ class Sweep_gui(jupyter_gui):
         reference.add_button(
             "set", description="Set reference"
         )
+        reference.add_button(
+            "preview", description="Preview reference", disabled = True
+        )
+        reference.elements["feedback"] = widgets.HTML("", style = dict(font_size= "15px", font_weight='bold'))
+
+        reference.elements["output"] = widgets.Output()
         reference["set"].on_click(gen_ref)
+        reference["preview"].on_click(show_reference)
         reference.show()
         
     def analyse_sweep(self):
