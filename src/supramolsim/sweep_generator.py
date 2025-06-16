@@ -151,7 +151,9 @@ class sweep_generator:
         :type reference_probe: dict
         
         """
-        if reference_structure is not None:
+        if reference_structure is None:
+            self.reference_structure = self.structures[0]
+        else:
             self.reference_structure = reference_structure
         if reference_probe is not None:
             self.reference_probe = reference_probe
@@ -481,3 +483,6 @@ class sweep_generator:
                 image = np.concatenate((image, replicates[i]))
             name = output_directory + param_combination_id + ".tiff"
             tiff.imwrite(name, image)
+        name_ref = output_directory + "reference.tiff"
+        tiff.imwrite(name_ref, self.reference_image)
+        
