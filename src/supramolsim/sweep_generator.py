@@ -169,8 +169,8 @@ class sweep_generator:
             )
         )
 
-    def generate_reference_image(self):
-        if self.reference_image is None:
+    def generate_reference_image(self, override=False):
+        if self.reference_image is None or override:
             self.generate_reference_sample()
         self.reference_image, self.reference_image_parameters = (
             sweep.generate_global_reference_modality(
