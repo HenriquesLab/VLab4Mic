@@ -93,11 +93,11 @@ class Sweep_gui(jupyter_gui):
         ez_sweep_structure["Select"].on_click(select)
         ez_sweep_structure.show()
 
-    def select_probes_and_mods(self, include_probe_models=False):
+    def select_probes_and_mods(self, include_probe_models=True):
         ez_sweep = EZInput(title="Sweep")
         probes2show = []
-        if self.selected_structure in self.probes_per_structure.keys():
-            probe_list = self.probes_per_structure[self.selected_structure]
+        if self.sweep_gen.structures[0] in self.probes_per_structure.keys():
+            probe_list = self.probes_per_structure[self.sweep_gen.structures[0]]
             probes2show.extend(
                 copy.copy(probe_list)
             )
@@ -225,10 +225,16 @@ class Sweep_gui(jupyter_gui):
             description="Structure",
             disabled = True
         )
+        options_probes = ["NHS_ester",]
+        if self.sweep_gen.structures[0] in self.probes_per_structure.keys():
+            probe_list = self.probes_per_structure[self.sweep_gen.structures[0]]
+            options_probes.extend(
+                copy.copy(probe_list)
+            )
         reference.add_dropdown(
-            "probe", options=["NHS_ester",], 
+            "probe", options=options_probes, 
             description="Probe",
-            disabled = True
+            disabled = False
         )
         reference.add_dropdown(
             "modality", options=["Reference",], 
@@ -277,10 +283,13 @@ class Sweep_gui(jupyter_gui):
             analysis_widget["output_name"].disabled = False
         def save_results(b):
             output_name = analysis_widget["output_name"].value
+            save_images = analysis_widget["save_images"].value
             self.sweep_gen.save_analysis(
                 output_directory=self.ouput_directory,
                 output_name=output_name
                 )
+            if save_images:
+                self.sweep_gen.save_images()
             #analysis_widget["save"].disabled = True
         analysis_widget.elements["reps"] = self.wgen.gen_bound_int(
                 value=3, description="Repeats per parameter combination",
@@ -308,6 +317,7 @@ class Sweep_gui(jupyter_gui):
             "output_name", 
             value="vlab4mic_analysis", 
             description="Output name")
+        analysis_widget.add_checkbox("save_images", description="Save images", value=False)
         analysis_widget.add_button(
             "save", description="save analysis", disabled=True
         )
