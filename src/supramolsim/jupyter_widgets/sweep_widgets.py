@@ -211,12 +211,12 @@ class Sweep_gui(jupyter_gui):
             reference["feedback"].value = "Generating Reference..."
             reference_structure = reference["structure"].value
             reference_probe = reference["probe"].value
-            self.sweep_gen.reference_structure = self.sweep_gen.structures[0]
+            self.sweep_gen.reference_structure = reference_structure
             self.sweep_gen.set_reference_parameters(
                 reference_structure=reference_structure,
                 reference_probe=reference_probe)
             with io.capture_output() as captured:
-                self.sweep_gen.generate_reference_image()
+                self.sweep_gen.generate_reference_image(override=True)
             reference["feedback"].value = "Reference Set"
             reference["preview"].disabled = False
 
