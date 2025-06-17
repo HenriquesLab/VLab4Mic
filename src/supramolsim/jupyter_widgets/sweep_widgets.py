@@ -290,10 +290,11 @@ class Sweep_gui(jupyter_gui):
             analysis_widget["save"].disabled = False
             analysis_widget["output_name"].disabled = False
         def save_results(b):
+            output_directory = analysis_widget["saving_directory"].selected_path
             output_name = analysis_widget["output_name"].value
             save_images = analysis_widget["save_images"].value
+            self.sweep_gen.ouput_directory = output_directory
             self.sweep_gen.save_analysis(
-                output_directory=self.ouput_directory,
                 output_name=output_name
                 )
             if save_images:
