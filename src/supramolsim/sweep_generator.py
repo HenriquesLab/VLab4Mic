@@ -469,7 +469,7 @@ class sweep_generator:
                         plot.savefig(os.path.join(output_directory, figure_name))
 
 
-    def save_images(self, output_name=None, output_directory=None):
+    def save_images(self, output_name=None, output_directory=None, ):
         if output_name is None:
             output_name = "vLab4mic_images_"
         if output_directory is None:
@@ -483,6 +483,8 @@ class sweep_generator:
                 image = np.concatenate((image, replicates[i]))
             name = output_directory + param_combination_id + ".tiff"
             tiff.imwrite(name, image)
-        name_ref = output_directory + "reference.tiff"
-        tiff.imwrite(name_ref, self.reference_image)
-        
+        if self.reference_image is not None:
+            # save reference image
+            name_ref = output_directory + "reference.tiff"
+            tiff.imwrite(name_ref, self.reference_image)
+            
