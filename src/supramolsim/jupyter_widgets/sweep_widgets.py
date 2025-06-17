@@ -209,7 +209,12 @@ class Sweep_gui(jupyter_gui):
         def gen_ref(b):
             reference["set"].disabled = True
             reference["feedback"].value = "Generating Reference..."
+            reference_structure = reference["structure"].value
+            reference_probe = reference["probe"].value
             self.sweep_gen.reference_structure = self.sweep_gen.structures[0]
+            self.sweep_gen.set_reference_parameters(
+                reference_structure=reference_structure,
+                reference_probe=reference_probe)
             with io.capture_output() as captured:
                 self.sweep_gen.generate_reference_image()
             reference["feedback"].value = "Reference Set"
@@ -221,9 +226,9 @@ class Sweep_gui(jupyter_gui):
                 self.sweep_gen.preview_reference_image()
 
         reference.add_dropdown(
-            "structure", options=["same for parameter sweep",], 
+            "structure", options=self.sweep_gen.structures, 
             description="Structure",
-            disabled = True
+            disabled = False
         )
         options_probes = ["NHS_ester",]
         if self.sweep_gen.structures[0] in self.probes_per_structure.keys():
