@@ -262,6 +262,7 @@ class Sweep_gui(jupyter_gui):
     def analyse_sweep(self):
         analysis_widget = EZInput(title="analysis")
         def analyse_sweep(b):
+            analysis_widget["feedback"].value = "Running analysis sweep. This might take some minutes..."
             analysis_widget["analyse"].disabled = True
             plots = analysis_widget["plots"].value
             param_names_set = self.sweep_gen.parameters_with_set_values
@@ -282,6 +283,8 @@ class Sweep_gui(jupyter_gui):
                 if self.sweep_gen.reference_image is None:
                     self.sweep_gen.generate_reference_image()
             with analysis_widget["outputs"]:
+                print("Generating Virtual samples.")
+                print("Once created, a progress bar will show the image simulation progression")
                 self.sweep_gen.run_analysis(plots=plots, save=False)
             analysis_widget["saving_directory"].disabled = False
             analysis_widget["save"].disabled = False
@@ -309,6 +312,7 @@ class Sweep_gui(jupyter_gui):
         analysis_widget.add_button(
             "analyse", description="Run analysis"
         )
+        analysis_widget.elements["feedback"] = widgets.HTML("", style = dict(font_size= "15px", font_weight='bold'))
         analysis_widget.elements["outputs"] = widgets.Output()
         analysis_widget.elements["saving_directory"] = FileChooser(
             self.ouput_directory,
