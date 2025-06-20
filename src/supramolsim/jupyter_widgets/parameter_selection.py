@@ -34,6 +34,7 @@ def update_widgets_visibility(ezwidget, visibility_dictionary):
 
 
 def ui_select_probe(experiment, **kwargs):
+    experiment.remove_probes()
     probes_gui = EZInput(title="Labels")
     visibility_widgets = dict()
     probe_options = []
