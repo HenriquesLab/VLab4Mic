@@ -101,7 +101,7 @@ class ExperimentParametrisation:
                                 lablname,
                             ]
 
-    def select_structure(self, structure_id="IXI5", build=True):
+    def select_structure(self, structure_id="1XI5", build=True):
         self.structure_id = structure_id
         if build:
             self.build(modules=["structure"])
