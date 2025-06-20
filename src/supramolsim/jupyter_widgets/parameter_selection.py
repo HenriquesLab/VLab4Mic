@@ -2,6 +2,7 @@ from ezinput import EZInput
 import matplotlib.pyplot as plt
 import copy
 from IPython.display import display, clear_output
+import ipywidgets as widgets
 
 
 def ui_select_structure(experiment):
@@ -50,9 +51,17 @@ def ui_select_probe(experiment, **kwargs):
         experiment.add_probe(
             probe_name=values["select_probe"].value
         )
+        update_probe_list()
+
+    def update_probe_list():
+        probes_gui["message1"].value = ""
+        for probe in experiment.probe_parameters.keys():
+            probes_gui["message1"].value += probe + "<br>"
 
     # widgets
-
+    ## Feedback labels
+    probes_gui.add_label("Seleced probes:")
+    probes_gui.elements["message1"] = widgets.HTML("")
     # pre-built probes
     probes_from_structure = experiment.config_probe_per_structure_names[experiment.structure_id]
     probes_gui.add_dropdown("select_probe",
