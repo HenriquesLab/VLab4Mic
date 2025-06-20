@@ -13,8 +13,8 @@ def ui_select_structure(experiment):
         experiment.build(modules="structure")
         elements["label_2"].value = experiment.structure_id
 
-    gui.add_label(value="Selected structure:")
-    gui.add_label(value="")
+    gui.add_label(value="Current structure selected:")
+    gui.add_label(value=experiment.structure_id)
     gui.add_dropdown("structures", description="Select Structure:", options=experiment.config_probe_per_structure_names.keys())
     gui.add_callback(
         "button",
@@ -46,16 +46,25 @@ def ui_select_probe(experiment, **kwargs):
             copy.copy(experiment.config_global_probes_names)
         )
     # methods
-
-
+    def select_probe(values):
+        experiment.add_probe(
+            probe_name=values["select_probe"].value
+        )
 
     # widgets
 
     # pre-built probes
     probes_from_structure = experiment.config_probe_per_structure_names[experiment.structure_id]
     probes_gui.add_dropdown("select_probe",
-                            description="Select probe:",
+                            description="Choose a probe:",
                             options=probe_options)
+    probes_gui.add_callback(
+        "add_probe",
+        select_probe,
+        probes_gui.elements,
+        description="Select probe",
+    )
+    
     return probes_gui   
 
 
