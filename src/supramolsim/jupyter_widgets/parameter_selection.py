@@ -1,5 +1,7 @@
 from ezinput import EZInput
 import matplotlib.pyplot as plt
+import copy
+from IPython.display import display, clear_output
 
 
 def ui_select_structure(experiment):
@@ -21,4 +23,39 @@ def ui_select_structure(experiment):
         description="Select structure",
     )
     return gui
-    
+
+def update_widgets_visibility(ezwidget, visibility_dictionary):
+    for widgetname in visibility_dictionary.keys():
+        if visibility_dictionary[widgetname]:
+            ezwidget[widgetname].layout.display = "inline-flex"
+        else:
+            visibility_dictionary[widgetname].layout.display = "None"   
+
+
+def ui_select_probe(experiment, **kwargs):
+    probes_gui = EZInput(title="Labels")
+    visibility_widgets = dict()
+    probe_options = []
+    if experiment.structure_id in experiment.config_probe_per_structure_names.keys():
+        probe_list = experiment.config_probe_per_structure_names[experiment.structure_id]
+        probe_options.extend(
+            copy.copy(probe_list)
+        )
+    # add probes with no targets
+    probe_options.extend(
+            copy.copy(experiment.config_global_probes_names)
+        )
+    # methods
+
+
+
+    # widgets
+
+    # pre-built probes
+    probes_from_structure = experiment.config_probe_per_structure_names[experiment.structure_id]
+    probes_gui.add_dropdown("select_probe",
+                            description="Select probe:",
+                            options=probe_options)
+    return probes_gui   
+
+
