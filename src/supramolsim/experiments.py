@@ -28,10 +28,10 @@ if not os.path.exists(output_path):
 
 @dataclass
 class ExperimentParametrisation:
-    experiment_id: str = ""
-    structure_id: str = ""
+    experiment_id: str = "vLab4mic_experiment"
+    structure_id: str = None
     configuration_path: str = ""
-    structure_label: str = ""
+    structure_label: str = "NHS_ester"
     fluorophore_id: str = ""
     coordinate_field_id: str = None
     selected_mods: Dict[str, int] = field(default_factory=dict)
@@ -101,7 +101,10 @@ class ExperimentParametrisation:
                                 lablname,
                             ]
 
-        # self.imaging_modalities = dict()
+    def select_structure(self, structure_id="IXI5", build=True):
+        self.structure_id = structure_id
+        if build:
+            self.build(modules=["structure"])
 
     def add_modality(self, modality_name, save=False, **kwargs):
         if modality_name in self.local_modalities_names:
