@@ -47,3 +47,44 @@ def ui_show_structure(experiment):
     gui.add_output("preview_structure")
     gui["preview_structure"].clear_output()
     return gui
+
+
+def ui_show_labelled_structure(experiment):
+    gui = EZInput(title="Labelled Structure")
+
+    def show_particle(
+                    emitter_plotsize = 1, 
+                    source_plotsize = 1, 
+                    hview=0,
+                    vview=0):
+        #with io.capture_output() as captured:   
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection="3d")
+        experiment.particle.gen_axis_plot(
+            axis_object=ax,
+            with_sources=True, 
+            axesoff=True,
+            emitter_plotsize=emitter_plotsize,
+            source_plotsize=source_plotsize,
+            view_init=[vview, hview, 0]
+            )
+        plt.close()
+        return fig
+
+
+    def show_labelled_structure(values):
+        gui["preview_labelled_structure"].clear_output()
+        with gui["preview_labelled_structure"]:
+            display(show_particle())
+    
+    
+    gui.add_callback(
+        "button",
+        show_labelled_structure,
+        gui.elements,
+        description="Show labelled structure",
+    )
+    
+    gui.add_output("preview_labelled_structure")
+    
+    return gui
