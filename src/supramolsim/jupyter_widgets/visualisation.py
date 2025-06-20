@@ -71,20 +71,56 @@ def ui_show_labelled_structure(experiment):
         plt.close()
         return fig
 
-
-    def show_labelled_structure(values):
+    def show_labelled_structure(change):
         gui["preview_labelled_structure"].clear_output()
         with gui["preview_labelled_structure"]:
-            display(show_particle())
+            display(show_particle(
+                emitter_plotsize=gui["emitter_plotsize"].value,
+                source_plotsize=gui["source_plotsize"].value,
+                hview=gui["hview"].value,
+                vview=gui["vview"].value
+            ))
     
-    
-    gui.add_callback(
-        "button",
-        show_labelled_structure,
-        gui.elements,
-        description="Show labelled structure",
+    gui.add_int_slider(
+        "emitter_plotsize",
+        description="Emitter size",
+        min=0,
+        max=30,
+        step=1,
+        value=1,
+        continuous_update=False,
+        on_change=show_labelled_structure,
     )
-    
+    gui.add_int_slider(
+        "source_plotsize",
+        description="Source size",
+        min=0,
+        max=30,
+        step=1,
+        value=1,
+        continuous_update=False,
+        on_change=show_labelled_structure,
+    )
+    gui.add_int_slider(
+        "hview",
+        description="Horizontal view",
+        min=-90,
+        max=90,
+        step=1,
+        value=0,
+        continuous_update=False,
+        on_change=show_labelled_structure,
+    )
+    gui.add_int_slider(
+        "vview",
+        description="Vertical view",
+        min=-90,
+        max=90,
+        step=1,
+        value=0,
+        continuous_update=False,
+        on_change=show_labelled_structure,
+    )
     gui.add_output("preview_labelled_structure")
-    
+    gui["emitter_plotsize"].value = 2
     return gui
