@@ -52,12 +52,18 @@ def ui_select_probe(experiment, **kwargs):
         experiment.add_probe(
             probe_name=values["select_probe"].value
         )
+        probes_gui["create_particle"].disabled = False
         update_probe_list()
 
     def update_probe_list():
         probes_gui["message1"].value = ""
         for probe in experiment.probe_parameters.keys():
             probes_gui["message1"].value += probe + "<br>"
+
+    def create_particle(b):
+        experiment.build(modules=["particle"])
+        probes_gui["add_probe"].disabled = True
+        probes_gui["create_particle"].disabled = True
 
     # widgets
     ## Feedback labels
@@ -73,7 +79,11 @@ def ui_select_probe(experiment, **kwargs):
         probes_gui.elements,
         description="Select probe",
     )
-    
+    probes_gui.add_button("create_particle", 
+                          description="Create labelled structure",
+                          disabled=True)
+    probes_gui["create_particle"].on_click(create_particle)
+
     return probes_gui   
 
 
