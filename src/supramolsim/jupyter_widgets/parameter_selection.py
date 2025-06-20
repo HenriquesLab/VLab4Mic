@@ -62,9 +62,8 @@ def ui_select_probe(experiment, **kwargs):
     # widgets
     ## Feedback labels
     probes_gui.add_label("Seleced probes:")
-    probes_gui.elements["message1"] = widgets.HTML("")
+    probes_gui.add_HTML("message1", "")
     # pre-built probes
-    probes_from_structure = experiment.config_probe_per_structure_names[experiment.structure_id]
     probes_gui.add_dropdown("select_probe",
                             description="Choose a probe:",
                             options=probe_options)
