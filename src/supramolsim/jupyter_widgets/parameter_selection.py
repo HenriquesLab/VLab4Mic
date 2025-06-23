@@ -171,6 +171,12 @@ def ui_select_modality(experiment):
             print(f"Modality {selected_modality} not found.")
         update_message()
     
+    def select_modalities(b):
+        experiment.build(modules=["imager"])
+        modality_gui["add_modality"].disabled = True
+        modality_gui["remove_modality"].disabled = True
+        modality_gui["select_modality"].disabled = True 
+
     modality_gui.add_dropdown(
         "select_modality",
         description="Select modality:",
@@ -186,7 +192,12 @@ def ui_select_modality(experiment):
         description="Remove modality",
         disabled=False
     )
+    modality_gui.add_button(
+        "select_modalies",
+        description="Select modalities",
+    )
     modality_gui["add_modality"].on_click(add_modality)
     modality_gui["remove_modality"].on_click(remove_modality)
+    modality_gui["select_modalies"].on_click(select_modalities)
     update_message()
     return modality_gui
