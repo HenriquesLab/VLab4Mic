@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import copy
 from IPython.display import display, clear_output
 import ipywidgets as widgets
-
+import io
 
 def ui_select_structure(experiment):
     gui = EZInput("Select_structure")
@@ -86,4 +86,34 @@ def ui_select_probe(experiment, **kwargs):
 
     return probes_gui   
 
+def ui_select_sample_parameters(experiment):
+    sample_gui = EZInput(title="Sample parameters")
+    # Add widgets for sample parameters
+    sample_gui.add_int_slider(
+        "n_particles",
+        description="Number of particles",
+        min=1,
+        max=20,
+        value=1,
+        continuous_update=False,
+        style={'description_width': 'initial'}
+    )
+    sample_gui.add_checkbox(
+        "random_orientations",
+        description="Randomise orientations",
+        value=True
+    )
+    sample_gui.add_button(
+        "select_sample_parameters",
+        description="Select sample parameters",
+        disabled=False
+    )
+    def select_virtual_sample_parameters(b):
+        experiment.set_virtualsample_params(
+            number_of_particles=sample_gui["n_particles"].value,
+            random_orientations=sample_gui["random_orientations"].value
+        )
+        experiment.build(modules=["coordinate_field"])
 
+    sample_gui["select_sample_parameters"].on_click(select_virtual_sample_parameters)
+    return sample_gui
