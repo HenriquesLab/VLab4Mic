@@ -58,8 +58,9 @@ def slider_normalised(stack, dimension, dim_position=None, cbar=True):
             min=1, 
             max=stack.shape[dimension], 
             step=1, 
-            value=dim_position, 
-            continuous_update=False
+            value=int(stack.shape[dimension]/2), 
+            continuous_update=False,
+            description="Slice",
         ),
         cbar=cbar
     )
