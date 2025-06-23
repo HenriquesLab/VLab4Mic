@@ -4,6 +4,11 @@ from supramolsim.utils import data_format
 import numpy as np
 import copy
 
+def test_virtual_sample_params(experiment_7r5k_base):
+    copy_exp = copy.deepcopy(experiment_7r5k_base)
+    copy_exp.set_virtualsample_params(number_of_particles=2)
+    copy_exp.build(modules=["virtualsample"])
+
 
 def test_create_minimal_field():
     nparticles = 24
