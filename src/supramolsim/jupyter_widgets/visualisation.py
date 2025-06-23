@@ -182,7 +182,7 @@ def ui_show_modality(experiment):
             :]
         gui["preview_modality"].clear_output()
         with gui["preview_modality"]:
-            display(slider_normalised(psf_stack, dimension=2))
+            display(slider_normalised(psf_stack, dimension=2, dim_position=half_z))
 
     current_modalities = list(experiment.imaging_modalities.keys())
     gui.add_dropdown(
