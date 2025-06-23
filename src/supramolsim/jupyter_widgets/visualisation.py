@@ -164,3 +164,39 @@ def ui_show_virtual_sample(experiment):
     gui["preview_virtual_sample"].clear_output()
     update_plot(True)
     return gui
+
+
+def ui_show_modality(experiment):
+    gui = EZInput(title="Modality")
+    
+    def update_plot(change):
+        mod_name = gui["modality"].value
+        psf_stack = experiment.imager.get_modality_psf_stack(mod_name)
+        psf_shapes = psf_stack.shape
+        stack_max = psf_stack.max()
+        gui["preview_modality"].clear_output()
+        fig, axs = plt.subplots()
+        axs.imshow(
+                psf_stack[:, :, int(psf_shapes[2] / 2)],
+                cmap="gray",
+                interpolation="none",
+                vmin=0,
+                vmax=stack_max,
+            )
+        plt.close()
+        with gui["preview_modality"]:
+            display(fig)
+
+
+    current_modalities = list(experiment.imaging_modalities.keys())
+    gui.add_dropdown(
+        "modality",
+        description="Modality",
+        options=current_modalities,
+        value=current_modalities[0],
+        on_change=update_plot,
+    )
+    gui.add_output("preview_modality")
+    gui["preview_modality"].clear_output()
+    update_plot(True)
+    return gui
