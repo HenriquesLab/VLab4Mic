@@ -1,7 +1,8 @@
 from ezinput import EZInput
 import matplotlib.pyplot as plt
 from IPython.display import display, clear_output
-
+from supramolsim.utils.visualisation.matplotlib_plots import slider_normalised
+import ipywidgets as widgets
 
 def ui_show_structure(experiment):
     gui = EZInput(title="Structure")
@@ -167,7 +168,6 @@ def ui_show_virtual_sample(experiment):
 
 
 def ui_show_modality(experiment):
-    from supramolsim.utils.visualisation.matplotlib_plots import slider_normalised
     gui = EZInput(title="Modality")
     xy_zoom_in = 0.5
     def update_plot(change):
@@ -180,9 +180,19 @@ def ui_show_modality(experiment):
             half_xy - int(half_xy * xy_zoom_in) : half_xy + int(half_xy * xy_zoom_in),
             half_xy - int(half_xy * xy_zoom_in) : half_xy + int(half_xy * xy_zoom_in),
             :]
+        dimension_plane = gui["dimension"].value
+        if dimension_plane == "X plane":
+            dimension = 0
+            slice_number = half_xy
+        elif dimension_plane == "Y plane":
+            dimension = 1
+            slice_number = half_xy
+        elif dimension_plane == "Z plane":
+            dimension = 2
+            slice_number = half_z
         gui["preview_modality"].clear_output()
         with gui["preview_modality"]:
-            display(slider_normalised(psf_stack, dimension=2, dim_position=half_z))
+            display(slider_normalised(psf_stack, dimension=dimension, dim_position=slice_number))
 
     current_modalities = list(experiment.imaging_modalities.keys())
     gui.add_dropdown(
@@ -191,6 +201,15 @@ def ui_show_modality(experiment):
         options=current_modalities,
         value=current_modalities[0],
         on_change=update_plot,
+    )
+    gui.add_custom_widget(
+        "dimension",
+        widgets.ToggleButtons,
+        options=["X plane", "Y plane", "Z plane"],
+        value="Z plane",
+        on_change=update_plot,
+        style={"description_width": "initial"},
+        description="Slice over: ",
     )
     gui.add_output("preview_modality")
     gui["preview_modality"].clear_output()
