@@ -89,8 +89,23 @@ def ui_select_probe(experiment, **kwargs):
 def ui_select_sample_parameters(experiment):
     sample_gui = EZInput(title="Sample parameters")
     # Add widgets for sample parameters
+    sample_gui.add_label(
+        "Current sample parameters selected:"
+    )
+
+    sample_gui.add_HTML(
+        "message", ""
+    )
+    def update_message():
+        text = ""
+        for key, value in experiment.virtualsample_params.items():
+            if key in sample_gui.elements.keys():
+                text += f"{key}: {value}<br>"
+        sample_gui["message"].value = text
+    
+
     sample_gui.add_int_slider(
-        "n_particles",
+        "number_of_particles",
         description="Number of particles",
         min=1,
         max=20,
@@ -110,10 +125,11 @@ def ui_select_sample_parameters(experiment):
     )
     def select_virtual_sample_parameters(b):
         experiment.set_virtualsample_params(
-            number_of_particles=sample_gui["n_particles"].value,
+            number_of_particles=sample_gui["number_of_particles"].value,
             random_orientations=sample_gui["random_orientations"].value
         )
         experiment.build(modules=["coordinate_field"])
+        update_message()
 
     sample_gui["select_sample_parameters"].on_click(select_virtual_sample_parameters)
     return sample_gui
