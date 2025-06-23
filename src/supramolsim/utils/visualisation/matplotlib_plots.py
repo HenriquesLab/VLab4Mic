@@ -4,20 +4,24 @@ from ipywidgets import interact, widgets
 import numpy as np
 
 
-def slider_normalised(stack, dimension):
-    def frame_slider_norm(frame):
+def slider_normalised(stack, dimension, dim_position=None, cbar=True):
+    def frame_slider_norm(frame, cbar):
         """
         stack is assumed to be of the shape MxNxZ, where Z is the axial direction
         """
         stack_max = np.max(stack)
         fig = plt.figure()
+        if cbar:
+            cbar_mode = "each"
+        else:
+            cbar_mode = None
         grid = axes_grid1.AxesGrid(
             fig,
             111,
             nrows_ncols=(1, 1),
             axes_pad=0.5,
             cbar_location="right",
-            cbar_mode="each",
+            cbar_mode=cbar_mode,
             cbar_size="15%",
             cbar_pad="5%",
         )
@@ -45,13 +49,19 @@ def slider_normalised(stack, dimension):
                 vmin=0,
                 vmax=stack_max,
             )
-        grid.cbar_axes[0].colorbar(im0)
+        if cbar: 
+            grid.cbar_axes[0].colorbar(im0)
 
     interact(
         frame_slider_norm,
         frame=widgets.IntSlider(
-            min=1, max=stack.shape[dimension], step=1, value=0, continuous_update=False
+            min=1, 
+            max=stack.shape[dimension], 
+            step=1, 
+            value=dim_position, 
+            continuous_update=False
         ),
+        cbar=cbar
     )
 
 
