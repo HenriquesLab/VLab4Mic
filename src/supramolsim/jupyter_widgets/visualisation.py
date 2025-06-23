@@ -167,26 +167,22 @@ def ui_show_virtual_sample(experiment):
 
 
 def ui_show_modality(experiment):
+    from supramolsim.utils.visualisation.matplotlib_plots import slider_normalised
     gui = EZInput(title="Modality")
-    
+    xy_zoom_in = 0.5
     def update_plot(change):
         mod_name = gui["modality"].value
         psf_stack = experiment.imager.get_modality_psf_stack(mod_name)
-        psf_shapes = psf_stack.shape
-        stack_max = psf_stack.max()
+        psf_shape = psf_stack.shape
+        half_xy = int(psf_shape[0] / 2)
+        half_z = int(psf_shape[2] / 2)
+        psf_stack = psf_stack[
+            half_xy - int(half_xy * xy_zoom_in) : half_xy + int(half_xy * xy_zoom_in),
+            half_xy - int(half_xy * xy_zoom_in) : half_xy + int(half_xy * xy_zoom_in),
+            :]
         gui["preview_modality"].clear_output()
-        fig, axs = plt.subplots()
-        axs.imshow(
-                psf_stack[:, :, int(psf_shapes[2] / 2)],
-                cmap="gray",
-                interpolation="none",
-                vmin=0,
-                vmax=stack_max,
-            )
-        plt.close()
         with gui["preview_modality"]:
-            display(fig)
-
+            display(slider_normalised(psf_stack, dimension=2))
 
     current_modalities = list(experiment.imaging_modalities.keys())
     gui.add_dropdown(
