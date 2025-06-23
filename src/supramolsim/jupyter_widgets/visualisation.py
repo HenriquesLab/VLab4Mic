@@ -180,19 +180,19 @@ def ui_show_modality(experiment):
             half_xy - int(half_xy * xy_zoom_in) : half_xy + int(half_xy * xy_zoom_in),
             half_xy - int(half_xy * xy_zoom_in) : half_xy + int(half_xy * xy_zoom_in),
             :]
-        dimension_plane = gui["dimension"].value
+        dimension_plane = gui["dimension_slice"].value
         if dimension_plane == "X plane":
             dimension = 0
-            slice_number = half_xy
         elif dimension_plane == "Y plane":
             dimension = 1
-            slice_number = half_xy
         elif dimension_plane == "Z plane":
             dimension = 2
-            slice_number = half_z
         gui["preview_modality"].clear_output()
         with gui["preview_modality"]:
-            display(slider_normalised(psf_stack, dimension=dimension, dim_position=slice_number))
+            display(slider_normalised(
+                psf_stack,
+                dimension=dimension,
+                cbar=False,))
 
     current_modalities = list(experiment.imaging_modalities.keys())
     gui.add_dropdown(
@@ -203,7 +203,7 @@ def ui_show_modality(experiment):
         on_change=update_plot,
     )
     gui.add_custom_widget(
-        "dimension",
+        "dimension_slice",
         widgets.ToggleButtons,
         options=["X plane", "Y plane", "Z plane"],
         value="Z plane",
