@@ -181,11 +181,11 @@ def ui_show_modality(experiment):
             half_xy - int(half_xy * xy_zoom_in) : half_xy + int(half_xy * xy_zoom_in),
             :]
         dimension_plane = gui["dimension_slice"].value
-        if dimension_plane == "X plane":
+        if dimension_plane == "YZ plane":
             dimension = 0
-        elif dimension_plane == "Y plane":
+        elif dimension_plane == "XZ plane":
             dimension = 1
-        elif dimension_plane == "Z plane":
+        elif dimension_plane == "XY plane":
             dimension = 2
         gui["preview_modality"].clear_output()
         with gui["preview_modality"]:
@@ -205,11 +205,11 @@ def ui_show_modality(experiment):
     gui.add_custom_widget(
         "dimension_slice",
         widgets.ToggleButtons,
-        options=["X plane", "Y plane", "Z plane"],
-        value="Z plane",
+        options=["YZ plane", "XZ plane", "XY plane"],
+        value="XY plane",
         on_change=update_plot,
         style={"description_width": "initial"},
-        description="Slice over: ",
+        description="Plane of view: ",
     )
     gui.add_output("preview_modality")
     gui["preview_modality"].clear_output()
