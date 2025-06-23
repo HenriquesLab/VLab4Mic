@@ -124,3 +124,43 @@ def ui_show_labelled_structure(experiment):
     gui.add_output("preview_labelled_structure")
     gui["emitter_plotsize"].value = 2
     return gui
+
+
+def ui_show_virtual_sample(experiment):
+    gui = EZInput(title="Virtual Sample")
+
+    def update_plot(change):
+        gui["preview_virtual_sample"].clear_output()
+        hview = gui["horizontal_view"].value
+        vview = gui["vertical_view"].value
+        with gui["preview_virtual_sample"]:
+            display(experiment.coordinate_field.show_field(
+                view_init=[vview, hview, 0],
+                return_fig=True))
+            plt.close()
+
+    gui.add_int_slider(
+        "horizontal_view",
+        description="Horizontal view",
+        min=-90,
+        max=90,
+        step=1,
+        value=0,
+        continuous_update=False,
+        on_change=update_plot,
+    )
+    gui.add_int_slider(
+        "vertical_view",
+        description="Vertical view",
+        min=-90,
+        max=90,
+        step=1,
+        value=90,
+        continuous_update=False,
+        on_change=update_plot,
+    )
+
+    gui.add_output("preview_virtual_sample")
+    gui["preview_virtual_sample"].clear_output()
+    update_plot(True)
+    return gui
