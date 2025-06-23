@@ -12,6 +12,7 @@ import seaborn as sns
 from matplotlib.ticker import FormatStrFormatter
 import copy
 import tifffile as tiff
+from pandas.api.types import is_numeric_dtype
 
 output_dir = Path.home() / "vlab4mic_outputs"
 
@@ -385,8 +386,10 @@ class sweep_generator:
             param2 = "probe_n"
         analysis_resut_df = self.get_analysis_output(keyname="dataframes")
         df = copy.deepcopy(self.analysis["dataframes"])
-        df[param1] = df[param1].round(3)
-        df[param2] = df[param2].round(3)
+        if is_numeric_dtype(df[param1]):
+            df[param1] = df[param1].round(3)
+        if is_numeric_dtype(df[param2]):
+            df[param2] = df[param2].round(3)
         df_categories, titles = sweep.pivot_dataframes_byCategory(
             dataframe=df,
             category_name=category,
