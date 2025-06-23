@@ -133,3 +133,51 @@ def ui_select_sample_parameters(experiment):
 
     sample_gui["select_sample_parameters"].on_click(select_virtual_sample_parameters)
     return sample_gui
+
+def ui_select_modality(experiment):
+    modalities_default = ["Widefield", "Confocal", "STED", "SMLM"]
+    modality_gui = EZInput(title="Modality selection")
+    modality_gui.add_label("Current modality selected:")
+    modality_gui.add_HTML("message", "No modalities selected yet.")
+    def update_message():
+        text = ""
+        for mod_name, params in experiment.imaging_modalities.items():
+            text += f"{mod_name}<br>"
+        modality_gui["message"].value = text
+    def add_modality(b):
+        selected_modality = modality_gui["select_modality"].value
+        experiment.add_modality(
+            modality_name=selected_modality
+        )
+        update_message()
+    
+    def remove_modality(b):
+        selected_modality = modality_gui["select_modality"].value
+        if selected_modality in experiment.imaging_modalities:
+            experiment.update_modality(
+                modality_name=selected_modality,
+                remove=True
+            )
+        else:
+            print(f"Modality {selected_modality} not found.")
+        update_message()
+    
+    modality_gui.add_dropdown(
+        "select_modality",
+        description="Select modality:",
+        options=modalities_default
+    )
+    modality_gui.add_button(
+        "add_modality",
+        description="Add modality",
+        disabled=False
+    )
+    modality_gui.add_button(
+        "remove_modality",
+        description="Remove modality",
+        disabled=False
+    )
+    modality_gui["add_modality"].on_click(add_modality)
+    modality_gui["remove_modality"].on_click(remove_modality)
+    update_message()
+    return modality_gui
