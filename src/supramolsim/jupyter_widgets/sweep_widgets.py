@@ -645,7 +645,7 @@ class Sweep_gui(jupyter_gui):
         with io.capture_output() as captured:
             self.my_experiment._build_coordinate_field(
                         keep=True,
-                        nparticles=1
+                        number_of_particles=1
                     )
         nparticles = widgets.IntSlider(value=1, min=1, max=20, description="Number of particles",  style = {'description_width': 'initial'},continuous_update=False)
         angle_view = widgets.IntSlider(value=20, min=-90, max=90, description="Angle view",  style = {'description_width': 'initial'},continuous_update=False)
@@ -668,7 +668,7 @@ class Sweep_gui(jupyter_gui):
                     with io.capture_output() as captured:
                         self.my_experiment._build_coordinate_field(
                             keep=True,
-                            nparticles=nparticles.value,
+                            number_of_particles=nparticles.value,
                             random_orientations=random_orientations.value
                         )
                         plot = self.my_experiment.coordinate_field.show_field(

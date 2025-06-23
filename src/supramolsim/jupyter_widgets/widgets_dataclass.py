@@ -848,13 +848,13 @@ class jupyter_gui:
 
         def createmin(b):
             random_pl = field_gui["random"].value
-            nparticles = field_gui["nparticles"].value
+            number_of_particles = field_gui["number_of_particles"].value
             min_distance = field_gui["mindist"].value
             # set parameters for virtual samle
             # then create the field
             self.my_experiment._build_coordinate_field(
                 keep=True,
-                nparticles=nparticles,
+                number_of_particles=number_of_particles,
                 use_self_particle=False,
                 random_placing=random_pl,
                 minimal_distance=min_distance,
@@ -864,7 +864,7 @@ class jupyter_gui:
 
         def createmin_particles(b):
             random_pl = field_gui["random"].value
-            nparticles = field_gui["nparticles"].value
+            number_of_particles = field_gui["number_of_particles"].value
             if field_gui["distance_from_particle"].value:
                 min_distance = None
             else:
@@ -872,7 +872,7 @@ class jupyter_gui:
             random_orientations = field_gui["random_orientations"].value
             self.my_experiment._build_coordinate_field(
                 keep=True,
-                nparticles=nparticles,
+                number_of_particles=number_of_particles,
                 random_placing=random_pl,
                 minimal_distance=min_distance,
                 random_orientations=random_orientations,
@@ -983,7 +983,7 @@ class jupyter_gui:
 
         # field_gui["show"].layout = widgets.Layout(width=width, display = "None")
         field_gui.add_int_slider(
-            "nparticles",
+            "number_of_particles",
             value=1,
             min=1,
             max=20,
@@ -1019,7 +1019,7 @@ class jupyter_gui:
         field_gui.show()
         if self.my_experiment.generators_status("particle"):
             print("Using particle model")
-            field_widgets["nparticles"] = True
+            field_widgets["number_of_particles"] = True
             field_widgets["random"] = True
             field_widgets["random_orientations"] = True
             field_widgets["distance_from_particle"] = True
@@ -1028,7 +1028,7 @@ class jupyter_gui:
             field_widgets["Use_Upload"] = True
         else:
             print("No particle available")
-            field_widgets["nparticles"] = True
+            field_widgets["number_of_particles"] = True
             field_widgets["random"] = True
             field_widgets["mindist"] = True
             field_widgets["minimal"] = True
