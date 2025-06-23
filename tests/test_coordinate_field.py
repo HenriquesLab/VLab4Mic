@@ -11,9 +11,9 @@ def test_virtual_sample_params(experiment_7r5k_base):
 
 
 def test_create_minimal_field():
-    nparticles = 24
-    test_field = field.create_min_field(nparticles=nparticles)
-    test_field.molecules_params["nMolecules"] == nparticles
+    number_of_particles = 24
+    test_field = field.create_min_field(number_of_particles=number_of_particles)
+    test_field.molecules_params["nMolecules"] == number_of_particles
     test_field.change_number_of_molecules(25)
     test_field.show_field()
     test_field.expand_isotropically(factor=2)
@@ -45,10 +45,10 @@ def test_minfield_with_particles(configuration_directory):
     particle, label_params_list = workflows.particle_from_structure(
         structure, [tmp_label1], configuration_directory
     )
-    nparticles = 24
+    number_of_particles = 24
     random_placing = True
     # minimal distance should be calculated automatically from particle
-    coordinates_field = field.create_min_field(nparticles=nparticles,
+    coordinates_field = field.create_min_field(number_of_particles=number_of_particles,
                                                 random_placing=random_placing)
     coordinates_field.create_molecules_from_InstanceObject(particle)
     coordinates_field.construct_static_field()
@@ -58,8 +58,8 @@ def test_minfield_with_particles(configuration_directory):
 
 
 def test_nparticles_constraints():
-    nparticles = 200
-    sample, expr = experiments.generate_virtual_sample(number_of_particles=nparticles)
+    number_of_particles = 200
+    sample, expr = experiments.generate_virtual_sample(number_of_particles=number_of_particles)
     assert expr.coordinate_field.molecules_params["minimal_distance"] is not None
-    assert len(expr.coordinate_field.molecules) < nparticles
-    assert expr.coordinate_field.molecules_params["nMolecules"] < nparticles
+    assert len(expr.coordinate_field.molecules) < number_of_particles
+    assert expr.coordinate_field.molecules_params["nMolecules"] < number_of_particles

@@ -554,7 +554,7 @@ class ExperimentParametrisation:
         if sample_dimensions is not None:
             vsample_configuration["sample_dimensions"] = sample_dimensions
         if number_of_particles is not None:
-            vsample_configuration["nparticles"] = number_of_particles
+            vsample_configuration["number_of_particles"] = number_of_particles
         if particle_positions is not None:
             vsample_configuration["relative_positions"] = particle_positions
         if random_orientations is not None:
@@ -729,7 +729,7 @@ def generate_virtual_sample(
     if sample_dimensions is not None:
         vsample_configuration["sample_dimensions"] = sample_dimensions
     if number_of_particles is not None:
-        vsample_configuration["nparticles"] = number_of_particles
+        vsample_configuration["number_of_particles"] = number_of_particles
     if particle_positions is not None:
         vsample_configuration["relative_positions"] = particle_positions
     if random_orientations is not None:
