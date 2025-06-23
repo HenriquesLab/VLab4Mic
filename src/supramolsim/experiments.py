@@ -299,7 +299,7 @@ class ExperimentParametrisation:
             return exported_field
         else:
             # create minimal field
-            fieldobject = coordinates_field.create_min_field(**kwargs)
+            fieldobject = coordinates_field.create_min_field(**self.virtualsample_params, **kwargs)
             exported_field = fieldobject.export_field()
             if keep:
                 self.exported_coordinate_field = exported_field
@@ -533,6 +533,35 @@ class ExperimentParametrisation:
             self.structure_label = None
         else:
             self.structure_label = list(self.probe_parameters.keys())
+
+    def set_virtualsample_params(
+        self,
+        virtualsample_template="square1x1um_randomised",
+        sample_dimensions=None,
+        number_of_particles= None,
+        particle_positions = None,
+        random_orientations:bool = None,
+        random_placing:bool = None,
+        **kwargs,
+    ):
+        # load default configuration for virtual sample
+        virtual_sample_template = os.path.join(
+            self.configuration_path,
+            "virtualsample",
+            virtualsample_template + ".yaml",
+        )
+        vsample_configuration = load_yaml(virtual_sample_template)
+        if sample_dimensions is not None:
+            vsample_configuration["sample_dimensions"] = sample_dimensions
+        if number_of_particles is not None:
+            vsample_configuration["nparticles"] = number_of_particles
+        if particle_positions is not None:
+            vsample_configuration["relative_positions"] = particle_positions
+        if random_orientations is not None:
+            vsample_configuration["random_orientations"] = random_orientations
+        if random_placing is not None:
+            vsample_configuration["random_placing"] = random_placing
+        self.virtualsample_params = vsample_configuration
 
     def use_image_for_positioning(
         self,
