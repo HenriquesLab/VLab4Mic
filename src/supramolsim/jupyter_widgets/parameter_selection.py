@@ -135,7 +135,7 @@ def ui_select_sample_parameters(experiment):
     return sample_gui
 
 def ui_select_modality(experiment):
-    modalities_default = ["Widefield", "Confocal", "STED", "SMLM"]
+    modalities_default = ["Widefield", "Confocal", "STED", "SMLM", "All"]
     modality_gui = EZInput(title="Modality selection")
     modality_gui.add_label("Current modality selected:")
     modality_gui.add_HTML("message", "No modalities selected yet.")
@@ -146,13 +146,22 @@ def ui_select_modality(experiment):
         modality_gui["message"].value = text
     def add_modality(b):
         selected_modality = modality_gui["select_modality"].value
-        experiment.add_modality(
+        if selected_modality == "All":
+            for mod_names in modalities_default[0:len(modalities_default)-1]:
+                experiment.add_modality(modality_name=mod_names, save=True)
+        else:   experiment.add_modality(
             modality_name=selected_modality
         )
         update_message()
     
     def remove_modality(b):
         selected_modality = modality_gui["select_modality"].value
+        if selected_modality == "All":
+            for mod_names in modalities_default[0:len(modalities_default)-1]:
+                experiment.update_modality(
+                    modality_name=mod_names,
+                    remove=True
+                )
         if selected_modality in experiment.imaging_modalities:
             experiment.update_modality(
                 modality_name=selected_modality,
