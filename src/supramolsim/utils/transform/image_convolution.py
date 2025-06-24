@@ -77,6 +77,7 @@ def frame_by_volume_convolution(
     kernel3D,
     zfocus_slice,
     projection_depth=1,
+    asframe=True
 ):
     """
     Generate a 2D image from the  3D field of active emitters
@@ -100,16 +101,19 @@ def frame_by_volume_convolution(
         zfocus_slice - projection_depth,
         zfocus_slice + projection_depth,
     )
-    frame = np.sum(
-        np.array(
-            convolved_intensity[
-                :, :, zfocus_slice - projection_depth : zfocus_slice + projection_depth
-            ]
-        ),
-        axis=2,
-    )
-    return frame
-
+    if asframe:
+        frame = np.sum(
+            np.array(
+                convolved_intensity[
+                    :, :, zfocus_slice - projection_depth : zfocus_slice + projection_depth
+                ]
+            ),
+            axis=2,
+        )
+        return frame
+    else:
+        return convolved_intensity
+    
 
 # keep
 def generate_frames_volume_convolution(
@@ -131,42 +135,74 @@ def generate_frames_volume_convolution(
     """
     Inputs are taken from the method _homogenise_scales4convolution_modality
     """
-    cframes = []
-    nframes = np.shape(photons_frames)[1]
-    for f in tqdm(range(int(nframes))):
-        photons_in_frame_vect = photons_frames[
-            :, f
-        ]  # extract the vector that corresponds to the current frame
-        # calculate depth. This value considers the PSF dimenstions
-        coordinates_scaled = field_coordinates
-        pixelsize_scaled = int(field_pixelsizeXY)
-        zplane = field_zfocus
-        depth = (
-            psf_array.shape[2] / 2
-        ) * psf_zstep  # Assumes the focus plane is at the middle
-        ranges = [
-            (0, field_size[0] * pixelsize_scaled),
-            (0, field_size[1] * pixelsize_scaled),
-            (zplane - depth, zplane + depth),
-        ]
-        frame_n = frame_by_volume_convolution(
-            coordinates_scaled,
-            photons_in_frame_vect,
-            ranges,
-            psf_zstep,
-            psf_array,
-            psf_focus_slice,
-            projection_depth=psf_projection_depth,
-        )
-        cframes.append(frame_n)
+    if asframes:
+        cframes = []
+        nframes = np.shape(photons_frames)[1]
+        for f in tqdm(range(int(nframes))):
+            photons_in_frame_vect = photons_frames[
+                :, f
+            ]  # extract the vector that corresponds to the current frame
+            # calculate depth. This value considers the PSF dimenstions
+            coordinates_scaled = field_coordinates
+            pixelsize_scaled = int(field_pixelsizeXY)
+            zplane = field_zfocus
+            depth = (
+                psf_array.shape[2] / 2
+            ) * psf_zstep  # Assumes the focus plane is at the middle
+            ranges = [
+                (0, field_size[0] * pixelsize_scaled),
+                (0, field_size[1] * pixelsize_scaled),
+                (zplane - depth, zplane + depth),
+            ]
+            frame_n = frame_by_volume_convolution(
+                coordinates_scaled,
+                photons_in_frame_vect,
+                ranges,
+                psf_zstep,
+                psf_array,
+                psf_focus_slice,
+                projection_depth=psf_projection_depth,
+            )
+            cframes.append(frame_n)
 
-    stack_zxy = np.array(cframes)
-    currentpixelsizes = (psf_pixelsizeXY, psf_pixelsizeXY)
-    newpixelsizes = (int(field_pixelsizeXY), int(field_pixelsizeXY))
-    binned_sequence = lateral_binning_stack(
-        stack_zxy, currentpixelsizes, newpixelsizes, field_size
-    )
-    return binned_sequence
+        stack_zxy = np.array(cframes)
+        currentpixelsizes = (psf_pixelsizeXY, psf_pixelsizeXY)
+        newpixelsizes = (int(field_pixelsizeXY), int(field_pixelsizeXY))
+        binned_sequence = lateral_binning_stack(
+            stack_zxy, currentpixelsizes, newpixelsizes, field_size
+        )
+        return binned_sequence
+    else:
+        volume_frames = []
+        nframes = np.shape(photons_frames)[1]
+        for f in tqdm(range(int(nframes))):
+            photons_in_frame_vect = photons_frames[
+                :, f
+            ]  # extract the vector that corresponds to the current frame
+            # calculate depth. This value considers the PSF dimenstions
+            coordinates_scaled = field_coordinates
+            pixelsize_scaled = int(field_pixelsizeXY)
+            zplane = field_zfocus
+            depth = (
+                psf_array.shape[2] / 2
+            ) * psf_zstep  # Assumes the focus plane is at the middle
+            ranges = [
+                (0, field_size[0] * pixelsize_scaled),
+                (0, field_size[1] * pixelsize_scaled),
+                (zplane - depth, zplane + depth),
+            ]
+            v_frame = frame_by_volume_convolution(
+                coordinates_scaled,
+                photons_in_frame_vect,
+                ranges,
+                psf_zstep,
+                psf_array,
+                psf_focus_slice,
+                projection_depth=psf_projection_depth,
+                asframe=False
+            )
+            volume_frames.append(v_frame)
+        return volume_frames
 
 
 # keep
