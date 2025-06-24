@@ -376,7 +376,7 @@ class Imager:
         nbeads=0,
         save=False,
         noise=False,
-        exp_time=0.1,
+        exp_time=0.001,
         **kwargs,
     ):
         """
