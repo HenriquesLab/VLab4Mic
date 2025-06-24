@@ -11,6 +11,7 @@ from datetime import datetime
 import seaborn as sns
 from matplotlib.ticker import FormatStrFormatter
 import copy
+import tifffile as tiff
 
 output_dir = Path.home() / "vlab4mic_outputs"
 
@@ -150,7 +151,9 @@ class sweep_generator:
         :type reference_probe: dict
         
         """
-        if reference_structure is not None:
+        if reference_structure is None:
+            self.reference_structure = self.structures[0]
+        else:
             self.reference_structure = reference_structure
         if reference_probe is not None:
             self.reference_probe = reference_probe
@@ -166,8 +169,8 @@ class sweep_generator:
             )
         )
 
-    def generate_reference_image(self):
-        if self.reference_image is None:
+    def generate_reference_image(self, override=False):
+        if self.reference_image is None or override:
             self.generate_reference_sample()
         self.reference_image, self.reference_image_parameters = (
             sweep.generate_global_reference_modality(
@@ -270,7 +273,7 @@ class sweep_generator:
 
 
     def run_analysis(
-        self, save=True, output_name=None, output_directory=None, plots=False
+        self, save=True, output_name=None, output_directory=None, plots=False, save_images=True, **kwargs
     ):
         """
         Analyse image simulations against the specified image reference.
@@ -464,3 +467,24 @@ class sweep_generator:
                     for metric, plot in plots_by_metric.items():
                         figure_name = output_name + "_" + metric + "_" + plot_type + ".png"
                         plot.savefig(os.path.join(output_directory, figure_name))
+
+
+    def save_images(self, output_name=None, output_directory=None, ):
+        if output_name is None:
+            output_name = "vLab4mic_images_"
+        if output_directory is None:
+            output_directory = os.path.join(self.ouput_directory, "simulated_images", "")
+            if not os.path.exists(output_directory):
+                os.makedirs(output_directory)
+        for param_combination_id, replicates in self.acquisition_outputs.items():
+            nreps = len(replicates)
+            image = replicates[0]
+            for i in range(1, nreps):
+                image = np.concatenate((image, replicates[i]))
+            name = output_directory + param_combination_id + ".tiff"
+            tiff.imwrite(name, image)
+        if self.reference_image is not None:
+            # save reference image
+            name_ref = output_directory + "reference.tiff"
+            tiff.imwrite(name_ref, self.reference_image)
+            

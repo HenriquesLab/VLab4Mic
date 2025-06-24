@@ -179,7 +179,7 @@ class ExperimentParametrisation:
         exp_time=0.001,
         noise=True,
         save=False,
-        nframes=2,
+        nframes=1,
         channels=[
             "ch0",
         ],

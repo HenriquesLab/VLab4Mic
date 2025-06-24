@@ -85,19 +85,19 @@ class Sweep_gui(jupyter_gui):
         ez_sweep_structure.add_button("Select", description="Select")
 
         def select(b):
-            self.selected_structure = self.structures_info_list[
+            self.sweep_gen.structures = [self.structures_info_list[
                 ez_sweep_structure["structures"].value
-            ]
+            ],]
             ez_sweep_structure["structures"].disabled = True
 
         ez_sweep_structure["Select"].on_click(select)
         ez_sweep_structure.show()
 
-    def select_probes_and_mods(self, include_probe_models=False):
+    def select_probes_and_mods(self, include_probe_models=True):
         ez_sweep = EZInput(title="Sweep")
         probes2show = []
-        if self.selected_structure in self.probes_per_structure.keys():
-            probe_list = self.probes_per_structure[self.selected_structure]
+        if self.sweep_gen.structures[0] in self.probes_per_structure.keys():
+            probe_list = self.probes_per_structure[self.sweep_gen.structures[0]]
             probes2show.extend(
                 copy.copy(probe_list)
             )
@@ -208,17 +208,38 @@ class Sweep_gui(jupyter_gui):
         reference = EZInput(title="reference")
         def gen_ref(b):
             reference["set"].disabled = True
-            self.reference_structure = self.select_structure
-            self.sweep_gen.generate_reference_image()
+            reference["feedback"].value = "Generating Reference..."
+            reference_structure = reference["structure"].value
+            reference_probe = reference["probe"].value
+            self.sweep_gen.reference_structure = reference_structure
+            self.sweep_gen.set_reference_parameters(
+                reference_structure=reference_structure,
+                reference_probe=reference_probe)
+            with io.capture_output() as captured:
+                self.sweep_gen.generate_reference_image(override=True)
+            reference["feedback"].value = "Reference Set"
+            reference["preview"].disabled = False
+
+        def show_reference(b):
+            reference["output"].clear_output()
+            with reference["output"]:
+                self.sweep_gen.preview_reference_image()
+
         reference.add_dropdown(
-            "structure", options=["same for parameter sweep",], 
+            "structure", options=self.sweep_gen.structures, 
             description="Structure",
-            disabled = True
+            disabled = False
         )
+        options_probes = ["NHS_ester",]
+        if self.sweep_gen.structures[0] in self.probes_per_structure.keys():
+            probe_list = self.probes_per_structure[self.sweep_gen.structures[0]]
+            options_probes.extend(
+                copy.copy(probe_list)
+            )
         reference.add_dropdown(
-            "probe", options=["NHS_ester",], 
+            "probe", options=options_probes, 
             description="Probe",
-            disabled = True
+            disabled = False
         )
         reference.add_dropdown(
             "modality", options=["Reference",], 
@@ -228,12 +249,20 @@ class Sweep_gui(jupyter_gui):
         reference.add_button(
             "set", description="Set reference"
         )
+        reference.add_button(
+            "preview", description="Preview reference", disabled = True
+        )
+        reference.elements["feedback"] = widgets.HTML("", style = dict(font_size= "15px", font_weight='bold'))
+
+        reference.elements["output"] = widgets.Output()
         reference["set"].on_click(gen_ref)
+        reference["preview"].on_click(show_reference)
         reference.show()
         
     def analyse_sweep(self):
         analysis_widget = EZInput(title="analysis")
         def analyse_sweep(b):
+            analysis_widget["feedback"].value = "Running analysis sweep. This might take some minutes..."
             analysis_widget["analyse"].disabled = True
             plots = analysis_widget["plots"].value
             param_names_set = self.sweep_gen.parameters_with_set_values
@@ -254,16 +283,22 @@ class Sweep_gui(jupyter_gui):
                 if self.sweep_gen.reference_image is None:
                     self.sweep_gen.generate_reference_image()
             with analysis_widget["outputs"]:
+                print("Generating Virtual samples.")
+                print("Once created, a progress bar will show the image simulation progression")
                 self.sweep_gen.run_analysis(plots=plots, save=False)
             analysis_widget["saving_directory"].disabled = False
             analysis_widget["save"].disabled = False
             analysis_widget["output_name"].disabled = False
         def save_results(b):
+            output_directory = analysis_widget["saving_directory"].selected_path
             output_name = analysis_widget["output_name"].value
+            save_images = analysis_widget["save_images"].value
+            self.sweep_gen.ouput_directory = output_directory
             self.sweep_gen.save_analysis(
-                output_directory=self.ouput_directory,
                 output_name=output_name
                 )
+            if save_images:
+                self.sweep_gen.save_images()
             #analysis_widget["save"].disabled = True
         analysis_widget.elements["reps"] = self.wgen.gen_bound_int(
                 value=3, description="Repeats per parameter combination",
@@ -278,6 +313,7 @@ class Sweep_gui(jupyter_gui):
         analysis_widget.add_button(
             "analyse", description="Run analysis"
         )
+        analysis_widget.elements["feedback"] = widgets.HTML("", style = dict(font_size= "15px", font_weight='bold'))
         analysis_widget.elements["outputs"] = widgets.Output()
         analysis_widget.elements["saving_directory"] = FileChooser(
             self.ouput_directory,
@@ -291,6 +327,7 @@ class Sweep_gui(jupyter_gui):
             "output_name", 
             value="vlab4mic_analysis", 
             description="Output name")
+        analysis_widget.add_checkbox("save_images", description="Save images", value=False)
         analysis_widget.add_button(
             "save", description="save analysis", disabled=True
         )
