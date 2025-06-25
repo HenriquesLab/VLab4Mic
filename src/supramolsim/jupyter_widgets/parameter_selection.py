@@ -13,6 +13,7 @@ def ui_select_structure(experiment):
         experiment.structure_id = elements["structures"].value
         experiment.build(modules="structure")
         elements["label_2"].value = experiment.structure_id
+        elements["button"].disabled = False
 
     gui.add_label(value="Current structure selected:")
     gui.add_label(value=experiment.structure_id)
@@ -139,7 +140,7 @@ def ui_select_sample_parameters(experiment):
 def ui_select_modality(experiment):
     modalities_default = ["Widefield", "Confocal", "STED", "SMLM", "All"]
     modality_gui = EZInput(title="Modality selection")
-    modality_gui.add_label("Current modality selected:")
+    modality_gui.add_label("Current modalities selected:")
     modality_gui.add_HTML("message", "No modalities selected yet.")
     def update_message():
         text = ""
