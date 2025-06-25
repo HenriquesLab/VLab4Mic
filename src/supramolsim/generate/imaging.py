@@ -376,7 +376,7 @@ class Imager:
         nbeads=0,
         save=False,
         noise=False,
-        exp_time=1.0,
+        exp_time=0.001,
         **kwargs,
     ):
         """
@@ -436,7 +436,10 @@ class Imager:
                 self.write_ground_truth_positions(
                     emitters_to_export, "x [nm],y [nm],z [nm]", gt_notes, no_emitters
                 )
-            convolution_type = self.modalities[modality]["psf"]["convolution_type"]
+            if "convolution_type" in kwargs.keys():
+                convolution_type = kwargs["convolution_type"]
+            else:
+                convolution_type = self.modalities[modality]["psf"]["convolution_type"]
             psf_size = psf_data["psf_array"].shape
             print(f"size of psf is: {psf_size}")
             simparams = dict(
@@ -450,6 +453,13 @@ class Imager:
             )
             if convolution_type == "direct":
                 pass
+            elif convolution_type == "raw_volume":
+                    images = conv.generate_frames_volume_convolution(
+                        **field_data,
+                        **psf_data,
+                        asframes=False,
+                    )
+                    beads = None
             else:
                 images, beads = self.images_by_convolutions(
                     convolution_type, **simparams
@@ -462,25 +472,28 @@ class Imager:
 
             # wrap up the images from a single fluorophore in the channel
             output_per_fluoname[fluo] = dict(images=images, beads=beads)
-        timeseries, beadstack = self._add_fluorophore_signals(output_per_fluoname)
-        # # # Up to here only the photon information on arrival
-        if noise:
-            print("Adding noise")
-            timeseries = self._crop_negative(timeseries)
-            # print(np.max(timeseries), np.min(timeseries))
-            timeseries = self.add_detector_noise(modality, timeseries)
-            if beadstack is not None:
-                beadstack = self.add_detector_noise(modality, beadstack)
-            else:
-                beadstack = None
-        if save:
-            # gt_positions = self.generate_ground_truth_positions(groundtruth_emitters)
-            timeseries = self._crop_negative(timeseries)
-            beadstack = self._crop_negative(beadstack)
-            writing_notes_fluo = writing_notes_fluo + "_withNoise_"
+        if convolution_type != "raw_volume":
+            timeseries, beadstack = self._add_fluorophore_signals(output_per_fluoname)
+            # # # Up to here only the photon information on arrival
+            if noise:
+                print("Adding noise")
+                timeseries = self._crop_negative(timeseries)
+                # print(np.max(timeseries), np.min(timeseries))
+                timeseries = self.add_detector_noise(modality, timeseries)
+                if beadstack is not None:
+                    beadstack = self.add_detector_noise(modality, beadstack)
+                else:
+                    beadstack = None
+            if save:
+                # gt_positions = self.generate_ground_truth_positions(groundtruth_emitters)
+                timeseries = self._crop_negative(timeseries)
+                beadstack = self._crop_negative(beadstack)
+                writing_notes_fluo = writing_notes_fluo + "_withNoise_"
 
-            self._save_timeseries_with_beads(timeseries, beadstack, writing_notes_fluo)
-        return timeseries, beadstack
+                self._save_timeseries_with_beads(timeseries, beadstack, writing_notes_fluo)
+            return timeseries, beadstack
+        else:
+            return images, beads
 
     def write_ground_truth_positions(
         self, emitters, header=None, notes="", no_emitters=False
