@@ -129,6 +129,8 @@ def ui_select_sample_parameters(experiment):
             random_orientations=sample_gui["random_orientations"].value
         )
         experiment.build(modules=["coordinate_field"])
+        if experiment.objects_created["imager"]:
+            experiment.build(modules=["imager"])
         update_message()
 
     sample_gui["select_sample_parameters"].on_click(select_virtual_sample_parameters)
@@ -201,3 +203,4 @@ def ui_select_modality(experiment):
     modality_gui["select_modalies"].on_click(select_modalities)
     update_message()
     return modality_gui
+
