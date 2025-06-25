@@ -3,24 +3,40 @@ import matplotlib.pyplot as plt
 from IPython.display import display, clear_output
 from supramolsim.utils.visualisation.matplotlib_plots import slider_normalised
 import ipywidgets as widgets
+import mpl_toolkits.axes_grid1 as axes_grid1
+import io
+import numpy as np
+from IPython.utils import io
+
+def update_widgets_visibility(ezwidget, visibility_dictionary):
+    for widgetname in visibility_dictionary.keys():
+        if visibility_dictionary[widgetname]:
+            ezwidget[widgetname].layout.display = "inline-flex"
+        else:
+            ezwidget[widgetname].layout.display = "inline-flex"
+
+
 
 def ui_show_structure(experiment):
     gui = EZInput(title="Structure")
-
     def show_structure(widget_elements):
-        widget_elements["preview_structure"].clear_output()
-        total = experiment.structure.num_assembly_atoms
-        widget_elements["n_atoms"].disabled = False
-        atoms_number = widget_elements["n_atoms"].value
-        if total > atoms_number:
-            fraction = atoms_number/total
+        if experiment.objects_created["structure"]:
+            widget_elements["preview_structure"].clear_output()
+            total = experiment.structure.num_assembly_atoms
+            widget_elements["n_atoms"].disabled = False
+            atoms_number = widget_elements["n_atoms"].value
+            if total > atoms_number:
+                fraction = atoms_number/total
+            else:
+                fraction = 1.0
+            with widget_elements["preview_structure"]:
+                display(
+                    experiment.structure.show_assembly_atoms(assembly_fraction=fraction)
+                )
+                plt.close()
         else:
-            fraction = 1.0
-        with widget_elements["preview_structure"]:
-            display(
-                experiment.structure.show_assembly_atoms(assembly_fraction=fraction)
-            )
-            plt.close()
+            with widget_elements["preview_structure"]:
+                print("Structure not created yet, please create it first.")
     
     gui.add_callback(
         "button",
@@ -215,3 +231,159 @@ def ui_show_modality(experiment):
     gui["preview_modality"].clear_output()
     update_plot(True)
     return gui
+
+
+def ui_set_acq_params(experiment):
+    acquisition_gui = EZInput(title="acquisition_params")
+    imager_channels = []
+    anymod = list(experiment.imager.modalities.keys())[0]
+    for chann in experiment.imager.modalities[anymod]["filters"].keys():
+        print(chann)
+        imager_channels.append(chann)
+    nchannels = len(imager_channels)
+
+    def set_params(b):
+        mod_id = acquisition_gui["modalities_dropdown"].value
+        exp_time = acquisition_gui["Exposure"].value
+        noise = acquisition_gui["Noise"].value
+        nframes = acquisition_gui["Frames"].value
+        if acquisition_gui["Channels"].value:
+            channels = []
+            for chann in experiment.imager.modalities[mod_id][
+                "filters"
+            ].keys():
+                channels.append(chann)
+            print(f"using all channels: {channels}")
+        else:
+            channels = [
+                "ch0",
+            ]
+        experiment.set_modality_acq(
+            modality_name=mod_id,
+            exp_time=exp_time,
+            noise=noise,
+            save=True,
+            nframes=nframes,
+            channels=channels,
+        )
+
+    def preview_mod(b):
+        def get_preview(imaging_system, acq_gui):
+
+            def preview_exposure(message, Modality, Exposure, Noise):
+                fig = plt.figure()
+                grid = axes_grid1.AxesGrid(
+                    fig,
+                    111,
+                    nrows_ncols=(1, nchannels),
+                    axes_pad=1,
+                    cbar_location="right",
+                    cbar_mode="each",
+                    cbar_size="10%",
+                    cbar_pad="20%",
+                )
+                i = 0
+                for single_channel in imager_channels:
+                    single_mod_acq_params = dict(
+                        exp_time=Exposure,
+                        noise=Noise,
+                        save=False,
+                        nframes=1,
+                        channel=single_channel,
+                    )
+                    with io.capture_output() as captured:
+                        timeseries, calibration_beads = (
+                            imaging_system.generate_imaging(
+                                modality=Modality, **single_mod_acq_params
+                            )
+                        )
+                        min_val = np.min(timeseries[0])
+                        max_val = np.max(timeseries[0])
+
+                    preview_image = grid[i].imshow(
+                        timeseries[0],
+                        cmap="gray",
+                        interpolation="none",
+                        vmin=min_val,
+                        vmax=max_val,
+                    )
+                    grid[i].set_xticks([])
+                    grid[i].set_yticks([])
+                    grid[i].set_title("preview channel:" + single_channel)
+                    grid.cbar_axes[i].colorbar(preview_image)
+                    i = i + 1
+                    # grid[i].set_visible(False)
+                return fig
+
+            figure = preview_exposure(
+                message=acq_gui["label_1"].value,
+                Modality=acq_gui["modalities_dropdown"].value,
+                Exposure=acq_gui["Exposure"].value,
+                Noise=acq_gui["Noise"].value,
+            )
+            plt.close()
+            acquisition_gui["image_output"].clear_output()
+            with acquisition_gui["image_output"]:
+                display(figure)
+
+        get_preview(experiment.imager, acquisition_gui)
+
+    def clear(b):
+        print("Acquisition parameters cleared")
+        experiment.reset_to_defaults(module="acquisitions", save=True)
+
+    def preview_params_chage(change):
+        preview_mod(True)
+
+    acquisition_gui.add_label("Set acquisition parameters")
+    selected_mods = list(experiment.imaging_modalities.keys())
+    acquisition_gui.add_dropdown("modalities_dropdown", options=selected_mods)
+    acquisition_gui.add_checkbox("Noise", description="Use Noise", value=True)
+    acquisition_gui.add_checkbox(
+        "Channels", description="Use all channels", value=True
+    )
+    ## bounded int Text
+    acquisition_gui.add_bounded_int_text(
+        "Frames",
+        description="Frames (not used for preview)",
+        vmin=1,
+        vmax=100000,
+        value=1,
+        step=1,
+    )
+    acquisition_gui.add_bounded_float_text(
+        "Exposure",
+        description="Exposure (sec)",
+        vmin=0.000000,
+        vmax=10.0,
+        step=0.0001,
+        value=0.01,
+    )   
+    acquisition_gui["modalities_dropdown"].observe(
+        preview_params_chage, names="value"
+    )
+    acquisition_gui["Noise"].observe(preview_params_chage, names="value")
+    acquisition_gui["Exposure"].observe(preview_params_chage, names="value")
+    acquisition_gui.add_button("Set", description="Update acquisition parameters")
+    acquisition_gui.add_button("Clear", description="Reset params")
+    acquisition_gui["Set"].on_click(set_params)
+    acquisition_gui["Clear"].on_click(clear)
+    acquisition_gui.elements["image_output"] = widgets.Output()
+    acq_widgets = {}
+    for wgt in acquisition_gui.elements.keys():
+        acq_widgets[wgt] = False
+        acquisition_gui.elements[wgt].layout = widgets.Layout(
+            width="50%", display="None"
+        )
+    acquisition_gui.show()
+    acq_widgets["Frames"] = True
+    acq_widgets["Set"] = True
+    acq_widgets["image_output"] = True
+    acq_widgets["label_1"] = True
+    acq_widgets["modalities_dropdown"] = True
+    acq_widgets["Exposure"] = True
+    acq_widgets["Noise"] = True
+    acq_widgets["Clear"] = True
+    update_widgets_visibility(acquisition_gui, acq_widgets)
+    preview_mod(True)
+    return acquisition_gui
