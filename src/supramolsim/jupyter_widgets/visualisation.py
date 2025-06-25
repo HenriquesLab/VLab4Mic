@@ -211,11 +211,15 @@ def ui_show_modality(experiment):
                 cbar=False,))
 
     current_modalities = list(experiment.imaging_modalities.keys())
+    if len(current_modalities) == 0:
+        value_modalities = None
+    else:
+        value_modalities = current_modalities[0]
     gui.add_dropdown(
         "modality",
         description="Modality",
         options=current_modalities,
-        value=current_modalities[0],
+        value=value_modalities,
         on_change=update_plot,
     )
     gui.add_custom_widget(
@@ -229,7 +233,8 @@ def ui_show_modality(experiment):
     )
     gui.add_output("preview_modality")
     gui["preview_modality"].clear_output()
-    update_plot(True)
+    if value_modalities is not None:
+        update_plot(True)
     return gui
 
 
