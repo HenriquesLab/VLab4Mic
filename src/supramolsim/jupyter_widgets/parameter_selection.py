@@ -176,9 +176,9 @@ def ui_select_modality(experiment):
     
     def select_modalities(b):
         experiment.build(modules=["imager"])
-        modality_gui["add_modality"].disabled = True
-        modality_gui["remove_modality"].disabled = True
-        modality_gui["select_modality"].disabled = True 
+        #modality_gui["add_modality"].disabled = True
+        #modality_gui["remove_modality"].disabled = True
+        #modality_gui["select_modality"].disabled = True 
 
     modality_gui.add_dropdown(
         "select_modality",
@@ -197,7 +197,7 @@ def ui_select_modality(experiment):
     )
     modality_gui.add_button(
         "select_modalies",
-        description="Select modalities",
+        description="Select and update virtual modalities",
     )
     modality_gui["add_modality"].on_click(add_modality)
     modality_gui["remove_modality"].on_click(remove_modality)
