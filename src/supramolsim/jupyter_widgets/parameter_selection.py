@@ -4,6 +4,7 @@ import copy
 from IPython.display import display, clear_output
 import ipywidgets as widgets
 import io
+from ipyfilechooser import FileChooser
 
 def ui_select_structure(experiment):
     gui = EZInput("Select_structure")
@@ -205,3 +206,31 @@ def ui_select_modality(experiment):
     update_message()
     return modality_gui
 
+def ui_run_experiment(experiment):
+    run_gui = EZInput(title="Run experiment")
+    #experiment.build(modules=["imager",])
+    def run_simulation(b):
+        run_gui["Acquire"].disabled = True
+        sav_dir = run_gui["saving_directory"].value
+        if sav_dir is not None:
+            experiment.output_directory = sav_dir
+            save = True
+        experiment.experiment_id = run_gui["experiment_name"].value
+        experiment.run_simulation(save=save)
+        run_gui.save_settings()
+
+    run_gui.add_label("Set experiment name")
+    run_gui.add_text_area(
+        "experiment_name", value="Exp_name", remember_value=True
+    )
+    run_gui.add_label("Set saving directory")
+    run_gui.elements["saving_directory"] = FileChooser(
+        experiment.output_directory,
+        title="<b>Select output directory</b>",
+        show_hidden=False,
+        select_default=True,
+        show_only_dirs=False,
+    )
+    run_gui.add_button("Acquire", description="Run Simulation")
+    run_gui["Acquire"].on_click(run_simulation)
+    return run_gui
