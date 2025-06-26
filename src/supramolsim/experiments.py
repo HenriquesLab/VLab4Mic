@@ -17,6 +17,7 @@ from supramolsim.utils.io.yaml_functions import load_yaml
 import numpy as np
 import os
 import copy
+from supramolsim.utils.io import yaml_functions
 
 from pathlib import Path
 
@@ -132,7 +133,10 @@ class ExperimentParametrisation:
             modalities=modalities_dir,
             base=self.configuration_path,
         )
-
+        param_settings_file = os.path.join(
+            self.config_directories["base"], "parameter_settings.yaml"
+        )
+        self.param_settings = yaml_functions.load_yaml(param_settings_file)
 
 
     def select_structure(self, structure_id="1XI5", build=True):
