@@ -5,6 +5,7 @@ from ipyfilechooser import FileChooser
 from IPython.utils import io
 import matplotlib.pyplot as plt
 import numpy as np
+from .widget_generator import widgen
 
 def select_structure(sweep_gen):
     ez_sweep_structure = EZInput(title="structure")
@@ -250,3 +251,36 @@ def analyse_sweep(sweep_gen):
     analysis_widget["analyse"].on_click(analyse_sweep_action)
     analysis_widget["save"].on_click(save_results)
     return analysis_widget
+
+def create_param_widgets(sweep_gen):
+    wgen = widgen()
+    range_widgets = dict()
+    for groupname, group_parameters in sweep_gen.param_settings.items():
+        for parameter_name, settings in group_parameters.items():
+            if (
+                settings["wtype"] == "float_slider"
+                or settings["wtype"] == "int_slider"
+            ):
+                if settings["wtype"] == "float_slider":
+                    slidertype = "float"
+                else:
+                    slidertype = "int"
+                slider = wgen.gen_range_slider(
+                    slidertype=slidertype,
+                    minmaxstep=settings["range"],
+                    orientation="horizontal",
+                    description=parameter_name,
+                    style={'description_width': 'initial'}
+                )
+                inttext = wgen.gen_bound_int(
+                    value=settings["nintervals"], description="Total values"
+                )
+                range_widgets[parameter_name] = wgen.gen_box(
+                    widget1=slider,
+                    widget2=inttext,
+                    orientation="vertical",
+                    layout = widgets.Layout(width="70%")
+                )
+            elif settings["wtype"] == "logical":
+                range_widgets[parameter_name] = wgen.gen_logicals()
+    return range_widgets
