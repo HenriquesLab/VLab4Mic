@@ -56,12 +56,12 @@ def select_probes_and_mods(sweep_gen):
     return ez_sweep
 
 def add_parameters_values(sweep_gen):
-    param_settings = sweep_gen.param_settings
-    range_widgets = sweep_gen.range_widgets
+
+    range_widgets = create_param_widgets(sweep_gen)
     param_ranges = EZInput(title="ranges")
     
     def change_param_list(change):
-        new_options = list(param_settings[change.new].keys())
+        new_options = list(sweep_gen.param_settings[change.new].keys())
         param_ranges["parms_per_group"].options = new_options
 
     def change_param_widget(change):
@@ -71,7 +71,7 @@ def add_parameters_values(sweep_gen):
     def set_param_range(b):
         param_group = param_ranges["groups"].value
         param_name = param_ranges["parms_per_group"].value
-        if param_settings[param_group][param_name]["wtype"] != "logical":
+        if sweep_gen.param_settings[param_group][param_name]["wtype"] != "logical":
             start, end = param_ranges[param_name].children[0].value
             steps = param_ranges[param_name].children[1].value
             param_values = (start, end, steps)
@@ -96,11 +96,11 @@ def add_parameters_values(sweep_gen):
         param_ranges["add_parameter"].disabled = True
         param_ranges["done"].disabled = True
 
-    parameter_group_names = list(param_settings.keys())
+    parameter_group_names = list(sweep_gen.param_settings.keys())
     param_ranges.add_dropdown("groups", options=parameter_group_names, description="Parameter group")
     param_ranges.add_dropdown(
         "parms_per_group",
-        options=list(param_settings[param_ranges["groups"].value].keys()),
+        options=list(sweep_gen.param_settings[param_ranges["groups"].value].keys()),
         description="Parameter name"
     )
     for wname, wgt in range_widgets.items():
