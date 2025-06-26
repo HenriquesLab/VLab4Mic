@@ -158,7 +158,7 @@ def ui_show_virtual_sample(experiment):
 
     gui.add_int_slider(
         "horizontal_view",
-        description="Horizontal view",
+        description="Rotation angle (degrees)",
         min=-90,
         max=90,
         step=1,
@@ -168,7 +168,7 @@ def ui_show_virtual_sample(experiment):
     )
     gui.add_int_slider(
         "vertical_view",
-        description="Vertical view",
+        description="Tilt angle (degrees)",
         min=-90,
         max=90,
         step=1,
