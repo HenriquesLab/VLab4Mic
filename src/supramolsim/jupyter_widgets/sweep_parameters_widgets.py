@@ -20,12 +20,11 @@ def select_structure(sweep_gen):
     ez_sweep_structure["Select"].on_click(select)
     return ez_sweep_structure
 
-def select_probes_and_mods(sweep_gen, include_probe_models=True):
-    my_exp = sweep_gen.my_experiment
+def select_probes_and_mods(sweep_gen):
+    my_exp = sweep_gen.experiment
     probes_per_structure = copy.copy(my_exp.config_probe_per_structure_names)
     vlab_probes = copy.copy(my_exp.config_global_probes_names)
-    targetless_probes = getattr(sweep_gen, "targetless_probes", [])
-    modalities_default = getattr(sweep_gen, "modalities_default", [])
+    modalities_default = copy.copy(my_exp.example_modalities)
 
     ez_sweep = EZInput(title="Sweep")
     probes2show = []
@@ -33,8 +32,6 @@ def select_probes_and_mods(sweep_gen, include_probe_models=True):
         probe_list = probes_per_structure[sweep_gen.structures[0]]
         probes2show.extend(copy.copy(probe_list))
     probes2show.extend(copy.copy(vlab_probes))
-    if include_probe_models:
-        probes2show.extend(copy.copy(targetless_probes))
     widget_modules = {}
     widget_modules["probes"] = widgets.SelectMultiple(
         description="probes", options=probes2show
