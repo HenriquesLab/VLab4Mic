@@ -87,7 +87,8 @@ class sweep_generator:
         self.plot_parameters["lineplots"]["style"] = None
         self.plot_parameters["lineplots"]["estimator"] = "mean"
         self.plot_parameters["lineplots"]["errorbar"] = "ci"
-
+        self.structures_info_list = self.experiment.structures_info_list
+        print("vLab4mic sweep generator initialised")
 
     def set_number_of_repetitions(self, repeats: int = 3 ):
         self.sweep_repetitions = repeats
