@@ -42,6 +42,7 @@ class ExperimentParametrisation:
     objects_created: Dict[str, int] = field(default_factory=dict)
     output_directory: str = str(output_path)
     example_structures = ["3J3Y", "7R5K", "1XI5", "8GMO"]
+    example_modalities = ["Widefield", "Confocal", "STED", "SMLM"]
 
     def __post_init__(self):
         pck_dir = os.path.dirname(os.path.abspath(supramolsim.__file__))
