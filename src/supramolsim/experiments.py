@@ -100,6 +100,7 @@ class ExperimentParametrisation:
                             self.config_probe_per_structure_names[struct] = [
                                 lablname,
                             ]
+        print("Experiment created")
 
     def select_structure(self, structure_id="1XI5", build=True):
         self.structure_id = structure_id
