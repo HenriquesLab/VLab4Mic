@@ -110,7 +110,7 @@ def ui_show_labelled_structure(experiment):
     )
     gui.add_int_slider(
         "source_plotsize",
-        description="Source size",
+        description="Epitope size",
         min=0,
         max=30,
         step=1,
