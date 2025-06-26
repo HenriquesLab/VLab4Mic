@@ -41,6 +41,7 @@ class ExperimentParametrisation:
     sweep_pars: Dict[str, int] = field(default_factory=dict)
     objects_created: Dict[str, int] = field(default_factory=dict)
     output_directory: str = str(output_path)
+    example_structures = ["3J3Y", "7R5K", "1XI5", "8GMO"]
 
     def __post_init__(self):
         pck_dir = os.path.dirname(os.path.abspath(supramolsim.__file__))
@@ -101,6 +102,37 @@ class ExperimentParametrisation:
                                 lablname,
                             ]
         print("Experiment created")
+        self.demo_structures = []
+        # get available structure IDs
+        self.structures_info_list = dict()
+        structure_dir = os.path.join(
+            self.configuration_path, "structures"
+        )
+        fluorophores_dir = os.path.join(
+            self.configuration_path, "fluorophores"
+        )
+        probes_dir = os.path.join(self.configuration_path, "probes")
+        modalities_dir = os.path.join(
+            self.configuration_path, "modalities"
+        )
+        for file in os.listdir(structure_dir):
+            if os.path.splitext(file)[-1] == ".yaml" and "_template" not in file:
+                structure_params = load_yaml(os.path.join(structure_dir, file))
+                struct_id = structure_params["model"]["ID"]
+                if struct_id in self.example_structures:
+                    strict_title = structure_params["model"]["title"]
+                    id_title = struct_id + ": " + strict_title
+                    self.structures_info_list[id_title] = struct_id
+                    self.demo_structures.append(id_title)
+        self.config_directories = dict(
+            structure=structure_dir,
+            fluorophores=fluorophores_dir,
+            probes=probes_dir,
+            modalities=modalities_dir,
+            base=self.configuration_path,
+        )
+
+
 
     def select_structure(self, structure_id="1XI5", build=True):
         self.structure_id = structure_id
