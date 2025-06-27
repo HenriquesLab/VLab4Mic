@@ -270,7 +270,7 @@ def create_param_widgets(sweep_gen):
                     slidertype=slidertype,
                     minmaxstep=settings["range"],
                     orientation="horizontal",
-                    description=parameter_name,
+                    description="Range",
                     style={'description_width': 'initial'},
                     layout=widgets.Layout(width='40%')
                 )
@@ -296,7 +296,7 @@ def create_param_widgets(sweep_gen):
                         )      
                 items = [name, check]
                 items.append(wgen.gen_logicals(
-                    description=parameter_name,
+                    description="Select either True or False or both",
                     layout=widgets.Layout(width='auto', height='auto')
                 ))
                 range_widgets[parameter_name] = widgets.VBox(
