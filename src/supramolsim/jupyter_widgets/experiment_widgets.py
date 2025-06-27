@@ -51,3 +51,8 @@ def select_sample_parameters_widget(experiment):
     view_sample = visualisation.ui_show_virtual_sample(experiment)
     select_sample = _bind_widgets(sample_params, view_sample)
     return select_sample
+
+def select_modalities_widget(experiment):
+    modalities_params = parameter_selection.ui_select_modality(experiment)
+    select_modalities = _bind_widgets(modalities_params)
+    return select_modalities
