@@ -35,6 +35,7 @@ def ui_show_structure(experiment):
                 )
                 plt.close()
         else:
+            widget_elements["preview_structure"].clear_output()
             with widget_elements["preview_structure"]:
                 print("Structure not created yet, please create it first.")
     
