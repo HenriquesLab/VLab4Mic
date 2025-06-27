@@ -171,7 +171,7 @@ def ui_select_modality(experiment):
             text += f"{mod_name}<br>"
         modality_gui["message"].value = text
     def add_modality(b):
-        selected_modality = modality_gui["select_modality"].value
+        selected_modality = modality_gui["modality"].value
         if selected_modality == "All":
             for mod_names in modalities_default[0:len(modalities_default)-1]:
                 experiment.add_modality(modality_name=mod_names, save=True)
@@ -182,7 +182,7 @@ def ui_select_modality(experiment):
         update_message()
     
     def remove_modality(b):
-        selected_modality = modality_gui["select_modality"].value
+        selected_modality = modality_gui["modality"].value
         if selected_modality == "All":
             for mod_names in modalities_default[0:len(modalities_default)-1]:
                 experiment.update_modality(
@@ -206,32 +206,34 @@ def ui_select_modality(experiment):
 
     def update_plot(change):
         mod_name = modality_gui["modality"].value
-        psf_stack = experiment.imager.get_modality_psf_stack(mod_name)
-        psf_shape = psf_stack.shape
-        half_xy = int(psf_shape[0] / 2)
-        half_z = int(psf_shape[2] / 2)
-        psf_stack = psf_stack[
-            half_xy - int(half_xy * xy_zoom_in) : half_xy + int(half_xy * xy_zoom_in),
-            half_xy - int(half_xy * xy_zoom_in) : half_xy + int(half_xy * xy_zoom_in),
-            :]
-        dimension_plane = modality_gui["dimension_slice"].value
-        if dimension_plane == "YZ plane":
-            dimension = 0
-        elif dimension_plane == "XZ plane":
-            dimension = 1
-        elif dimension_plane == "XY plane":
-            dimension = 2
-        modality_gui["preview_modality"].clear_output()
-        with modality_gui["preview_modality"]:
-            display(slider_normalised(
-                psf_stack,
-                dimension=dimension,
-                cbar=False,))
+        if mod_name != "All":
+            psf_stack = preview_experiment.imager.get_modality_psf_stack(mod_name)
+            psf_shape = psf_stack.shape
+            half_xy = int(psf_shape[0] / 2)
+            half_z = int(psf_shape[2] / 2)
+            psf_stack = psf_stack[
+                half_xy - int(half_xy * xy_zoom_in) : half_xy + int(half_xy * xy_zoom_in),
+                half_xy - int(half_xy * xy_zoom_in) : half_xy + int(half_xy * xy_zoom_in),
+                :]
+            dimension_plane = modality_gui["dimension_slice"].value
+            if dimension_plane == "YZ plane":
+                dimension = 0
+            elif dimension_plane == "XZ plane":
+                dimension = 1
+            elif dimension_plane == "XY plane":
+                dimension = 2
+            modality_gui["preview_modality"].clear_output()
+            with modality_gui["preview_modality"]:
+                display(slider_normalised(
+                    psf_stack,
+                    dimension=dimension,
+                    cbar=False,))
 
     modality_gui.add_dropdown(
-        "select_modality",
-        description="Select modality:",
-        options=modalities_default
+        "modality",
+        description="Modality",
+        options=modalities_default,
+        on_change=update_plot,
     )
     modality_gui.add_button(
         "add_modality",
@@ -244,13 +246,28 @@ def ui_select_modality(experiment):
         disabled=False
     )
     modality_gui.add_button(
-        "select_modalies",
+        "select_modalities",
         description="Select and update virtual modalities",
+    )
+    modality_gui.add_custom_widget(
+        "dimension_slice",
+        widgets.ToggleButtons,
+        options=["XY plane", "XZ plane", "YZ plane"],
+        value="XY plane",
+        on_change=update_plot,
+        style={"description_width": "initial"},
+        description="Plane of view: ",
+    )
+    modality_gui.add_output(
+        "preview_modality",
+        description="Preview of selected modality",
+        style={"description_width": "initial"},
     )
     modality_gui["add_modality"].on_click(add_modality)
     modality_gui["remove_modality"].on_click(remove_modality)
-    modality_gui["select_modalies"].on_click(select_modalities)
+    modality_gui["select_modalities"].on_click(select_modalities)
     update_message()
+    update_plot(True)
     return modality_gui
 
 def ui_run_experiment(experiment):
