@@ -56,70 +56,63 @@ def select_probes_and_mods(sweep_gen):
     return ez_sweep
 
 def add_parameters_values(sweep_gen):
-
     range_widgets = create_param_widgets(sweep_gen)
-    param_ranges = EZInput(title="ranges")
-    
-    def change_param_list(change):
-        new_options = list(sweep_gen.param_settings[change.new].keys())
-        param_ranges["parms_per_group"].options = new_options
+    sweep_parameter_gui = EZInput(title="sweep_parameters",)
 
-    def change_param_widget(change):
-        param_ranges[change.old].layout.display = "None"
-        param_ranges[change.new].layout.display = "inline-flex"
-
-    def set_param_range(b):
-        param_group = param_ranges["groups"].value
-        param_name = param_ranges["parms_per_group"].value
-        if sweep_gen.param_settings[param_group][param_name]["wtype"] != "logical":
-            start, end = param_ranges[param_name].children[0].value
-            steps = param_ranges[param_name].children[1].value
-            param_values = (start, end, steps)
-        else:
-            param_values = []
-            if param_ranges[param_name].value == "Both":
-                param_values = [True, False,]
-            elif param_ranges[param_name].value ==  "True":
-                param_values = [True,]
-            if param_ranges[param_name].value == "False":
-                param_values = [False,]
-
-        sweep_gen.set_parameter_values(
-            param_group=param_group,
-            param_name=param_name,
-            values=param_values,
+    for group_name, params in sweep_gen.param_settings.items():
+        sweep_parameter_gui.add_HTML(
+            tag=group_name,
+            value=f"<b>Parameter group: {group_name}</b>",
+            style={'font_size': '20px'}
         )
-    
-    def disable_widgets(b):
-        param_ranges["groups"].disabled = True
-        param_ranges["parms_per_group"].disabled = True
-        param_ranges["add_parameter"].disabled = True
-        param_ranges["done"].disabled = True
+        for param_name, param_info in params.items():
+            param_widget = range_widgets[param_name]
+            sweep_parameter_gui.elements[param_name] = param_widget
+            sweep_parameter_gui.add_label()
 
-    parameter_group_names = list(sweep_gen.param_settings.keys())
-    param_ranges.add_dropdown("groups", options=parameter_group_names, description="Parameter group")
-    param_ranges.add_dropdown(
-        "parms_per_group",
-        options=list(sweep_gen.param_settings[param_ranges["groups"].value].keys()),
-        description="Parameter name"
+    sweep_parameter_gui.add_button("select_parameters",
+                                   "Select parameters for sweep")
+    sweep_parameter_gui.add_button("clear_parameters",
+                                    "Clear all parameters",
+                                    )
+    sweep_parameter_gui.add_HTML(
+        tag="message",
+        value="No parameters selected",
     )
-    for wname, wgt in range_widgets.items():
-        param_ranges.elements[wname] = wgt
-        param_ranges.elements[wname].layout.display = "None"
-    param_ranges[param_ranges["parms_per_group"].value].layout.display = (
-        "inline-flex"
-    )
-    param_ranges.add_button(
-        "add_parameter", description="Add this parameter for sweep"
-    )
-    param_ranges.add_button(
-        "done", description="Done"
-    )
-    param_ranges["groups"].observe(change_param_list, names="value")
-    param_ranges["parms_per_group"].observe(change_param_widget, names="value")
-    param_ranges["add_parameter"].on_click(set_param_range)
-    param_ranges["done"].on_click(disable_widgets)
-    return param_ranges
+
+    def set_param_ranges(b):
+        for group_name, params in sweep_gen.param_settings.items():
+            for param_name, param_info in params.items():
+                use = sweep_parameter_gui[param_name].children[1].value
+                if use:
+                    print(f"Setting parameter {param_name} in group {group_name}")
+                    if param_info["wtype"] != "logical":
+                        start, end = sweep_parameter_gui[param_name].children[2].value
+                        steps = sweep_parameter_gui[param_name].children[3].value
+                        param_values = (start, end, steps)
+                    else:
+                        val = sweep_parameter_gui[param_name].children[2].value
+                        if val == "Both":
+                            param_values = [True, False]
+                        elif val == "True":
+                            param_values = [True]
+                        else:
+                            param_values = [False]
+                    sweep_gen.set_parameter_values(
+                        param_group=group_name,
+                        param_name=param_name,
+                        values=param_values,
+                    )
+
+        sweep_parameter_gui["message"].value = "Parameters set successfully"
+
+    def clear_parameters(b):
+        sweep_gen.clear_sweep_parameters()
+        sweep_parameter_gui["message"].value = "All parameters cleared"
+
+    sweep_parameter_gui["select_parameters"].on_click(set_param_ranges)
+    sweep_parameter_gui["clear_parameters"].on_click(clear_parameters)
+    return sweep_parameter_gui
 
 def set_reference(sweep_gen):
     my_exp = sweep_gen.experiment
