@@ -200,9 +200,9 @@ def ui_select_modality(experiment):
     
     def select_modalities(b):
         experiment.build(modules=["imager"])
-        #modality_gui["add_modality"].disabled = True
-        #modality_gui["remove_modality"].disabled = True
-        #modality_gui["select_modality"].disabled = True 
+        modality_gui["add_modality"].disabled = True
+        modality_gui["remove_modality"].disabled = True
+        modality_gui["select_modalities"].disabled = True 
 
     def update_plot(change):
         mod_name = modality_gui["modality"].value
