@@ -5,6 +5,8 @@ from IPython.display import display, clear_output
 import ipywidgets as widgets
 import io
 from ipyfilechooser import FileChooser
+import copy
+
 
 def ui_select_structure(experiment):
     gui = EZInput("Select_structure")
@@ -155,6 +157,10 @@ def ui_select_sample_parameters(experiment):
 
 def ui_select_modality(experiment):
     modalities_default = ["Widefield", "Confocal", "STED", "SMLM", "All"]
+    preview_experiment = copy.deepcopy(experiment)
+    for mod_names in modalities_default[0:len(modalities_default)-1]:
+        preview_experiment.add_modality(modality_name=mod_names, save=True)
+    preview_experiment.build(modules=["imager"])
     modality_gui = EZInput(title="Modality selection")
     modality_gui.add_label("Current modalities selected:")
     modality_gui.add_HTML("message", "No modalities selected yet.")
@@ -168,9 +174,10 @@ def ui_select_modality(experiment):
         if selected_modality == "All":
             for mod_names in modalities_default[0:len(modalities_default)-1]:
                 experiment.add_modality(modality_name=mod_names, save=True)
-        else:   experiment.add_modality(
-            modality_name=selected_modality
-        )
+        else:   
+            experiment.add_modality(
+                modality_name=selected_modality
+            )
         update_message()
     
     def remove_modality(b):
