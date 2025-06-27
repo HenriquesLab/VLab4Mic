@@ -22,7 +22,10 @@ def ui_select_structure(experiment):
         else:
             gui["label_1"].value = "Current structure selected: " + "No structure selected yet." 
 
-    gui.add_label(value="Current structure selected: No structure selected yet")
+    if experiment.structure_id is not None:
+        gui.add_label(value="Current structure selected: " + experiment.structure_id)
+    else:
+        gui.add_label(value="Current structure selected: No structure selected yet")
     gui.add_dropdown("structures", description="Select Structure:", options=experiment.structures_info_list.keys())
     gui.add_label("Note: Time for structure loading varyies depending on the size of the structure")
     gui.add_callback(
