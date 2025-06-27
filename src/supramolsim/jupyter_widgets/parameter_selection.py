@@ -6,7 +6,7 @@ import ipywidgets as widgets
 import io
 from ipyfilechooser import FileChooser
 import copy
-
+from supramolsim.utils.visualisation.matplotlib_plots import slider_normalised
 
 def ui_select_structure(experiment):
     gui = EZInput("Select_structure")
@@ -158,6 +158,7 @@ def ui_select_sample_parameters(experiment):
 def ui_select_modality(experiment):
     modalities_default = ["Widefield", "Confocal", "STED", "SMLM", "All"]
     preview_experiment = copy.deepcopy(experiment)
+    xy_zoom_in = 0.5
     for mod_names in modalities_default[0:len(modalities_default)-1]:
         preview_experiment.add_modality(modality_name=mod_names, save=True)
     preview_experiment.build(modules=["imager"])
@@ -202,6 +203,30 @@ def ui_select_modality(experiment):
         #modality_gui["add_modality"].disabled = True
         #modality_gui["remove_modality"].disabled = True
         #modality_gui["select_modality"].disabled = True 
+
+    def update_plot(change):
+        mod_name = modality_gui["modality"].value
+        psf_stack = experiment.imager.get_modality_psf_stack(mod_name)
+        psf_shape = psf_stack.shape
+        half_xy = int(psf_shape[0] / 2)
+        half_z = int(psf_shape[2] / 2)
+        psf_stack = psf_stack[
+            half_xy - int(half_xy * xy_zoom_in) : half_xy + int(half_xy * xy_zoom_in),
+            half_xy - int(half_xy * xy_zoom_in) : half_xy + int(half_xy * xy_zoom_in),
+            :]
+        dimension_plane = modality_gui["dimension_slice"].value
+        if dimension_plane == "YZ plane":
+            dimension = 0
+        elif dimension_plane == "XZ plane":
+            dimension = 1
+        elif dimension_plane == "XY plane":
+            dimension = 2
+        modality_gui["preview_modality"].clear_output()
+        with modality_gui["preview_modality"]:
+            display(slider_normalised(
+                psf_stack,
+                dimension=dimension,
+                cbar=False,))
 
     modality_gui.add_dropdown(
         "select_modality",
