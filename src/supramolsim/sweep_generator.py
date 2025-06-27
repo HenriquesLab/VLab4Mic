@@ -235,6 +235,16 @@ class sweep_generator:
         else:
             print(f"{param_group} is not a valid parameter group")
 
+    def clear_sweep_parameters(self):
+        """
+        Clear all parameters set for the sweep.
+        This will reset the parameters to default values
+        """
+        for group_name in self.params_by_group.keys():
+            self.params_by_group[group_name] = {}
+        self.parameters_with_set_values = []
+
+
     def create_parameters_iterables(self):
         param_groups = list(self.params_by_group.keys())
         no_params_set = True
