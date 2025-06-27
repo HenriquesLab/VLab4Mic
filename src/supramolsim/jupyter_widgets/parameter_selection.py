@@ -10,11 +10,11 @@ def ui_select_structure(experiment):
     gui = EZInput("Select_structure")
     def select_structure(elements):
         elements["label_1"].value = "Current structure selected: Loading..."
-        elements["button"].disabled = True
+        elements["select_structure"].disabled = True
         experiment.structure_id = experiment.structures_info_list[elements["structures"].value]
         experiment.build(modules="structure")
         update_structure_list()
-        elements["button"].disabled = False
+        elements["select_structure"].disabled = False
 
     def update_structure_list():
         if experiment.structure_id is not None:
@@ -26,7 +26,7 @@ def ui_select_structure(experiment):
     gui.add_dropdown("structures", description="Select Structure:", options=experiment.structures_info_list.keys())
     gui.add_label("Note: Time for structure loading varyies depending on the size of the structure")
     gui.add_callback(
-        "button",
+        "select_structure",
         select_structure,
         gui.elements,
         description="Select structure",
