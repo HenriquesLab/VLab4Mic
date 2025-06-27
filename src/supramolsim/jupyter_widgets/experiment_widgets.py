@@ -39,3 +39,9 @@ def select_structure_widget(experiment):
     view_structure = visualisation.ui_show_structure(experiment)
     select_structure = _bind_widgets(structure_params, view_structure)
     return select_structure
+
+def select_probe_widget(experiment):
+    probes_params = parameter_selection.ui_select_probe(experiment)
+    view_probes = visualisation.ui_show_labelled_structure(experiment)
+    select_probe = _bind_widgets(probes_params, view_probes)
+    return select_probe
