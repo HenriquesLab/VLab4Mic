@@ -164,14 +164,23 @@ def ui_show_virtual_sample(experiment):
 
     def update_plot(change):
         gui["preview_virtual_sample"].clear_output()
-        hview = gui["horizontal_view"].value
-        vview = gui["vertical_view"].value
         with gui["preview_virtual_sample"]:
-            display(experiment.coordinate_field.show_field(
-                view_init=[vview, hview, 0],
-                return_fig=True))
-            plt.close()
-
+            if experiment.generators_status("coordinate_field"):
+                gui["horizontal_view"].disabled = False
+                gui["vertical_view"].disabled = False
+                hview = gui["horizontal_view"].value
+                vview = gui["vertical_view"].value
+                with gui["preview_virtual_sample"]:
+                    display(experiment.coordinate_field.show_field(
+                        view_init=[vview, hview, 0],
+                        return_fig=True))
+                    plt.close()
+            else:
+                display("Virtual sample not created yet, please create it first.")
+    gui.add_button(
+        "show_virtual_sample",
+        description="Show virtual sample",
+    )
     gui.add_int_slider(
         "horizontal_view",
         description="Rotation angle (degrees)",
@@ -181,6 +190,7 @@ def ui_show_virtual_sample(experiment):
         value=0,
         continuous_update=False,
         on_change=update_plot,
+        disabled=True,
     )
     gui.add_int_slider(
         "vertical_view",
@@ -191,11 +201,11 @@ def ui_show_virtual_sample(experiment):
         value=90,
         continuous_update=False,
         on_change=update_plot,
+        disabled=True,
     )
-
+    
+    gui["show_virtual_sample"].on_click(update_plot)
     gui.add_output("preview_virtual_sample")
-    gui["preview_virtual_sample"].clear_output()
-    update_plot(True)
     return gui
 
 
