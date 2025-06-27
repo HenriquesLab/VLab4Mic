@@ -278,17 +278,43 @@ def create_param_widgets(sweep_gen):
                     minmaxstep=settings["range"],
                     orientation="horizontal",
                     description=parameter_name,
-                    style={'description_width': 'initial'}
+                    style={'description_width': 'initial'},
+                    layout=widgets.Layout(width='40%')
                 )
                 inttext = wgen.gen_bound_int(
                     value=settings["nintervals"], description="Total values"
                 )
-                range_widgets[parameter_name] = wgen.gen_box(
-                    widget1=slider,
-                    widget2=inttext,
-                    orientation="vertical",
-                    layout = widgets.Layout(width="70%")
+                param_name_w_checkbox = widgets.HBox(
+                    [
+                        widgets.HTML(f"<b>" + parameter_name + "</b>", style={'font_size': '15px'}),
+                        widgets.Checkbox(
+                            value=False,
+                            description="Use parameter",
+                            style={'description_width': 'initial'}
+                        )
+                    ]
+                )
+                items = [param_name_w_checkbox, slider, inttext]
+                range_widgets[parameter_name] = widgets.VBox(
+                    items
                 )
             elif settings["wtype"] == "logical":
-                range_widgets[parameter_name] = wgen.gen_logicals()
+                param_name_w_checkbox = widgets.HBox(
+                    [
+                        widgets.HTML(f"<b>" + parameter_name + "</b>", style={'font_size': '15px'}),
+                        widgets.Checkbox(
+                            value=False,
+                            description="Use parameter",
+                            style={'description_width': 'initial'}
+                        )
+                    ]
+                )
+                items = [param_name_w_checkbox]
+                items.append(wgen.gen_logicals(
+                    description=parameter_name,
+                    layout=widgets.Layout(width='auto', height='auto')
+                ))
+                range_widgets[parameter_name] = widgets.VBox(
+                    items
+                )
     return range_widgets
