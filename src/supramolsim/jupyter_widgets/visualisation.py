@@ -95,6 +95,10 @@ def ui_show_labelled_structure(experiment):
             if not experiment.objects_created["particle"]:
                 display("Particle not created yet, please create it first.")
             else:
+                gui["emitter_plotsize"].disabled = False
+                gui["source_plotsize"].disabled = False
+                gui["hview"].disabled = False
+                gui["vview"].disabled = False
                 display(show_particle(
                     emitter_plotsize=gui["emitter_plotsize"].value,
                     source_plotsize=gui["source_plotsize"].value,
@@ -111,6 +115,7 @@ def ui_show_labelled_structure(experiment):
         value=1,
         continuous_update=False,
         on_change=show_labelled_structure,
+        disabled=True
     )
     gui.add_int_slider(
         "source_plotsize",
@@ -121,6 +126,7 @@ def ui_show_labelled_structure(experiment):
         value=1,
         continuous_update=False,
         on_change=show_labelled_structure,
+        disabled=True
     )
     gui.add_int_slider(
         "hview",
@@ -131,6 +137,7 @@ def ui_show_labelled_structure(experiment):
         value=0,
         continuous_update=False,
         on_change=show_labelled_structure,
+        disabled=True
     )
     gui.add_int_slider(
         "vview",
@@ -141,6 +148,7 @@ def ui_show_labelled_structure(experiment):
         value=0,
         continuous_update=False,
         on_change=show_labelled_structure,
+        disabled=True
     )
     gui.add_button(
         "show_labelled_structure",
