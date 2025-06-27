@@ -284,32 +284,24 @@ def create_param_widgets(sweep_gen):
                 inttext = wgen.gen_bound_int(
                     value=settings["nintervals"], description="Total values"
                 )
-                param_name_w_checkbox = widgets.HBox(
-                    [
-                        widgets.HTML(f"<b>" + parameter_name + "</b>", style={'font_size': '15px'}),
-                        widgets.Checkbox(
+                name = widgets.HTML(f"<b>" + parameter_name + "</b>", style={'font_size': '15px'})
+                check = widgets.Checkbox(
                             value=False,
                             description="Use parameter",
                             style={'description_width': 'initial'}
                         )
-                    ]
-                )
-                items = [param_name_w_checkbox, slider, inttext]
+                items = [name, check, slider, inttext]
                 range_widgets[parameter_name] = widgets.VBox(
                     items
                 )
             elif settings["wtype"] == "logical":
-                param_name_w_checkbox = widgets.HBox(
-                    [
-                        widgets.HTML(f"<b>" + parameter_name + "</b>", style={'font_size': '15px'}),
-                        widgets.Checkbox(
+                name = widgets.HTML(f"<b>" + parameter_name + "</b>", style={'font_size': '15px'})
+                check = widgets.Checkbox(
                             value=False,
                             description="Use parameter",
                             style={'description_width': 'initial'}
-                        )
-                    ]
-                )
-                items = [param_name_w_checkbox]
+                        )      
+                items = [name, check]
                 items.append(wgen.gen_logicals(
                     description=parameter_name,
                     layout=widgets.Layout(width='auto', height='auto')
