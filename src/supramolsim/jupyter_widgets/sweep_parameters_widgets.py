@@ -184,7 +184,7 @@ def set_reference(sweep_gen):
     return reference
 
 def analyse_sweep(sweep_gen):
-    wgen = sweep_gen.wgen
+    wgen = widgen()
     ouput_directory = getattr(sweep_gen, "ouput_directory", ".")
     analysis_widget = EZInput(title="analysis")
     def analyse_sweep_action(b):
