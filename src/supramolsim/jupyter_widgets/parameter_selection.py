@@ -76,7 +76,10 @@ def ui_select_probe(experiment, **kwargs):
         experiment.build(modules=["particle"])
         probes_gui["add_probe"].disabled = True
         probes_gui["create_particle"].disabled = True
-        probes_gui["message2"].value = "Particle created successfully!"
+        if experiment.generators_status("particle"):
+            probes_gui["message2"].value = "Particle created successfully!"
+        else:
+            probes_gui["message2"].value = "Particle creation failed. Check the logs for details."
 
     # widgets
     ## Feedback labels
