@@ -10,21 +10,26 @@ def ui_select_structure(experiment):
     gui = EZInput("Select_structure")
     def select_structure(elements):
         elements["button"].disabled = True
-        elements["label_2"].value = "Loading structure, this can take a few seconds..."
-        experiment.structure_id = elements["structures"].value
+        experiment.structure_id = experiment.structures_info_list[elements["structures"].value]
         experiment.build(modules="structure")
-        elements["label_2"].value = experiment.structure_id
+        update_structure_list()
         elements["button"].disabled = False
 
-    gui.add_label(value="Current structure selected:")
-    gui.add_label(value=experiment.structure_id)
-    gui.add_dropdown("structures", description="Select Structure:", options=experiment.config_probe_per_structure_names.keys())
+    def update_structure_list():
+        if experiment.structure_id is not None:
+            gui["label_1"].value = "Current structure selected: " + experiment.structure_id
+        else:
+            gui["label_1"].value = "Current structure selected: " + "No structure selected yet." 
+
+    gui.add_label(value="Current structure selected: No structure selected yet")
+    gui.add_dropdown("structures", description="Select Structure:", options=experiment.structures_info_list.keys())
     gui.add_callback(
         "button",
         select_structure,
         gui.elements,
         description="Select structure",
     )
+    set
     return gui
 
 def update_widgets_visibility(ezwidget, visibility_dictionary):
