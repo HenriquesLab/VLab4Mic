@@ -9,6 +9,7 @@ from ipyfilechooser import FileChooser
 def ui_select_structure(experiment):
     gui = EZInput("Select_structure")
     def select_structure(elements):
+        elements["label_1"].value = "Current structure selected: Loading..."
         elements["button"].disabled = True
         experiment.structure_id = experiment.structures_info_list[elements["structures"].value]
         experiment.build(modules="structure")
@@ -23,12 +24,14 @@ def ui_select_structure(experiment):
 
     gui.add_label(value="Current structure selected: No structure selected yet")
     gui.add_dropdown("structures", description="Select Structure:", options=experiment.structures_info_list.keys())
+    gui.add_label("Note: Time for structure loading varyies depending on the size of the structure")
     gui.add_callback(
         "button",
         select_structure,
         gui.elements,
         description="Select structure",
     )
+    
     return gui
 
 def update_widgets_visibility(ezwidget, visibility_dictionary):
