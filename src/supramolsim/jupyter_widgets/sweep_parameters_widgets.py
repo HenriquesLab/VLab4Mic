@@ -122,7 +122,7 @@ def add_parameters_values(sweep_gen):
     return param_ranges
 
 def set_reference(sweep_gen):
-    my_exp = sweep_gen.my_experiment
+    my_exp = sweep_gen.experiment
     probes_per_structure = copy.copy(my_exp.config_probe_per_structure_names)
     reference = EZInput(title="reference")
     def gen_ref(b):
@@ -142,8 +142,14 @@ def set_reference(sweep_gen):
     def show_reference(b):
         reference["output"].clear_output()
         with reference["output"]:
-            sweep_gen.preview_reference_image()
-
+            image = sweep_gen.preview_reference_image(return_image=True)
+            if image.shape[0] == 1:
+                image = np.squeeze(image)
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            ax.imshow(image)
+            plt.close()
+            display(fig)
     reference.add_dropdown(
         "structure", options=sweep_gen.structures, 
         description="Structure",
@@ -170,7 +176,9 @@ def set_reference(sweep_gen):
         "preview", description="Preview reference", disabled = True
     )
     reference.elements["feedback"] = widgets.HTML("", style = dict(font_size= "15px", font_weight='bold'))
-    reference.elements["output"] = widgets.Output()
+    reference.add_output(
+        "output", description="Reference output"
+    )
     reference["set"].on_click(gen_ref)
     reference["preview"].on_click(show_reference)
     return reference
