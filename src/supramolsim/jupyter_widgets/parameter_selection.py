@@ -29,7 +29,6 @@ def ui_select_structure(experiment):
         gui.elements,
         description="Select structure",
     )
-    set
     return gui
 
 def update_widgets_visibility(ezwidget, visibility_dictionary):
