@@ -499,6 +499,7 @@ class ExperimentParametrisation:
         self._update_probes()
         if self.generators_status("particle"):
             self.particle = None
+            self.objects_created["particle"] = False
         if self.generators_status("structure"):
             self.structure._clear_labels()
             # self.structure.label_targets = dict()
