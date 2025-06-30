@@ -92,6 +92,20 @@ class sweep_generator:
         print("vLab4mic sweep generator initialised")
 
     def set_number_of_repetitions(self, repeats: int = 3 ):
+        """
+        Sets the number of repetitions for each parameter configuration in a sweep.
+
+        This method configures how many times each parameter combination should be 
+        repeated when generating a parameter sweep, which can be useful for 
+        statistical analysis of simulation results.
+
+        Args:
+            repeats (int, optional): Number of times to repeat each parameter combination.
+                Defaults to 3.
+
+        Returns:
+            None
+        """
         self.sweep_repetitions = repeats
 
     # generators
@@ -274,6 +288,18 @@ class sweep_generator:
         )
 
     def set_analysis_parameters(self, metrics_list: list[str] = None, zoom_in: float = None, **kwargs):
+        """
+        Set analysis parameters for the simulation.
+
+        Parameters:
+            metrics_list (list[str], optional): A list of metric names to be used in the analysis.
+            zoom_in (float, optional): A zoom factor to be applied during analysis.
+            **kwargs: Additional keyword arguments for future extensibility.
+
+        Notes:
+            - If `metrics_list` is provided and is a list, it will be stored in the analysis parameters.
+            - If `zoom_in` is provided, it will be stored in the analysis parameters.
+        """
         if metrics_list is not None and type(metrics_list) == list:
             self.analysis_parameters["metrics_list"] = metrics_list
         if zoom_in is not None:
@@ -342,15 +368,46 @@ class sweep_generator:
 
     # methods to retrieve attributes
     def get_analysis_output(self, keyname="dataframes"):
+        """
+        Retrieve the analysis output associated with the specified key.
+
+        Parameters:
+            keyname (str): The key corresponding to the desired analysis output. Defaults to "dataframes".
+
+        Returns:
+            Any: The analysis output associated with the given key.
+
+        Raises:
+            KeyError: If the specified key does not exist in the analysis dictionary.
+        """
         return self.analysis[keyname]
 
-    def generate_analysis_plots(
+    def generate_analysis_plots(    
         self,
         plot_type=None,
         metric_name = None,
         decimals:int = None,
         **kwargs,
     ):
+        """
+        Generates and stores analysis plots based on the specified plot type and metric.
+        Parameters
+        ----------
+        plot_type : str, optional
+            The type of plot to generate. Supported types are "heatmaps" and "lineplots".
+            If not specified, defaults to "heatmaps".
+        metric_name : str, optional
+            The name of the metric to plot. Required for generating the plot.
+        decimals : int, optional
+            Number of decimal places to format metric values. If not specified, defaults to 3.
+        **kwargs
+            Additional keyword arguments passed to the underlying plotting functions.
+        Notes
+        -----
+        - The generated plot is stored in the `self.analysis["plots"]` dictionary under the corresponding plot type and metric name.
+        - Plot parameters are retrieved from `self.plot_parameters` based on the plot type.
+        - Requires that analysis output dataframes are available via `self.get_analysis_output(keyname="dataframes")`.
+        """
         if decimals is None:
             decimals = "%.3f"
         else:
@@ -462,6 +519,26 @@ class sweep_generator:
     def save_analysis(
         self, output_name=None, output_directory=None, analysis_type=None
     ):
+        """
+        Saves analysis results, including dataframes and plots, to the specified output directory.
+
+        Parameters
+        ----------
+        output_name : str, optional
+            Base name for the output files. If None, defaults to "vLab4mic_results_".
+            The current date (YYYYMMDD) will be appended to the name.
+        output_directory : str, optional
+            Directory where the output files will be saved. If None, uses the instance's `ouput_directory` attribute.
+        analysis_type : list of str, optional
+            Types of analysis outputs to save. Can include "dataframes" and/or "plots".
+            If None, both "dataframes" and "plots" are saved.
+
+        Notes
+        -----
+        - Dataframes are saved as CSV files.
+        - Plots are saved as PNG files, named according to their metric and plot type.
+        - The method relies on `get_analysis_output` to retrieve the relevant dataframes and plots.
+        """
         now = datetime.now()  # dd/mm/YY H:M:S
         dt_string = now.strftime("%Y%m%d")
         if analysis_type is None:
@@ -484,7 +561,20 @@ class sweep_generator:
                         plot.savefig(os.path.join(output_directory, figure_name))
 
 
-    def save_images(self, output_name=None, output_directory=None, ):
+    def save_images(self, output_name=None, output_directory=None):
+        """
+        Saves simulated images and an optional reference image to disk in TIFF format.
+
+        Parameters:
+            output_name (str, optional): Base name for the output image files. Defaults to "vLab4mic_images_".
+            output_directory (str, optional): Directory where images will be saved. If not provided, uses a default path
+                based on `self.ouput_directory` under a "simulated_images" subdirectory. The directory is created if it does not exist.
+
+        Behavior:
+            - Iterates over all parameter combinations in `self.acquisition_outputs`.
+            - For each combination, concatenates all replicate images and saves the result as a TIFF file named after the parameter combination ID.
+            - If `self.reference_image` is present, saves it as "reference.tiff" in the output directory.
+        """
         if output_name is None:
             output_name = "vLab4mic_images_"
         if output_directory is None:
