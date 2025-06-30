@@ -29,7 +29,7 @@ def ui_select_structure(experiment):
     else:
         gui.add_label(value="Current structure selected: No structure selected yet")
     gui.add_dropdown("structures", description="Select Structure:", options=experiment.structures_info_list.keys())
-    gui.add_label("Note: Time for structure loading varyies depending on the size of the structure")
+    gui.add_label("Note: Time for structure loading varies depending on the size of the structure")
     gui.add_callback(
         "select_structure",
         select_structure,
@@ -75,13 +75,14 @@ def ui_select_probe(experiment, **kwargs):
             probes_gui["message1"].value += probe + "<br>"
 
     def create_particle(b):
+        probes_gui["message2"].value = "Creating labelled structure..."
         experiment.build(modules=["particle"])
         probes_gui["add_probe"].disabled = True
         probes_gui["create_particle"].disabled = True
         if experiment.generators_status("particle"):
-            probes_gui["message2"].value = "Particle created successfully!"
+            probes_gui["message2"].value = "Labelled structure created successfully!"
         else:
-            probes_gui["message2"].value = "Particle creation failed. Check the logs for details."
+            probes_gui["message2"].value = "Labelled structure creation failed. Check the logs for details."
 
     # widgets
     ## Feedback labels
