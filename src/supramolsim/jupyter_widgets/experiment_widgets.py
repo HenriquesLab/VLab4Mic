@@ -27,8 +27,9 @@ def _bind_widgets(parameters=None, visualisation=None):
     Bind the widgets to the parameters and visualisation objects.
     """
     gui = EZInput("Main_widget")
-    for tag, element in parameters.elements.items():
-        gui.elements[tag] = element
+    if parameters is not None:
+        for tag, element in parameters.elements.items():
+            gui.elements[tag] = element
     if visualisation is not None:
         for tag, element in visualisation.elements.items():
             gui.elements[tag] = element
@@ -56,6 +57,15 @@ def select_modalities_widget(experiment):
     modalities_params = parameter_selection.ui_select_modality(experiment)
     select_modalities = _bind_widgets(modalities_params)
     return select_modalities
+
+
+def select_acquisition_parameters_widget(experiment):
+    """
+    Create a widget to select acquisition parameters.
+    """
+    view_acq_params = visualisation.ui_set_acq_params(experiment)
+    select_acq_params = _bind_widgets(visualisation = view_acq_params)
+    return select_acq_params
 
 def run_experiment_widget(experiment):
     """
