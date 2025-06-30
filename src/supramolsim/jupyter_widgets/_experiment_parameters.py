@@ -58,9 +58,12 @@ def ui_select_probe(experiment, **kwargs):
             copy.copy(probe_list)
         )
     # add probes with no targets
-    probe_options.extend(
-            copy.copy(experiment.config_global_probes_names)
-        )
+    for probe_name in experiment.config_global_probes_names:
+        if experiment.config_probe_params[probe_name]["target"]["type"]:
+            probe_options.append(probe_name)
+    #probe_options.extend(
+    #        copy.copy(experiment.config_global_probes_names)
+    #    )
     # methods
     def select_probe(values):
         experiment.add_probe(
