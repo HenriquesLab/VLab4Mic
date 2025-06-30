@@ -78,6 +78,7 @@ class ExperimentParametrisation:
         probes_dir = os.path.join(local_dir, "probes")
         structure_dir = os.path.join(local_dir, "structures")
         self.config_probe_params = {}
+        self.config_probe_models_names = []
         self.config_global_probes_names = []
         self.config_probe_per_structure_names = {}
         for p_file in os.listdir(probes_dir):
@@ -87,7 +88,7 @@ class ExperimentParametrisation:
                 # print(label_parmeters)
                 lablname = os.path.splitext(p_file)[0]
                 if "Mock" in label_parmeters["known_targets"]:
-                    self.config_global_probes_names.append(lablname)
+                    self.config_probe_models_names.append(lablname)
                     self.config_probe_params[lablname] = label_parmeters
                 elif "Generic" in label_parmeters["known_targets"]:
                     self.config_global_probes_names.append(lablname)
