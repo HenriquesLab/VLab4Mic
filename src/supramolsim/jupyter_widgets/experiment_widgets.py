@@ -23,15 +23,23 @@ if not os.path.exists(output_path):
     os.makedirs(output_path)
 
 
-def _bind_widgets(parameters=None, visualisation=None):
+def _bind_widgets(parameters=None, visualisation=None, add_border=False):
     """
     Bind the widgets to the parameters and visualisation objects.
     """
     gui = EZInput("Main_widget")
+    if add_border:
+        gui.add_HTML("parameters_section", "Parameters section", style=dict(font_weight='bold', font_size='16px'))
+ 
     if parameters is not None:
         for tag, element in parameters.elements.items():
             gui.elements[tag] = element
     if visualisation is not None:
+        if add_border:
+            gui.elements["divisor"] = widgets.Label("")
+            gui["divisor"].layout=widgets.Layout(border='1px solid black', height='0px', width='50%')
+            gui.add_HTML("visualisation_section","Visualisation section", style = dict(font_weight='bold',  font_size='16px') )
+
         for tag, element in visualisation.elements.items():
             gui.elements[tag] = element
     return gui
