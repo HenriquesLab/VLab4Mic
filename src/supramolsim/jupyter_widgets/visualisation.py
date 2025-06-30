@@ -367,9 +367,19 @@ def ui_set_acq_params(experiment):
     def clear(b):
         print("Acquisition parameters cleared")
         experiment.reset_to_defaults(module="acquisitions", save=True)
+        acquisition_gui["current_parameters"].value = _mods_text_update(
+            mods_text_base="Current acquisition parameters for modalities: ",
+            mod_acq_params=experiment.selected_mods,
+            keys_to_use=["exp_time", "noise", "nframes"],
+        )
+        
 
     def preview_params_chage(change):
-        preview_mod(True)
+        if acquisition_gui["show_preview"].value:
+            preview_mod(True)
+        else:
+            acquisition_gui["image_output"].clear_output()
+            
 
     def _mods_text_update(mods_text_base, mod_acq_params, keys_to_use = ["exp_time", "noise"]):
         mods_text = mods_text_base + "<br>"
@@ -416,7 +426,16 @@ def ui_set_acq_params(experiment):
     acquisition_gui.add_button("Clear", description="Reset params")
     acquisition_gui["Set"].on_click(set_params)
     acquisition_gui["Clear"].on_click(clear)
-    acquisition_gui.elements["image_output"] = widgets.Output()
+    acquisition_gui.add_checkbox(
+        "show_preview",
+        description="Show preview",
+        value=False,
+        on_change=preview_mod,
+        continuous_update=False,
+    )
+    acquisition_gui["show_preview"].observe(preview_params_chage, names="value")
+    acquisition_gui.add_output("image_output")
+    
     acq_widgets = {}
     for wgt in acquisition_gui.elements.keys():
         acq_widgets[wgt] = False
@@ -442,7 +461,6 @@ def ui_set_acq_params(experiment):
     )
     
     update_widgets_visibility(acquisition_gui, acq_widgets)
-    preview_mod(True)
     return acquisition_gui
 
 def ui_preview_results(experiment):
