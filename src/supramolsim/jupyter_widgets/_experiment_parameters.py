@@ -7,6 +7,7 @@ import io
 from ipyfilechooser import FileChooser
 import copy
 from supramolsim.utils.visualisation.matplotlib_plots import slider_normalised
+import numpy as np
 
 def ui_select_structure(experiment):
     gui = EZInput("Select_structure")
@@ -226,6 +227,28 @@ def ui_select_modality(experiment):
                 dimension = 1
             elif dimension_plane == "XY plane":
                 dimension = 2
+             # mod info
+            pixelsize = experiment.local_modalities_parameters[mod_name]["detector"]["pixelsize"]
+            pixelsize_nm = pixelsize * 1000
+            psf_voxel = np.array(
+                        experiment.local_modalities_parameters[mod_name]["psf_params"]["voxelsize"]
+                    )
+            psf_sd = np.array(
+                        experiment.local_modalities_parameters[mod_name]["psf_params"]["std_devs"]
+                    )
+            psf_depth = experiment.local_modalities_parameters[mod_name]["psf_params"]["depth"]
+            s1 = "Detector pixelsize (nm): " + str(pixelsize_nm)
+            psf_sd_metric = np.multiply(psf_voxel, psf_sd)
+            s2 = "PSF sd (nm): " + str(psf_sd_metric)
+            s3  = "Depth of field (nm): " + str(psf_depth)
+            s4 = "PSF preview (on a 1x1 µm field of view)"
+            modality_gui["modality_info"].value = (
+                "<b>Modality: </b>" + mod_name + "<br>"
+                + "<b>" + s1 + "</b><br>"
+                + "<b>" + s2 + "</b><br>"
+                + "<b>" + s3 + "</b><br>"
+                + "<b>" + s4 + "</b><br>"
+            )
             modality_gui["preview_modality"].clear_output()
             with modality_gui["preview_modality"]:
                 display(slider_normalised(
@@ -253,6 +276,11 @@ def ui_select_modality(experiment):
         "select_modalities",
         description="Select and update virtual modalities",
     )
+    modality_gui.add_label("Modality information")
+    modality_gui.add_HTML(
+        "modality_info",
+        ""
+    )
     modality_gui.add_custom_widget(
         "dimension_slice",
         widgets.ToggleButtons,
@@ -267,6 +295,8 @@ def ui_select_modality(experiment):
         description="Preview of selected modality",
         style={"description_width": "initial"},
     )
+    
+
     modality_gui["add_modality"].on_click(add_modality)
     modality_gui["remove_modality"].on_click(remove_modality)
     modality_gui["select_modalities"].on_click(select_modalities)
