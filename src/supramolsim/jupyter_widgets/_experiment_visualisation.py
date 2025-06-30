@@ -13,7 +13,7 @@ def update_widgets_visibility(ezwidget, visibility_dictionary):
         if visibility_dictionary[widgetname]:
             ezwidget[widgetname].layout.display = "inline-flex"
         else:
-            ezwidget[widgetname].layout.display = "inline-flex"
+            ezwidget[widgetname].layout.display = "None"
 
 
 
@@ -398,8 +398,7 @@ def ui_set_acq_params(experiment):
     acquisition_gui.add_dropdown("modalities_dropdown", options=selected_mods)
     acquisition_gui.add_checkbox("Noise", description="Use Noise", value=True)
     acquisition_gui.add_checkbox(
-        "Channels", description="Use all channels", value=True
-    )
+        "Channels", description="Use all channels", value=True)
     ## bounded int Text
     acquisition_gui.add_bounded_int_text(
         "Frames",
@@ -428,7 +427,7 @@ def ui_set_acq_params(experiment):
     acquisition_gui["Clear"].on_click(clear)
     acquisition_gui.add_checkbox(
         "show_preview",
-        description="Show preview",
+        description="Show interactive acquisition preview",
         value=False,
         on_change=preview_mod,
         continuous_update=False,
@@ -451,6 +450,7 @@ def ui_set_acq_params(experiment):
     acq_widgets["Exposure"] = True
     acq_widgets["Noise"] = True
     acq_widgets["Clear"] = True
+    acq_widgets["show_preview"] = True
     acquisition_gui.add_HTML(
         "current_parameters",
         _mods_text_update(
