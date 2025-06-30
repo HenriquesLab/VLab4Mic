@@ -1,3 +1,39 @@
+"""
+_experiment_visualisation
+-------------------------
+
+This module provides EZInput-based widget interfaces for visualising experiment components and results
+in the virtual microscopy simulation workflow. It enables interactive visualisation of structures, labelled structures,
+virtual samples, imaging modalities, acquisition parameters, and experiment results within Jupyter notebooks.
+
+Functions
+---------
+
+- update_widgets_visibility(ezwidget, visibility_dictionary):
+    Utility to show/hide widgets in an EZInput widget based on a visibility dictionary.
+
+- ui_show_structure(experiment):
+    Returns a widget for visualising the experiment structure.
+
+- ui_show_labelled_structure(experiment):
+    Returns a widget for visualising the labelled structure (with probes).
+
+- ui_show_virtual_sample(experiment):
+    Returns a widget for visualising the virtual sample.
+
+- ui_show_modality(experiment):
+    Returns a widget for visualising the point spread function (PSF) of selected imaging modalities.
+
+- ui_set_acq_params(experiment):
+    Returns a widget for setting and previewing acquisition parameters.
+
+- ui_preview_results(experiment):
+    Returns a widget for previewing experiment results.
+
+
+Each function returns an EZInput-based widget for use in a Jupyter notebook.
+"""
+
 from ezinput import EZInput
 import matplotlib.pyplot as plt
 from IPython.display import display, clear_output
@@ -9,15 +45,40 @@ import numpy as np
 from IPython.utils import io
 
 def update_widgets_visibility(ezwidget, visibility_dictionary):
+    """
+    Show or hide widgets in an EZInput widget based on a visibility dictionary.
+
+    Parameters
+    ----------
+    ezwidget : EZInput
+        The EZInput widget containing elements to show/hide.
+    visibility_dictionary : dict
+        Dictionary mapping widget names to booleans (True to show, False to hide).
+
+    Returns
+    -------
+    None
+    """
     for widgetname in visibility_dictionary.keys():
         if visibility_dictionary[widgetname]:
             ezwidget[widgetname].layout.display = "inline-flex"
         else:
             ezwidget[widgetname].layout.display = "None"
 
-
-
 def ui_show_structure(experiment):
+    """
+    Create a widget for visualising the experiment structure.
+
+    Parameters
+    ----------
+    experiment : ExperimentParametrisation
+        The experiment object containing the structure.
+
+    Returns
+    -------
+    EZInput
+        Widget for structure visualisation.
+    """
     gui = EZInput(title="Structure")
     def show_structure(widget_elements):
         if experiment.objects_created["structure"]:
@@ -59,15 +120,25 @@ def ui_show_structure(experiment):
             )
             plt.close()
 
-
     gui.add_int_slider("n_atoms", description="Atoms to use", min=1, max=10000, step=1, value = 1000, on_change=update_plot, continuous_update=False, disabled=True)
-
     gui.add_output("preview_structure")
     gui["preview_structure"].clear_output()
     return gui
 
-
 def ui_show_labelled_structure(experiment):
+    """
+    Create a widget for visualising the labelled structure (with probes).
+
+    Parameters
+    ----------
+    experiment : ExperimentParametrisation
+        The experiment object containing the labelled structure.
+
+    Returns
+    -------
+    EZInput
+        Widget for labelled structure visualisation.
+    """
     gui = EZInput(title="Labelled Structure")
 
     def show_particle(
@@ -75,7 +146,6 @@ def ui_show_labelled_structure(experiment):
                     source_plotsize = 1, 
                     hview=0,
                     vview=0):
-        #with io.capture_output() as captured:   
         fig = plt.figure()
         ax = fig.add_subplot(111, projection="3d")
         experiment.particle.gen_axis_plot(
@@ -158,8 +228,20 @@ def ui_show_labelled_structure(experiment):
     gui.add_output("preview_labelled_structure")
     return gui
 
-
 def ui_show_virtual_sample(experiment):
+    """
+    Create a widget for visualising the virtual sample.
+
+    Parameters
+    ----------
+    experiment : ExperimentParametrisation
+        The experiment object containing the virtual sample.
+
+    Returns
+    -------
+    EZInput
+        Widget for virtual sample visualisation.
+    """
     gui = EZInput(title="Virtual Sample")
 
     def update_plot(change):
@@ -208,8 +290,20 @@ def ui_show_virtual_sample(experiment):
     gui.add_output("preview_virtual_sample")
     return gui
 
-
 def ui_show_modality(experiment):
+    """
+    Create a widget for visualising the point spread function (PSF) of selected imaging modalities.
+
+    Parameters
+    ----------
+    experiment : ExperimentParametrisation
+        The experiment object containing imaging modalities.
+
+    Returns
+    -------
+    EZInput
+        Widget for modality PSF visualisation.
+    """
     gui = EZInput(title="Modality")
     xy_zoom_in = 0.5
     def update_plot(change):
@@ -263,8 +357,20 @@ def ui_show_modality(experiment):
         update_plot(True)
     return gui
 
-
 def ui_set_acq_params(experiment):
+    """
+    Create a widget for setting and previewing acquisition parameters.
+
+    Parameters
+    ----------
+    experiment : ExperimentParametrisation
+        The experiment object containing acquisition settings.
+
+    Returns
+    -------
+    EZInput
+        Widget for acquisition parameter selection and preview.
+    """
     acquisition_gui = EZInput(title="acquisition_params")
     imager_channels = []
     anymod = list(experiment.imager.modalities.keys())[0]
@@ -348,7 +454,6 @@ def ui_set_acq_params(experiment):
                     grid[i].set_title("preview channel:" + single_channel)
                     grid.cbar_axes[i].colorbar(preview_image)
                     i = i + 1
-                    # grid[i].set_visible(False)
                 return fig
 
             figure = preview_exposure(
@@ -392,14 +497,12 @@ def ui_set_acq_params(experiment):
             mods_text +=  modality_name + ": " + "&emsp;" +  str(keys_subset) + "<br>"
         return mods_text
 
-
     acquisition_gui.add_label("Set acquisition parameters")
     selected_mods = list(experiment.imaging_modalities.keys())
     acquisition_gui.add_dropdown("modalities_dropdown", options=selected_mods)
     acquisition_gui.add_checkbox("Noise", description="Use Noise", value=True)
     acquisition_gui.add_checkbox(
         "Channels", description="Use all channels", value=True)
-    ## bounded int Text
     acquisition_gui.add_bounded_int_text(
         "Frames",
         description="Frames (not used for preview)",
@@ -464,13 +567,26 @@ def ui_set_acq_params(experiment):
     return acquisition_gui
 
 def ui_preview_results(experiment):
+    """
+    Create a widget for previewing experiment results.
+
+    Parameters
+    ----------
+    experiment : ExperimentParametrisation
+        The experiment object containing results.
+
+    Returns
+    -------
+    EZInput
+        Widget for previewing experiment results.
+    """
     gui = EZInput(title="Preview Results")
 
     if len(experiment.results.keys()) == 0:
         results_options = ["No results available",]
     else:
         results_options = list(experiment.results.keys())
-    value_modalities = results_options[0]  # Set initial valu
+    value_modalities = results_options[0]  # Set initial value
     def preview_results(b):
         gui["preview_results"].clear_output()
         with gui["preview_results"]:
