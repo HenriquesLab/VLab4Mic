@@ -142,11 +142,37 @@ class ExperimentParametrisation:
 
 
     def select_structure(self, structure_id="1XI5", build=True):
+        """
+        Select a molecular structure by its identifier and optionally builds the structure module.
+        
+        Args:
+            structure_id (str, optional): The identifier of the structure to select. Defaults to "1XI5".
+            build (bool, optional): If True, triggers the build process for the structure module. Defaults to True.
+        Returns:
+            None
+
+        """
         self.structure_id = structure_id
         if build:
             self.build(modules=["structure"])
 
     def add_modality(self, modality_name, save=False, **kwargs):
+        """
+        Adds a new imaging modality to the experiment.
+
+        If the specified modality name exists in the local modalities, it copies the parameters from the local template.
+        Otherwise, it uses the 'Widefield' modality parameters as a template to create a new modality.
+        Additional parameters for the modality can be specified via keyword arguments and will override the defaults.
+        Optionally, the modality output can be saved by setting `save` to True.
+
+        Args:
+            modality_name (str): The name of the modality to add.
+            save (bool, optional): If True, saves the modality output. Defaults to False.
+            **kwargs: Arbitrary keyword arguments to override or set specific modality parameters.
+
+        Returns:
+            None
+        """
         if modality_name in self.local_modalities_names:
             self.imaging_modalities[modality_name] = copy.deepcopy(
                 self.local_modalities_parameters[modality_name]
@@ -174,6 +200,28 @@ class ExperimentParametrisation:
         psf_voxel_nm: int = None,
         remove=False,
     ):
+        """
+        Update or remove an imaging modality's parameters.
+        This method allows updating specific parameters of an imaging modality, such as pixel size, lateral and axial resolution, and PSF voxel size. 
+        If `remove` is True, the modality is removed from the internal dictionaries.
+        Parameters
+        ----------
+        modality_name : str
+            The name of the imaging modality to update or remove.
+        pixelsize_nm : int, optional
+            The new pixel size in nanometers. If provided, updates the detector pixel size.
+        lateral_resolution_nm : int, optional
+            The new lateral resolution in nanometers. If provided, updates the lateral standard deviations of the PSF.
+        axial_resolution_nm : int, optional
+            The new axial resolution in nanometers. If provided, updates the axial standard deviation of the PSF.
+        psf_voxel_nm : int, optional
+            The new PSF voxel size in nanometers. If provided, updates the PSF voxel size for all axes.
+        remove : bool, default False
+            If True, removes the specified modality from the internal dictionaries.
+        Notes
+        -----
+        After updating any parameters, the imaging modality is reconfigured in the imager.
+        """
         if remove:
             self.imaging_modalities.pop(modality_name, None)
             self.selected_mods.pop(modality_name, None)
@@ -216,7 +264,7 @@ class ExperimentParametrisation:
                     **self.imaging_modalities[modality_name]
                 )
 
-    def set_modality_acq(
+    def set_modality_acq(      
         self,
         modality_name,
         exp_time=0.001,
@@ -228,6 +276,22 @@ class ExperimentParametrisation:
         ],
         **kwargs,
     ):
+        """
+        Configures and sets acquisition parameters for a specified imaging modality.
+
+        Args:
+            modality_name (str): The name of the imaging modality to configure.
+            exp_time (float, optional): Exposure time for the acquisition in seconds. Defaults to 0.001.
+            noise (bool, optional): Whether to include noise in the acquisition. Defaults to True.
+            save (bool, optional): Whether to save the acquired data. Defaults to False.
+            nframes (int, optional): Number of frames to acquire. Defaults to 1.
+            channels (list of str, optional): List of channel names to use. Defaults to ["ch0"].
+            **kwargs: Additional keyword arguments for modality-specific parameters.
+
+        Notes:
+            - If the specified modality is not available in `self.imaging_modalities`, a message is printed and no action is taken.
+            - Acquisition parameters are formatted using `configuration_format.format_modality_acquisition_params` and stored in `self.selected_mods`.
+        """
         if modality_name in self.imaging_modalities.keys():
             self.selected_mods[modality_name] = (
                 configuration_format.format_modality_acquisition_params(
