@@ -418,3 +418,53 @@ def ui_set_acq_params(experiment):
     update_widgets_visibility(acquisition_gui, acq_widgets)
     preview_mod(True)
     return acquisition_gui
+
+def ui_preview_results(experiment):
+    gui = EZInput(title="Preview Results")
+
+    if len(experiment.results.keys()) == 0:
+        results_options = ["No results available",]
+    else:
+        results_options = list(experiment.results.keys())
+    value_modalities = results_options[0]  # Set initial valu
+    def preview_results(b):
+        gui["preview_results"].clear_output()
+        with gui["preview_results"]:
+            if len(experiment.results.keys()) == 0:
+                display("Experiment not run yet, please run it first.")
+            else:
+                gui["modality"].disabled = False
+                gui["modality"].value = list(experiment.results.keys())[0]  # Set initial value
+                update_plot(True)
+
+    gui.add_label("Preview Results of the Experiment")
+    gui.add_button(
+        "show_results",
+        description="Show Results",
+    )
+    
+    def update_plot(change):
+        modality = gui["modality"].value
+        image = experiment.results[modality]
+        if image.ndim == 3:
+            image = image[0]
+        figure, ax = plt.subplots(figsize=(8, 6))
+        ax.imshow(image, cmap='gray')
+        ax.axis('off')
+        ax.set_title(f"Preview of {modality} results")
+        plt.close()
+        gui["preview_results"].clear_output()  
+        with gui["preview_results"]:
+            display(figure)
+
+    gui.add_dropdown(
+        "modality",
+        description="Modality",
+        options=results_options,
+        value=value_modalities,
+        disabled=True,
+    )
+    gui.add_output("preview_results") 
+    gui["modality"].observe(update_plot, names="value")
+    gui["show_results"].on_click(preview_results)
+    return gui
