@@ -274,14 +274,21 @@ def ui_run_experiment(experiment):
     run_gui = EZInput(title="Run experiment")
     #experiment.build(modules=["imager",])
     def run_simulation(b):
+
+        run_gui["message"].value = "Running simulation..."
         run_gui["Acquire"].disabled = True
         sav_dir = run_gui["saving_directory"].value
         if sav_dir is not None:
             experiment.output_directory = sav_dir
             save = True
         experiment.experiment_id = run_gui["experiment_name"].value
-        experiment.run_simulation(save=save)
+        output = experiment.run_simulation(save=save)
         run_gui.save_settings()
+        if output is None:
+            run_gui["message"].value = "Simulation failed. Make sure all parameters are set correctly."
+        else:
+            run_gui["message"].value = "Simulation completed successfully."
+            run_gui["Acquire"].disabled = False
 
     run_gui.add_label("Set experiment name")
     run_gui.add_text_area(
@@ -294,6 +301,11 @@ def ui_run_experiment(experiment):
         show_hidden=False,
         select_default=True,
         show_only_dirs=False,
+    )
+    run_gui.add_HTML(
+        "message",
+        "",
+        style=dict(font_weight='bold')
     )
     run_gui.add_button("Acquire", description="Run Simulation")
     run_gui["Acquire"].on_click(run_simulation)

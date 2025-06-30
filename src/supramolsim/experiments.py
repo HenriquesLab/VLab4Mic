@@ -369,6 +369,7 @@ class ExperimentParametrisation:
                 )
             self.objects_created["imager"] = True
         else:
+            self.imager = None
             print("No modalities")
 
     def generators_status(self, generator_name):
@@ -472,6 +473,9 @@ class ExperimentParametrisation:
         # has a minimal coordinate field
         if not self.generators_status("imager"):
             self.build(modules="imager")
+            if self.imager is None:
+                print("Imager not created. Cannot run simulation.")
+                return None
         if modality == "All":
             print("Simulating all modalities")
             if acq_params is None:
