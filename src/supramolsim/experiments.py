@@ -137,6 +137,7 @@ class ExperimentParametrisation:
             self.config_directories["base"], "parameter_settings.yaml"
         )
         self.param_settings = yaml_functions.load_yaml(param_settings_file)
+        self.results = dict()
 
 
     def select_structure(self, structure_id="1XI5", build=True):
@@ -485,7 +486,9 @@ class ExperimentParametrisation:
                 # acq_params is a value in selected mods
                 acquisition_param=acq_params,
             )
+            self.results = simulation_output
             return simulation_output
+            
         else:
             print(f"Simulating: {modality}")
             acq_p = self.selected_mods[modality]
