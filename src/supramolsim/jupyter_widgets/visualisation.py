@@ -297,6 +297,11 @@ def ui_set_acq_params(experiment):
             nframes=nframes,
             channels=channels,
         )
+        acquisition_gui["current_parameters"].value = _mods_text_update(
+            mods_text_base="Current acquisition parameters for modalities: ",
+            mod_acq_params=experiment.selected_mods,
+            keys_to_use=["exp_time", "noise", "nframes"],
+        )
 
     def preview_mod(b):
         def get_preview(imaging_system, acq_gui):
@@ -366,6 +371,18 @@ def ui_set_acq_params(experiment):
     def preview_params_chage(change):
         preview_mod(True)
 
+    def _mods_text_update(mods_text_base, mod_acq_params, keys_to_use = ["exp_time", "noise"]):
+        mods_text = mods_text_base + "<br>"
+        for modality_name, acq_params in mod_acq_params.items():
+            if acq_params is None:
+                acq_params = "Default"
+            else:
+                keys_subset = {key: acq_params[key] for key in keys_to_use}
+                acq_params["exp_time"] = round(keys_subset["exp_time"], 3)
+            mods_text +=  modality_name + ": " + "&emsp;" +  str(keys_subset) + "<br>"
+        return mods_text
+
+
     acquisition_gui.add_label("Set acquisition parameters")
     selected_mods = list(experiment.imaging_modalities.keys())
     acquisition_gui.add_dropdown("modalities_dropdown", options=selected_mods)
@@ -415,6 +432,15 @@ def ui_set_acq_params(experiment):
     acq_widgets["Exposure"] = True
     acq_widgets["Noise"] = True
     acq_widgets["Clear"] = True
+    acquisition_gui.add_HTML(
+        "current_parameters",
+        _mods_text_update(
+            mods_text_base="Current acquisition parameters for modalities: ",
+            mod_acq_params=experiment.selected_mods,
+            keys_to_use=["exp_time", "noise", "nframes"],
+        ),
+    )
+    
     update_widgets_visibility(acquisition_gui, acq_widgets)
     preview_mod(True)
     return acquisition_gui
