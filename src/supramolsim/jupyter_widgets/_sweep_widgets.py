@@ -2,8 +2,8 @@ import supramolsim.utils
 from ..sweep_generator import sweep_generator
 import ipywidgets as widgets
 from .. import experiments
-from .widget_generator import widgen
-from .widgets_dataclass import jupyter_gui
+from ._widget_generator import widgen
+from ._widgets_dataclass import jupyter_gui
 import os
 import supramolsim
 from supramolsim.utils.io import yaml_functions

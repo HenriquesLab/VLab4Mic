@@ -5,7 +5,7 @@ from ipyfilechooser import FileChooser
 from IPython.utils import io
 import matplotlib.pyplot as plt
 import numpy as np
-from .widget_generator import widgen
+from ._widget_generator import widgen
 
 def select_structure(sweep_gen):
     ez_sweep_structure = EZInput(title="structure")
