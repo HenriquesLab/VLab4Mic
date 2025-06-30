@@ -62,6 +62,6 @@ def run_experiment_widget(experiment):
     Create a widget to run the experiment.
     """
     run_experiment = parameter_selection.ui_run_experiment(experiment)
-    preview_results = None
+    preview_results = visualisation.ui_preview_results(experiment)
     run_experiment = _bind_widgets(run_experiment, preview_results)
     return run_experiment
