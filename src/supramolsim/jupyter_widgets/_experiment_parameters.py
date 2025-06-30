@@ -168,7 +168,7 @@ def ui_select_modality(experiment):
         preview_experiment.add_modality(modality_name=mod_names, save=True)
     preview_experiment.build(modules=["imager"])
     modality_gui = EZInput(title="Modality selection")
-    modality_gui.add_label("Current modalities selected:")
+    modality_gui.add_label("Current modalities list:")
     modality_gui.add_HTML("message", "No modalities selected yet.")
     def update_message():
         text = ""
@@ -274,7 +274,7 @@ def ui_select_modality(experiment):
     )
     modality_gui.add_button(
         "select_modalities",
-        description="Select and update virtual modalities",
+        description="Select list and update virtual modalities",
     )
     modality_gui.add_label("Modality information")
     modality_gui.add_HTML(
