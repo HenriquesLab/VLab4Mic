@@ -438,6 +438,18 @@ class ExperimentParametrisation:
             print("No modalities")
 
     def generators_status(self, generator_name):
+        """
+        Returns the status of the specified generator.
+
+        Args:
+            generator_name (str): The name of the generator whose status is to be retrieved.
+
+        Returns:
+            The status or object associated with the given generator name from the objects_created dictionary.
+
+        Raises:
+            KeyError: If the specified generator_name does not exist in objects_created.
+        """
         return self.objects_created[generator_name]
 
     def build(
@@ -448,6 +460,16 @@ class ExperimentParametrisation:
         ],
         **kwargs,
     ):
+        """
+        Builds various simulation objects based on the specified modules.
+
+        Parameters:
+            use_locals (bool, optional): Determines whether to use local variables or attributes when building objects. Defaults to True.
+            modules (list, optional): List of module names to build. If "all" is included, builds all available modules: "structure", "particle", "coordinate_field", and "imager". Defaults to ["all"].
+
+        Notes:
+            The order of building is: structure, particle, coordinate_field, imager.
+        """
         print("Building objects")
         if "all" in modules:
             build_list = ["structure", "particle", "coordinate_field", "imager"]
@@ -461,7 +483,6 @@ class ExperimentParametrisation:
             self._build_coordinate_field(use_self_particle=use_locals, keep=use_locals)
         if "imager" in build_list:
             self._build_imager(use_local_field=use_locals)
-        # self._param_linspaces()
 
     def _gen_reference(
         self, write=False, keep=False, ref_acq_pars=None, modality_wise=False
@@ -532,10 +553,20 @@ class ExperimentParametrisation:
         return _reference, _reference_parameters
 
     def run_simulation(
-        self, name="NONAME", acq_params=None, save=False, modality="All", **kwargs
+        self, name="vlab4mic_experiment", acq_params=None, save=False, modality="All", **kwargs
     ):
-        # imager will run regardless, since by default
-        # has a minimal coordinate field
+        """
+        Runs a simulation for the specified imaging modality or all modalities.
+        Parameters:
+            name (str): Name of the experiment or simulation. Defaults to "vlab4mic_experiment".
+            acq_params (dict or None): Acquisition parameters for the simulation. If None and modality is "All", uses self.selected_mods.
+            save (bool): Whether to save the simulation output to disk. Defaults to False.
+            modality (str): The imaging modality to simulate. If "All", simulates all available modalities. Defaults to "All".
+            **kwargs: Additional keyword arguments passed to the imaging generator.
+        Returns:
+            dict or None: Simulation output as a dictionary mapping modality names to results.
+                          Returns None if the imager could not be created.
+        """
         if not self.generators_status("imager"):
             self.build(modules="imager")
             if self.imager is None:
@@ -567,6 +598,13 @@ class ExperimentParametrisation:
             return simulation_output
 
     def remove_probes(self):
+        """
+        Removes all probe-related parameters and updates the internal state accordingly.
+
+        This method clears the probe parameters, updates the probes, and resets the
+        particle and structure objects if their respective generators are active.
+        It also clears any labels associated with the structure.
+        """
         self.probe_parameters = dict()
         self._update_probes()
         if self.generators_status("particle"):
@@ -583,7 +621,7 @@ class ExperimentParametrisation:
         probe_target_value: str = None,
         probe_target_option: str = None,
         probe_distance_to_epitope: float = None,
-        probe_model: list[str] = None,
+        probe_model: str = None,
         probe_fluorophore: str = "AF647",
         probe_steric_hindrance=None,
         probe_paratope: str = None,
@@ -595,6 +633,35 @@ class ExperimentParametrisation:
         as_primary=False,
         **kwargs,
     ):
+        """ 
+        Adds a probe configuration to the experiment.
+        This method loads a probe configuration from a YAML file, updates its parameters based on the provided arguments,
+        and stores it in the experiment's probe parameters. It supports customization of probe properties such as target type,
+        fluorophore, model, conjugation details, and more.
+        Args:
+            probe_name (str): Name of the probe. Defaults to "NHS_ester".
+            probe_target_type (str, optional): Type of the probe target (e.g., "Primary", "Secondary").
+            probe_target_value (str, optional): Value or identifier of the probe target.
+            probe_target_option (str, optional): Additional option for the probe target, used for secondary epitopes.
+            probe_distance_to_epitope (float, optional): Distance from the probe to the epitope.
+            probe_model (str, optional): List of model identifiers for the probe.
+            probe_fluorophore (str, optional): Identifier for the fluorophore. Defaults to "AF647".
+            probe_steric_hindrance (optional): Steric hindrance value or configuration.
+            probe_paratope (str, optional): Paratope identifier or information.
+            probe_conjugation_target_info (optional): Information about the conjugation target.
+            probe_conjugation_efficiency (float, optional): Efficiency of the probe conjugation.
+            probe_seconday_epitope (optional): Information about a secondary epitope target.
+            probe_wobbling (bool, optional): Whether to enable probe wobbling. Defaults to False.
+            labelling_efficiency (float, optional): Efficiency of probe labelling. Defaults to 1.0.
+            as_primary (bool, optional): Whether to treat the probe as a primary linker. Defaults to False.
+            **kwargs: Additional keyword arguments for future extensions.
+        Side Effects:
+            Updates the `probe_parameters` attribute with the new or modified probe configuration.
+            Calls the `_update_probes` method to refresh internal probe state.
+        Raises:
+            FileNotFoundError: If the probe configuration YAML file does not exist.
+            KeyError: If required keys are missing in the configuration or probe parameters.
+        """
         probe_configuration_file = os.path.join(
             self.configuration_path, "probes", probe_name + ".yaml"
         )
@@ -648,13 +715,28 @@ class ExperimentParametrisation:
     def set_virtualsample_params(
         self,
         virtualsample_template="square1x1um_randomised",
-        sample_dimensions=None,
-        number_of_particles= None,
-        particle_positions = None,
+        sample_dimensions: list[int, int, int]=None,
+        number_of_particles: int = None,
+        particle_positions: list = None,
         random_orientations:bool = None,
         random_placing:bool = None,
         **kwargs,
     ):
+        """
+        Set parameters for the virtual sample by loading a template configuration and optionally overriding specific values.
+
+        Args:
+            virtualsample_template (str): Name of the virtual sample template YAML file (without extension) to load. Defaults to "square1x1um_randomised".
+            sample_dimensions (list[int, int, int], optional): Dimensions of the sample to override the template value.
+            number_of_particles (int, optional): Number of particles to override the template value.
+            particle_positions (list, optional): List of particle positions to override the template value.
+            random_orientations (bool, optional): Whether to randomize particle orientations, overrides the template value.
+            random_placing (bool, optional): Whether to randomize particle placement, overrides the template value.
+            **kwargs: Additional keyword arguments (currently unused).
+
+        Side Effects:
+            Sets the `virtualsample_params` attribute with the loaded and updated configuration.
+        """
         # load default configuration for virtual sample
         virtual_sample_template = os.path.join(
             self.configuration_path,
@@ -675,6 +757,7 @@ class ExperimentParametrisation:
         self.virtualsample_params = vsample_configuration
 
     def use_image_for_positioning(
+
         self,
         img,
         mode="localmaxima",
@@ -685,6 +768,29 @@ class ExperimentParametrisation:
         min_distance=None,
         **kwargs,
     ):
+        """
+        Generates and sets relative positions for a virtual sample based on features detected in an input image.
+
+        This method processes the provided image to extract feature coordinates using the specified detection mode 
+        and parameters. The resulting positions are stored in `self.virtualsample_params["relative_positions"]`, 
+        and the sample's physical dimensions are updated accordingly. The method then triggers the build process 
+        for the 'coordinate_field' and 'imager' modules.
+
+        Args:
+            img: The input image (as a NumPy array or compatible format) to be analyzed for feature detection.
+            mode (str, optional): The feature detection mode to use (e.g., "localmaxima"). Defaults to "localmaxima".
+            sigma (float or None, optional): Standard deviation for Gaussian smoothing. If None, no smoothing is applied.
+            background (float or None, optional): Background intensity to subtract from the image. If None, no subtraction.
+            threshold (float or None, optional): Minimum intensity threshold for feature detection. If None, uses default.
+            pixelsize (float or None, optional): Pixel size of the input image. If None, uses default.
+            min_distance (float or None, optional): Minimum distance between detected features. If None, uses default.
+            **kwargs: Additional keyword arguments passed to the feature detection function.
+
+        Side Effects:
+            Updates `self.virtualsample_params` with new relative positions and sample dimensions.
+            Calls `self.build()` for the specified modules.
+
+        """
         xyz_relative, image_physical_size = coordinates_field.gen_positions_from_image(
             img=img,
             mode=mode,
