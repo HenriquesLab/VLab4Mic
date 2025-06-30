@@ -56,3 +56,12 @@ def select_modalities_widget(experiment):
     modalities_params = parameter_selection.ui_select_modality(experiment)
     select_modalities = _bind_widgets(modalities_params)
     return select_modalities
+
+def run_experiment_widget(experiment):
+    """
+    Create a widget to run the experiment.
+    """
+    run_experiment = parameter_selection.ui_run_experiment(experiment)
+    preview_results = None
+    run_experiment = _bind_widgets(run_experiment, preview_results)
+    return run_experiment
