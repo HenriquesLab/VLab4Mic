@@ -581,6 +581,8 @@ class LabeledInstance:
             print("Current scale and new scale are the same. No scaling performed")
         else:
             scaling_factor = current_scale / new_scale
+            scaling_factor_source = self.source["scale"] / new_scale
+            print(scaling_factor, scaling_factor_source)
             for labeltype in self.emitters.keys():
                 #print("scaling")
                 if self.get_emitter_by_target(labeltype) is not None:
@@ -588,10 +590,33 @@ class LabeledInstance:
                     self.emitters[labeltype] = (
                         self.get_emitter_by_target(labeltype) * scaling_factor
                     )
+                #scale its source - epitopes
+                self.source["targets"][labeltype]["coordinates"] *= scaling_factor_source
+                if self.source["targets"][labeltype]["normals"] is not None:
+                    print(f"normals not NONE: {scaling_factor_source}")
+                    print(self.source["targets"][labeltype]["normals"], )
+                    self.source["targets"][labeltype]["normals"] *= scaling_factor_source
+                if self.labels[labeltype]["emitters"] is not None:
+                    self.labels[labeltype]["emitters"] = self.labels[labeltype]["emitters"].astype('float64') * scaling_factor
+                if self.labels[labeltype]["minimal_distance"] is not None:
+                    self.labels[labeltype]["minimal_distance"] *= scaling_factor
+                if "coordinates" in self.labels[labeltype].keys():
+                    self.labels[labeltype]["coordinates"] = self.labels[labeltype]["coordinates"].astype('float64') * scaling_factor
+                if self.labels[labeltype]["binding"]["distance"]["to_target"] is not None:
+                    self.labels[labeltype]["binding"]["distance"]["to_target"] *= scaling_factor
+                if self.labels[labeltype]["binding"]["distance"]["between_targets"] is not None:
+                    self.labels[labeltype]["binding"]["distance"]["between_targets"] *= scaling_factor
+                self.labels[labeltype]["scale"] *= new_scale
                 # print(f'after: {self.emitters[labeltype]}')
             self.params["ref_point"] = self.params["ref_point"] * scaling_factor
             self.axis["pivot"] = self.axis["pivot"] * scaling_factor
             self.radial_hindance *= scaling_factor
+            # scale source
+            self.source["reference_pt"] *= scaling_factor_source
+            self.source["axis"]['pivot'] *= scaling_factor_source
+            self.source["scale"] = new_scale
+            #scale labels
+            
             self._set_scale(new_scale)
 
     def get_emitter_by_target(self, targetname: str):
@@ -726,9 +751,14 @@ class LabeledInstance:
         if axesoff:
             ax.set_axis_off()
         else:
-            ax.set_xlabel("X (Angstroms)")
-            ax.set_ylabel("Y (Angstroms)")
-            ax.set_zlabel("Z (Angstroms)")
+            if self.get_scale() == 1e-10:
+                ax.set_xlabel("X (Angstroms)")
+                ax.set_ylabel("Y (Angstroms)")
+                ax.set_zlabel("Z (Angstroms)")
+            elif self.get_scale() == 1e-9:
+                ax.set_xlabel("X (Nanometers)")
+                ax.set_ylabel("Y (Nanometers)")
+                ax.set_zlabel("Z (Nanometers)")
         if return_plot:
             return ax
         else:

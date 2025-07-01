@@ -157,7 +157,7 @@ def indirect_labelling(coords_nomrals, label_data, **kwargs):
             normals=coords_nomrals["normals"],
             min_distance=label_data["minimal_distance"]
         )  #####################
-        print(f"number of epitopes: {epitopes.shape}")
+        # print(f"number of epitopes: {epitopes.shape}")
         if epitopes.shape[0] == 0:
             indirect_realisation = None
             list_reoriented_points_normals = None
