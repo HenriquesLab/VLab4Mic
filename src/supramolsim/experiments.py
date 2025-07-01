@@ -108,16 +108,10 @@ class ExperimentParametrisation:
         self.demo_structures = []
         # get available structure IDs
         self.structures_info_list = dict()
-        structure_dir = os.path.join(
-            self.configuration_path, "structures"
-        )
-        fluorophores_dir = os.path.join(
-            self.configuration_path, "fluorophores"
-        )
+        structure_dir = os.path.join(self.configuration_path, "structures")
+        fluorophores_dir = os.path.join(self.configuration_path, "fluorophores")
         probes_dir = os.path.join(self.configuration_path, "probes")
-        modalities_dir = os.path.join(
-            self.configuration_path, "modalities"
-        )
+        modalities_dir = os.path.join(self.configuration_path, "modalities")
         for file in os.listdir(structure_dir):
             if os.path.splitext(file)[-1] == ".yaml" and "_template" not in file:
                 structure_params = load_yaml(os.path.join(structure_dir, file))
@@ -139,7 +133,6 @@ class ExperimentParametrisation:
         )
         self.param_settings = yaml_functions.load_yaml(param_settings_file)
         self.results = dict()
-
 
     def select_structure(self, structure_id="1XI5", build=True):
         """
@@ -212,7 +205,7 @@ class ExperimentParametrisation:
         """
         Update or remove an imaging modality's parameters.
 
-        This method allows updating specific parameters of an imaging modality, such as pixel size, lateral and axial resolution, and PSF voxel size. 
+        This method allows updating specific parameters of an imaging modality, such as pixel size, lateral and axial resolution, and PSF voxel size.
         If `remove` is True, the modality is removed from the internal dictionaries.
 
         Parameters
@@ -275,7 +268,7 @@ class ExperimentParametrisation:
                     **self.imaging_modalities[modality_name]
                 )
 
-    def set_modality_acq(      
+    def set_modality_acq(
         self,
         modality_name,
         exp_time=0.001,
@@ -483,7 +476,9 @@ class ExperimentParametrisation:
             return exported_field
         else:
             # create minimal field
-            fieldobject = coordinates_field.create_min_field(**self.virtualsample_params, **kwargs)
+            fieldobject = coordinates_field.create_min_field(
+                **self.virtualsample_params, **kwargs
+            )
             exported_field = fieldobject.export_field()
             if keep:
                 self.exported_coordinate_field = exported_field
@@ -668,7 +663,12 @@ class ExperimentParametrisation:
         return _reference, _reference_parameters
 
     def run_simulation(
-        self, name="vlab4mic_experiment", acq_params=None, save=False, modality="All", **kwargs
+        self,
+        name="vlab4mic_experiment",
+        acq_params=None,
+        save=False,
+        modality="All",
+        **kwargs,
     ):
         """
         Run a simulation for the specified imaging modality or all modalities.
@@ -870,11 +870,11 @@ class ExperimentParametrisation:
     def set_virtualsample_params(
         self,
         virtualsample_template="square1x1um_randomised",
-        sample_dimensions: list[int, int, int]=None,
+        sample_dimensions: list[int, int, int] = None,
         number_of_particles: int = None,
         particle_positions: list = None,
-        random_orientations:bool = None,
-        random_placing:bool = None,
+        random_orientations: bool = None,
+        random_placing: bool = None,
         **kwargs,
     ):
         """
@@ -934,9 +934,9 @@ class ExperimentParametrisation:
         """
         Generate and set relative positions for a virtual sample based on features detected in an input image.
 
-        This method processes the provided image to extract feature coordinates using the specified detection mode 
-        and parameters. The resulting positions are stored in `self.virtualsample_params["relative_positions"]`, 
-        and the sample's physical dimensions are updated accordingly. The method then triggers the build process 
+        This method processes the provided image to extract feature coordinates using the specified detection mode
+        and parameters. The resulting positions are stored in `self.virtualsample_params["relative_positions"]`,
+        and the sample's physical dimensions are updated accordingly. The method then triggers the build process
         for the 'coordinate_field' and 'imager' modules.
 
         Parameters
