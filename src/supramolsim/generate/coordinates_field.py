@@ -16,6 +16,9 @@ from ..utils.visualisation.matplotlib_plots import add_ax_scatter
 
 class Field:
     def __init__(self):
+        """
+        Initialize a Field object with default parameters for dimensions, scale, and molecule placement.
+        """
         self.params = {}
         self.params["dimension_sizes"] = [1000.0, 1000.0, 10.0]
         self.params["scale"] = 1e-9
@@ -76,12 +79,25 @@ class Field:
 
     def set_params(self, **kwargs):
         """
-        :param kwargs: same as self.params.keys()
+        Set field parameters using keyword arguments.
+
+        Parameters
+        ----------
+        **kwargs
+            Field parameter names and values.
         """
         for key, value in kwargs.items():
             self.params[key] = value
 
     def init_from_file(self, field_yaml):
+        """
+        Initialize field parameters from a YAML configuration file.
+
+        Parameters
+        ----------
+        field_yaml : str
+            Path to the YAML file containing field parameters.
+        """
         with open(field_yaml, "r") as f:
             field_params = yaml.safe_load(f)
         params = dict(field_params["params"])
@@ -96,6 +112,20 @@ class Field:
         self.set_molecules_params(**molecules)
 
     def create_minimal_field(self, nmolecules=1, random_placing=False, random_orientations=False, **kwargs):
+        """
+        Create a minimal field with a specified number of molecules and placement options.
+
+        Parameters
+        ----------
+        nmolecules : int, optional
+            Number of molecules to place in the field. Default is 1.
+        random_placing : bool, optional
+            If True, place molecules randomly. Default is False.
+        random_orientations : bool, optional
+            If True, assign random orientations to molecules. Default is False.
+        **kwargs
+            Additional parameters for field creation.
+        """
         fluo_name = "AF647"
         self.calculate_absolute_reference()
         if "minimal_distance" in kwargs.keys():
@@ -141,6 +171,9 @@ class Field:
 
 
     def calculate_absolute_reference(self):
+        """
+        Calculate and set the absolute reference point based on the relative reference and dimension sizes.
+        """
         relative_pt = self.get_field_param("relative_reference_point")
         dimensions = self.get_field_param("dimension_sizes")
         abs_posx = relative_pt[0] * dimensions[0]
@@ -149,17 +182,61 @@ class Field:
         self._set_absolute_reference(np.array([abs_posx, abs_posy, abs_posz]))
 
     def get_field_param(self, parameter: str):
+        """
+        Get a field parameter by name.
+
+        Parameters
+        ----------
+        parameter : str
+            Name of the field parameter.
+
+        Returns
+        -------
+        Any
+            Value of the requested field parameter.
+        """
         return self.params[parameter]
 
     def change_number_of_molecules(self, n: int):
+        """
+        Change the number of molecules in the field and generate new random positions.
+
+        Parameters
+        ----------
+        n : int
+            Number of molecules.
+        """
         self.set_molecule_param("nMolecules", n)
         self.generate_random_positions()
 
     # molecule parameters
     def get_molecule_param(self, parameter: str):
+        """
+        Get a molecule parameter by name.
+
+        Parameters
+        ----------
+        parameter : str
+            Name of the molecule parameter.
+
+        Returns
+        -------
+        Any
+            Value of the requested molecule parameter.
+        """
         return self.molecules_params[parameter]
 
     def set_molecule_param(self, parameter: str, value):
+        """
+        Set a molecule parameter.
+
+        Parameters
+        ----------
+        parameter : str
+            Name of the molecule parameter.
+        value : Any
+            Value to set.
+        """
         self.molecules_params[parameter] = value
 
     def set_molecules_params(
@@ -170,6 +247,22 @@ class Field:
         random_rotations,
         **kwargs,
     ):
+        """
+        Set multiple molecule parameters at once.
+
+        Parameters
+        ----------
+        nMolecules : int
+            Number of molecules.
+        random_positions : bool
+            Whether to use random positions.
+        random_orientations : bool
+            Whether to use random orientations.
+        random_rotations : bool
+            Whether to use random rotations.
+        **kwargs
+            Additional molecule parameters.
+        """
         # self.change_number_of_molecules(nMolecules)
         self.set_molecule_param("nMolecules", nMolecules)
         if random_positions:
@@ -182,6 +275,9 @@ class Field:
             self.molecules_params[key] = value
 
     def show_params(self):
+        """
+        Print the current field and molecule parameters.
+        """
         print("Field parameters")
         for key, val in self.params.items():
             print(key, ": ", val)
@@ -192,10 +288,7 @@ class Field:
     # methods to prime molecule positions, orientations...
     def generate_random_positions(self):
         """
-        Generate positions randomly constrained by the dimensions of the
-        field and the minimal molecule distance if exists
-
-        Sets the molecule parameter "absolute positions"
+        Generate random positions for molecules within the field, optionally enforcing a minimal distance.
         """
         npositions = self.get_molecule_param("nMolecules")
         print(f"nmolecules: {npositions}")
@@ -214,6 +307,9 @@ class Field:
             self._gen_abs_from_rel_positions()
 
     def generate_random_orientations(self):
+        """
+        Generate random orientations for all molecules in the field.
+        """
         # give new orientation
         norientations = self.get_molecule_param("nMolecules")
         orientations = []
@@ -222,6 +318,14 @@ class Field:
         self.set_molecule_param("orientations", orientations)
 
     def generate_global_orientation(self, global_orientation = None):
+        """
+        Set a global orientation for all molecules.
+
+        Parameters
+        ----------
+        global_orientation : array-like, optional
+            Orientation vector to assign to all molecules.
+        """
         # give new orientation
         if global_orientation is not None:
             norientations = self.get_molecule_param("nMolecules")
@@ -314,10 +418,26 @@ class Field:
         self.plotting_params[fluoname] = fluo_plotting_params
 
     def get_fluorophore_params(self):
+        """
+        Get the dictionary of fluorophore parameters.
+
+        Returns
+        -------
+        dict
+            Dictionary of fluorophore parameters.
+        """
         return self.fluoparams
 
     # working with macromolecules
     def create_molecules_from_InstanceObject(self, InstancePrototype: LabeledInstance):
+        """
+        Create molecules in the field from a prototype instance.
+
+        Parameters
+        ----------
+        InstancePrototype : LabeledInstance
+            Prototype instance to copy for each molecule.
+        """
         reps = self.get_molecule_param("nMolecules")
         particle_copy = copy.deepcopy(InstancePrototype)
         self.molecules_default_orientation = particle_copy._get_source_parameter("axis")
@@ -376,12 +496,18 @@ class Field:
         return particle
 
     def show_molecules(self):
+        """
+        Show all molecules in the field using their show_instance method.
+        """
         if self.molecules is not None:
             for mol in self.molecules:
                 mol.show_instance()
                 mol.get_ref_point()
 
     def relabel_molecules(self):
+        """
+        Regenerate and rescale all molecules in the field.
+        """
         if self.molecules:
             for mol in self.molecules:
                 mol.generate_instance()
@@ -389,6 +515,9 @@ class Field:
                 mol.scale_coordinates_system(self.get_field_param("scale"))
 
     def relocate_molecules(self):
+        """
+        Move each molecule to its absolute position in the field.
+        """
         if self.molecules:
             if self.get_molecule_param("absolute_positions") is not None:
                 # move each molecule to their absolute position
@@ -398,6 +527,9 @@ class Field:
                     mol.transform_translate(pos)
 
     def reorient_molecules(self):
+        """
+        Reorient each molecule in the field according to its assigned orientation.
+        """
         if self.get_molecule_param("orientations") is not None:
             for mol, ori in zip(
                 self.molecules, self.get_molecule_param("orientations")
@@ -419,6 +551,16 @@ class Field:
     # and all of them will be able to be visualised if the optics define it
 
     def construct_static_field(self, relocate=True, reorient=True):
+        """
+        Construct the static field by placing and orienting molecules and grouping emitters by fluorophore.
+
+        Parameters
+        ----------
+        relocate : bool, optional
+            If True, relocate molecules to their absolute positions. Default is True.
+        reorient : bool, optional
+            If True, reorient molecules. Default is True.
+        """
         if self.molecules:
             # verify absolute positions exist
             if self.get_molecule_param("absolute_positions") is None:
@@ -441,7 +583,7 @@ class Field:
 
     def _construct_channels_by_fluorophores(self):
         """
-        group all emitter positions that correspond to a fluorophore species
+        Group all emitter positions by fluorophore species.
         """
         nmolecules = self.get_molecule_param("nMolecules")
         if nmolecules == 0:
@@ -457,9 +599,17 @@ class Field:
 
     def _pull_coordinates_per_fluorophore(self, fluophorename):
         """
-        fluorophorename is a string that identifies a specific species of fluorophore
-        Iterates over the particles of InstanceLabelled and gets its emitters
-        Returns all emitters corresponding to that emitter
+        Get all emitter coordinates for a given fluorophore.
+
+        Parameters
+        ----------
+        fluophorename : str
+            Name of the fluorophore.
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of emitter coordinates.
         """
         # first, verify that there are particles (Labelled instance)
         nmolecules = self.get_molecule_param("nMolecules")
@@ -474,6 +624,14 @@ class Field:
             return pulled
 
     def get_emitters_by_fluorophores(self):
+        """
+        Get a dictionary of all emitters grouped by fluorophore.
+
+        Returns
+        -------
+        dict
+            Dictionary mapping fluorophore names to emitter coordinates.
+        """
         if len(self.fluorophre_emitters) == 0:
             print("Constructing channels by fluorophore type")
             self._construct_channels_by_fluorophores()
@@ -481,6 +639,25 @@ class Field:
 
     # methods for visualisation
     def show_field(self, fluo_type="all", view_init=[30, 0, 0], initial_pos=True, return_fig=False):
+        """
+        Visualize the field and emitters in 3D.
+
+        Parameters
+        ----------
+        fluo_type : str, optional
+            Fluorophore type to display. Default is "all".
+        view_init : list of int, optional
+            Initial view angles [elev, azim, roll]. Default is [30, 0, 0].
+        initial_pos : bool, optional
+            If True, show initial positions. Default is True.
+        return_fig : bool, optional
+            If True, return the matplotlib figure. Default is False.
+
+        Returns
+        -------
+        matplotlib.figure.Figure or None
+            The figure if return_fig is True, otherwise None.
+        """
         dimension_sizes = self.get_field_param("dimension_sizes")
         xx, yy = np.meshgrid(
             range(int(dimension_sizes[0])), range(int(dimension_sizes[1]))
@@ -529,6 +706,14 @@ class Field:
             fig.show()
 
     def expand_isotropically(self, factor):
+        """
+        Expand the field isotropically by a given factor.
+
+        Parameters
+        ----------
+        factor : float
+            Expansion factor (must be > 1).
+        """
         if factor <= 1:
             print("Input factor has to be greater than 1")
         else:
@@ -561,6 +746,14 @@ class Field:
                 print(self.fluorophre_emitters[fname])
 
     def export_field(self):
+        """
+        Export the field as a dictionary for use in imaging simulations.
+
+        Returns
+        -------
+        dict
+            Dictionary containing field emitters, scale, sizes, plotting parameters, and reference point.
+        """
         if self.fluorophre_emitters is None:
             self.construct_static_field()
         field_emitters = self.fluorophre_emitters
@@ -579,6 +772,27 @@ class Field:
 
 
 def create_min_field(number_of_particles=1, random_placing=False, random_orientations=False, prints=False, **kwargs):
+    """
+    Create a minimal field with a specified number of particles.
+
+    Parameters
+    ----------
+    number_of_particles : int, optional
+        Number of particles to place in the field. Default is 1.
+    random_placing : bool, optional
+        If True, place particles randomly. Default is False.
+    random_orientations : bool, optional
+        If True, assign random orientations to particles. Default is False.
+    prints : bool, optional
+        If True, print debug information. Default is False.
+    **kwargs
+        Additional parameters for field creation.
+
+    Returns
+    -------
+    Field
+        The created Field object.
+    """
     if prints:
         print("Initialising default field")
     coordinates_field = Field()
@@ -595,6 +809,27 @@ def create_min_field(number_of_particles=1, random_placing=False, random_orienta
 
 
 def gen_positions_from_image(img, mode="mask", pixelsize = None, **kwargs):
+    """
+    Generate relative positions from an image using either a mask or local maxima.
+
+    Parameters
+    ----------
+    img : numpy.ndarray
+        Input image.
+    mode : str, optional
+        Mode for position extraction ("mask" or "localmaxima"). Default is "mask".
+    pixelsize : float, optional
+        Size of a pixel.
+    **kwargs
+        Additional parameters for position extraction.
+
+    Returns
+    -------
+    xyz_relative : list
+        List of relative positions.
+    image_physical_size : numpy.ndarray
+        Physical size of the image.
+    """
     npixels = list(img.shape)
     image_physical_size = np.zeros(shape=(2))
     image_physical_size[0] = pixelsize * npixels[0]
