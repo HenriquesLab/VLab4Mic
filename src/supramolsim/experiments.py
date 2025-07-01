@@ -143,14 +143,18 @@ class ExperimentParametrisation:
 
     def select_structure(self, structure_id="1XI5", build=True):
         """
-        Select a molecular structure by its identifier and optionally builds the structure module.
-        
-        Args:
-            structure_id (str, optional): The identifier of the structure to select. Defaults to "1XI5".
-            build (bool, optional): If True, triggers the build process for the structure module. Defaults to True.
-        Returns:
-            None
+        Select a molecular structure by its identifier and optionally build the structure module.
 
+        Parameters
+        ----------
+        structure_id : str, optional
+            The identifier of the structure to select. Default is "1XI5".
+        build : bool, optional
+            If True, triggers the build process for the structure module. Default is True.
+
+        Returns
+        -------
+        None
         """
         self.structure_id = structure_id
         if build:
@@ -158,20 +162,25 @@ class ExperimentParametrisation:
 
     def add_modality(self, modality_name, save=False, **kwargs):
         """
-        Adds a new imaging modality to the experiment.
+        Add a new imaging modality to the experiment.
 
         If the specified modality name exists in the local modalities, it copies the parameters from the local template.
         Otherwise, it uses the 'Widefield' modality parameters as a template to create a new modality.
         Additional parameters for the modality can be specified via keyword arguments and will override the defaults.
         Optionally, the modality output can be saved by setting `save` to True.
 
-        Args:
-            modality_name (str): The name of the modality to add.
-            save (bool, optional): If True, saves the modality output. Defaults to False.
-            **kwargs: Arbitrary keyword arguments to override or set specific modality parameters.
+        Parameters
+        ----------
+        modality_name : str
+            The name of the modality to add.
+        save : bool, optional
+            If True, saves the modality output. Default is False.
+        **kwargs
+            Arbitrary keyword arguments to override or set specific modality parameters.
 
-        Returns:
-            None
+        Returns
+        -------
+        None
         """
         if modality_name in self.local_modalities_names:
             self.imaging_modalities[modality_name] = copy.deepcopy(
@@ -202,8 +211,10 @@ class ExperimentParametrisation:
     ):
         """
         Update or remove an imaging modality's parameters.
+
         This method allows updating specific parameters of an imaging modality, such as pixel size, lateral and axial resolution, and PSF voxel size. 
         If `remove` is True, the modality is removed from the internal dictionaries.
+
         Parameters
         ----------
         modality_name : str
@@ -216,8 +227,9 @@ class ExperimentParametrisation:
             The new axial resolution in nanometers. If provided, updates the axial standard deviation of the PSF.
         psf_voxel_nm : int, optional
             The new PSF voxel size in nanometers. If provided, updates the PSF voxel size for all axes.
-        remove : bool, default False
-            If True, removes the specified modality from the internal dictionaries.
+        remove : bool, optional
+            If True, removes the specified modality from the internal dictionaries. Default is False.
+
         Notes
         -----
         After updating any parameters, the imaging modality is reconfigured in the imager.
@@ -259,7 +271,6 @@ class ExperimentParametrisation:
                 ]
                 changes = True
             if changes:
-                # mod_pars = self.imaging_modalities[modality_name]
                 self.imager.set_imaging_modality(
                     **self.imaging_modalities[modality_name]
                 )
@@ -277,20 +288,29 @@ class ExperimentParametrisation:
         **kwargs,
     ):
         """
-        Configures and sets acquisition parameters for a specified imaging modality.
+        Configure and set acquisition parameters for a specified imaging modality.
 
-        Args:
-            modality_name (str): The name of the imaging modality to configure.
-            exp_time (float, optional): Exposure time for the acquisition in seconds. Defaults to 0.001.
-            noise (bool, optional): Whether to include noise in the acquisition. Defaults to True.
-            save (bool, optional): Whether to save the acquired data. Defaults to False.
-            nframes (int, optional): Number of frames to acquire. Defaults to 1.
-            channels (list of str, optional): List of channel names to use. Defaults to ["ch0"].
-            **kwargs: Additional keyword arguments for modality-specific parameters.
+        Parameters
+        ----------
+        modality_name : str
+            The name of the imaging modality to configure.
+        exp_time : float, optional
+            Exposure time for the acquisition in seconds. Default is 0.001.
+        noise : bool, optional
+            Whether to include noise in the acquisition. Default is True.
+        save : bool, optional
+            Whether to save the acquired data. Default is False.
+        nframes : int, optional
+            Number of frames to acquire. Default is 1.
+        channels : list of str, optional
+            List of channel names to use. Default is ["ch0"].
+        **kwargs
+            Additional keyword arguments for modality-specific parameters.
 
-        Notes:
-            - If the specified modality is not available in `self.imaging_modalities`, a message is printed and no action is taken.
-            - Acquisition parameters are formatted using `configuration_format.format_modality_acquisition_params` and stored in `self.selected_mods`.
+        Notes
+        -----
+        If the specified modality is not available in `self.imaging_modalities`, a message is printed and no action is taken.
+        Acquisition parameters are formatted using `configuration_format.format_modality_acquisition_params` and stored in `self.selected_mods`.
         """
         if modality_name in self.imaging_modalities.keys():
             self.selected_mods[modality_name] = (
@@ -302,11 +322,37 @@ class ExperimentParametrisation:
             print("Modality not selected")
 
     def reset_to_defaults(self, module="acquisitions", **kwargs):
+        """
+        Reset acquisition parameters or other module settings to their default values.
+
+        Parameters
+        ----------
+        module : str, optional
+            The module to reset. Default is "acquisitions".
+        **kwargs
+            Additional keyword arguments passed to the reset function.
+
+        Returns
+        -------
+        None
+        """
         if module == "acquisitions":
             for mod_name in self.selected_mods.keys():
                 self.set_modality_acq(mod_name, **kwargs)
 
     def _build_structure(self, keep=True):
+        """
+        Build the structure object for the experiment.
+
+        Parameters
+        ----------
+        keep : bool, optional
+            If True, store the structure in the experiment. Default is True.
+
+        Returns
+        -------
+        None
+        """
         if self.structure_id:
             struct, struct_param = load_structure(
                 self.structure_id, self.configuration_path
@@ -318,11 +364,23 @@ class ExperimentParametrisation:
 
     def _build_label(self, lab_eff=1, keep=False, **kwargs):
         """
-        Create a list with one dictionary with
-        the set up info for creating a label.
-        It assumes there is only one label store in
-        the attrubute "structure_label" and one in
-        "fluorophore_id".
+        Create a list with one dictionary with the setup info for creating a label.
+
+        Assumes there is only one label stored in the attribute "structure_label" and one in "fluorophore_id".
+
+        Parameters
+        ----------
+        lab_eff : float, optional
+            Labelling efficiency. Default is 1.
+        keep : bool, optional
+            If True, keep the label. Default is False.
+        **kwargs
+            Additional keyword arguments for label creation.
+
+        Returns
+        -------
+        list
+            List of label dictionaries.
         """
         labels_list = []
         for probe_name, probe_params in self.probe_parameters.items():
@@ -330,29 +388,15 @@ class ExperimentParametrisation:
                 label_builder_format(label_id=probe_name, **probe_params)
             )
         return labels_list
-        # probe_name = self.structure_label
-        # if probe_name in self.probe_parameters.keys():
-        #    probeparams = self.probe_parameters[probe_name]
-        #    labels_list.append(
-        #        label_builder_format(
-        #            label_id=probe_name,
-        #            **probeparams
-        #        )
-        #    )
-        # else:
-        #    labels_list.append(
-        #        label_builder_format(
-        #            label_id=self.structure_label,
-        #            fluorophore_id=self.fluorophore_id,
-        #            labelling_efficiency=lab_eff,
-        #        )
-        #    )
-        # if keep:
-        #    pass
-        # else:
-        #    return labels_list
 
     def _check_if_defects(self):
+        """
+        Check if defect parameters are set and update the use_defects flag.
+
+        Returns
+        -------
+        None
+        """
         if (
             self.defect_eps["defect"]
             and self.defect_eps["eps1"]
@@ -361,6 +405,23 @@ class ExperimentParametrisation:
             self.defect_eps["use_defects"] = True
 
     def _build_particle(self, lab_eff=1.0, defect_build=None, keep=False):
+        """
+        Build the particle object for the experiment, optionally adding defects.
+
+        Parameters
+        ----------
+        lab_eff : float, optional
+            Labelling efficiency. Default is 1.0.
+        defect_build : float or None, optional
+            Defect parameter to use. Default is None.
+        keep : bool, optional
+            If True, store the particle in the experiment. Default is False.
+
+        Returns
+        -------
+        particle or None
+            The particle object if created, else None.
+        """
         if self.generators_status("structure"):
             self._check_if_defects()
             labels_list = self._build_label(lab_eff=lab_eff)
@@ -389,6 +450,25 @@ class ExperimentParametrisation:
     def _build_coordinate_field(
         self, use_self_particle=True, keep=False, coordinate_field_path=None, **kwargs
     ):
+        """
+        Build the coordinate field for the experiment, either from the current particle or as a minimal field.
+
+        Parameters
+        ----------
+        use_self_particle : bool, optional
+            If True, use the current particle to build the field. Default is True.
+        keep : bool, optional
+            If True, store the field in the experiment. Default is False.
+        coordinate_field_path : str or None, optional
+            Path to a coordinate field file. Default is None.
+        **kwargs
+            Additional keyword arguments for field creation.
+
+        Returns
+        -------
+        exported_field or None
+            The exported field if created, else None.
+        """
         self.exported_coordinate_field = None
         if use_self_particle and self.generators_status("particle"):
             print("creating field from existing particle")
@@ -412,6 +492,20 @@ class ExperimentParametrisation:
                 self.objects_created["coordinate_field"] = True
 
     def _build_imager(self, use_local_field=False, prints=True):
+        """
+        Build the imager object for the experiment using the selected imaging modalities.
+
+        Parameters
+        ----------
+        use_local_field : bool, optional
+            If True, use the local exported coordinate field. Default is False.
+        prints : bool, optional
+            If True, print status messages. Default is True.
+
+        Returns
+        -------
+        None
+        """
         if self.imaging_modalities:
             # print(f"Using selected mods: {self.imaging_modalities.keys()}")
             mods_list = list(self.imaging_modalities.keys())
@@ -439,16 +533,22 @@ class ExperimentParametrisation:
 
     def generators_status(self, generator_name):
         """
-        Returns the status of the specified generator.
+        Return the status of the specified generator.
 
-        Args:
-            generator_name (str): The name of the generator whose status is to be retrieved.
+        Parameters
+        ----------
+        generator_name : str
+            The name of the generator whose status is to be retrieved.
 
-        Returns:
+        Returns
+        -------
+        object
             The status or object associated with the given generator name from the objects_created dictionary.
 
-        Raises:
-            KeyError: If the specified generator_name does not exist in objects_created.
+        Raises
+        ------
+        KeyError
+            If the specified generator_name does not exist in objects_created.
         """
         return self.objects_created[generator_name]
 
@@ -461,14 +561,20 @@ class ExperimentParametrisation:
         **kwargs,
     ):
         """
-        Builds various simulation objects based on the specified modules.
+        Build various simulation objects based on the specified modules.
 
-        Parameters:
-            use_locals (bool, optional): Determines whether to use local variables or attributes when building objects. Defaults to True.
-            modules (list, optional): List of module names to build. If "all" is included, builds all available modules: "structure", "particle", "coordinate_field", and "imager". Defaults to ["all"].
+        Parameters
+        ----------
+        use_locals : bool, optional
+            Determines whether to use local variables or attributes when building objects. Default is True.
+        modules : list, optional
+            List of module names to build. If "all" is included, builds all available modules: "structure", "particle", "coordinate_field", and "imager". Default is ["all"].
+        **kwargs
+            Additional keyword arguments for building modules.
 
-        Notes:
-            The order of building is: structure, particle, coordinate_field, imager.
+        Notes
+        -----
+        The order of building is: structure, particle, coordinate_field, imager.
         """
         print("Building objects")
         if "all" in modules:
@@ -488,20 +594,30 @@ class ExperimentParametrisation:
         self, write=False, keep=False, ref_acq_pars=None, modality_wise=False
     ):
         """
-        Calculate a reference image of the virtual sample by using the ideal
-        parameters for each of the parameters to sweep. Requires the
-        dictionary of the params2sweep
+        Calculate a reference image of the virtual sample by using the ideal parameters for each of the parameters to sweep.
 
+        Requires the dictionary of the params2sweep. If modality_wise is True (default), a reference is calculated for each modality with that modality's parameters. Otherwise, it will use the Reference modality configuration to generate an idealised image as reference.
 
-        If modality_wise is true (default), a reference is calculated for each modality
-        with that modality's parameters. Otherwhise, it will use a the Reference modality
-        configuration to generate an idealised image as reference.
+        Parameters
+        ----------
+        write : bool, optional
+            Whether to write the reference image to disk. Default is False.
+        keep : bool, optional
+            If True, store the reference in the experiment. Default is False.
+        ref_acq_pars : dict or None, optional
+            Acquisition parameters for the reference. Default is None.
+        modality_wise : bool, optional
+            If True, calculate reference for each modality. Default is False.
+
+        Returns
+        -------
+        tuple
+            (_reference, _reference_parameters)
         """
         reference_pars = dict()
         output_name = "REFERENCE_"
         # get ideal parameters for virtual sample
         for param_name, param_settings in self.sweep_pars.items():
-            # print(param_name, param_settings)
             reference_pars[param_name] = param_settings["ideal"]
         print(reference_pars)
         # generate particle
@@ -546,7 +662,6 @@ class ExperimentParametrisation:
                     ]
                     * scalefactor
                 )
-        #
         if keep:
             self.experiment_reference = _reference
             self.objects_created["output_reference"] = True
@@ -556,16 +671,25 @@ class ExperimentParametrisation:
         self, name="vlab4mic_experiment", acq_params=None, save=False, modality="All", **kwargs
     ):
         """
-        Runs a simulation for the specified imaging modality or all modalities.
-        Parameters:
-            name (str): Name of the experiment or simulation. Defaults to "vlab4mic_experiment".
-            acq_params (dict or None): Acquisition parameters for the simulation. If None and modality is "All", uses self.selected_mods.
-            save (bool): Whether to save the simulation output to disk. Defaults to False.
-            modality (str): The imaging modality to simulate. If "All", simulates all available modalities. Defaults to "All".
-            **kwargs: Additional keyword arguments passed to the imaging generator.
-        Returns:
-            dict or None: Simulation output as a dictionary mapping modality names to results.
-                          Returns None if the imager could not be created.
+        Run a simulation for the specified imaging modality or all modalities.
+
+        Parameters
+        ----------
+        name : str, optional
+            Name of the experiment or simulation. Default is "vlab4mic_experiment".
+        acq_params : dict or None, optional
+            Acquisition parameters for the simulation. If None and modality is "All", uses self.selected_mods.
+        save : bool, optional
+            Whether to save the simulation output to disk. Default is False.
+        modality : str, optional
+            The imaging modality to simulate. If "All", simulates all available modalities. Default is "All".
+        **kwargs
+            Additional keyword arguments passed to the imaging generator.
+
+        Returns
+        -------
+        dict or None
+            Simulation output as a dictionary mapping modality names to results. Returns None if the imager could not be created.
         """
         if not self.generators_status("imager"):
             self.build(modules="imager")
@@ -583,12 +707,10 @@ class ExperimentParametrisation:
                 experiment_name=name,
                 savingdir=self.output_directory,
                 write=save,
-                # acq_params is a value in selected mods
                 acquisition_param=acq_params,
             )
             self.results = simulation_output
             return simulation_output
-            
         else:
             print(f"Simulating: {modality}")
             acq_p = self.selected_mods[modality]
@@ -599,11 +721,15 @@ class ExperimentParametrisation:
 
     def remove_probes(self):
         """
-        Removes all probe-related parameters and updates the internal state accordingly.
+        Remove all probe-related parameters and update the internal state accordingly.
 
         This method clears the probe parameters, updates the probes, and resets the
         particle and structure objects if their respective generators are active.
         It also clears any labels associated with the structure.
+
+        Returns
+        -------
+        None
         """
         self.probe_parameters = dict()
         self._update_probes()
@@ -612,7 +738,6 @@ class ExperimentParametrisation:
             self.objects_created["particle"] = False
         if self.generators_status("structure"):
             self.structure._clear_labels()
-            # self.structure.label_targets = dict()
 
     def add_probe(
         self,
@@ -633,34 +758,58 @@ class ExperimentParametrisation:
         as_primary=False,
         **kwargs,
     ):
-        """ 
-        Adds a probe configuration to the experiment.
+        """
+        Add a probe configuration to the experiment.
+
         This method loads a probe configuration from a YAML file, updates its parameters based on the provided arguments,
         and stores it in the experiment's probe parameters. It supports customization of probe properties such as target type,
         fluorophore, model, conjugation details, and more.
-        Args:
-            probe_name (str): Name of the probe. Defaults to "NHS_ester".
-            probe_target_type (str, optional): Type of the probe target (e.g., "Primary", "Secondary").
-            probe_target_value (str, optional): Value or identifier of the probe target.
-            probe_target_option (str, optional): Additional option for the probe target, used for secondary epitopes.
-            probe_distance_to_epitope (float, optional): Distance from the probe to the epitope.
-            probe_model (str, optional): List of model identifiers for the probe.
-            probe_fluorophore (str, optional): Identifier for the fluorophore. Defaults to "AF647".
-            probe_steric_hindrance (optional): Steric hindrance value or configuration.
-            probe_paratope (str, optional): Paratope identifier or information.
-            probe_conjugation_target_info (optional): Information about the conjugation target.
-            probe_conjugation_efficiency (float, optional): Efficiency of the probe conjugation.
-            probe_seconday_epitope (optional): Information about a secondary epitope target.
-            probe_wobbling (bool, optional): Whether to enable probe wobbling. Defaults to False.
-            labelling_efficiency (float, optional): Efficiency of probe labelling. Defaults to 1.0.
-            as_primary (bool, optional): Whether to treat the probe as a primary linker. Defaults to False.
-            **kwargs: Additional keyword arguments for future extensions.
-        Side Effects:
-            Updates the `probe_parameters` attribute with the new or modified probe configuration.
-            Calls the `_update_probes` method to refresh internal probe state.
-        Raises:
-            FileNotFoundError: If the probe configuration YAML file does not exist.
-            KeyError: If required keys are missing in the configuration or probe parameters.
+
+        Parameters
+        ----------
+        probe_name : str, optional
+            Name of the probe. Default is "NHS_ester".
+        probe_target_type : str, optional
+            Type of the probe target (e.g., "Primary", "Secondary").
+        probe_target_value : str, optional
+            Value or identifier of the probe target.
+        probe_target_option : str, optional
+            Additional option for the probe target, used for secondary epitopes.
+        probe_distance_to_epitope : float, optional
+            Distance from the probe to the epitope.
+        probe_model : str, optional
+            List of model identifiers for the probe.
+        probe_fluorophore : str, optional
+            Identifier for the fluorophore. Default is "AF647".
+        probe_steric_hindrance : Any, optional
+            Steric hindrance value or configuration.
+        probe_paratope : str, optional
+            Paratope identifier or information.
+        probe_conjugation_target_info : Any, optional
+            Information about the conjugation target.
+        probe_conjugation_efficiency : float, optional
+            Efficiency of the probe conjugation.
+        probe_seconday_epitope : Any, optional
+            Information about a secondary epitope target.
+        probe_wobbling : bool, optional
+            Whether to enable probe wobbling. Default is False.
+        labelling_efficiency : float, optional
+            Efficiency of probe labelling. Default is 1.0.
+        as_primary : bool, optional
+            Whether to treat the probe as a primary linker. Default is False.
+        **kwargs
+            Additional keyword arguments for future extensions.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the probe configuration YAML file does not exist.
+        KeyError
+            If required keys are missing in the configuration or probe parameters.
+
+        Notes
+        -----
+        Updates the ``probe_parameters`` attribute with the new or modified probe configuration and calls the :meth:`_update_probes` method to refresh internal probe state.
         """
         probe_configuration_file = os.path.join(
             self.configuration_path, "probes", probe_name + ".yaml"
@@ -671,7 +820,6 @@ class ExperimentParametrisation:
                 type=probe_target_type, value=probe_target_value
             )
             if probe_target_type == "Primary" and probe_target_option:
-                # check if there is a primary probe with the name of value
                 if probe_target_value in self.probe_parameters.keys():
                     print(
                         f"Using {probe_target_option} as epitope on {probe_target_value}"
@@ -707,6 +855,13 @@ class ExperimentParametrisation:
         self._update_probes()
 
     def _update_probes(self):
+        """
+        Update the structure_label attribute based on the current probe_parameters.
+
+        Returns
+        -------
+        None
+        """
         if len(self.probe_parameters.keys()) == 0:
             self.structure_label = None
         else:
@@ -725,17 +880,26 @@ class ExperimentParametrisation:
         """
         Set parameters for the virtual sample by loading a template configuration and optionally overriding specific values.
 
-        Args:
-            virtualsample_template (str): Name of the virtual sample template YAML file (without extension) to load. Defaults to "square1x1um_randomised".
-            sample_dimensions (list[int, int, int], optional): Dimensions of the sample to override the template value.
-            number_of_particles (int, optional): Number of particles to override the template value.
-            particle_positions (list, optional): List of particle positions to override the template value.
-            random_orientations (bool, optional): Whether to randomize particle orientations, overrides the template value.
-            random_placing (bool, optional): Whether to randomize particle placement, overrides the template value.
-            **kwargs: Additional keyword arguments (currently unused).
+        Parameters
+        ----------
+        virtualsample_template : str, optional
+            Name of the virtual sample template YAML file (without extension) to load. Default is "square1x1um_randomised".
+        sample_dimensions : list of int, optional
+            Dimensions of the sample to override the template value.
+        number_of_particles : int, optional
+            Number of particles to override the template value.
+        particle_positions : list, optional
+            List of particle positions to override the template value.
+        random_orientations : bool, optional
+            Whether to randomize particle orientations, overrides the template value.
+        random_placing : bool, optional
+            Whether to randomize particle placement, overrides the template value.
+        **kwargs
+            Additional keyword arguments (currently unused).
 
-        Side Effects:
-            Sets the `virtualsample_params` attribute with the loaded and updated configuration.
+        Returns
+        -------
+        None
         """
         # load default configuration for virtual sample
         virtual_sample_template = os.path.join(
@@ -757,7 +921,6 @@ class ExperimentParametrisation:
         self.virtualsample_params = vsample_configuration
 
     def use_image_for_positioning(
-
         self,
         img,
         mode="localmaxima",
@@ -769,27 +932,39 @@ class ExperimentParametrisation:
         **kwargs,
     ):
         """
-        Generates and sets relative positions for a virtual sample based on features detected in an input image.
+        Generate and set relative positions for a virtual sample based on features detected in an input image.
 
         This method processes the provided image to extract feature coordinates using the specified detection mode 
         and parameters. The resulting positions are stored in `self.virtualsample_params["relative_positions"]`, 
         and the sample's physical dimensions are updated accordingly. The method then triggers the build process 
         for the 'coordinate_field' and 'imager' modules.
 
-        Args:
-            img: The input image (as a NumPy array or compatible format) to be analyzed for feature detection.
-            mode (str, optional): The feature detection mode to use (e.g., "localmaxima"). Defaults to "localmaxima".
-            sigma (float or None, optional): Standard deviation for Gaussian smoothing. If None, no smoothing is applied.
-            background (float or None, optional): Background intensity to subtract from the image. If None, no subtraction.
-            threshold (float or None, optional): Minimum intensity threshold for feature detection. If None, uses default.
-            pixelsize (float or None, optional): Pixel size of the input image. If None, uses default.
-            min_distance (float or None, optional): Minimum distance between detected features. If None, uses default.
-            **kwargs: Additional keyword arguments passed to the feature detection function.
+        Parameters
+        ----------
+        img : array-like
+            The input image (as a NumPy array or compatible format) to be analyzed for feature detection.
+        mode : str, optional
+            The feature detection mode to use (e.g., "localmaxima"). Default is "localmaxima".
+        sigma : float or None, optional
+            Standard deviation for Gaussian smoothing. If None, no smoothing is applied.
+        background : float or None, optional
+            Background intensity to subtract from the image. If None, no subtraction.
+        threshold : float or None, optional
+            Minimum intensity threshold for feature detection. If None, uses default.
+        pixelsize : float or None, optional
+            Pixel size of the input image. If None, uses default.
+        min_distance : float or None, optional
+            Minimum distance between detected features. If None, uses default.
+        **kwargs
+            Additional keyword arguments passed to the feature detection function.
 
-        Side Effects:
-            Updates `self.virtualsample_params` with new relative positions and sample dimensions.
-            Calls `self.build()` for the specified modules.
+        Returns
+        -------
+        None
 
+        Notes
+        -----
+        Updates `self.virtualsample_params` with new relative positions and sample dimensions. Calls `self.build()` for the specified modules.
         """
         xyz_relative, image_physical_size = coordinates_field.gen_positions_from_image(
             img=img,
