@@ -27,6 +27,9 @@ from ..utils.transform.normals import normals_by_scaling  # verified
 
 class MolecularStructureParser:
     def __init__(self):
+        """
+        Initialize a MolecularStructureParser object with default attributes.
+        """
         self.id = ""
         self.chain_builder = "CaPPBuilder"
         self.ch_builder_max_dist = 5
@@ -49,6 +52,9 @@ class MolecularStructureParser:
         self.axis = dict(pivot=None, direction=None)
 
     def _clear_labels(self):
+        """
+        Clear all label targets and normals, resetting plotting parameters except for assembly atoms.
+        """
         #print("labels cleared")
         self.label_targets = dict()
         self.label_normals = None
@@ -58,8 +64,12 @@ class MolecularStructureParser:
 
     def initialise_parsers(self, dictionary: dict):
         """
-        Create molecular structure of the PDB/CIF based on
-        its format and associated parameters.
+        Create molecular structure of the PDB/CIF based on its format and associated parameters.
+
+        Parameters
+        ----------
+        dictionary : dict
+            Dictionary containing file path, ID, format, and optionally title.
         """
         print("Parsing structure. This might take a few seconds...")
         self.source_file = dictionary["file"]
@@ -87,6 +97,9 @@ class MolecularStructureParser:
 
     # BUILD STRUCTURE
     def build_structure(self):
+        """
+        Build the structure by generating chains, assembly operations, and reference point.
+        """
         print(f"Building structure for: {self.id}: {self.identifier}...")
         if self.chains_dict is None:
             self.generate_chains_sequences()
@@ -96,14 +109,21 @@ class MolecularStructureParser:
             self.generate_assembly_reference_point()
 
     def generate_MMCIF_dictionary(self):
+        """
+        Generate a dictionary with all fields parsed from the CIF file.
+        """
         # generate the dictionary with all field parsed from CIF file
         self.CIFdictionary = MMCIF2Dict(self.source_file)
         self._gen_protein_names()
 
     def get_atoms_infile(self):
         """
-        Obtain all atom coordinates written the PDB/CIF file.
-        Only the asymmetric unit is parsed.
+        Obtain all atom coordinates written in the PDB/CIF file.
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of atom coordinates (N, 3).
         """
         coordinates = []
         for chains in self.struct:
@@ -117,11 +137,7 @@ class MolecularStructureParser:
 
     def generate_chains_sequences(self):
         """
-        Constructs a dictionary with chain ids as keys and
-        each chain value contains the string of the
-        peptide built using the specified self.chain_builder
-
-        When these chains are used for searching epitope sequences.
+        Construct a dictionary with chain IDs as keys and peptide sequences as values.
         """
         seq_chains_dict = {}
         for chains in self.struct:
@@ -136,6 +152,9 @@ class MolecularStructureParser:
         # print(f"file contains {nchains} chains")
     
     def _gen_protein_names(self):
+        """
+        Generate a dictionary of protein names and associated chain/strand information.
+        """
         protein_name = dict()
         chain_name = self.CIFdictionary["_entity.pdbx_description"]
         chain_number = self.CIFdictionary["_entity.id"]
@@ -145,15 +164,55 @@ class MolecularStructureParser:
         self.protein_names = protein_name
     
     def list_protein_names(self):
+        """
+        List all protein names in the structure.
+
+        Returns
+        -------
+        list of str
+            List of protein names.
+        """
         return list(self.protein_names.keys())
 
     def _random_substring(string, size=5):
+        """
+        Generate a random substring of a given size from a string.
+
+        Parameters
+        ----------
+        string : str
+            Input string.
+        size : int, optional
+            Length of the substring. Default is 5.
+
+        Returns
+        -------
+        str
+            Random substring.
+        """
         if len(string) > size:
             start = random.randint(0, len(string) - (size + 1))
             end = start + size
             return string[start:end]
 
     def _sequence_substring(self, string, size=5, position="random"):
+        """
+        Extract a substring from a sequence at a specified position.
+
+        Parameters
+        ----------
+        string : str
+            Input sequence.
+        size : int, optional
+            Length of the substring. Default is 5.
+        position : str, optional
+            Position to extract from ("random", "cterminal", "nterminal").
+
+        Returns
+        -------
+        str
+            Extracted substring.
+        """
         if position == "random":
             return self._random_substring(string, size)
         elif position == "cterminal":
@@ -164,6 +223,25 @@ class MolecularStructureParser:
             return string[0:end]
 
     def get_peptide_motif(self, chain_name=None, chain_id=None, size = 5, position="cterminal"):
+        """
+        Get a peptide motif from a specified chain and position.
+
+        Parameters
+        ----------
+        chain_name : str, optional
+            Name of the chain.
+        chain_id : str, optional
+            Chain ID.
+        size : int, optional
+            Length of the motif. Default is 5.
+        position : str, optional
+            Position in the chain ("cterminal", "nterminal", "random").
+
+        Returns
+        -------
+        tuple
+            (chain_name, chain_id, position, motif)
+        """
         if chain_name is None:
             chains_in_structure = list(self.protein_names.keys())
             chain_name = random.choice(chains_in_structure)
@@ -174,8 +252,7 @@ class MolecularStructureParser:
 
     def generate_assemmbly_operations(self):
         """
-        Parse the rotation/translation operation needed to
-        construct a molecular assembly from an asymmetric unit
+        Parse the rotation/translation operations needed to construct a molecular assembly from an asymmetric unit.
         """
         if self.CIFdictionary is None:  # check if already created
             self.generate_MMCIF_dictionary()
@@ -228,10 +305,7 @@ class MolecularStructureParser:
 
     def generate_assembly_reference_point(self):
         """
-        Generate a reference point for the whole structure by
-        constructing a full assembly (transforming the assymetric unit)
-        with the assembly operations if needed.
-        Then averaging all atoms including asymmetric partners if exist.
+        Generate a reference point for the whole structure by constructing a full assembly and averaging all atom coordinates.
         """
         # this function could use a small portion of the atoms defined only
         allatoms_defined = self.get_atoms_infile()  # Parse all atoms in file
@@ -283,17 +357,38 @@ class MolecularStructureParser:
         return self.assembly_atoms["coordinates"]
 
     def set_axis_from_point(self, axis_defining_point):
+        """
+        Set the axis of the structure using a point.
+
+        Parameters
+        ----------
+        axis_defining_point : numpy.ndarray
+            Point to define the axis direction.
+        """
         direction = axis_defining_point - self.assembly_refpt
         self.axis = dict(pivot=self.assembly_refpt, direction=direction)
 
     # central axis definition
 
     def set_axis_with_vector(self, vector: np.array = np.array([0, 0, 1])):
+        """
+        Set the axis of the structure using a direction vector.
+
+        Parameters
+        ----------
+        vector : numpy.ndarray, optional
+            Direction vector. Default is [0, 0, 1].
+        """
         self.axis = dict(pivot=self.assembly_refpt, direction=vector)
 
     def _central_axis_from_rotations(self):
         """
-        Calculate the central axis orientation from the assembly operations
+        Calculate the central axis orientation from the assembly operations.
+
+        Returns
+        -------
+        numpy.ndarray
+            Central axis vector.
         """
         average = np.identity(3)
         keys = list(self.assembly_operations.keys())
@@ -311,8 +406,21 @@ class MolecularStructureParser:
 
     def _get_atom_res_chain(self, chainnames: list, resnames: list, atomnames: list):
         """
-        Parse the structure generated and return desired atoms coordinates
-        defined with atom name, residue id and chain id.
+        Parse the structure and return atom coordinates defined by atom name, residue ID, and chain ID.
+
+        Parameters
+        ----------
+        chainnames : list of str
+            List of chain IDs.
+        resnames : list of str
+            List of residue names.
+        atomnames : list of str
+            List of atom names.
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of atom coordinates.
         """
         myatoms = []
         for model in self.struct:
@@ -331,12 +439,23 @@ class MolecularStructureParser:
         self, chainnames: list, resnames: list, atomnames: list, position: int
     ):
         """
-        Parse the structure generated and return desired atoms coordinates
-        defined with atom name, residue id and chain id
+        Parse the structure and return atom coordinates for a specific site.
 
-        It is intended to return only one position per chain
-        The position will be counted from the cosntructed chains so that
-        Is is heavily dependant of all the chain to be defined
+        Parameters
+        ----------
+        chainnames : list of str
+            List of chain IDs.
+        resnames : list of str
+            List of residue names.
+        atomnames : list of str
+            List of atom names.
+        position : int
+            Position in the chain.
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of atom coordinates for the specific site.
         """
         print(f"looking in: {chainnames}, {resnames}, {atomnames}, {position}")
         myatoms = []
@@ -368,10 +487,21 @@ class MolecularStructureParser:
         self, residues: list, atoms: list, position: int = None
     ):
         """
-        Parse the structure return desired atoms coordinates
-        defined with atom name, residue id and chain id.
+        Parse the structure and return atom coordinates for specified residues and atoms, including assembly partners if defined.
 
-        Output has shape Nx3. N is number of atoms
+        Parameters
+        ----------
+        residues : list of str
+            List of residue names.
+        atoms : list of str
+            List of atom names.
+        position : int, optional
+            Position in the chain.
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of atom coordinates.
         """
         if self.chains_dict is None:
             self.generate_chains_sequences()  # Initialized as none
@@ -407,10 +537,20 @@ class MolecularStructureParser:
                              position = None,
                              **kwargs):
         """
-        Generate target locations for the labelling
-        defined as Direct labeling
+        Generate target locations for labelling defined as direct labeling.
 
-        :param labelobj: instance of the class Label
+        Parameters
+        ----------
+        label_name : str, optional
+            Name for the label. Default is "atoms".
+        residues : list of str, optional
+            List of residue names.
+        atoms : list of str, optional
+            List of atom names.
+        position : int, optional
+            Position in the chain.
+        **kwargs
+            Additional keyword arguments (e.g., fluorophore, labeling_efficiency).
         """
         try:
             fluorophore = kwargs["fluorophore"]
@@ -438,16 +578,16 @@ class MolecularStructureParser:
 
     def gen_targets_by_sequence(self, target_name, sequence, **kwargs):
         """
-        Generate target locations for the labelling
-        defined as Binding labeling.
+        Generate target locations for labelling defined as indirect labeling.
 
-        It takes the epitope sequence and search for it in all the chains.
-        Only considers the first appearance of such sequence.
-        Keeps the atom coordinates form all residues in the sequence.
-        Returns a point coordinate calculated from that sequence:
-            Default method is coordinate average
-
-        :param labelobj: instance of the class Label
+        Parameters
+        ----------
+        target_name : str
+            Name for the target.
+        sequence : str
+            Epitope sequence to search for.
+        **kwargs
+            Additional keyword arguments (e.g., fluorophore, labeling_efficiency, method).
         """
         #  only the first appearance of the epitope in every chain is retreived
         #  if a chain has more than one epitope, only the first one is returned
@@ -530,6 +670,20 @@ class MolecularStructureParser:
 
     # generate targets from label info
     def gen_Targets(self, target_name,  target_type, target_value, **kwargs):
+        """
+        Generate targets for labelling based on the type of target.
+
+        Parameters
+        ----------
+        target_name : str
+            Name for the target.
+        target_type : str
+            Type of target ("Atom_residue" or "Sequence").
+        target_value : Any
+            Value for the target (e.g., atom/residue info or sequence).
+        **kwargs
+            Additional keyword arguments.
+        """
         # call the generator depending on the target type
         if target_type == "Atom_residue":
             #print(target_value)
@@ -542,15 +696,64 @@ class MolecularStructureParser:
             print(f"Label type {target_type} is not a valid label")
 
     def get_target_coords(self, targetid: str):
+        """
+        Get coordinates for a specific target.
+
+        Parameters
+        ----------
+        targetid : str
+            Target identifier.
+
+        Returns
+        -------
+        numpy.ndarray
+            Coordinates of the target.
+        """
         return self.label_targets[targetid]["coordinates"]
 
     def get_target_normals(self, targetid: str):
+        """
+        Get normals for a specific target.
+
+        Parameters
+        ----------
+        targetid : str
+            Target identifier.
+
+        Returns
+        -------
+        numpy.ndarray
+            Normals of the target.
+        """
         return self.label_targets[targetid]["normals"]
 
     def get_target_colour(self, targetid: str):
+        """
+        Get plotting colour for a specific target.
+
+        Parameters
+        ----------
+        targetid : str
+            Target identifier.
+
+        Returns
+        -------
+        str
+            Colour code.
+        """
         return self.plotting_params[targetid]["plotcolour"]
 
     def set_labefficiency(self, targetname: str, newefficiency: float):
+        """
+        Set the labelling efficiency for a target.
+
+        Parameters
+        ----------
+        targetname : str
+            Target identifier.
+        newefficiency : float
+            New labelling efficiency value.
+        """
         self.label_targets[targetname]["labeling_efficiency"] = newefficiency
 
     # visualisation
@@ -566,6 +769,35 @@ class MolecularStructureParser:
         with_normals=False,
         return_plot=False
     ):
+        """
+        Visualize target labels and optionally assembly atoms and reference point.
+
+        Parameters
+        ----------
+        labelnames : str, optional
+            Name of the label to show. If None, show all.
+        with_assembly_atoms : bool, optional
+            If True, show assembly atoms. Default is False.
+        assembly_fraction : float, optional
+            Fraction of assembly atoms to show. Default is 0.01.
+        reference_point : bool, optional
+            If True, show the reference point. Default is True.
+        view_init : list of int, optional
+            Initial view angles [elev, azim, roll]. Default is [0, 0, 0].
+        axesoff : bool, optional
+            If True, hide axes. Default is True.
+        show_axis : bool, optional
+            If True, show the axis. Default is True.
+        with_normals : bool, optional
+            If True, show normals. Default is False.
+        return_plot : bool, optional
+            If True, return the matplotlib figure. Default is False.
+
+        Returns
+        -------
+        matplotlib.figure.Figure or None
+            The figure if return_plot is True, otherwise None.
+        """
         if labelnames is None:
             fig = plt.figure()
             ax = fig.add_subplot(111, projection="3d")
@@ -623,6 +855,23 @@ class MolecularStructureParser:
     def show_assembly_atoms(
         self, assembly_fraction=0.01, view_init=[0, 0, 0], axesoff=True
     ):
+        """
+        Visualize a fraction of the assembly atoms.
+
+        Parameters
+        ----------
+        assembly_fraction : float, optional
+            Fraction of assembly atoms to show. Default is 0.01.
+        view_init : list of int, optional
+            Initial view angles [elev, azim, roll]. Default is [0, 0, 0].
+        axesoff : bool, optional
+            If True, hide axes. Default is True.
+
+        Returns
+        -------
+        matplotlib.figure.Figure
+            The figure object.
+        """
         print(f"Showing {assembly_fraction*100}% of the total atoms")
         fig = plt.figure()
         ax = fig.add_subplot(111, projection="3d")
@@ -643,9 +892,20 @@ class MolecularStructureParser:
 
     def create_instance_builder(self, write=False, savingdir=None):
         """
-        create a dictionary with the information from putative label sites
-        with their associated normals and general parameters such as axis,
-        reference point, etc.
+        Create a dictionary with information from target sites, their normals, axis, reference point, etc.
+        This dictionary can be used as source for labelled structures in the simulation. 
+
+        Parameters
+        ----------
+        write : bool, optional
+            If True, write the builder to a YAML file. Default is False.
+        savingdir : str, optional
+            Directory to save the YAML file. If None, uses current working directory.
+
+        Returns
+        -------
+        dict
+            Instance builder dictionary.
         """
         targets = dict()
         for target_name, value in self.label_targets.items():
@@ -667,6 +927,14 @@ class MolecularStructureParser:
 
 class MolecularReplicates(MolecularStructureParser):
     def __init__(self, pdbxinfo):
+        """
+        Initialize a MolecularReplicates object from structure information.
+
+        Parameters
+        ----------
+        pdbxinfo : dict
+            Dictionary with structure file, title, format, and ID.
+        """
         MolecularStructureParser.__init__(self)
         self.initialise_parsers(pdbxinfo)
         self.replicates = 1
@@ -674,7 +942,15 @@ class MolecularReplicates(MolecularStructureParser):
         self.plotcolours = {}
         self.label_fluorophore = {}
 
-    def add_label(self, labelobj: Label, ):
+    def add_label(self, labelobj: Label):
+        """
+        Add a label to the molecular structure and generate its targets.
+
+        Parameters
+        ----------
+        labelobj : Label
+            Label object to add.
+        """
         #prepare target value from label object
         self.gen_Targets(
             target_name=labelobj.get_name(),
@@ -686,6 +962,16 @@ class MolecularReplicates(MolecularStructureParser):
         self.label_fluorophore[labelobj.get_name()] = labelobj.get_fluorophore()
 
     def assign_normals2targets(self, mode="scaling", target=None):
+        """
+        Assign normals to targets using a specified method.
+
+        Parameters
+        ----------
+        mode : str, optional
+            Method for assigning normals ("scaling"). Default is "scaling".
+        target : str, optional
+            Specific target to assign normals to. If None, assign to all.
+        """
         print(f"Assigning normals to targets with method: {mode}")
         if target is None:
             for target_name, value in self.label_targets.items():
@@ -704,15 +990,23 @@ def build_structure_cif(
     cif_file: str, struct_title: str = "", cif_id: str = "", format_type="CIF"
 ):
     """
-    Load and parse PDB/CIF file and build structure object.
-    This generates the minimal object containing all atoms and
-    associated infomration parsed ready to be accessed when labelling
-    and displaying structure.
+    Load and parse a PDB/CIF file and build a structure object.
 
-    Input:
-        (string): absolute path of CIF
-    Output:
-        (MolecularReplicates) Structure object
+    Parameters
+    ----------
+    cif_file : str
+        Absolute path of the CIF file.
+    struct_title : str, optional
+        Title of the structure.
+    cif_id : str, optional
+        Structure ID.
+    format_type : str, optional
+        File format type ("CIF" or "PDB"). Default is "CIF".
+
+    Returns
+    -------
+    MolecularReplicates
+        Structure object with parsed atoms and information.
     """
     structure_dictionary = {
         "file": cif_file,
