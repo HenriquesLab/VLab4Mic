@@ -12,6 +12,7 @@ import seaborn as sns
 from matplotlib.ticker import FormatStrFormatter
 import copy
 import tifffile as tiff
+from pandas.api.types import is_numeric_dtype
 
 output_dir = Path.home() / "vlab4mic_outputs"
 
@@ -86,7 +87,9 @@ class sweep_generator:
         self.plot_parameters["lineplots"]["style"] = None
         self.plot_parameters["lineplots"]["estimator"] = "mean"
         self.plot_parameters["lineplots"]["errorbar"] = "ci"
-
+        self.structures_info_list = self.experiment.structures_info_list
+        self.param_settings = self.experiment.param_settings
+        print("vLab4mic sweep generator initialised")
 
     def set_number_of_repetitions(self, repeats: int = 3 ):
         self.sweep_repetitions = repeats
@@ -231,6 +234,16 @@ class sweep_generator:
             self.parameters_with_set_values.append(param_name)
         else:
             print(f"{param_group} is not a valid parameter group")
+
+    def clear_sweep_parameters(self):
+        """
+        Clear all parameters set for the sweep.
+        This will reset the parameters to default values
+        """
+        for group_name in self.params_by_group.keys():
+            self.params_by_group[group_name] = {}
+        self.parameters_with_set_values = []
+
 
     def create_parameters_iterables(self):
         param_groups = list(self.params_by_group.keys())
@@ -385,8 +398,10 @@ class sweep_generator:
             param2 = "probe_n"
         analysis_resut_df = self.get_analysis_output(keyname="dataframes")
         df = copy.deepcopy(self.analysis["dataframes"])
-        df[param1] = df[param1].round(3)
-        df[param2] = df[param2].round(3)
+        if is_numeric_dtype(df[param1]):
+            df[param1] = df[param1].round(3)
+        if is_numeric_dtype(df[param2]):
+            df[param2] = df[param2].round(3)
         df_categories, titles = sweep.pivot_dataframes_byCategory(
             dataframe=df,
             category_name=category,

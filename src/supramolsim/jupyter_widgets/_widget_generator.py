@@ -58,8 +58,7 @@ class widgen:
         logicals =  widgets.RadioButtons(
             options=["True", "False", "Both"],
             layout=layout, # If the items' names are long
-            description="",
-            disabled=False
+            **kwargs
             )
         return logicals
 

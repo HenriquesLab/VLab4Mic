@@ -17,6 +17,7 @@ from supramolsim.utils.io.yaml_functions import load_yaml
 import numpy as np
 import os
 import copy
+from supramolsim.utils.io import yaml_functions
 
 from pathlib import Path
 
@@ -28,10 +29,10 @@ if not os.path.exists(output_path):
 
 @dataclass
 class ExperimentParametrisation:
-    experiment_id: str = ""
-    structure_id: str = ""
+    experiment_id: str = "vLab4mic_experiment"
+    structure_id: str = None
     configuration_path: str = ""
-    structure_label: str = ""
+    structure_label: str = "NHS_ester"
     fluorophore_id: str = ""
     coordinate_field_id: str = None
     selected_mods: Dict[str, int] = field(default_factory=dict)
@@ -41,6 +42,8 @@ class ExperimentParametrisation:
     sweep_pars: Dict[str, int] = field(default_factory=dict)
     objects_created: Dict[str, int] = field(default_factory=dict)
     output_directory: str = str(output_path)
+    example_structures = ["3J3Y", "7R5K", "1XI5", "8GMO"]
+    example_modalities = ["Widefield", "Confocal", "STED", "SMLM"]
 
     def __post_init__(self):
         pck_dir = os.path.dirname(os.path.abspath(supramolsim.__file__))
@@ -75,6 +78,7 @@ class ExperimentParametrisation:
         probes_dir = os.path.join(local_dir, "probes")
         structure_dir = os.path.join(local_dir, "structures")
         self.config_probe_params = {}
+        self.config_probe_models_names = []
         self.config_global_probes_names = []
         self.config_probe_per_structure_names = {}
         for p_file in os.listdir(probes_dir):
@@ -84,7 +88,7 @@ class ExperimentParametrisation:
                 # print(label_parmeters)
                 lablname = os.path.splitext(p_file)[0]
                 if "Mock" in label_parmeters["known_targets"]:
-                    self.config_global_probes_names.append(lablname)
+                    self.config_probe_models_names.append(lablname)
                     self.config_probe_params[lablname] = label_parmeters
                 elif "Generic" in label_parmeters["known_targets"]:
                     self.config_global_probes_names.append(lablname)
@@ -100,8 +104,47 @@ class ExperimentParametrisation:
                             self.config_probe_per_structure_names[struct] = [
                                 lablname,
                             ]
+        print("Experiment created")
+        self.demo_structures = []
+        # get available structure IDs
+        self.structures_info_list = dict()
+        structure_dir = os.path.join(
+            self.configuration_path, "structures"
+        )
+        fluorophores_dir = os.path.join(
+            self.configuration_path, "fluorophores"
+        )
+        probes_dir = os.path.join(self.configuration_path, "probes")
+        modalities_dir = os.path.join(
+            self.configuration_path, "modalities"
+        )
+        for file in os.listdir(structure_dir):
+            if os.path.splitext(file)[-1] == ".yaml" and "_template" not in file:
+                structure_params = load_yaml(os.path.join(structure_dir, file))
+                struct_id = structure_params["model"]["ID"]
+                if struct_id in self.example_structures:
+                    strict_title = structure_params["model"]["title"]
+                    id_title = struct_id + ": " + strict_title
+                    self.structures_info_list[id_title] = struct_id
+                    self.demo_structures.append(id_title)
+        self.config_directories = dict(
+            structure=structure_dir,
+            fluorophores=fluorophores_dir,
+            probes=probes_dir,
+            modalities=modalities_dir,
+            base=self.configuration_path,
+        )
+        param_settings_file = os.path.join(
+            self.config_directories["base"], "parameter_settings.yaml"
+        )
+        self.param_settings = yaml_functions.load_yaml(param_settings_file)
+        self.results = dict()
 
-        # self.imaging_modalities = dict()
+
+    def select_structure(self, structure_id="1XI5", build=True):
+        self.structure_id = structure_id
+        if build:
+            self.build(modules=["structure"])
 
     def add_modality(self, modality_name, save=False, **kwargs):
         if modality_name in self.local_modalities_names:
@@ -296,7 +339,7 @@ class ExperimentParametrisation:
             return exported_field
         else:
             # create minimal field
-            fieldobject = coordinates_field.create_min_field(**kwargs)
+            fieldobject = coordinates_field.create_min_field(**self.virtualsample_params, **kwargs)
             exported_field = fieldobject.export_field()
             if keep:
                 self.exported_coordinate_field = exported_field
@@ -327,6 +370,7 @@ class ExperimentParametrisation:
                 )
             self.objects_created["imager"] = True
         else:
+            self.imager = None
             print("No modalities")
 
     def generators_status(self, generator_name):
@@ -430,6 +474,9 @@ class ExperimentParametrisation:
         # has a minimal coordinate field
         if not self.generators_status("imager"):
             self.build(modules="imager")
+            if self.imager is None:
+                print("Imager not created. Cannot run simulation.")
+                return None
         if modality == "All":
             print("Simulating all modalities")
             if acq_params is None:
@@ -444,7 +491,9 @@ class ExperimentParametrisation:
                 # acq_params is a value in selected mods
                 acquisition_param=acq_params,
             )
+            self.results = simulation_output
             return simulation_output
+            
         else:
             print(f"Simulating: {modality}")
             acq_p = self.selected_mods[modality]
@@ -458,6 +507,7 @@ class ExperimentParametrisation:
         self._update_probes()
         if self.generators_status("particle"):
             self.particle = None
+            self.objects_created["particle"] = False
         if self.generators_status("structure"):
             self.structure._clear_labels()
             # self.structure.label_targets = dict()
@@ -530,6 +580,35 @@ class ExperimentParametrisation:
             self.structure_label = None
         else:
             self.structure_label = list(self.probe_parameters.keys())
+
+    def set_virtualsample_params(
+        self,
+        virtualsample_template="square1x1um_randomised",
+        sample_dimensions=None,
+        number_of_particles= None,
+        particle_positions = None,
+        random_orientations:bool = None,
+        random_placing:bool = None,
+        **kwargs,
+    ):
+        # load default configuration for virtual sample
+        virtual_sample_template = os.path.join(
+            self.configuration_path,
+            "virtualsample",
+            virtualsample_template + ".yaml",
+        )
+        vsample_configuration = load_yaml(virtual_sample_template)
+        if sample_dimensions is not None:
+            vsample_configuration["sample_dimensions"] = sample_dimensions
+        if number_of_particles is not None:
+            vsample_configuration["number_of_particles"] = number_of_particles
+        if particle_positions is not None:
+            vsample_configuration["relative_positions"] = particle_positions
+        if random_orientations is not None:
+            vsample_configuration["random_orientations"] = random_orientations
+        if random_placing is not None:
+            vsample_configuration["random_placing"] = random_placing
+        self.virtualsample_params = vsample_configuration
 
     def use_image_for_positioning(
         self,
@@ -697,7 +776,7 @@ def generate_virtual_sample(
     if sample_dimensions is not None:
         vsample_configuration["sample_dimensions"] = sample_dimensions
     if number_of_particles is not None:
-        vsample_configuration["nparticles"] = number_of_particles
+        vsample_configuration["number_of_particles"] = number_of_particles
     if particle_positions is not None:
         vsample_configuration["relative_positions"] = particle_positions
     if random_orientations is not None:

@@ -834,3 +834,13 @@ class Imager:
             ax.set_axis_off()
         if return_fig:
             return fig
+
+
+    def get_modality_psf_stack(self, modality: str):
+        """
+        Returns the PSF stack of the modality
+        """
+        if modality in self.modalities.keys():
+            return self.modalities[modality]["psf"]["psf_stack"]
+        else:
+            raise ValueError(f"Modality {modality} not found in modalities")
