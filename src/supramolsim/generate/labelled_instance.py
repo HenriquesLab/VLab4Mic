@@ -173,7 +173,7 @@ class LabeledInstance:
     def load_label(
         self,
         targets: dict,
-        scale: float = 1e-9,
+        scale: float = 1e-10,
         axis=dict(pivot=None, direction=None),
         label_name="NA",
         labelling_efficiency: float = 1.0,
@@ -627,6 +627,23 @@ class LabeledInstance:
             if self.labels[labeltype]["binding"]["distance"]["between_targets"] is not None:
                 self.labels[labeltype]["binding"]["distance"]["between_targets"] *= probe_scaling_factor
             self.labels[labeltype]["scale"] = new_scale
+            # update the primary targets if they exist
+            self.primary["targets"][labeltype]["coordinates"] *= probe_scaling_factor
+            if  self.primary["targets"][labeltype]["normals"] is not None:
+                self.primary["targets"][labeltype]["normals"] *= probe_scaling_factor
+        for labeltype in self.secondary.keys():
+            probe_scaling_factor = self.secondary[labeltype]["scale"] / new_scale
+            if self.secondary[labeltype]["emitters"] is not None:
+                self.secondary[labeltype]["emitters"] = self.secondary[labeltype]["emitters"].astype('float64') * probe_scaling_factor
+            if "coordinates" in self.secondary[labeltype].keys():
+                self.secondary[labeltype]["coordinates"] = self.secondary[labeltype]["coordinates"].astype('float64') * probe_scaling_factor
+            if self.secondary[labeltype]["binding"]["distance"]["to_target"] is not None:
+                self.secondary[labeltype]["binding"]["distance"]["to_target"] *= probe_scaling_factor
+            if self.secondary[labeltype]["binding"]["distance"]["between_targets"] is not None:
+                self.secondary[labeltype]["binding"]["distance"]["between_targets"] *= probe_scaling_factor
+            self.secondary[labeltype]["scale"] = new_scale
+
+    # methods to get emitters by target name
             
 
     def get_emitter_by_target(self, targetname: str):
