@@ -587,14 +587,18 @@ def ui_preview_results(experiment):
     else:
         results_options = list(experiment.results.keys())
     value_modalities = results_options[0]  # Set initial value
-    def preview_results(b):
+    def show_results(b):
         gui["preview_results"].clear_output()
-        with gui["preview_results"]:
-            if len(experiment.results.keys()) == 0:
+        if len(experiment.results.keys()) == 0:
+            with gui["preview_results"]:
                 display("Experiment not run yet, please run it first.")
-            else:
-                gui["modality"].disabled = False
-                gui["modality"].value = list(experiment.results.keys())[0]  # Set initial value
+        else:
+            gui["modality"].disabled = False
+            gui["modality"].options = list(experiment.results.keys())
+            gui["modality"].value = list(experiment.results.keys())[0]  # Set initial value
+            gui["modality"].layout.display = "inline-flex"
+            gui["modality"].observe(update_plot, names="value")
+            with gui["preview_results"]:
                 update_plot(True)
 
     gui.add_label("Preview Results of the Experiment")
@@ -624,7 +628,7 @@ def ui_preview_results(experiment):
         value=value_modalities,
         disabled=True,
     )
+    gui["modality"].layout = widgets.Layout(width="50%", display="None")
     gui.add_output("preview_results") 
-    gui["modality"].observe(update_plot, names="value")
-    gui["show_results"].on_click(preview_results)
+    gui["show_results"].on_click(show_results)
     return gui
