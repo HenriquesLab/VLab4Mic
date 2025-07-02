@@ -20,7 +20,7 @@ class LabeledInstance:
     def __init__(self):
         self.params = {}
         self.params["ref_point"] = None
-        self.params["scale"] = None
+        self.params["scale"] = 1e-10
         self.source = {}
         self.source["targets"] = None
         #self.source["reference_pt"] = None
@@ -114,9 +114,11 @@ class LabeledInstance:
             axis["direction"] *= scaling_factor
 
         self._set_source_targets(dict(targets))  # making an explicit copy
-        self._set_source_reference(reference_point)
+        #self._set_source_reference(reference_point)
+        self._set_ref_point(reference_point)
         self._set_source_scale(scale)
-        self._set_source_axis(axis)
+        #self._set_source_axis(axis)
+        self.axis = copy.copy(axis)
         self._set_source_info(info)
         self.status["source"] = True
 
@@ -359,9 +361,9 @@ class LabeledInstance:
         instance_constructor = dict(
             emitters_dictionary=targets_labeled_instance,
             emitters_vectors=targets_labeled_instance_vectors,
-            ref_point=self._get_source_parameter("reference_pt"),
-            scale=self._get_source_parameter("scale"),
-            axis=self._get_source_parameter("axis"),
+            ref_point=self.get_ref_point(),
+            scale=self.get_scale(),
+            axis=self.axis,
             label_fluorophore=label_fluorophore,
             plotting_params=plotting_params,
         )
@@ -406,9 +408,9 @@ class LabeledInstance:
 
         instance_constructor = dict(
             emitters_dictionary=targets_labeled_instance,
-            ref_point=self._get_source_parameter("reference_pt"),
-            scale=self._get_source_parameter("scale"),
-            axis=self._get_source_parameter("axis"),
+            ref_point=self.get_ref_point(),
+            scale=self.get_scale(),
+            axis=self.axis,
             label_fluorophore=label_fluorophore,
             plotting_params=plotting_params,
         )
