@@ -588,18 +588,18 @@ class LabeledInstance:
         return self.params["scale"]
 
     def scale_coordinates_system(self, new_scale: float):
-        
+
         scaling_factor = self.params["scale"] / new_scale
-        scaling_factor_source = self.source["scale"] / new_scale
+        #scaling_factor_source = self.source["scale"] / new_scale
         # scale object data
         self.params["ref_point"] = self.params["ref_point"] * scaling_factor
         self.axis["pivot"] = self.axis["pivot"] * scaling_factor
         self.radial_hindance *= scaling_factor
         self._set_scale(new_scale)
         # scale source data
-        self.source["reference_pt"] *= scaling_factor_source
-        self.source["axis"]['pivot'] *= scaling_factor_source
-        self.source["scale"] = new_scale
+        #self.source["reference_pt"] *= scaling_factor_source
+        #self.source["axis"]['pivot'] *= scaling_factor_source
+        #self.source["scale"] = new_scale
         # scale emitters and each target in source
         for labeltype in self.emitters.keys():
             #print("scaling")
@@ -608,11 +608,11 @@ class LabeledInstance:
                 self.emitters[labeltype] = (
                     self.get_emitter_by_target(labeltype) * scaling_factor
                 )
-            self.source["targets"][labeltype]["coordinates"] *= scaling_factor_source
+            self.source["targets"][labeltype]["coordinates"] *= scaling_factor
             if self.source["targets"][labeltype]["normals"] is not None:
                 print(f"normals not NONE: {scaling_factor}")
                 print(self.source["targets"][labeltype]["normals"], )
-                self.source["targets"][labeltype]["normals"] *= scaling_factor_source
+                self.source["targets"][labeltype]["normals"] *= scaling_factor
         # scale probes data
         for labeltype in self.labels.keys():
             probe_scaling_factor = self.labels[labeltype]["scale"] / new_scale
