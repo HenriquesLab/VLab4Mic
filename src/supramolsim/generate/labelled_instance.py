@@ -628,9 +628,10 @@ class LabeledInstance:
                 self.labels[labeltype]["binding"]["distance"]["between_targets"] *= probe_scaling_factor
             self.labels[labeltype]["scale"] = new_scale
             # update the primary targets if they exist
-            self.primary["targets"][labeltype]["coordinates"] *= probe_scaling_factor
-            if  self.primary["targets"][labeltype]["normals"] is not None:
-                self.primary["targets"][labeltype]["normals"] *= probe_scaling_factor
+            if labeltype in self.primary["targets"].keys():
+                self.primary["targets"][labeltype]["coordinates"] *= probe_scaling_factor
+                if  self.primary["targets"][labeltype]["normals"] is not None:
+                    self.primary["targets"][labeltype]["normals"] *= probe_scaling_factor
         for labeltype in self.secondary.keys():
             probe_scaling_factor = self.secondary[labeltype]["scale"] / new_scale
             if self.secondary[labeltype]["emitters"] is not None:
