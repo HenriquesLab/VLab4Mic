@@ -21,6 +21,37 @@ def sweep_vasmples(
     repetitions=1,
     **kwargs,
 ):
+    """
+    Generate virtual samples for all combinations of structures, probes, probe parameters, defects, and virtual sample parameters.
+
+    Parameters
+    ----------
+    experiment : ExperimentParametrisation, optional
+        Experiment object to use. If None, a new one is created.
+    structures : list, optional
+        List of structure IDs.
+    probes : list, optional
+        List of probe names.
+    probe_parameters : dict, optional
+        Dictionary of probe parameter sets.
+    particle_defects : dict, optional
+        Dictionary of defect parameter sets.
+    virtual_samples : dict, optional
+        Dictionary of virtual sample parameter sets.
+    repetitions : int, optional
+        Number of repetitions for each combination.
+    **kwargs
+        Additional keyword arguments.
+
+    Returns
+    -------
+    experiment : ExperimentParametrisation
+        The experiment object used.
+    vsample_outputs : dict
+        Dictionary of generated virtual samples.
+    vsample_params : dict
+        Dictionary of parameter combinations for each sample.
+    """
     # empty lists, but fill up with default
     pck_dir = os.path.dirname(os.path.abspath(supramolsim.__file__))
     local_dir = os.path.join(pck_dir, "configs")
@@ -133,6 +164,35 @@ def sweep_modalities_updatemod(
     modality_params: dict = None,
     modality_acq_prams: dict =None,
 ):
+    """
+    Simulate image acquisitions for all virtual samples and modalities.
+
+    Parameters
+    ----------
+    experiment : ExperimentParametrisation, optional
+        Experiment object to use. If None, a new one is created.
+    vsample_outputs : dict, optional
+        Dictionary of virtual sample outputs.
+    vsampl_pars : dict, optional
+        Dictionary of virtual sample parameters.
+    modalities : list, optional
+        List of modality names.
+    modality_params : dict, optional
+        Dictionary of modality parameter sets.
+    modality_acq_prams : dict, optional
+        Dictionary of modality acquisition parameter sets.
+
+    Returns
+    -------
+    experiment : ExperimentParametrisation
+        The experiment object used.
+    mod_outputs : dict
+        Dictionary of simulated image outputs.
+    mod_params : dict
+        Dictionary of parameter combinations for each modality.
+    pixelsizes : dict
+        Dictionary of pixel sizes for each modality.
+    """
     default_mod = "Confocal"
     default_aqc = dict(
         nframes=2,
@@ -218,6 +278,29 @@ def generate_global_reference_sample(
     probe_parameters=None,
     virtual_sample=None,
 ):
+    """
+    Generate a global reference virtual sample.
+
+    Parameters
+    ----------
+    experiment : ExperimentParametrisation, optional
+        Experiment object to use. If None, a new one is created.
+    structure : str, optional
+        Structure ID.
+    probe : str, optional
+        Probe name.
+    probe_parameters : dict, optional
+        Probe parameters.
+    virtual_sample : dict, optional
+        Virtual sample parameters.
+
+    Returns
+    -------
+    reference_vsample : dict
+        The generated reference virtual sample.
+    refernece_parameters : list
+        List of parameters used for the reference.
+    """
     # empty lists, but fill up with default
     pck_dir = os.path.dirname(os.path.abspath(supramolsim.__file__))
     local_dir = os.path.join(pck_dir, "configs")
@@ -255,6 +338,29 @@ def generate_global_reference_modality(
     modality=None,
     modality_acquisition = None,
 ):
+    """
+    Generate a global reference image for a given virtual sample and modality.
+
+    Parameters
+    ----------
+    experiment : ExperimentParametrisation, optional
+        Experiment object to use. If None, a new one is created.
+    reference_vsample : dict, optional
+        Reference virtual sample.
+    reference_vsample_params : dict, optional
+        Parameters for the reference virtual sample.
+    modality : str, optional
+        Modality name.
+    modality_acquisition : dict, optional
+        Acquisition parameters for the modality.
+
+    Returns
+    -------
+    reference_output : numpy.ndarray
+        The simulated reference image.
+    reference_parameters : dict
+        Parameters used for the reference image.
+    """
     if experiment is None:
         experiment = ExperimentParametrisation()
     if modality is None:
@@ -289,6 +395,27 @@ def generate_global_reference_modality(
 
 
 def analyse_image_sweep(img_outputs, img_params, reference, analysis_case_params=None):
+    """
+    Analyse a sweep of images against a reference image.
+
+    Parameters
+    ----------
+    img_outputs : dict
+        Dictionary of simulated image outputs.
+    img_params : dict
+        Dictionary of image parameters.
+    reference : numpy.ndarray
+        Reference image.
+    analysis_case_params : dict, optional
+        Additional parameters for analysis.
+
+    Returns
+    -------
+    measurement_vectors : list
+        List of measurement results for each image.
+    inputs : dict
+        Dictionary of input images and used references.
+    """
     measurement_vectors = []
     # ref_pixelsize = analysis_case_params["ref_pixelsize"]
     inputs = dict()
@@ -308,6 +435,35 @@ def analyse_image_sweep(img_outputs, img_params, reference, analysis_case_params
     return measurement_vectors, inputs
 
 def analyse_sweep_single_reference(img_outputs, img_params, reference_image, reference_params, zoom_in=0, metrics_list:list =["ssim",], **kwargs):
+    """
+    Analyse a sweep of images against a single reference image using specified metrics.
+
+    Parameters
+    ----------
+    img_outputs : dict
+        Dictionary of simulated image outputs.
+    img_params : dict
+        Dictionary of image parameters.
+    reference_image : numpy.ndarray
+        Reference image.
+    reference_params : dict
+        Parameters for the reference image.
+    zoom_in : float, optional
+        Zoom factor for analysis. Defaults to 0.
+    metrics_list : list of str, optional
+        List of metric names to compute. Defaults to ["ssim"].
+    **kwargs
+        Additional keyword arguments.
+
+    Returns
+    -------
+    measurement_vectors : list
+        List of measurement results for each image.
+    inputs : dict
+        Dictionary of input images and used references.
+    metrics_list : list
+        List of metric names used.
+    """
     measurement_vectors = []
     # ref_pixelsize = analysis_case_params["ref_pixelsize"]
     inputs = dict()
@@ -340,6 +496,35 @@ def analyse_sweep_single_reference(img_outputs, img_params, reference_image, ref
 def measurements_dataframe(
     measurement_vectors, probe_parameters=None, p_defects=None, mod_names = None, sample_params=None, mod_params=None, mod_acq=None, metric_names=None
 ):
+    """
+    Create a pandas DataFrame from measurement vectors and parameter dictionaries.
+
+    Parameters
+    ----------
+    measurement_vectors : list
+        List of measurement results.
+    probe_parameters : dict, optional
+        Dictionary of probe parameter sets.
+    p_defects : dict, optional
+        Dictionary of defect parameter sets.
+    mod_names : list, optional
+        List of modality names.
+    sample_params : dict, optional
+        Dictionary of sample parameter sets.
+    mod_params : dict, optional
+        Dictionary of modality parameter sets.
+    mod_acq : dict, optional
+        Dictionary of modality acquisition parameter sets.
+    metric_names : list, optional
+        List of metric names.
+
+    Returns
+    -------
+    data_frame : pandas.DataFrame
+        DataFrame with basic combination and replica info.
+    df_combined : pandas.DataFrame
+        DataFrame with expanded parameter and metric columns.
+    """
     measurement_array = np.array(measurement_vectors)
     nrows = len(measurement_array[:, 1])
     ids = [i.split("_") for i in measurement_array[:, 0]]
@@ -442,6 +627,19 @@ def measurements_dataframe(
 
 
 def create_param_combinations(**kwargs):
+    """
+    Generate all combinations of parameter values.
+
+    Parameters
+    ----------
+    **kwargs
+        Parameter names and their possible values (lists).
+
+    Returns
+    -------
+    combinations_dict : dict
+        Dictionary mapping combination index to parameter dictionary.
+    """
     if kwargs:
         # Generate all combinations using itertools.product
         combinations = list(itertools.product(*kwargs.values()))
@@ -455,6 +653,31 @@ def create_param_combinations(**kwargs):
 
 
 def pivot_dataframes_byCategory(dataframe, category_name, param1, param2, metric_name, **kwargs):
+    """
+    Pivot a DataFrame by category and two parameters, summarizing a metric.
+
+    Parameters
+    ----------
+    dataframe : pandas.DataFrame
+        DataFrame to pivot.
+    category_name : str
+        Name of the category column.
+    param1 : str
+        First parameter for pivot index.
+    param2 : str
+        Second parameter for pivot columns.
+    metric_name : str
+        Name of the metric to summarize.
+    **kwargs
+        Additional keyword arguments.
+
+    Returns
+    -------
+    df_categories : dict
+        Dictionary of pivoted DataFrames for each category.
+    titles : dict
+        Dictionary with category, param1, and param2 names.
+    """
     df_categories = dict()
     for category, group in dataframe.groupby(category_name):
         summarised_group = None
@@ -492,6 +715,28 @@ def probe_parameters_sweep(
         probe_wobbling = None,
         labelling_efficiency: list[float] = None,
     ):
+    """
+    Generate combinations of probe parameters for a sweep.
+
+    Parameters
+    ----------
+    probe_target_type : list of str, optional
+    probe_target_value : list of str, optional
+    probe_distance_to_epitope : float, optional
+    probe_model : list of str, optional
+    probe_fluorophore : str, optional
+    probe_paratope : str, optional
+    probe_conjugation_target_info : any, optional
+    probe_conjugation_efficiency : list of float, optional
+    probe_seconday_epitope : any, optional
+    probe_wobbling : any, optional
+    labelling_efficiency : list of float, optional
+
+    Returns
+    -------
+    probe_parameters : dict or None
+        Dictionary of parameter combinations, or None if no parameters.
+    """
     local_params = locals()
     probe_parameters_vectors = {}
     for par, value in local_params.items():
@@ -517,6 +762,23 @@ def virtual_sample_parameters_sweep(
         random_orientations = False,
         random_placing = False,
     ):
+    """
+    Generate combinations of virtual sample parameters for a sweep.
+
+    Parameters
+    ----------
+    virtual_sample_template : str, optional
+    sample_dimensions : list of float, optional
+    number_of_particles : int, optional
+    particle_positions : list of numpy.array, optional
+    random_orientations : bool, optional
+    random_placing : bool, optional
+
+    Returns
+    -------
+    field_parameters : dict or None
+        Dictionary of parameter combinations, or None if no parameters.
+    """
     local_params = locals()
     field_parameters_vectors = {}
     for par, value in local_params.items():
@@ -539,6 +801,20 @@ def defects_parameters_sweep(
         defect_large_cluster: float = None,
         defect: float = None,
     ):
+    """
+    Generate combinations of defect parameters for a sweep.
+
+    Parameters
+    ----------
+    defect_small_cluster : float, optional
+    defect_large_cluster : float, optional
+    defect : float, optional
+
+    Returns
+    -------
+    defects_parameters : dict or None
+        Dictionary of parameter combinations, or None if no parameters.
+    """
     local_params = locals()
     defects_parameters_vectors = {}
     for par, value in local_params.items():
@@ -563,6 +839,21 @@ def modality_parameters_sweep(
         axial_resolution_nm: float = None,
         psf_voxel_nm: int = None,
     ):
+    """
+    Generate combinations of modality parameters for a sweep.
+
+    Parameters
+    ----------
+    pixelsize_nm : float, optional
+    lateral_resolution_nm : float, optional
+    axial_resolution_nm : float, optional
+    psf_voxel_nm : int, optional
+
+    Returns
+    -------
+    modality_parameters : dict or None
+        Dictionary of parameter combinations, or None if no parameters.
+    """
     local_params = locals()
     modality_parameters_vectors = {}
     for par, value in local_params.items():
@@ -587,6 +878,21 @@ def acquisition_parameters_sweep(
         nframes: float = None,
         channels: float = None,
     ):
+    """
+    Generate combinations of acquisition parameters for a sweep.
+
+    Parameters
+    ----------
+    exp_time : str, optional
+    noise : float, optional
+    nframes : float, optional
+    channels : float, optional
+
+    Returns
+    -------
+    acq_parameters : dict or None
+        Dictionary of parameter combinations, or None if no parameters.
+    """
     local_params = locals()
     acq_parameters_vectors = {}
     for par, value in local_params.items():

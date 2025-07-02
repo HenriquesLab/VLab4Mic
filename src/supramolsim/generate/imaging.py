@@ -22,6 +22,9 @@ from ..utils.transform.noise import add_image_noise
 class Imager:
     # Optical params
     def __init__(self):
+        """
+        Initialize the Imager object with default ROI and imaging parameters.
+        """
         self.roi_params = {}
         self.roi_params["scale"] = 1e-6
         self.roi_params["reference_point"] = [0, 0]  # center of the imagexy
@@ -42,15 +45,39 @@ class Imager:
         self.identifier = ""
 
     def set_experiment_name(self, name: str):
+        """
+        Set the experiment identifier for the imager.
+
+        Parameters
+        ----------
+        name : str
+            Name or identifier for the experiment.
+        """
         self.identifier = name
 
     def set_roi_from_file(self, roi_yaml: str):
+        """
+        Set ROI parameters from a YAML configuration file.
+
+        Parameters
+        ----------
+        roi_yaml : str
+            Path to the YAML file containing ROI parameters.
+        """
         with open(roi_yaml, "r") as f:
             roi_p = yaml.safe_load(f)
         self.set_roi_params(**roi_p)
 
     # methods to get and set roi params
     def set_roi_params(self, **kwargs):
+        """
+        Set ROI parameters from keyword arguments.
+
+        Parameters
+        ----------
+        **kwargs
+            ROI parameter names and values.
+        """
         if kwargs is not None:
             for key, value in kwargs.items():
                 self.roi_params[key] = value
@@ -75,6 +102,14 @@ class Imager:
         self.roi_params["ranges"] = [xrange, yrange, zrange]
 
     def get_absoulte_reference_point(self):
+        """
+        Get the absolute reference point in 3D (including focus plane).
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of shape (1, 3) with the absolute reference point.
+        """
         focus_plane = self.get_roi_params("focus_plane")
         ref_pt = self.get_roi_params("reference_point")
         ref_pt.append(focus_plane)
@@ -82,20 +117,61 @@ class Imager:
         return np.array(ref_pt).reshape((1, 3))
 
     def set_focus(self, focus: float):
+        """
+        Set the focus plane position.
+
+        Parameters
+        ----------
+        focus : float
+            Z position of the focus plane.
+        """
         self.roi_params["focus_plane"] = focus
         self._calculate_roi_ranges()
 
     def set_roi_position(self, x, y):
+        """
+        Set the (x, y) position of the ROI reference point.
+
+        Parameters
+        ----------
+        x : float
+            X coordinate.
+        y : float
+            Y coordinate.
+        """
         self.roi_params["reference_point"] = [x, y]
         self._calculate_roi_ranges()
 
     def set_roi_sizes(self, x, y):
+        """
+        Set the size of the ROI in the x and y dimensions.
+
+        Parameters
+        ----------
+        x : float
+            Size in the x dimension.
+        y : float
+            Size in the y dimension.
+        """
         self.roi_params["dimension_sizes"][0] = x
         self.roi_params["dimension_sizes"][1] = y
         self._calculate_roi_ranges()
         self._adjust_modalities_imsizes()
 
     def get_roi_params(self, parameter: str):
+        """
+        Get a copy of a specific ROI parameter.
+
+        Parameters
+        ----------
+        parameter : str
+            Name of the ROI parameter.
+
+        Returns
+        -------
+        Any
+            Value of the requested ROI parameter.
+        """
         return copy.copy(self.roi_params[parameter])
 
     def import_field(
@@ -107,6 +183,24 @@ class Imager:
         field_sizes,
         **kwargs,
     ):
+        """
+        Import emitter field and adjust ROI and emitter coordinates accordingly.
+
+        Parameters
+        ----------
+        field_emitters : dict
+            Dictionary of emitters by fluorophore.
+        field_scale : float
+            Scale of the field.
+        plotting_params : dict
+            Plotting parameters for emitters.
+        reference_point : array-like
+            Reference point of the field.
+        field_sizes : array-like
+            Size of the field in each dimension.
+        **kwargs
+            Additional keyword arguments.
+        """
         if field_scale == self.get_roi_params("scale"):
             print("FOV scale and current scale are the same. No scaling performed")
             scaling_factor = 1
@@ -123,6 +217,9 @@ class Imager:
         self.plotting_params = plotting_params
 
     def recenter_roi(self):
+        """
+        Recenter the ROI based on the field's reference point.
+        """
         field_xyz = self.field["reference_point"]
         # print(field_xyz)
         self.set_roi_position(field_xyz[0], field_xyz[1])
@@ -131,8 +228,12 @@ class Imager:
     # fluorophore parameters
     def set_fluorophores_from_file(self, fluo_params: str):
         """
-        args
-            fluo_params: (string) path to configuration file
+        Set fluorophore parameters from a YAML configuration file.
+
+        Parameters
+        ----------
+        fluo_params : str
+            Path to the YAML file containing fluorophore parameters.
         """
         fluo_p = load_yaml(fluo_params)
         self.set_fluorophores_params(**fluo_p)
@@ -145,6 +246,22 @@ class Imager:
         blinking_rates: dict,
         **kwargs,
     ):
+        """
+        Set parameters for a fluorophore.
+
+        Parameters
+        ----------
+        identifier : str
+            Name or ID of the fluorophore.
+        photon_yield : int
+            Number of photons emitted per second.
+        emission : str
+            Emission type.
+        blinking_rates : dict
+            Dictionary of blinking rate parameters.
+        **kwargs
+            Additional keyword arguments.
+        """
         fluoname = identifier
         # print(fluo)
         if "plotcolour" in kwargs.keys():
@@ -163,6 +280,16 @@ class Imager:
     # self.set_3state_blinking_params()
 
     def set_fluorophore_photons_per_second(self, fluorophore_name, photon_yield):
+        """
+        Set the photon yield for a fluorophore.
+
+        Parameters
+        ----------
+        fluorophore_name : str
+            Name of the fluorophore.
+        photon_yield : int
+            Number of photons per second.
+        """
         self.fluorophore_params[fluorophore_name]["photons_per_second"] = photon_yield
 
     def set_3state_blinking_params(
@@ -175,6 +302,26 @@ class Imager:
         photons_per_blink,
         **kwargs,
     ):
+        """
+        Set three-state blinking parameters for a fluorophore.
+
+        Parameters
+        ----------
+        fluorophore_name : str
+            Name of the fluorophore.
+        kon : float
+            On rate.
+        koff : float
+            Off rate.
+        kbleach : float
+            Bleaching rate.
+        initial_state : int
+            Initial state.
+        photons_per_blink : float
+            Photons emitted per blink.
+        **kwargs
+            Additional keyword arguments.
+        """
         blink_dictionary = dict(
             kon=kon,
             koff=koff,
@@ -186,6 +333,14 @@ class Imager:
 
     # modality module
     def set_imaging_modality_from_file(self, modality_file: str):
+        """
+        Set imaging modality parameters from a YAML configuration file.
+
+        Parameters
+        ----------
+        modality_file : str
+            Path to the YAML file containing modality parameters.
+        """
         with open(modality_file, "r") as f:
             modality_p = yaml.safe_load(f)
         self.set_imaging_modality(**modality_p)
@@ -200,6 +355,26 @@ class Imager:
         prints=False,
         **kwargs,
     ):
+        """
+        Set parameters for an imaging modality.
+
+        Parameters
+        ----------
+        filters : dict
+            Filter/channel configuration.
+        psf_params : dict
+            PSF parameters.
+        detector : dict
+            Detector parameters.
+        emission : str, optional
+            Emission type. Default is "blinking".
+        modality : str, optional
+            Name of the modality. Default is "modality1".
+        prints : bool, optional
+            If True, print debug information.
+        **kwargs
+            Additional keyword arguments.
+        """
         self._create_modality(modality)
         self._set_modality_channels(modality, filters, prints=prints)
         self._set_modality_emission(modality, emission)
@@ -316,10 +491,32 @@ class Imager:
             self._set_image_size(mod, modality_imsize)
 
     def set_noise_order(self, modality, noise_order: list):
+        """
+        Set the order in which noise types are applied for a modality.
+
+        Parameters
+        ----------
+        modality : str
+            Name of the modality.
+        noise_order : list of str
+            List specifying the order of noise types.
+        """
         self.modalities[modality]["detector"]["noise_order"] = noise_order
         # print(f"Noise order set as: {noise_order}")
 
     def set_noise_model_param(self, modality, noise_type, params: dict):
+        """
+        Set parameters for a specific noise type in a modality.
+
+        Parameters
+        ----------
+        modality : str
+            Name of the modality.
+        noise_type : str
+            Type of noise.
+        params : dict
+            Parameters for the noise type.
+        """
         self.modalities[modality]["detector"]["noise_model"][noise_type] = params
         # print(f"Noise model set as: {noise_type} with params {params}")
 
@@ -546,10 +743,21 @@ class Imager:
 
     def add_detector_noise(self, modality, stack):
         """
-        INput is an image stack and a dictionary with the
-        Types of noise to add, and the parameters needed for each one
-        The Noise model also includes an order of noise addition
+        Add detector noise to an image stack according to the modality's noise model.
+
+        Parameters
+        ----------
+        modality : str
+            Name of the modality.
+        stack : numpy.ndarray
+            Image stack to which noise will be added.
+
+        Returns
+        -------
+        numpy.ndarray
+            Image stack with noise added.
         """
+
         # consider all the parameters of the detection system and corrupt
         # the photon data
         noise_params = self.modalities[modality]["detector"]["noise_model"]
@@ -644,6 +852,19 @@ class Imager:
         )  # change at will if needed to get the original images
 
     def get_emitters_in_ROI(self, fluoname: str):
+        """
+        Get emitters of a given fluorophore that are within the ROI.
+
+        Parameters
+        ----------
+        fluoname : str
+            Name of the fluorophore.
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of emitter coordinates within the ROI.
+        """
         # get limits of ROI in xyz
         # to match the previous implementation
         # the limits must be from 0 to maxX in microns
@@ -661,6 +882,31 @@ class Imager:
     def calculate_photons_per_frame(
         self, modality, fluo, n_emitters, nframes, exp_time=1, **kwargs
     ):
+        """
+        Calculate the number of photons per frame for emitters.
+
+        Parameters
+        ----------
+        modality : str
+            Name of the modality.
+        fluo : str
+            Name of the fluorophore.
+        n_emitters : int
+            Number of emitters.
+        nframes : int
+            Number of frames.
+        exp_time : float, optional
+            Exposure time per frame. Default is 1.
+        **kwargs
+            Additional keyword arguments.
+
+        Returns
+        -------
+        photon_frames : numpy.ndarray
+            Array of photon counts per frame.
+        emission_notes : str
+            Notes about the emission model used.
+        """
         # which model to use
         if n_emitters == 0:
             photon_frames = np.repeat(0, nframes)
@@ -775,13 +1021,41 @@ class Imager:
         return np.array(self.emitters_by_fluorophore[fluo])
 
     def set_writing_directory(self, saving_dir):
+        """
+        Set the directory for saving output files.
+
+        Parameters
+        ----------
+        saving_dir : str
+            Path to the directory for saving files.
+        """
         self.writing_dir = saving_dir
 
     def write_tiff_stack(self, image_stk, notes):
+        """
+        Write an image stack to a TIFF file.
+
+        Parameters
+        ----------
+        image_stk : numpy.ndarray
+            Image stack to save.
+        notes : str
+            Notes or filename suffix for the output file.
+        """
         path = self.writing_dir
         write_tif(image_stk, path, notes)
 
     def write_text(self, list_of_lines, notes):
+        """
+        Write a list of text lines to a file.
+
+        Parameters
+        ----------
+        list_of_lines : list of str
+            Lines to write.
+        notes : str
+            Notes or filename suffix for the output file.
+        """
         # text is written line by line
         path = self.writing_dir
         write_txt(list_of_lines, path, notes)
@@ -796,6 +1070,29 @@ class Imager:
         axesoff=False,
         return_fig = False
     ):
+        """
+        Visualize the emitter field and ROI in 3D.
+
+        Parameters
+        ----------
+        fluo_type : str, optional
+            Fluorophore type to display. Default is "all".
+        view_init : list of int, optional
+            Initial view angles [elev, azim, roll]. Default is [30, 0, 0].
+        initial_pos : bool, optional
+            If True, show initial positions. Default is True.
+        reference_pt : bool, optional
+            If True, show the reference point. Default is False.
+        axesoff : bool, optional
+            If True, hide axes. Default is False.
+        return_fig : bool, optional
+            If True, return the matplotlib figure. Default is False.
+
+        Returns
+        -------
+        matplotlib.figure.Figure or None
+            The figure if return_fig is True, otherwise None.
+        """
         # FOCUS
         roi_ranges = self.get_roi_params("ranges")
         z_focus = self.get_roi_params("focus_plane")
@@ -838,7 +1135,22 @@ class Imager:
 
     def get_modality_psf_stack(self, modality: str):
         """
-        Returns the PSF stack of the modality
+        Get the PSF stack for a given modality.
+
+        Parameters
+        ----------
+        modality : str
+            Name of the modality.
+
+        Returns
+        -------
+        numpy.ndarray
+            PSF stack for the modality.
+
+        Raises
+        ------
+        ValueError
+            If the modality is not found.
         """
         if modality in self.modalities.keys():
             return self.modalities[modality]["psf"]["psf_stack"]

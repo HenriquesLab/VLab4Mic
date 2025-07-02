@@ -18,6 +18,9 @@ from ..utils.data_format.structural_format import builder_format
 
 class LabeledInstance:
     def __init__(self):
+        """
+        Initialize a LabeledInstance object with default parameters and attributes.
+        """
         self.params = {}
         self.params["ref_point"] = None
         self.params["scale"] = None
@@ -53,8 +56,12 @@ class LabeledInstance:
 
     def set_params(self, **kwargs):
         """
-        Method used to set the parameters of LabeledInstance using keyword arguments.
-        :param kwargs: same as self.params.keys()
+        Set parameters for the LabeledInstance using keyword arguments.
+
+        Parameters
+        ----------
+        **kwargs
+            Parameter names and values to set.
         """
         for key, value in kwargs.items():
             self.params[key] = value
@@ -90,18 +97,29 @@ class LabeledInstance:
     def load_source(
         self,
         targets: dict,
-        reference_point: np.ndarray,  # all points share the same reference point
+        reference_point: np.ndarray,
         scale: float,
         axis=dict(pivot=np.array([0, 0, 0]), direction=np.array([0, 0, 1])),
         info="NA",
         **kwargs,
     ):
         """
-        Method to set the ideal label locations and information
-        for label targeting.
+        Set the ideal label locations and information for label targeting.
 
-        targets: dictionary with target locations per label entity
-        targets should also contain a list of surface normals for each target
+        Parameters
+        ----------
+        targets : dict
+            Dictionary with target locations per label entity.
+        reference_point : numpy.ndarray
+            Reference point shared by all targets.
+        scale : float
+            Scale of the coordinates.
+        axis : dict, optional
+            Axis definition with 'pivot' and 'direction'.
+        info : str, optional
+            Additional information string.
+        **kwargs
+            Additional keyword arguments.
         """
         self._set_source_targets(dict(targets))  # making an explicit copy
         self._set_source_reference(reference_point)
@@ -134,10 +152,12 @@ class LabeledInstance:
 
     def load_label_file(self, label_yaml):
         """
-        Intended to be used with a predefined label structure
-        that contains emitters expplicitly stated if exists
-        and with those emitters the first two points
-        correspond to the pivot and axis definition
+        Load label definitions from a YAML file and add them to the instance.
+
+        Parameters
+        ----------
+        label_yaml : str
+            Path to the YAML file containing label definitions.
         """
         with open(label_yaml, "r") as f:
             label_params = yaml.safe_load(f)
@@ -171,10 +191,28 @@ class LabeledInstance:
         **kwargs,
     ):
         """
-        Targets is a dictionary with the fluorophore name as key
-        Each of these keys have a set of emitters in the case
-        of antibodies or linkers. For direct labeling the key
-        value is None
+        Add a label to the instance.
+
+        Parameters
+        ----------
+        targets : dict
+            Dictionary with fluorophore names as keys and emitter coordinates as values.
+        scale : float, optional
+            Scale of the label. Default is 1e-9.
+        axis : dict, optional
+            Axis definition for the label.
+        label_name : str, optional
+            Name of the label.
+        labelling_efficiency : float, optional
+            Labelling efficiency. Default is 1.0.
+        minimal_distance : float, optional
+            Minimal distance between emitters. Default is 0.0.
+        secondary : bool, optional
+            If True, label is secondary. Default is False.
+        info : str, optional
+            Additional information.
+        **kwargs
+            Additional keyword arguments.
         """
         # should check if the name is different
         label_name = label_name
@@ -220,6 +258,14 @@ class LabeledInstance:
         return self.labels
 
     def get_label_names(self):
+        """
+        Get the list of label names.
+
+        Returns
+        -------
+        list of str
+            Names of all labels in the instance.
+        """
         return self.labelnames
 
     def _get_label_fluorophore(self, label_name):
@@ -405,6 +451,9 @@ class LabeledInstance:
         return instance_constructor
 
     def generate_instance(self):
+        """
+        Generate the instance by constructing emitters and reference points based on loaded source and label information.
+        """
         if self.sequential_labelling:
             print("Sequential_labelling")
             primaries = self._generate_instance_constructor()
@@ -427,7 +476,20 @@ class LabeledInstance:
         minsamples=1,
     ):
         """
-        specify parameters for adding defects
+        Specify parameters for adding defects to the instance.
+
+        Parameters
+        ----------
+        deg_dissasembly : float, optional
+            Degree of disassembly. Default is 0.5.
+        xmer_neigh_distance : float, optional
+            Neighbour distance for clustering. Default is 100.
+        fracture : float, optional
+            Fracture parameter. Default is -24.
+        eps1 : float, optional
+            Clustering parameter. Default is 20.
+        minsamples : int, optional
+            Minimum samples for clustering. Default is 1.
         """
         d_cluster_params = dict(
             eps1=eps1,
@@ -497,8 +559,24 @@ class LabeledInstance:
         **kwargs,
     ):
         """
-        Emitters_dictionary: with the name of the label_name as keys
-            and coordinates as values for each.
+        Add emitters and reference point information to the instance.
+
+        Parameters
+        ----------
+        emitters_dictionary : dict
+            Dictionary of emitters per label.
+        ref_point : numpy.ndarray
+            Reference point.
+        scale : float
+            Scale of the coordinates.
+        axis : dict
+            Axis definition.
+        label_fluorophore : dict
+            Mapping from label to fluorophore.
+        plotting_params : dict
+            Plotting parameters for each label.
+        **kwargs
+            Additional keyword arguments.
         """
         self.labelnames = list(emitters_dictionary.keys())
         self._add_emitters(dict(emitters_dictionary))  # making an explicit copy
@@ -510,12 +588,36 @@ class LabeledInstance:
         self.plotting_params = dict(plotting_params)
 
     def get_axis(self):
+        """
+        Get the axis information for the instance.
+
+        Returns
+        -------
+        dict
+            Axis definition with 'pivot' and 'direction'.
+        """
         return self.axis
 
     def get_ref_point(self):
+        """
+        Get the reference point of the instance.
+
+        Returns
+        -------
+        numpy.ndarray
+            Reference point coordinates.
+        """
         return self.params["ref_point"]
 
     def transform_reorient(self, neworientation: np.array):
+        """
+        Reorient the instance to a new orientation.
+
+        Parameters
+        ----------
+        neworientation : numpy.ndarray
+            New orientation vector.
+        """
         if np.linalg.norm(neworientation) == 0:
             print(f"Norm for vector {neworientation} is 0. No reorientation done")
         else:
@@ -555,6 +657,14 @@ class LabeledInstance:
         pass
 
     def transform_translate(self, newcenter):
+        """
+        Translate the instance to a new center.
+
+        Parameters
+        ----------
+        newcenter : numpy.ndarray
+            New center coordinates.
+        """
         nref = copy.copy(newcenter)
         # move labels
         for labeltype in self.emitters.keys():
@@ -573,9 +683,25 @@ class LabeledInstance:
         )
 
     def get_scale(self):
+        """
+        Get the current scale of the instance.
+
+        Returns
+        -------
+        float
+            Scale value.
+        """
         return self.params["scale"]
 
     def scale_coordinates_system(self, new_scale: float):
+        """
+        Scale the coordinates of the instance to a new scale.
+
+        Parameters
+        ----------
+        new_scale : float
+            New scale value.
+        """
         current_scale = self.get_scale()
         if current_scale == new_scale:
             print("Current scale and new scale are the same. No scaling performed")
@@ -620,6 +746,19 @@ class LabeledInstance:
             self._set_scale(new_scale)
 
     def get_emitter_by_target(self, targetname: str):
+        """
+        Get emitter coordinates for a given target.
+
+        Parameters
+        ----------
+        targetname : str
+            Name of the target.
+
+        Returns
+        -------
+        numpy.ndarray or None
+            Emitter coordinates or None if not found.
+        """
         if len(self.emitters[targetname]) == 0:
             return None
         else:
@@ -632,6 +771,19 @@ class LabeledInstance:
         self.fluo2labels = inv_map
 
     def get_emitters_by_fluorophore(self, fluoname: str):
+        """
+        Get all emitter coordinates for a given fluorophore.
+
+        Parameters
+        ----------
+        fluoname : str
+            Name of the fluorophore.
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of emitter coordinates.
+        """
         lab_target = self.fluo2labels[fluoname]
         pulled = np.empty((0, 3))
         for l in lab_target:
@@ -649,6 +801,33 @@ class LabeledInstance:
                 ylims = [-100,100],
                 zlims = None,
                 **kwargs):
+        """
+        Visualize the probe structure in 3D.
+
+        Parameters
+        ----------
+        probe_name : str, optional
+            Name of the probe to visualize.
+        axesoff : bool, optional
+            If True, hide axes. Default is False.
+        return_plot : bool, optional
+            If True, return the matplotlib axis object. Default is False.
+        view_init : list of int, optional
+            Initial view angles [elev, azim, roll]. Default is [30, 0, 0].
+        xlims : list, optional
+            X-axis limits. Default is [-100, 100].
+        ylims : list, optional
+            Y-axis limits. Default is [-100, 100].
+        zlims : list, optional
+            Z-axis limits. Default is None.
+        **kwargs
+            Additional keyword arguments.
+
+        Returns
+        -------
+        matplotlib.axes._subplots.Axes3DSubplot or None
+            The axis if return_plot is True, otherwise None.
+        """
         if probe_name is None:
             first_probe = self.labelnames[0]
             probe_name = self.emitters[first_probe]
@@ -716,6 +895,35 @@ class LabeledInstance:
         source_size=1,
         emitter_plotsize=1,
     ):
+        """
+        Visualize the labelled instance in 3D.
+
+        Parameters
+        ----------
+        labelnames : str or list, optional
+            Label names to visualize. Default is "All".
+        reference_point : bool, optional
+            If True, show the reference point. Default is False.
+        view_init : list of int, optional
+            Initial view angles [elev, azim, roll]. Default is [20, 0, 0].
+        axesoff : bool, optional
+            If True, hide axes. Default is True.
+        show_axis : bool, optional
+            If True, show the axis. Default is False.
+        with_sources : bool, optional
+            If True, show source coordinates. Default is False.
+        return_plot : bool, optional
+            If True, return the matplotlib axis object. Default is False.
+        source_size : int, optional
+            Size of source markers. Default is 1.
+        emitter_plotsize : int, optional
+            Size of emitter markers. Default is 1.
+
+        Returns
+        -------
+        matplotlib.axes._subplots.Axes3DSubplot or None
+            The axis if return_plot is True, otherwise None.
+        """
         if labelnames == "All":
             fig = plt.figure()
             ax = fig.add_subplot(111, projection="3d")
@@ -776,6 +984,30 @@ class LabeledInstance:
         axis_object=None,
         emitter_plotsize=1,
     ):
+        """
+        Generate a 3D axis plot for the labelled instance.
+
+        Parameters
+        ----------
+        labelnames : str or list, optional
+            Label names to visualize. Default is "All".
+        reference_point : bool, optional
+            If True, show the reference point. Default is False.
+        view_init : list of int, optional
+            Initial view angles [elev, azim, roll]. Default is [20, 0, 0].
+        axesoff : bool, optional
+            If True, hide axes. Default is True.
+        show_axis : bool, optional
+            If True, show the axis. Default is False.
+        with_sources : bool, optional
+            If True, show source coordinates. Default is False.
+        source_plotsize : int, optional
+            Size of source markers. Default is 1.
+        axis_object : matplotlib.axes._subplots.Axes3DSubplot, optional
+            Axis object to plot on.
+        emitter_plotsize : int, optional
+            Size of emitter markers. Default is 1.
+        """
         zlims = [0, 1]
         if labelnames == "All":
             for labs in self.labelnames:
@@ -843,6 +1075,21 @@ class LabeledInstance:
 
 
 def create_particle(source_builder=None, label_params_list=None):
+    """
+    Create a LabeledInstance particle from a source builder and label parameters.
+
+    Parameters
+    ----------
+    source_builder : dict, optional
+        Dictionary with source parameters.
+    label_params_list : list of dict, optional
+        List of label parameter dictionaries.
+
+    Returns
+    -------
+    LabeledInstance
+        The created particle instance.
+    """
     particle = LabeledInstance()
     if source_builder is not None:
         particle.load_source(**source_builder)  # define the source
@@ -854,8 +1101,19 @@ def create_particle(source_builder=None, label_params_list=None):
 
 def add_label_params_to_particle(particle: LabeledInstance, label_params):
     """
-    Add source parameters to an initialised particle containing Target sites.
+    Add label parameters to an initialized particle containing target sites.
 
+    Parameters
+    ----------
+    particle : LabeledInstance
+        The particle to add label parameters to.
+    label_params : list of dict
+        List of label parameter dictionaries.
+
+    Returns
+    -------
+    LabeledInstance
+        The particle with added label parameters.
     """
     targets = dict()
     for lab in label_params:

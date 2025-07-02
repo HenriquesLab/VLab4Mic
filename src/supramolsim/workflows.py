@@ -24,18 +24,24 @@ from pathlib import Path
 
 def load_structure(structure_id: str = None, config_dir=None):
     """
-    Initialise a BioPython object for the PDB/CIF ID
-    and retreive available information about specific labelling.
-    This function require your configuration directory
-    to contain a structure configuration file (yaml).
-    It automatically downloads the CIF file of the structure if
-    it does not exist locally.
+    Initialise a BioPython object for the PDB/CIF ID and retrieve available information about specific labelling.
 
-    Args:
-        structure_id:  (string) 4 letter ID of structure
-        config_dir: (string) absolute path for configuration files
-    Returns:
-        Molecularstructure object
+    This function requires your configuration directory to contain a structure configuration file (yaml).
+    It automatically downloads the CIF file of the structure if it does not exist locally.
+
+    Parameters
+    ----------
+    structure_id : str, optional
+        4-letter ID of structure.
+    config_dir : str, optional
+        Absolute path for configuration files.
+
+    Returns
+    -------
+    structure : Molecularstructure
+        The loaded structure object.
+    structure_params : dict
+        Structure parameters loaded from configuration.
     """
     if config_dir is not None:
         print("Loading structure.")
@@ -71,6 +77,37 @@ def load_structure(structure_id: str = None, config_dir=None):
 def probe_model(
     model, binding, conjugation_sites, config_dir, probe_name="probe", **kwargs
 ):
+    """
+    Generate probe model and anchor points for a given structure and binding configuration.
+
+    Parameters
+    ----------
+    model : dict
+        Model information dictionary.
+    binding : dict
+        Binding configuration dictionary.
+    conjugation_sites : dict
+        Conjugation site information.
+    config_dir : str
+        Path to configuration directory.
+    probe_name : str, optional
+        Name for the probe (default "probe").
+    **kwargs
+        Additional keyword arguments, e.g., epitope.
+
+    Returns
+    -------
+    structural_model : MolecularReplicates
+        The structure with generated targets.
+    target_sites : numpy.ndarray
+        Coordinates of target sites.
+    anchor_point : numpy.ndarray
+        Anchor point for the probe.
+    direction_point : numpy.ndarray
+        Direction point for the probe.
+    probe_epitope : dict
+        Dictionary with epitope coordinates and normals.
+    """
     anchor_point = None
     probe_epitope = dict(coordinates=None, normals=None)
     structural_model, structure_model_prams = load_structure(model["ID"], config_dir)
@@ -142,20 +179,23 @@ def particle_from_structure(
     structure: MolecularReplicates, labels=list, config_dir=None
 ):
     """
-    Create a labelled particle.
-    First, build each label as label objects from the configuration
-    directory.
-    Each label is added to the structure object; this action
-    generates a set of targets corresponding to that label.
-    A labelled particle is initialised from these targets and
-    their associated labels.
+    Create a labelled particle from a structure and label definitions.
 
-    Args:
-        structure: (MolecularReplicates) Object that represent the parsed CIF
-        labels: (list) list of dictionaries. Each dictionary
-        contains its label ID and Fluorophore ID
-    Returns:
-        particle object: (LabelledInstance)
+    Parameters
+    ----------
+    structure : MolecularReplicates
+        Object representing the parsed CIF structure.
+    labels : list of dict
+        List of label dictionaries, each containing label ID and fluorophore ID.
+    config_dir : str, optional
+        Path to configuration directory.
+
+    Returns
+    -------
+    particle : LabelledInstance
+        The created labelled particle.
+    label_params_list : list of dict
+        List of label parameter dictionaries.
     """
     if config_dir is not None:
         label_params_list = []
@@ -227,22 +267,26 @@ def field_from_particle(
     particle: labinstance.LabeledInstance, field_config: str = None, **kwargs
 ):
     """
-    Create a particle field from input particle object.
+    Create a particle field from an input particle object.
 
-    A minimal field is initialised, bu default it defines a single particle
-    at the middle of a square area of 1x1 micrometers. If a field
-    configuration file is provided, the initialised field is adjusted from
-    this configuration file.
-    According to the definition of the field, one or more particle copies
-    are positioned within the field.
-    The exact positions of the emitters within this field is exported.
+    A minimal field is initialised; by default it defines a single particle at the middle of a square area of 1x1 micrometers.
+    If a field configuration file is provided, the initialised field is adjusted from this configuration file.
 
-    Args:
-        particle: (MolecularReplicates) Object that represent the parsed CIF
-        field_config: (list) list of dictionaries. Each dictionary
-    Returns:
-        exported_field:
-        coordinates_field:
+    Parameters
+    ----------
+    particle : LabeledInstance
+        Particle object to place in the field.
+    field_config : dict or str, optional
+        Field configuration dictionary or file path.
+    **kwargs
+        Additional keyword arguments for field creation.
+
+    Returns
+    -------
+    exported_field : dict
+        Exported field dictionary.
+    coordinates_field : CoordinatesField
+        The coordinates field object.
     """
     if field_config is not None:
         print("Creating field from parameter files")
@@ -263,20 +307,28 @@ def create_imaging_system(
     """
     Create an imaging system object.
 
-    Reads the configuration files for the specified imaging modalities
-    in modalities_id_list and initialises the imager object.
+    Reads the configuration files for the specified imaging modalities in modalities_id_list and initialises the imager object.
 
-    args:
-        exported_field: output dictionary from the export_field method
-        if the coordinate field
-        modalities_id_list: (list) List of modalities IDs. The IDs must match
-        the name of their configuration file
-        config_dir: Configuration directory
-    returns:
-        imager (Imaging Object): Instance of Imaging class initialised with
-        the input modalities
+    Parameters
+    ----------
+    exported_field : dict, optional
+        Output dictionary from the export_field method of the coordinate field.
+    modalities_id_list : list of str, optional
+        List of modality IDs. The IDs must match the name of their configuration file.
+    config_dir : str, optional
+        Path to configuration directory.
+    mod_params : dict, optional
+        Dictionary of modality parameters.
+    **kwargs
+        Additional keyword arguments.
+
+    Returns
+    -------
+    image_generator : Imager
+        Instance of Imaging class initialised with the input modalities.
+    modality_parameters : list of dict
+        List of modality parameter dictionaries.
     """
-
     if config_dir is not None:
         if exported_field is None:
             # minimal field
@@ -311,7 +363,6 @@ def create_imaging_system(
                 image_generator.set_imaging_modality(**modality)
         return image_generator, modality_parameters
         
-        
 
 
 # generate several modalities results
@@ -324,17 +375,27 @@ def generate_multi_imaging_modalities(
     **kwargs,
 ):
     """
-    Generate imaging ouputs for each modality from the image generator.
+    Generate imaging outputs for each modality from the image generator.
 
-    args:
-        image_generator: Instance of Imaging class
-        experiment_name: Name to add to each output file
-        savingdir: Output directory
-        acquisition_param: dictionary conatining aquisition parameters for
-        each modality.
-        write: If True, all output images will be writen at the savingdir
-    returns:
-        outputs: dictionary of image outputs per modality. If write is True, the
+    Parameters
+    ----------
+    image_generator : Imager
+        Instance of Imaging class.
+    experiment_name : str, optional
+        Name to add to each output file. Default is "multi_imaging_modalities".
+    savingdir : str, optional
+        Output directory for saving images.
+    acquisition_param : dict, optional
+        Dictionary containing acquisition parameters for each modality.
+    write : bool, optional
+        If True, all output images will be written to savingdir.
+    **kwargs
+        Additional keyword arguments.
+
+    Returns
+    -------
+    outputs : dict
+        Dictionary of image outputs per modality.
     """
     # kwargs will contain as keys the names of the modalities,
     # which shall correspond to the modality name
