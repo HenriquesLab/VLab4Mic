@@ -1,3 +1,35 @@
+"""
+sweep_parameters_widgets
+------------------------
+
+This module provides widget-based interfaces for configuring parameter sweeps, reference images, and analysis
+in the virtual microscopy simulation workflow. It uses EZInput and ipywidgets to allow users to select structures,
+probes, modalities, parameter ranges, and to run and save analysis sweeps in Jupyter notebooks.
+
+Functions
+---------
+
+- select_structure(sweep_gen):
+    Returns a widget for selecting a structure to sweep over.
+
+- select_probes_and_mods(sweep_gen):
+    Returns a widget for selecting probes and imaging modalities for the sweep.
+
+- add_parameters_values(sweep_gen):
+    Returns a widget for specifying parameter ranges and values to sweep.
+
+- set_reference(sweep_gen):
+    Returns a widget for setting and previewing a reference image for analysis.
+
+- analyse_sweep(sweep_gen):
+    Returns a widget for running the analysis sweep and saving results.
+
+- create_param_widgets(sweep_gen):
+    Helper function to generate widgets for parameter range selection.
+
+
+Each function returns an EZInput-based widget or ipywidgets element for use in a Jupyter notebook.
+"""
 import copy
 import ipywidgets as widgets
 from ezinput import EZInput
@@ -8,6 +40,19 @@ import numpy as np
 from ._widget_generator import widgen
 
 def select_structure(sweep_gen):
+    """
+    Create a widget for selecting a structure to sweep over.
+
+    Parameters
+    ----------
+    sweep_gen : object
+        The sweep generator object containing structure information.
+
+    Returns
+    -------
+    EZInput
+        Widget for structure selection.
+    """
     ez_sweep_structure = EZInput(title="structure")
     ez_sweep_structure.add_dropdown("structures", options=sweep_gen.structures_info_list.keys())
     ez_sweep_structure.add_button("Select", description="Select")
@@ -22,6 +67,19 @@ def select_structure(sweep_gen):
     return ez_sweep_structure
 
 def select_probes_and_mods(sweep_gen):
+    """
+    Create a widget for selecting probes and imaging modalities for the sweep.
+
+    Parameters
+    ----------
+    sweep_gen : object
+        The sweep generator object containing probe and modality information.
+
+    Returns
+    -------
+    EZInput
+        Widget for probe and modality selection.
+    """
     my_exp = sweep_gen.experiment
     probes_per_structure = copy.copy(my_exp.config_probe_per_structure_names)
     vlab_probes = copy.copy(my_exp.config_global_probes_names)
@@ -56,6 +114,19 @@ def select_probes_and_mods(sweep_gen):
     return ez_sweep
 
 def add_parameters_values(sweep_gen):
+    """
+    Create a widget for specifying parameter ranges and values to sweep.
+
+    Parameters
+    ----------
+    sweep_gen : object
+        The sweep generator object containing parameter settings.
+
+    Returns
+    -------
+    EZInput
+        Widget for parameter range selection and sweep configuration.
+    """
     range_widgets = create_param_widgets(sweep_gen)
     sweep_parameter_gui = EZInput(title="sweep_parameters",)
 
@@ -115,6 +186,19 @@ def add_parameters_values(sweep_gen):
     return sweep_parameter_gui
 
 def set_reference(sweep_gen):
+    """
+    Create a widget for setting and previewing a reference image for analysis.
+
+    Parameters
+    ----------
+    sweep_gen : object
+        The sweep generator object containing experiment and reference info.
+
+    Returns
+    -------
+    EZInput
+        Widget for reference image selection and preview.
+    """
     my_exp = sweep_gen.experiment
     probes_per_structure = copy.copy(my_exp.config_probe_per_structure_names)
     reference = EZInput(title="reference")
@@ -177,6 +261,19 @@ def set_reference(sweep_gen):
     return reference
 
 def analyse_sweep(sweep_gen):
+    """
+    Create a widget for running the analysis sweep and saving results.
+
+    Parameters
+    ----------
+    sweep_gen : object
+        The sweep generator object containing analysis and output info.
+
+    Returns
+    -------
+    EZInput
+        Widget for running analysis and saving results.
+    """
     wgen = widgen()
     ouput_directory = getattr(sweep_gen, "ouput_directory", ".")
     analysis_widget = EZInput(title="analysis")
@@ -254,6 +351,19 @@ def analyse_sweep(sweep_gen):
     return analysis_widget
 
 def create_param_widgets(sweep_gen):
+    """
+    Helper function to generate widgets for parameter range selection.
+
+    Parameters
+    ----------
+    sweep_gen : object
+        The sweep generator object containing parameter settings.
+
+    Returns
+    -------
+    dict
+        Dictionary of widgets for each parameter.
+    """
     wgen = widgen()
     range_widgets = dict()
     for groupname, group_parameters in sweep_gen.param_settings.items():

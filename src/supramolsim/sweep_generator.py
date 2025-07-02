@@ -92,13 +92,28 @@ class sweep_generator:
         print("vLab4mic sweep generator initialised")
 
     def set_number_of_repetitions(self, repeats: int = 3 ):
+        """
+        Sets the number of repetitions for each parameter configuration in a sweep.
+
+        Parameters
+        ----------
+        repeats : int, optional
+            Number of times to repeat each parameter combination. Defaults to 3.
+
+        Returns
+        -------
+        None
+        """
         self.sweep_repetitions = repeats
 
     # generators
     def generate_virtual_samples(self):
         """
-        Generate virtual samples from the specified parameter combinations
+        Generate virtual samples from the specified parameter combinations.
 
+        Returns
+        -------
+        None
         """
         self.create_parameters_iterables()
         self.experiment, self.virtual_samples, self.virtual_samples_parameters = (
@@ -114,8 +129,11 @@ class sweep_generator:
 
     def generate_acquisitions(self):
         """
-        Generate image simulation acquisition for all virtual samples
-        generated with generate_virtual_samples
+        Generate image simulation acquisition for all virtual samples generated with generate_virtual_samples.
+
+        Returns
+        -------
+        None
         """
         # generate virtual samples
         with io.capture_output() as captured:
@@ -143,16 +161,22 @@ class sweep_generator:
         **kwargs,
     ):
         """
-        Specify parameters to use for both reference sample and 
-        reference image used at analysis.
+        Specify parameters to use for both reference sample and reference image used at analysis.
 
-        :param reference_structure: 4-letter ID of PDB/CIF model.
-        :type reference_structure: str
-        :param reference_probe: Name ID of probe configuration file (filename).
-        :type reference_probe: str
-        :param reference_probe_parameters: probe parameters to use
-        :type reference_probe: dict
-        
+        Parameters
+        ----------
+        reference_structure : str, optional
+            4-letter ID of PDB/CIF model.
+        reference_probe : str, optional
+            Name ID of probe configuration file (filename).
+        reference_probe_parameters : dict, optional
+            Probe parameters to use.
+        **kwargs
+            Additional keyword arguments.
+
+        Returns
+        -------
+        None
         """
         if reference_structure is None:
             self.reference_structure = self.structures[0]
@@ -164,6 +188,13 @@ class sweep_generator:
             self.reference_probe_parameters = reference_probe_parameters
 
     def generate_reference_sample(self):
+        """
+        Generate the reference virtual sample and its parameters.
+
+        Returns
+        -------
+        None
+        """
         self.reference_virtual_sample, self.reference_virtual_sample_params = (
             sweep.generate_global_reference_sample(
                 structure=self.reference_structure,
@@ -173,6 +204,18 @@ class sweep_generator:
         )
 
     def generate_reference_image(self, override=False):
+        """
+        Generate the reference image using the reference virtual sample.
+
+        Parameters
+        ----------
+        override : bool, optional
+            If True, regenerate the reference image even if it exists. Defaults to False.
+
+        Returns
+        -------
+        None
+        """
         if self.reference_image is None or override:
             self.generate_reference_sample()
         self.reference_image, self.reference_image_parameters = (
@@ -184,6 +227,19 @@ class sweep_generator:
 
     # previews
     def preview_acquisition_output(self, return_image=False):
+        """
+        Preview or return the first acquisition output image.
+
+        Parameters
+        ----------
+        return_image : bool, optional
+            If True, return the image array instead of displaying it. Defaults to False.
+
+        Returns
+        -------
+        numpy.ndarray or None
+            The image array if `return_image` is True, otherwise None.
+        """
         param_id = list(self.acquisition_outputs_parameters.keys())[0]
         repetition = 0
         frame = 0
@@ -194,6 +250,19 @@ class sweep_generator:
             print(self.acquisition_outputs_parameters[param_id])
 
     def preview_reference_image(self, return_image=False):
+        """
+        Preview or return the reference image.
+
+        Parameters
+        ----------
+        return_image : bool, optional
+            If True, return the image array instead of displaying it. Defaults to False.
+
+        Returns
+        -------
+        numpy.ndarray or None
+            The image array if `return_image` is True, otherwise None.
+        """
         if return_image:
             return self.reference_image
         else:
@@ -203,21 +272,21 @@ class sweep_generator:
     # set and change parameters
     def set_parameter_values(self, param_group, param_name, values=None):
         """
-        Specify list or range of values to use per parameter
+        Specify list or range of values to use per parameter.
 
-        :param param_group: group of parameter e.g probe, virtual_sample
-        :type save: str
-        :param param_name: name of parameter to use for sweep
-        :type save: str
-        :param values: parameter values to use. 
-            If values is a tuple,
-            a sequence of values will be generated asssuming the tuple contains
-            the parameter for numpy linspace method (start, stop, num)
-            If values is a list, the list is set as the final values to use
-            If values is a None, a default list will be generated 
-            according to the parameter set
-        :type values: [None, tuple, list]
+        Parameters
+        ----------
+        param_group : str
+            Group of parameter, e.g., 'probe', 'virtual_sample'.
+        param_name : str
+            Name of parameter to use for sweep.
+        values : None, tuple, or list, optional
+            Parameter values to use. If tuple, interpreted as (start, stop, num) for linspace.
+            If list, used directly. If None, defaults are generated.
 
+        Returns
+        -------
+        None
         """
         if param_group in list(self.params_by_group.keys()):
             if values is None:
@@ -237,8 +306,11 @@ class sweep_generator:
 
     def clear_sweep_parameters(self):
         """
-        Clear all parameters set for the sweep.
-        This will reset the parameters to default values
+        Clear all parameters set for the sweep, resetting to default values.
+
+        Returns
+        -------
+        None
         """
         for group_name in self.params_by_group.keys():
             self.params_by_group[group_name] = {}
@@ -246,6 +318,13 @@ class sweep_generator:
 
 
     def create_parameters_iterables(self):
+        """
+        Create iterables for all parameter groups based on set values.
+
+        Returns
+        -------
+        None
+        """
         param_groups = list(self.params_by_group.keys())
         no_params_set = True
         for group_name in param_groups:
@@ -274,12 +353,42 @@ class sweep_generator:
         )
 
     def set_analysis_parameters(self, metrics_list: list[str] = None, zoom_in: float = None, **kwargs):
+        """
+        Set analysis parameters for the simulation.
+
+        Parameters
+        ----------
+        metrics_list : list of str, optional
+            A list of metric names to be used in the analysis.
+        zoom_in : float, optional
+            A zoom factor to be applied during analysis.
+        **kwargs
+            Additional keyword arguments for future extensibility.
+
+        Returns
+        -------
+        None
+        """
         if metrics_list is not None and type(metrics_list) == list:
             self.analysis_parameters["metrics_list"] = metrics_list
         if zoom_in is not None:
             self.analysis_parameters["zoom_in"] = zoom_in
 
     def set_plot_parameters(self, plot_type, **kwargs):
+        """
+        Set plotting parameters for a given plot type.
+
+        Parameters
+        ----------
+        plot_type : str
+            The type of plot to configure.
+        **kwargs
+            Plot-specific keyword arguments.
+
+        Returns
+        -------
+        None
+        """
         if plot_type in self.plot_parameters.keys():
             for key, val in kwargs.items():
                 self.plot_parameters[plot_type][key] = val
@@ -290,17 +399,27 @@ class sweep_generator:
     ):
         """
         Analyse image simulations against the specified image reference.
-        This method generates a dataframe containing the calculated metrics
-        per parameter combination
 
-        :param save: specify if output analysis will be saved in output_directory
-        :type save: bool
-        :param output_name: name to identify analysis output files
-        :type save: str
-        :param output_directory: path for writing outputs
-        :type output_directory: str
-        :param plots: Generate heatmas and lineplots from the results dataframe 
-        :type plots: bool
+        This method generates a dataframe containing the calculated metrics per parameter combination.
+
+        Parameters
+        ----------
+        save : bool, optional
+            Specify if output analysis will be saved in output_directory. Defaults to True.
+        output_name : str, optional
+            Name to identify analysis output files.
+        output_directory : str, optional
+            Path for writing outputs.
+        plots : bool, optional
+            Generate heatmaps and lineplots from the results dataframe. Defaults to False.
+        save_images : bool, optional
+            Whether to save images. Defaults to True.
+        **kwargs
+            Additional keyword arguments.
+
+        Returns
+        -------
+        None
         """
         if self.acquisition_outputs is None:
             self.generate_acquisitions()
@@ -329,6 +448,13 @@ class sweep_generator:
             )
 
     def gen_analysis_dataframe(self):
+        """
+        Generate the analysis dataframe from measurement vectors and parameters.
+
+        Returns
+        -------
+        None
+        """
         unformatted_df, self.analysis["dataframes"] = sweep.measurements_dataframe(
             measurement_vectors=self.analysis["unsorted"]["measurement_vectors"],
             probe_parameters=self.probe_parameters,
@@ -342,15 +468,58 @@ class sweep_generator:
 
     # methods to retrieve attributes
     def get_analysis_output(self, keyname="dataframes"):
+        """
+        Retrieve the analysis output associated with the specified key.
+
+        Parameters
+        ----------
+        keyname : str, optional
+            The key corresponding to the desired analysis output. Defaults to "dataframes".
+
+        Returns
+        -------
+        Any
+            The analysis output associated with the given key.
+
+        Raises
+        ------
+        KeyError
+            If the specified key does not exist in the analysis dictionary.
+        """
         return self.analysis[keyname]
 
-    def generate_analysis_plots(
+    def generate_analysis_plots(    
         self,
         plot_type=None,
         metric_name = None,
         decimals:int = None,
         **kwargs,
     ):
+        """
+        Generates and stores analysis plots based on the specified plot type and metric.
+
+        Parameters
+        ----------
+        plot_type : str, optional
+            The type of plot to generate. Supported types are "heatmaps" and "lineplots".
+            If not specified, defaults to "heatmaps".
+        metric_name : str, optional
+            The name of the metric to plot. Required for generating the plot.
+        decimals : int, optional
+            Number of decimal places to format metric values. If not specified, defaults to 3.
+        **kwargs
+            Additional keyword arguments passed to the underlying plotting functions.
+
+        Notes
+        -----
+        The generated plot is stored in the `self.analysis["plots"]` dictionary under the corresponding plot type and metric name.
+        Plot parameters are retrieved from `self.plot_parameters` based on the plot type.
+        Requires that analysis output dataframes are available via `self.get_analysis_output(keyname="dataframes")`.
+
+        Returns
+        -------
+        None
+        """
         if decimals is None:
             decimals = "%.3f"
         else:
@@ -388,6 +557,31 @@ class sweep_generator:
             return_figure = False,
             decimals='%.4f',
             **kwargs):
+        """
+        Generate heatmap plots for the specified metric and parameters.
+
+        Parameters
+        ----------
+        metric_name : str, optional
+            Name of the metric to plot.
+        category : str, optional
+            Category for pivoting data (e.g., modality_name).
+        param1 : str, optional
+            First parameter for the heatmap axes.
+        param2 : str, optional
+            Second parameter for the heatmap axes.
+        return_figure : bool, optional
+            If True, return the matplotlib figure. Defaults to False.
+        decimals : str, optional
+            Format string for decimal places. Defaults to '%.4f'.
+        **kwargs
+            Additional keyword arguments.
+
+        Returns
+        -------
+        matplotlib.figure.Figure
+            The generated heatmap figure.
+        """
         if metric_name is None:
             metric_name = self.analysis_parameters["metrics_list"][0]
         if category is None:
@@ -430,6 +624,39 @@ class sweep_generator:
                        figsize=[10,10],
                        decimals='%.4f',
                        **kwargs):
+        """
+        Generate line plots for the specified metric and parameters.
+
+        Parameters
+        ----------
+        data : pandas.DataFrame, optional
+            Data to plot. If None, uses self.analysis["dataframes"].
+        x_param : str, optional
+            Parameter for the x-axis.
+        metric_name : str, optional
+            Metric to plot on the y-axis.
+        hue : str, optional
+            Variable that defines subsets of the data, which will be drawn on separate lines.
+        style : str, optional
+            Variable that determines the line style.
+        markers : bool or list, optional
+            Markers for the lines.
+        estimator : str or callable, optional
+            Method for aggregating data.
+        errorbar : str, optional
+            Error bar type.
+        figsize : list, optional
+            Figure size.
+        decimals : str, optional
+            Format string for decimal places.
+        **kwargs
+            Additional keyword arguments.
+
+        Returns
+        -------
+        matplotlib.figure.Figure
+            The generated line plot figure.
+        """
         if data is None:
             data = self.analysis["dataframes"]
         if x_param is None and len(self.parameters_with_set_values) > 0:
@@ -462,6 +689,30 @@ class sweep_generator:
     def save_analysis(
         self, output_name=None, output_directory=None, analysis_type=None
     ):
+        """
+        Saves analysis results, including dataframes and plots, to the specified output directory.
+
+        Parameters
+        ----------
+        output_name : str, optional
+            Base name for the output files. If None, defaults to "vLab4mic_results_".
+            The current date (YYYYMMDD) will be appended to the name.
+        output_directory : str, optional
+            Directory where the output files will be saved. If None, uses the instance's `ouput_directory` attribute.
+        analysis_type : list of str, optional
+            Types of analysis outputs to save. Can include "dataframes" and/or "plots".
+            If None, both "dataframes" and "plots" are saved.
+
+        Notes
+        -----
+        Dataframes are saved as CSV files.
+        Plots are saved as PNG files, named according to their metric and plot type.
+        The method relies on `get_analysis_output` to retrieve the relevant dataframes and plots.
+
+        Returns
+        -------
+        None
+        """
         now = datetime.now()  # dd/mm/YY H:M:S
         dt_string = now.strftime("%Y%m%d")
         if analysis_type is None:
@@ -484,7 +735,28 @@ class sweep_generator:
                         plot.savefig(os.path.join(output_directory, figure_name))
 
 
-    def save_images(self, output_name=None, output_directory=None, ):
+    def save_images(self, output_name=None, output_directory=None):
+        """
+        Saves simulated images and an optional reference image to disk in TIFF format.
+
+        Parameters
+        ----------
+        output_name : str, optional
+            Base name for the output image files. Defaults to "vLab4mic_images_".
+        output_directory : str, optional
+            Directory where images will be saved. If not provided, uses a default path
+            based on `self.ouput_directory` under a "simulated_images" subdirectory. The directory is created if it does not exist.
+
+        Returns
+        -------
+        None
+
+        Behavior
+        --------
+        - Iterates over all parameter combinations in `self.acquisition_outputs`.
+        - For each combination, concatenates all replicate images and saves the result as a TIFF file named after the parameter combination ID.
+        - If `self.reference_image` is present, saves it as "reference.tiff" in the output directory.
+        """
         if output_name is None:
             output_name = "vLab4mic_images_"
         if output_directory is None:
@@ -502,4 +774,3 @@ class sweep_generator:
             # save reference image
             name_ref = output_directory + "reference.tiff"
             tiff.imwrite(name_ref, self.reference_image)
-            

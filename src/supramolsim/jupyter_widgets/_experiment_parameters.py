@@ -1,3 +1,36 @@
+"""
+_experiment_parameters
+----------------------
+
+This module provides EZInput-based widget interfaces for selecting and configuring experiment parameters
+in the virtual microscopy simulation workflow. It enables interactive selection of structures, probes, sample parameters,
+imaging modalities, and running experiments within Jupyter notebooks.
+
+Functions
+---------
+
+- ui_select_structure(experiment):
+    Returns a widget for selecting the experiment structure.
+
+- update_widgets_visibility(ezwidget, visibility_dictionary):
+    Utility to show/hide widgets in an EZInput widget based on a visibility dictionary.
+
+- ui_select_probe(experiment, **kwargs):
+    Returns a widget for selecting and adding probes to the experiment.
+
+- ui_select_sample_parameters(experiment):
+    Returns a widget for configuring sample parameters (e.g., number of particles, random orientations).
+
+- ui_select_modality(experiment):
+    Returns a widget for selecting and previewing imaging modalities.
+
+- ui_run_experiment(experiment):
+    Returns a widget for running the experiment and saving results.
+
+
+Each function returns an EZInput-based widget for use in a Jupyter notebook.
+"""
+
 from ezinput import EZInput
 import matplotlib.pyplot as plt
 import copy
@@ -10,6 +43,19 @@ from supramolsim.utils.visualisation.matplotlib_plots import slider_normalised
 import numpy as np
 
 def ui_select_structure(experiment):
+    """
+    Create a widget for selecting the experiment structure.
+
+    Parameters
+    ----------
+    experiment : ExperimentParametrisation
+        The experiment object containing available structures.
+
+    Returns
+    -------
+    EZInput
+        Widget for structure selection.
+    """
     gui = EZInput("Select_structure")
     def select_structure(elements):
         elements["label_1"].value = "Current structure selected: Loading..."
@@ -41,14 +87,40 @@ def ui_select_structure(experiment):
     return gui
 
 def update_widgets_visibility(ezwidget, visibility_dictionary):
+    """
+    Show or hide widgets in an EZInput widget based on a visibility dictionary.
+
+    Parameters
+    ----------
+    ezwidget : EZInput
+        The EZInput widget containing elements to show/hide.
+    visibility_dictionary : dict
+        Dictionary mapping widget names to booleans (True to show, False to hide).
+
+    Returns
+    -------
+    None
+    """
     for widgetname in visibility_dictionary.keys():
         if visibility_dictionary[widgetname]:
             ezwidget[widgetname].layout.display = "inline-flex"
         else:
             visibility_dictionary[widgetname].layout.display = "None"   
 
-
 def ui_select_probe(experiment, **kwargs):
+    """
+    Create a widget for selecting and adding probes to the experiment.
+
+    Parameters
+    ----------
+    experiment : ExperimentParametrisation
+        The experiment object containing probe configuration.
+
+    Returns
+    -------
+    EZInput
+        Widget for probe selection and addition.
+    """
     experiment.remove_probes()
     probes_gui = EZInput(title="Labels")
     visibility_widgets = dict()
@@ -62,9 +134,6 @@ def ui_select_probe(experiment, **kwargs):
     for probe_name in experiment.config_global_probes_names:
         if experiment.config_probe_params[probe_name]["target"]["type"]:
             probe_options.append(probe_name)
-    #probe_options.extend(
-    #        copy.copy(experiment.config_global_probes_names)
-    #    )
     # methods
     def select_probe(values):
         experiment.add_probe(
@@ -89,10 +158,8 @@ def ui_select_probe(experiment, **kwargs):
             probes_gui["message2"].value = "Labelled structure creation failed. Check the logs for details."
 
     # widgets
-    ## Feedback labels
     probes_gui.add_label("Seleced probes:")
     probes_gui.add_HTML("message1", "No probes selected yet.", style = dict(font_weight='bold'))
-    # pre-built probes
     probes_gui.add_dropdown("select_probe",
                             description="Choose a probe:",
                             options=probe_options)
@@ -111,6 +178,19 @@ def ui_select_probe(experiment, **kwargs):
     return probes_gui   
 
 def ui_select_sample_parameters(experiment):
+    """
+    Create a widget for configuring sample parameters such as number of particles and random orientations.
+
+    Parameters
+    ----------
+    experiment : ExperimentParametrisation
+        The experiment object containing sample parameters.
+
+    Returns
+    -------
+    EZInput
+        Widget for sample parameter configuration.
+    """
     sample_gui = EZInput(title="Sample parameters")
     # Add widgets for sample parameters
     sample_gui.add_label(
@@ -161,6 +241,19 @@ def ui_select_sample_parameters(experiment):
     return sample_gui
 
 def ui_select_modality(experiment):
+    """
+    Create a widget for selecting and previewing imaging modalities.
+
+    Parameters
+    ----------
+    experiment : ExperimentParametrisation
+        The experiment object containing modality configuration.
+
+    Returns
+    -------
+    EZInput
+        Widget for modality selection and preview.
+    """
     modalities_default = ["Widefield", "Confocal", "STED", "SMLM", "All"]
     preview_experiment = copy.deepcopy(experiment)
     xy_zoom_in = 0.5
@@ -305,6 +398,19 @@ def ui_select_modality(experiment):
     return modality_gui
 
 def ui_run_experiment(experiment):
+    """
+    Create a widget for running the experiment and saving results.
+
+    Parameters
+    ----------
+    experiment : ExperimentParametrisation
+        The experiment object to run and save.
+
+    Returns
+    -------
+    EZInput
+        Widget for running the experiment and saving results.
+    """
     run_gui = EZInput(title="Run experiment")
     #experiment.build(modules=["imager",])
     def run_simulation(b):
