@@ -320,8 +320,8 @@ class Field:
     def create_molecules_from_InstanceObject(self, InstancePrototype: LabeledInstance):
         reps = self.get_molecule_param("nMolecules")
         particle_copy = copy.deepcopy(InstancePrototype)
-        self.molecules_default_orientation = particle_copy._get_source_parameter("axis")
         particle_copy.scale_coordinates_system(self.get_field_param("scale"))
+        self.molecules_default_orientation = particle_copy.get_axis()
         if self.molecules_params["minimal_distance"] is None:
             self._set_molecule_minimal_distance(
                 dist=particle_copy.radial_hindance
@@ -386,7 +386,7 @@ class Field:
             for mol in self.molecules:
                 mol.generate_instance()
                 # mol.show_instance()
-                mol.scale_coordinates_system(self.get_field_param("scale"))
+                #mol.scale_coordinates_system(self.get_field_param("scale"))
 
     def relocate_molecules(self):
         if self.molecules:
