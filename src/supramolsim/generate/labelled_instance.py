@@ -23,9 +23,9 @@ class LabeledInstance:
         self.params["scale"] = None
         self.source = {}
         self.source["targets"] = None
-        self.source["reference_pt"] = None
-        self.source["scale"] = None
-        self.source["axis"] = None
+        #self.source["reference_pt"] = None
+        #self.source["scale"] = None
+        #self.source["axis"] = None
         self.source["info"] = None
         self.labels = {}
         self.labelnames = list()
@@ -103,6 +103,16 @@ class LabeledInstance:
         targets: dictionary with target locations per label entity
         targets should also contain a list of surface normals for each target
         """
+        if scale != self.params["scale"]:
+            scaling_factor = scale / self.params["scale"]
+            for tgt in targets.keys():
+                if targets[tgt]["normals"] is not None:
+                    targets[tgt]["normals"] *= scaling_factor
+                targets[tgt]["coordinates"] *= scaling_factor
+            reference_point *= scaling_factor
+            axis["pivot"] *= scaling_factor
+            axis["direction"] *= scaling_factor
+
         self._set_source_targets(dict(targets))  # making an explicit copy
         self._set_source_reference(reference_point)
         self._set_source_scale(scale)
