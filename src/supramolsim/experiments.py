@@ -18,7 +18,7 @@ import numpy as np
 import os
 import copy
 from supramolsim.utils.io import yaml_functions
-
+from IPython.utils import io
 from pathlib import Path
 
 output_path = Path.home() / "vlab4mic_outputs"
@@ -104,7 +104,6 @@ class ExperimentParametrisation:
                             self.config_probe_per_structure_names[struct] = [
                                 lablname,
                             ]
-        print("Experiment created")
         self.demo_structures = []
         # get available structure IDs
         self.structures_info_list = dict()
@@ -705,12 +704,14 @@ class ExperimentParametrisation:
         print("Virtual sample cleared")
 
     def create_example_experiment(self):
-        self.select_structure("1XI5", build=False)
-        self.add_probe()
-        self.set_virtualsample_params()
-        for modality_name in self.example_modalities:
-            self.add_modality(modality_name)
-        self.build()
+        with io.capture_output() as captured:
+            self.select_structure("1XI5", build=False)
+            self.add_probe()
+            self.set_virtualsample_params()
+            for modality_name in self.example_modalities:
+                self.add_modality(modality_name)
+            self.build()
+        print("Experiment created with default parameters")
 
     def clear_experiment(self):
         """
@@ -1046,6 +1047,27 @@ class ExperimentParametrisation:
             100,
         ]
         self.build(modules=["coordinate_field", "imager"])
+
+    def current_settings(self, as_string=True, newline="<br>"):
+        """
+        Print the current settings of the experiment, including structure, particle, coordinate field, and imaging modalities.
+        
+        Returns
+        -------
+        None
+        """
+        string = "Current settings of the experiment:" + newline
+        string += f"Structure ID: {self.structure_id}" + newline
+        string += f"Probes: {list(self.probe_parameters.keys())}" + newline
+        string += f"Virtual sample: {self.coordinate_field_id}" + newline
+        string += "Imaging Modalities:" + newline
+        for modality_name, acqparams in self.selected_mods.items():
+            string += f"  {modality_name}: {acqparams}" + newline
+        if not as_string:
+            print(string)
+        else:
+            return string
+        
 
 
 def generate_virtual_sample(
