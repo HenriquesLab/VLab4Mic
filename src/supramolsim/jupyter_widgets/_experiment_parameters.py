@@ -429,7 +429,11 @@ def ui_run_experiment(experiment):
         else:
             run_gui["message"].value = "Simulation completed successfully."
             run_gui["Acquire"].disabled = False
-
+    experiment_info =  experiment.current_settings(as_string=True, newline="<br>")
+    run_gui.add_HTML(
+        "experiment_info",
+        experiment_info
+    )
     run_gui.add_label("Set experiment name")
     run_gui.add_text_area(
         "experiment_name", value="Exp_name", remember_value=True
