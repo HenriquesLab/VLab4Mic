@@ -33,8 +33,8 @@ class ExperimentParametrisation:
     structure_id: str = None
     configuration_path: str = ""
     structure_label: str = "NHS_ester"
-    fluorophore_id: str = ""
-    coordinate_field_id: str = None
+    fluorophore_id: str = "AF647"
+    coordinate_field_id: str = "square1x1um_randomised"
     selected_mods: Dict[str, int] = field(default_factory=dict)
     imaging_modalities: Dict[str, int] = field(default_factory=dict)
     probe_parameters: Dict[str, int] = field(default_factory=dict)
