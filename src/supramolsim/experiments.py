@@ -152,6 +152,20 @@ class ExperimentParametrisation:
         self.structure_id = structure_id
         if build:
             self.build(modules=["structure"])
+    
+    def clear_structure(self):
+        """
+        Clear the current structure by resetting the structure ID and related parameters.
+        This method sets the structure ID to None and resets the structure object if it exists.
+        Returns
+        -------
+        None
+        """
+        self.structure_id = None
+        if self.generators_status("structure"):
+            self.structure = None
+        self.objects_created["structure"] = False
+        print("Structure cleared")
 
     def add_modality(self, modality_name, save=False, **kwargs):
         """
