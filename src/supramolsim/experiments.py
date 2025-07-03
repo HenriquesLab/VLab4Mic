@@ -1048,7 +1048,7 @@ class ExperimentParametrisation:
         ]
         self.build(modules=["coordinate_field", "imager"])
 
-    def current_settings(self, as_string=True, newline="<br>"):
+    def current_settings(self, as_string=True, newline="<br>", modalities_acq_params=False):
         """
         Print the current settings of the experiment, including structure, particle, coordinate field, and imaging modalities.
         
@@ -1060,9 +1060,14 @@ class ExperimentParametrisation:
         string += f"Structure ID: {self.structure_id}" + newline
         string += f"Probes: {list(self.probe_parameters.keys())}" + newline
         string += f"Virtual sample: {self.coordinate_field_id}" + newline
-        string += "Imaging Modalities:" + newline
+        string += "Imaging Modalities: " 
         for modality_name, acqparams in self.selected_mods.items():
-            string += f"  {modality_name}: {acqparams}" + newline
+            string += f"  {modality_name}"
+            if modalities_acq_params:
+                string += f": {acqparams}" + newline
+            else:
+                string += "; "
+        string += newline
         if not as_string:
             print(string)
         else:
