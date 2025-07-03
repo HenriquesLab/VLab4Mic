@@ -30,7 +30,7 @@ if not os.path.exists(output_path):
 @dataclass
 class ExperimentParametrisation:
     experiment_id: str = "vLab4mic_experiment"
-    structure_id: str = None
+    structure_id: str = "1XI5"
     configuration_path: str = ""
     structure_label: str = "NHS_ester"
     fluorophore_id: str = "AF647"
@@ -133,6 +133,7 @@ class ExperimentParametrisation:
         )
         self.param_settings = yaml_functions.load_yaml(param_settings_file)
         self.results = dict()
+        self.create_example_experiment()
 
     def select_structure(self, structure_id="1XI5", build=True):
         """
@@ -693,6 +694,35 @@ class ExperimentParametrisation:
             self.experiment_reference = _reference
             self.objects_created["output_reference"] = True
         return _reference, _reference_parameters
+    
+    def clear_labelled_structure(self):
+        self.remove_probes()
+
+    def clear_virtual_sample(self):
+        if self.generators_status("coordinate_field"):
+            self.exported_coordinate_field = None
+            self.objects_created["exported_coordinate_field"] = False
+        print("Virtual sample cleared")
+
+    def create_example_experiment(self):
+        self.select_structure("1XI5", build=False)
+        self.add_probe()
+        self.set_virtualsample_params()
+        for modality_name in self.example_modalities:
+            self.add_modality(modality_name)
+        self.build()
+
+    def clear_experiment(self):
+        """
+        Clear the current experiment by resetting all parameters and objects.
+        """
+        self.clear_structure()
+        self.clear_labelled_structure()
+        self.clear_virtual_sample()
+        self.clear_modalities()
+        self.results = dict()
+        
+
 
     def run_simulation(
         self,
@@ -768,8 +798,10 @@ class ExperimentParametrisation:
         if self.generators_status("particle"):
             self.particle = None
             self.objects_created["particle"] = False
+            print("Labelled structure cleared")
         if self.generators_status("structure"):
             self.structure._clear_labels()
+        print("Probes removed from experiment")
 
     def add_probe(
         self,
