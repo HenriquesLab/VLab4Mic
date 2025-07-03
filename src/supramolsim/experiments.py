@@ -328,6 +328,24 @@ class ExperimentParametrisation:
         else:
             print("Modality not selected")
 
+    def clear_modalities(self):
+        """
+        Clear all selected imaging modalities and their acquisition parameters.
+        This method resets the `imaging_modalities` and `selected_mods` dictionaries to empty states,
+        effectively removing all configured modalities from the experiment.
+        Returns
+        -------
+        None
+        """
+        for modality_name in self.imaging_modalities.keys():
+            self.update_modality(
+                modality_name, remove=True
+            )
+        if self.generators_status("imager"):
+            self.imager = None
+            self.objects_created["imager"] = False
+        print("All modalities cleared")
+
     def reset_to_defaults(self, module="acquisitions", **kwargs):
         """
         Reset acquisition parameters or other module settings to their default values.
