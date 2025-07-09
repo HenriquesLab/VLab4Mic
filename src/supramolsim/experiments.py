@@ -337,7 +337,8 @@ class ExperimentParametrisation:
         -------
         None
         """
-        for modality_name in self.imaging_modalities.keys():
+        modality_names = list(self.imaging_modalities.keys())
+        for modality_name in modality_names:
             self.update_modality(
                 modality_name, remove=True
             )
@@ -892,6 +893,16 @@ class ExperimentParametrisation:
                     self.probe_parameters[probe_target_value][
                         "probe_seconday_epitope"
                     ] = probe_target_option
+        elif probe_configuration["target"]["type"] is None or probe_configuration["target"]["value"] is None:
+            print("No target info provided for the probe. Generating default sequence.")
+            # probe has no target info
+            # a random target will be used
+            protein_name, _1, site, sequence = self.structure.get_peptide_motif(position="cterminal") 
+            probe_configuration["target_info"] = dict(
+                type="Sequence", value=sequence
+            )
+            #probe_configuration["target"]["type"] = "Sequence"
+            #probe_configuration["target"]["value"] = sequence  
         if probe_distance_to_epitope is not None:
             probe_configuration["distance_to_epitope"] = probe_distance_to_epitope
         if probe_fluorophore is not None:
