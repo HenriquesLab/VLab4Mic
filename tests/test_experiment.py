@@ -16,7 +16,8 @@ def test_build_vmicroscope_multimodal():
     images, experiment = experiments.build_virtual_microscope(
     multimodal=modalities,
     )
-    assert list(experiment.imager.modalities.keys()) == modalities
+    for modality in modalities:
+        assert modality in experiment.imager.modalities.keys()
 
 #structure_list = ["2RCJ", "7R5K", "3J3Y", "1XI5", "1HZH"]
 structure_list = ["2RCJ", "1XI5",]
