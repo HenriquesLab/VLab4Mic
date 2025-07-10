@@ -134,6 +134,8 @@ def ui_select_probe(experiment, **kwargs):
     for probe_name in experiment.config_global_probes_names:
         if experiment.config_probe_params[probe_name]["target"]["type"]:
             probe_options.append(probe_name)
+    for probe_name in experiment.config_probe_models_names:
+            probe_options.append(probe_name)
     # methods
     def select_probe(values):
         experiment.add_probe(
