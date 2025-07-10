@@ -2,7 +2,8 @@ import matplotlib.pyplot as plt
 import mpl_toolkits.axes_grid1 as axes_grid1
 from ipywidgets import interact, widgets
 import numpy as np
-
+import copy
+from scipy.ndimage import rotate
 
 def slider_normalised(stack, dimension, dim_position=None, cbar=True):
     def frame_slider_norm(frame, cbar):
@@ -135,3 +136,26 @@ def draw_nomral_segments(points_normal, figure, lenght=100, colors=["g", "y"]):
         starts[:, 0], starts[:, 1], starts[:, 2], color=colors[1], marker="o"
     )
     return figure
+
+
+def stack_projection(stack, angle=45, axes=(1,2), method = "max"):
+    projection = None
+    zstack = copy.copy(stack)
+    rotated = rotate(zstack, angle=angle, axes=axes, reshape=False, order=3)  # order=3: cubic interpolation
+    if method == "max":
+        projection = np.max(rotated, axis=2) 
+    return projection
+
+def plot_projection(stack, angle=45, plane="XY", method = "max"):
+    if plane == "XY":
+        axes = (1, 2)
+    elif plane == "XZ": 
+        axes = (0, 2)
+    elif plane == "YZ":
+        axes = (0, 1)
+    else:
+        raise ValueError("Invalid plane. Choose from 'XY', 'XZ', or 'YZ'.")
+    projection = stack_projection(stack, angle=angle, axes=axes, method=method)
+    plt.imshow(projection, cmap='gray')
+    plt.axis('off')
+    plt.show()
