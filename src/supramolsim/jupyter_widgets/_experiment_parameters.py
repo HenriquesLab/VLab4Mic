@@ -134,6 +134,8 @@ def ui_select_probe(experiment, **kwargs):
     for probe_name in experiment.config_global_probes_names:
         if experiment.config_probe_params[probe_name]["target"]["type"]:
             probe_options.append(probe_name)
+    for probe_name in experiment.config_probe_models_names:
+            probe_options.append(probe_name)
     # methods
     def select_probe(values):
         experiment.add_probe(
@@ -429,7 +431,11 @@ def ui_run_experiment(experiment):
         else:
             run_gui["message"].value = "Simulation completed successfully."
             run_gui["Acquire"].disabled = False
-
+    experiment_info =  experiment.current_settings(as_string=True, newline="<br>")
+    run_gui.add_HTML(
+        "experiment_info",
+        experiment_info
+    )
     run_gui.add_label("Set experiment name")
     run_gui.add_text_area(
         "experiment_name", value="Exp_name", remember_value=True

@@ -600,8 +600,12 @@ def ui_preview_results(experiment):
             gui["modality"].observe(update_plot, names="value")
             with gui["preview_results"]:
                 update_plot(True)
-
-    gui.add_label("Preview Results of the Experiment")
+    gui.add_HTML(
+        "section_header",
+        "Preview Results of the Experiment",
+        style={"text-align": "center", "margin-bottom": "20px"}
+    )
+    #gui.add_label("Preview Results of the Experiment")
     gui.add_button(
         "show_results",
         description="Show Results",

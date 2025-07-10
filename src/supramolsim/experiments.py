@@ -18,7 +18,7 @@ import numpy as np
 import os
 import copy
 from supramolsim.utils.io import yaml_functions
-
+from IPython.utils import io
 from pathlib import Path
 
 output_path = Path.home() / "vlab4mic_outputs"
@@ -30,11 +30,11 @@ if not os.path.exists(output_path):
 @dataclass
 class ExperimentParametrisation:
     experiment_id: str = "vLab4mic_experiment"
-    structure_id: str = None
+    structure_id: str = "1XI5"
     configuration_path: str = ""
     structure_label: str = "NHS_ester"
-    fluorophore_id: str = ""
-    coordinate_field_id: str = None
+    fluorophore_id: str = "AF647"
+    coordinate_field_id: str = "square1x1um_randomised"
     selected_mods: Dict[str, int] = field(default_factory=dict)
     imaging_modalities: Dict[str, int] = field(default_factory=dict)
     probe_parameters: Dict[str, int] = field(default_factory=dict)
@@ -104,7 +104,6 @@ class ExperimentParametrisation:
                             self.config_probe_per_structure_names[struct] = [
                                 lablname,
                             ]
-        print("Experiment created")
         self.demo_structures = []
         # get available structure IDs
         self.structures_info_list = dict()
@@ -133,6 +132,7 @@ class ExperimentParametrisation:
         )
         self.param_settings = yaml_functions.load_yaml(param_settings_file)
         self.results = dict()
+        self.create_example_experiment()
 
     def select_structure(self, structure_id="1XI5", build=True):
         """
@@ -152,6 +152,20 @@ class ExperimentParametrisation:
         self.structure_id = structure_id
         if build:
             self.build(modules=["structure"])
+    
+    def clear_structure(self):
+        """
+        Clear the current structure by resetting the structure ID and related parameters.
+        This method sets the structure ID to None and resets the structure object if it exists.
+        Returns
+        -------
+        None
+        """
+        self.structure_id = None
+        if self.generators_status("structure"):
+            self.structure = None
+        self.objects_created["structure"] = False
+        print("Structure cleared")
 
     def add_modality(self, modality_name, save=False, **kwargs):
         """
@@ -313,6 +327,25 @@ class ExperimentParametrisation:
             )
         else:
             print("Modality not selected")
+
+    def clear_modalities(self):
+        """
+        Clear all selected imaging modalities and their acquisition parameters.
+        This method resets the `imaging_modalities` and `selected_mods` dictionaries to empty states,
+        effectively removing all configured modalities from the experiment.
+        Returns
+        -------
+        None
+        """
+        modality_names = list(self.imaging_modalities.keys())
+        for modality_name in modality_names:
+            self.update_modality(
+                modality_name, remove=True
+            )
+        if self.generators_status("imager"):
+            self.imager = None
+            self.objects_created["imager"] = False
+        print("All modalities cleared")
 
     def reset_to_defaults(self, module="acquisitions", **kwargs):
         """
@@ -661,6 +694,37 @@ class ExperimentParametrisation:
             self.experiment_reference = _reference
             self.objects_created["output_reference"] = True
         return _reference, _reference_parameters
+    
+    def clear_labelled_structure(self):
+        self.remove_probes()
+
+    def clear_virtual_sample(self):
+        if self.generators_status("coordinate_field"):
+            self.exported_coordinate_field = None
+            self.objects_created["exported_coordinate_field"] = False
+        print("Virtual sample cleared")
+
+    def create_example_experiment(self):
+        with io.capture_output() as captured:
+            self.select_structure("1XI5", build=False)
+            self.add_probe()
+            self.set_virtualsample_params()
+            for modality_name in self.example_modalities:
+                self.add_modality(modality_name)
+            self.build()
+        print("Experiment created with default parameters")
+
+    def clear_experiment(self):
+        """
+        Clear the current experiment by resetting all parameters and objects.
+        """
+        self.clear_structure()
+        self.clear_labelled_structure()
+        self.clear_virtual_sample()
+        self.clear_modalities()
+        self.results = dict()
+        
+
 
     def run_simulation(
         self,
@@ -736,8 +800,10 @@ class ExperimentParametrisation:
         if self.generators_status("particle"):
             self.particle = None
             self.objects_created["particle"] = False
+            print("Labelled structure cleared")
         if self.generators_status("structure"):
             self.structure._clear_labels()
+        print("Probes removed from experiment")
 
     def add_probe(
         self,
@@ -827,6 +893,16 @@ class ExperimentParametrisation:
                     self.probe_parameters[probe_target_value][
                         "probe_seconday_epitope"
                     ] = probe_target_option
+        elif probe_configuration["target"]["type"] is None or probe_configuration["target"]["value"] is None:
+            print("No target info provided for the probe. Generating default sequence.")
+            # probe has no target info
+            # a random target will be used
+            protein_name, _1, site, sequence = self.structure.get_peptide_motif(position="cterminal") 
+            probe_configuration["target_info"] = dict(
+                type="Sequence", value=sequence
+            )
+            #probe_configuration["target"]["type"] = "Sequence"
+            #probe_configuration["target"]["value"] = sequence  
         if probe_distance_to_epitope is not None:
             probe_configuration["distance_to_epitope"] = probe_distance_to_epitope
         if probe_fluorophore is not None:
@@ -982,6 +1058,32 @@ class ExperimentParametrisation:
             100,
         ]
         self.build(modules=["coordinate_field", "imager"])
+
+    def current_settings(self, as_string=True, newline="<br>", modalities_acq_params=False):
+        """
+        Print the current settings of the experiment, including structure, particle, coordinate field, and imaging modalities.
+        
+        Returns
+        -------
+        None
+        """
+        string = "Current settings of the experiment:" + newline
+        string += f"Structure ID: {self.structure_id}" + newline
+        string += f"Probes: {list(self.probe_parameters.keys())}" + newline
+        string += f"Virtual sample: {self.coordinate_field_id}" + newline
+        string += "Imaging Modalities: " 
+        for modality_name, acqparams in self.selected_mods.items():
+            string += f"  {modality_name}"
+            if modalities_acq_params:
+                string += f": {acqparams}" + newline
+            else:
+                string += "; "
+        string += newline
+        if not as_string:
+            print(string)
+        else:
+            return string
+        
 
 
 def generate_virtual_sample(
