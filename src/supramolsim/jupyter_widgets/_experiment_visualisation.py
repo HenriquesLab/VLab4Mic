@@ -43,6 +43,7 @@ import mpl_toolkits.axes_grid1 as axes_grid1
 import io
 import numpy as np
 from IPython.utils import io
+from ..utils.visualisation.matplotlib_plots import plot_projection
 
 def update_widgets_visibility(ezwidget, visibility_dictionary):
     """
@@ -469,6 +470,59 @@ def ui_set_acq_params(experiment):
 
         get_preview(experiment.imager, acquisition_gui)
 
+    def preview_volume(b):
+        def get_vol_preview(imaging_system, acq_gui):
+            def get_volume(Modality, Exposure, Noise):
+                fig = plt.figure()
+                for single_channel in imager_channels:
+                    single_mod_acq_params = dict(
+                        exp_time=Exposure,
+                        noise=Noise,
+                        save=False,
+                        nframes=1,
+                        channel=single_channel,
+                        convolution_type="raw_volume"
+                    )
+                    with io.capture_output() as captured:
+                        images_volumes, _beads = (
+                            imaging_system.generate_imaging(
+                                modality=Modality, **single_mod_acq_params
+                            )
+                        )
+                        volume = images_volumes[0]
+                    return volume
+
+            volume = get_volume(
+                Modality=acq_gui["modalities_dropdown"].value,
+                Exposure=acq_gui["Exposure"].value,
+                Noise=acq_gui["Noise"].value,
+            )
+            acquisition_gui["image_output"].clear_output()
+            slider = widgets.IntSlider(
+                value=45,
+                min=0,
+                max=180,
+                step=1,
+                description='Angle:',
+                continuous_update=False,
+            )
+            toggle_buttons = widgets.ToggleButtons(
+                options=['XY', 'XZ', 'YZ'],
+                description='plane:',
+                disabled=False,
+            )
+            with acquisition_gui["image_output"]:
+                display(
+                    widgets.interactive(
+                        plot_projection,
+                        stack=widgets.fixed(volume),
+                        angle=slider,
+                        plane=toggle_buttons,
+                        method=widgets.fixed("max"),
+                    )   
+                )
+        get_vol_preview(experiment.imager, acquisition_gui)             
+
     def clear(b):
         print("Acquisition parameters cleared")
         experiment.reset_to_defaults(module="acquisitions", save=True)
@@ -481,7 +535,12 @@ def ui_set_acq_params(experiment):
 
     def preview_params_chage(change):
         if acquisition_gui["show_preview"].value:
-            preview_mod(True)
+            if acquisition_gui["show_as_volume"].value:
+                acquisition_gui["image_output"].clear_output()
+                preview_volume(True)
+            else:
+                acquisition_gui["image_output"].clear_output()
+                preview_mod(True)
         else:
             acquisition_gui["image_output"].clear_output()
             
@@ -517,7 +576,7 @@ def ui_set_acq_params(experiment):
         vmin=0.000000,
         vmax=10.0,
         step=0.0001,
-        value=0.01,
+        value=0.001,
     )   
     acquisition_gui["modalities_dropdown"].observe(
         preview_params_chage, names="value"
@@ -535,7 +594,15 @@ def ui_set_acq_params(experiment):
         on_change=preview_mod,
         continuous_update=False,
     )
+    acquisition_gui.add_checkbox(
+        "show_as_volume",
+        description="Show interactive acquisition convolved volume (experimental feature)",
+        value=False,
+        on_change=preview_volume,
+        continuous_update=False,
+    )
     acquisition_gui["show_preview"].observe(preview_params_chage, names="value")
+    acquisition_gui["show_as_volume"].observe(preview_params_chage, names="value")
     acquisition_gui.add_output("image_output")
     
     acq_widgets = {}
@@ -554,6 +621,7 @@ def ui_set_acq_params(experiment):
     acq_widgets["Noise"] = True
     acq_widgets["Clear"] = True
     acq_widgets["show_preview"] = True
+    acq_widgets["show_as_volume"] = True
     acquisition_gui.add_HTML(
         "current_parameters",
         _mods_text_update(
