@@ -209,7 +209,7 @@ def ui_select_sample_parameters(experiment):
         else:
             text = ""
             for key, value in experiment.virtualsample_params.items():
-                if key in sample_gui.elements.keys():
+                if key in ["number_of_particles", "random_orientations", "minimal_distance"]:
                     text += f"{key}: {value}<br>"
             sample_gui["message"].value = text
     
@@ -253,14 +253,6 @@ def ui_select_sample_parameters(experiment):
     sample_gui.add_bounded_int_text("pixel_size",
         description="Pixel size (nm)",
         value=100,
-        vmin=1,
-        vmax=1000,
-        step=1,
-        style={"description_width": "initial"},
-    )
-    sample_gui.add_bounded_int_text("minimal_distance_pixels",
-        description="Set minimal distance as pixels (for mask detection)",
-        value=2,
         vmin=1,
         vmax=1000,
         step=1,
@@ -327,18 +319,20 @@ def ui_select_sample_parameters(experiment):
     def upload_and_set(b):
         filepath = sample_gui["File"].selected
         img = tif.imread(filepath)
+        pixelsize = sample_gui["pixel_size"].value
         min_distance = None
         if sample_gui["detection_method"].value == "Local Maxima":
             mode = "localmaxima"
         elif sample_gui["detection_method"].value == "Mask":
             mode = "mask"
-            min_distance = sample_gui["minimal_distance_pixels"].value
+            if not sample_gui["use_min_from_particle"].value:           
+                min_distance = pixelsize
         else:
             raise ValueError("Unknown detection method selected.")
         sigma = sample_gui["blur_sigma"].value
         background = sample_gui["background_intensity"].value
         threshold = sample_gui["intensity_threshold"].value
-        pixelsize = sample_gui["pixel_size"].value
+        
         npositions = sample_gui["number_of_particles"].value
         experiment.use_image_for_positioning(
             img = img,
@@ -355,7 +349,6 @@ def ui_select_sample_parameters(experiment):
     def toggle_advanced_parameters(b):
         widgets_visibility["select_sample_parameters"] = not widgets_visibility["select_sample_parameters"]
         widgets_visibility["upload_and_set"] = not widgets_visibility["upload_and_set"]
-        widgets_visibility["minimal_distance_pixels"] = not widgets_visibility["minimal_distance_pixels"]
         widgets_visibility["File"] = not widgets_visibility["File"]
         widgets_visibility["pixel_size"] = not widgets_visibility["pixel_size"]
         widgets_visibility["background_intensity"] = not widgets_visibility["background_intensity"]
@@ -369,7 +362,6 @@ def ui_select_sample_parameters(experiment):
         widgets_visibility[wgt] = True
         sample_gui.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex")    
     widgets_visibility["upload_and_set"] = False
-    widgets_visibility["minimal_distance_pixels"] = False
     widgets_visibility["File"] = False
     widgets_visibility["pixel_size"] = False
     widgets_visibility["background_intensity"] = False
