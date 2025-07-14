@@ -262,7 +262,7 @@ def ui_select_sample_parameters(experiment):
         description="Background intensity",
         value=0,
         vmin=0,
-        vmax=10000,
+        vmax=100000,
         step=1,
         style={"description_width": "initial"},
     )
@@ -305,7 +305,7 @@ def ui_select_sample_parameters(experiment):
         if sample_gui["use_min_from_particle"].value:
             min_distance = None
         else:
-            min_distance = sample_gui["minimal_distance"].value
+            min_distance = sample_gui["minimal_distance_nm"].value
         experiment.set_virtualsample_params(
             number_of_particles=sample_gui["number_of_particles"].value,
             random_orientations=sample_gui["random_orientations"].value,
@@ -325,10 +325,12 @@ def ui_select_sample_parameters(experiment):
             mode = "localmaxima"
         elif sample_gui["detection_method"].value == "Mask":
             mode = "mask"
-            if not sample_gui["use_min_from_particle"].value:           
-                min_distance = pixelsize
         else:
             raise ValueError("Unknown detection method selected.")
+        if sample_gui["use_min_from_particle"].value:
+            min_distance = experiment.virtualsample_params["minimal_distance"]  
+        else:  
+            min_distance = sample_gui["minimal_distance_nm"].value
         sigma = sample_gui["blur_sigma"].value
         background = sample_gui["background_intensity"].value
         threshold = sample_gui["intensity_threshold"].value
@@ -344,6 +346,7 @@ def ui_select_sample_parameters(experiment):
             min_distance=min_distance,
             npositions=npositions
         )
+        sample_gui.save_settings()
         update_message()
 
     def toggle_advanced_parameters(b):

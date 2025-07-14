@@ -831,6 +831,11 @@ def gen_positions_from_image(img, mode="mask", pixelsize = None, min_distance = 
     image_physical_size : numpy.ndarray
         Physical size of the image.
     """
+    if min_distance is None:
+        min_distance = 1
+    else:
+        min_dist_pixels = min_distance/pixelsize
+        min_distance = math.ceil(min_dist_pixels)
     npixels = list(img.shape)
     image_physical_size = np.zeros(shape=(2))
     image_physical_size[0] = pixelsize * npixels[0]
@@ -840,11 +845,6 @@ def gen_positions_from_image(img, mode="mask", pixelsize = None, min_distance = 
             npositions = 1
         else:
             npositions = kwargs["npositions"]
-        if min_distance is None:
-            min_distance = 1
-        else:
-            min_dist_pixels = min_distance/pixelsize
-            min_distance = math.ceil(min_dist_pixels)
         pixel_positions = sampl.get_random_pixels(
             img, 
             num_pixels=npositions, 
@@ -863,10 +863,6 @@ def gen_positions_from_image(img, mode="mask", pixelsize = None, min_distance = 
             threshold = None
         else:
             threshold = kwargs["threshold"]
-        if "min_distance" not in kwargs.keys():
-            min_distance = 1
-        else:
-            min_distance = kwargs["min_distance"]
         pixel_positions, img_processed = metrics.local_maxima_positions(
             img, 
             min_distance=min_distance, 
