@@ -105,7 +105,7 @@ def update_widgets_visibility(ezwidget, visibility_dictionary):
         if visibility_dictionary[widgetname]:
             ezwidget[widgetname].layout.display = "inline-flex"
         else:
-            visibility_dictionary[widgetname].layout.display = "None"   
+            ezwidget[widgetname].layout.display = "None"   
 
 def ui_select_probe(experiment, **kwargs):
     """
@@ -203,11 +203,14 @@ def ui_select_sample_parameters(experiment):
         "message", ""
     )
     def update_message():
-        text = ""
-        for key, value in experiment.virtualsample_params.items():
-            if key in sample_gui.elements.keys():
-                text += f"{key}: {value}<br>"
-        sample_gui["message"].value = text
+        if experiment.virtualsample_params.items() is None:
+            sample_gui["message"].value = "No sample parameters selected yet."
+        else:
+            text = ""
+            for key, value in experiment.virtualsample_params.items():
+                if key in sample_gui.elements.keys():
+                    text += f"{key}: {value}<br>"
+            sample_gui["message"].value = text
     
 
     sample_gui.add_int_slider(
@@ -224,22 +227,110 @@ def ui_select_sample_parameters(experiment):
         description="Randomise orientations",
         value=True
     )
+    sample_gui.add_checkbox(
+            "use_min_from_particle",
+            value=True,
+            description="Use minimal distance from labelled particle dimensions",
+    )
+    sample_gui.add_bounded_int_text("minimal_distance",
+        description="Set minimal distance between particles (nm)",
+        value=100,
+        vmin=1,
+        vmax=1000,
+        step=1,
+        style={"description_width": "initial"},
+    )
     sample_gui.add_button(
         "select_sample_parameters",
         description="Select sample parameters",
         disabled=False
     )
+    sample_gui.add_button(
+        "advanced_parameters",
+        description="Show advanced parameters",
+    )
+    # advanced parameters
+    sample_gui.add_button("Upload", description="Load image")
+    sample_gui.add_file_upload(
+            "File", description="Select from file", accept="*.tif", save_settings=False
+        )
+    sample_gui.add_bounded_int_text("pixel_size",
+        description="Pixel size (nm)",
+        value=100,
+        vmin=1,
+        vmax=1000,
+        step=1,
+        style={"description_width": "initial"},
+    )
+    sample_gui.add_bounded_int_text("background_intensity",
+        description="Background intensity",
+        value=0,
+        vmin=0,
+        vmax=10000,
+        step=1,
+        style={"description_width": "initial"},
+    )
+    sample_gui.add_bounded_int_text("blur_sigma",
+        description="Gaussian blurr sigma (nm)",
+        value=0,
+        vmin=0,
+        vmax=1000,
+        step=1,
+        style={"description_width": "initial"},
+    )
+    sample_gui.add_bounded_int_text("intensity_threshold",
+        description="Intensity threshold",
+        value=0,
+        vmin=0,
+        vmax=10000,
+        step=1,
+        style={"description_width": "initial"},
+    )
+    sample_gui.add_dropdown("detection_method",
+        description="Detection method",
+        options=["Local Maxima", "Mask"],
+        value="Local Maxima",
+        style={"description_width": "initial"},
+    )
+    sample_gui.add_checkbox(
+            "random",
+            value=True,
+            description="Randomise positions (enforced when there is more than one particle)",
+            style={"description_width": "initial"},   
+    )
     def select_virtual_sample_parameters(b):
+        if sample_gui["use_min_from_particle"].value:
+            min_distance = None
+        else:
+            min_distance = sample_gui["minimal_distance"].value
         experiment.set_virtualsample_params(
             number_of_particles=sample_gui["number_of_particles"].value,
-            random_orientations=sample_gui["random_orientations"].value
+            random_orientations=sample_gui["random_orientations"].value,
+            minimal_distance=min_distance
         )
         experiment.build(modules=["coordinate_field"])
         if experiment.objects_created["imager"]:
             experiment.build(modules=["imager"])
         update_message()
-
+    
+    def enable_advanced_parameters(b):
+        pass
+    widgets_visibility = {}
+    for wgt in sample_gui.elements.keys():
+        widgets_visibility[wgt] = True
+        sample_gui.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex")    
+    widgets_visibility["Upload"] = False
+    widgets_visibility["File"] = False
+    widgets_visibility["pixel_size"] = False
+    widgets_visibility["background_intensity"] = False
+    widgets_visibility["blur_sigma"] = False
+    widgets_visibility["intensity_threshold"] = False
+    widgets_visibility["detection_method"] = False
+    widgets_visibility["random"] = False
+    update_widgets_visibility(sample_gui, widgets_visibility)
     sample_gui["select_sample_parameters"].on_click(select_virtual_sample_parameters)
+    sample_gui["advanced_parameters"].on_click(enable_advanced_parameters)
+    select_virtual_sample_parameters(True)  # Initialize with default parameters
     return sample_gui
 
 def ui_select_modality(experiment):
