@@ -247,7 +247,7 @@ def ui_select_sample_parameters(experiment):
     )
     sample_gui.add_button(
         "advanced_parameters",
-        description="Show advanced parameters",
+        description="Toggle advanced parameters",
     )
     # advanced parameters
     sample_gui.add_button("Upload", description="Load image")
@@ -313,8 +313,16 @@ def ui_select_sample_parameters(experiment):
             experiment.build(modules=["imager"])
         update_message()
     
-    def enable_advanced_parameters(b):
-        pass
+    def toggle_advanced_parameters(b):
+        widgets_visibility["Upload"] = not widgets_visibility["Upload"]
+        widgets_visibility["File"] = not widgets_visibility["File"]
+        widgets_visibility["pixel_size"] = not widgets_visibility["pixel_size"]
+        widgets_visibility["background_intensity"] = not widgets_visibility["background_intensity"]
+        widgets_visibility["blur_sigma"] = not widgets_visibility["blur_sigma"]
+        widgets_visibility["intensity_threshold"] = not widgets_visibility["intensity_threshold"]
+        widgets_visibility["detection_method"] = not widgets_visibility["detection_method"]
+        widgets_visibility["random"] = not widgets_visibility["random"]
+        update_widgets_visibility(sample_gui, widgets_visibility)
     widgets_visibility = {}
     for wgt in sample_gui.elements.keys():
         widgets_visibility[wgt] = True
@@ -329,7 +337,7 @@ def ui_select_sample_parameters(experiment):
     widgets_visibility["random"] = False
     update_widgets_visibility(sample_gui, widgets_visibility)
     sample_gui["select_sample_parameters"].on_click(select_virtual_sample_parameters)
-    sample_gui["advanced_parameters"].on_click(enable_advanced_parameters)
+    sample_gui["advanced_parameters"].on_click(toggle_advanced_parameters)
     select_virtual_sample_parameters(True)  # Initialize with default parameters
     return sample_gui
 
