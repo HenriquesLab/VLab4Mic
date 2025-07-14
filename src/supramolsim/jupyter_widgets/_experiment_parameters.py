@@ -250,7 +250,6 @@ def ui_select_sample_parameters(experiment):
         description="Toggle advanced parameters",
     )
     # advanced parameters
-    sample_gui.add_button("Upload", description="Load image")
     sample_gui.add_file_upload(
             "File", description="Select from file", accept="*.tif", save_settings=False
         )
@@ -298,6 +297,7 @@ def ui_select_sample_parameters(experiment):
             description="Randomise positions (enforced when there is more than one particle)",
             style={"description_width": "initial"},   
     )
+    sample_gui.add_button("upload_and_set", description="Load image and set parameters", disabled=False)
     def select_virtual_sample_parameters(b):
         if sample_gui["use_min_from_particle"].value:
             min_distance = None
@@ -313,8 +313,11 @@ def ui_select_sample_parameters(experiment):
             experiment.build(modules=["imager"])
         update_message()
     
+    def upload_and_set(b):
+        pass
+
     def toggle_advanced_parameters(b):
-        widgets_visibility["Upload"] = not widgets_visibility["Upload"]
+        widgets_visibility["upload_and_set"] = not widgets_visibility["upload_and_set"]
         widgets_visibility["File"] = not widgets_visibility["File"]
         widgets_visibility["pixel_size"] = not widgets_visibility["pixel_size"]
         widgets_visibility["background_intensity"] = not widgets_visibility["background_intensity"]
@@ -327,7 +330,7 @@ def ui_select_sample_parameters(experiment):
     for wgt in sample_gui.elements.keys():
         widgets_visibility[wgt] = True
         sample_gui.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex")    
-    widgets_visibility["Upload"] = False
+    widgets_visibility["upload_and_set"] = False
     widgets_visibility["File"] = False
     widgets_visibility["pixel_size"] = False
     widgets_visibility["background_intensity"] = False
@@ -338,6 +341,7 @@ def ui_select_sample_parameters(experiment):
     update_widgets_visibility(sample_gui, widgets_visibility)
     sample_gui["select_sample_parameters"].on_click(select_virtual_sample_parameters)
     sample_gui["advanced_parameters"].on_click(toggle_advanced_parameters)
+    sample_gui["upload_and_set"].on_click(upload_and_set)
     select_virtual_sample_parameters(True)  # Initialize with default parameters
     return sample_gui
 
