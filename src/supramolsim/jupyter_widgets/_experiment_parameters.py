@@ -41,6 +41,7 @@ from ipyfilechooser import FileChooser
 import copy
 from supramolsim.utils.visualisation.matplotlib_plots import slider_normalised
 import numpy as np
+import tifffile as tif
 
 def ui_select_structure(experiment):
     """
@@ -232,7 +233,7 @@ def ui_select_sample_parameters(experiment):
             value=True,
             description="Use minimal distance from labelled particle dimensions",
     )
-    sample_gui.add_bounded_int_text("minimal_distance",
+    sample_gui.add_bounded_int_text("minimal_distance_nm",
         description="Set minimal distance between particles (nm)",
         value=100,
         vmin=1,
@@ -240,22 +241,26 @@ def ui_select_sample_parameters(experiment):
         step=1,
         style={"description_width": "initial"},
     )
-    sample_gui.add_button(
-        "select_sample_parameters",
-        description="Select sample parameters",
-        disabled=False
-    )
+    
     sample_gui.add_button(
         "advanced_parameters",
         description="Toggle advanced parameters",
     )
-    # advanced parameters
+    ####  advanced parameters ####
     sample_gui.add_file_upload(
             "File", description="Select from file", accept="*.tif", save_settings=False
         )
     sample_gui.add_bounded_int_text("pixel_size",
         description="Pixel size (nm)",
         value=100,
+        vmin=1,
+        vmax=1000,
+        step=1,
+        style={"description_width": "initial"},
+    )
+    sample_gui.add_bounded_int_text("minimal_distance_pixels",
+        description="Set minimal distance as pixels (for mask detection)",
+        value=2,
         vmin=1,
         vmax=1000,
         step=1,
@@ -297,7 +302,13 @@ def ui_select_sample_parameters(experiment):
             description="Randomise positions (enforced when there is more than one particle)",
             style={"description_width": "initial"},   
     )
-    sample_gui.add_button("upload_and_set", description="Load image and set parameters", disabled=False)
+    sample_gui.add_button(
+        "select_sample_parameters",
+        description="Select sample parameters",
+        disabled=False
+    )
+    sample_gui.add_button("upload_and_set", description="Load image and select parameters", disabled=False)
+    sample_gui.add_HTML("advanced_params_feedback", "", style=dict(font_weight='bold'))
     def select_virtual_sample_parameters(b):
         if sample_gui["use_min_from_particle"].value:
             min_distance = None
@@ -314,10 +325,37 @@ def ui_select_sample_parameters(experiment):
         update_message()
     
     def upload_and_set(b):
-        pass
+        filepath = sample_gui["File"].selected
+        img = tif.imread(filepath)
+        min_distance = None
+        if sample_gui["detection_method"].value == "Local Maxima":
+            mode = "localmaxima"
+        elif sample_gui["detection_method"].value == "Mask":
+            mode = "mask"
+            min_distance = sample_gui["minimal_distance_pixels"].value
+        else:
+            raise ValueError("Unknown detection method selected.")
+        sigma = sample_gui["blur_sigma"].value
+        background = sample_gui["background_intensity"].value
+        threshold = sample_gui["intensity_threshold"].value
+        pixelsize = sample_gui["pixel_size"].value
+        npositions = sample_gui["number_of_particles"].value
+        experiment.use_image_for_positioning(
+            img = img,
+            mode=mode,
+            sigma=sigma,
+            background=background,
+            threshold=threshold,
+            pixelsize=pixelsize,
+            min_distance=min_distance,
+            npositions=npositions
+        )
+        update_message()
 
     def toggle_advanced_parameters(b):
+        widgets_visibility["select_sample_parameters"] = not widgets_visibility["select_sample_parameters"]
         widgets_visibility["upload_and_set"] = not widgets_visibility["upload_and_set"]
+        widgets_visibility["minimal_distance_pixels"] = not widgets_visibility["minimal_distance_pixels"]
         widgets_visibility["File"] = not widgets_visibility["File"]
         widgets_visibility["pixel_size"] = not widgets_visibility["pixel_size"]
         widgets_visibility["background_intensity"] = not widgets_visibility["background_intensity"]
@@ -331,6 +369,7 @@ def ui_select_sample_parameters(experiment):
         widgets_visibility[wgt] = True
         sample_gui.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex")    
     widgets_visibility["upload_and_set"] = False
+    widgets_visibility["minimal_distance_pixels"] = False
     widgets_visibility["File"] = False
     widgets_visibility["pixel_size"] = False
     widgets_visibility["background_intensity"] = False
