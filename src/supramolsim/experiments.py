@@ -951,6 +951,7 @@ class ExperimentParametrisation:
         particle_positions: list = None,
         random_orientations: bool = None,
         random_placing: bool = None,
+        minimal_distance: float = None,
         **kwargs,
     ):
         """
@@ -994,6 +995,7 @@ class ExperimentParametrisation:
             vsample_configuration["random_orientations"] = random_orientations
         if random_placing is not None:
             vsample_configuration["random_placing"] = random_placing
+        vsample_configuration["minimal_distance"] = minimal_distance
         self.virtualsample_params = vsample_configuration
 
     def use_image_for_positioning(
