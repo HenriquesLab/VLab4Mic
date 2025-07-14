@@ -1052,6 +1052,7 @@ class ExperimentParametrisation:
             threshold=threshold,
             pixelsize=pixelsize,
             min_distance=min_distance,
+            **kwargs,
         )
         self.virtualsample_params["relative_positions"] = xyz_relative
         self.virtualsample_params["sample_dimensions"] = [
