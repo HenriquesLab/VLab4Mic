@@ -501,6 +501,7 @@ class ExperimentParametrisation:
             exported_field, fieldobject = field_from_particle(
                 self.particle, **self.virtualsample_params, **kwargs
             )
+            self.virtualsample_params["minimal_distance"] = fieldobject.molecules_params["minimal_distance"]
             if keep:
                 self.exported_coordinate_field = exported_field
                 self.objects_created["exported_coordinate_field"] = True
@@ -1054,12 +1055,23 @@ class ExperimentParametrisation:
             min_distance=min_distance,
             **kwargs,
         )
-        self.virtualsample_params["relative_positions"] = xyz_relative
-        self.virtualsample_params["sample_dimensions"] = [
-            image_physical_size[0],
-            image_physical_size[1],
-            100,
-        ]
+        self.set_virtualsample_params(
+            sample_dimensions=[
+                image_physical_size[0],
+                image_physical_size[1],
+                100,],
+            particle_positions=xyz_relative,
+            number_of_particles=len(xyz_relative),
+            random_orientations=False,
+            random_placing=False,
+            minimal_distance=min_distance,
+        )
+        #self.virtualsample_params["relative_positions"] = xyz_relative
+        #self.virtualsample_params["sample_dimensions"] = [
+        #    image_physical_size[0],
+        #    image_physical_size[1],
+        #    100,
+        #]
         self.build(modules=["coordinate_field", "imager"])
 
     def current_settings(self, as_string=True, newline="<br>", modalities_acq_params=False):
