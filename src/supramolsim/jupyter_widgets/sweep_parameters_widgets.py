@@ -312,7 +312,7 @@ def set_reference(sweep_gen):
         reference["preview"].disabled = False
     #
     reference.add_button(
-        "set", description="Set reference"
+        "set", description="Generate image reference"
     )
     reference.add_button(
         "preview", description="Preview reference", disabled = True
