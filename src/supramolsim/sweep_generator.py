@@ -225,6 +225,15 @@ class sweep_generator:
             )
         )
 
+    def load_reference_image(self, ref_image_path=None, ref_params=None, override=True):
+        """
+        Load a reference image from a specified path.
+        """
+        ref_image = tiff.imread(ref_image_path)
+        if override:
+            self.reference_image = ref_image
+            self.reference_image_parameters = ref_params
+
     # previews
     def preview_acquisition_output(self, return_image=False):
         """
