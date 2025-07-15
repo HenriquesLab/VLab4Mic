@@ -192,6 +192,18 @@ def ui_select_probe(experiment, **kwargs):
                             options=probe_options)
     probes_gui.add_HTML("probe_info", "")
     probes_gui["select_probe"].observe(show_probe_info, names="value")
+    probes_gui.add_button("toggle_advanced_parameters", description="Toggle advanced parameters")
+    # advaced parameters
+    probes_gui.add_HTML("advance_param_header", "Advanced parameters")
+
+
+
+
+    #
+    def toggle_advanced_parameters(b): 
+        probe_widgets_visibility["advance_param_header"] = not probe_widgets_visibility["advance_param_header"]
+        update_widgets_visibility(probes_gui, probe_widgets_visibility)
+
     probes_gui.add_callback(
         "add_probe",
         select_probe,
@@ -202,9 +214,15 @@ def ui_select_probe(experiment, **kwargs):
                           description="Create labelled structure",
                           disabled=True)
     probes_gui.add_HTML("message2", "No labelled structure created yet.", style = dict(font_weight='bold', font_size='15px'))
+    probe_widgets_visibility = {}
+    for wgt in probes_gui.elements.keys():
+        probe_widgets_visibility[wgt] = True
+        probes_gui.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex")
+   
+   
     show_probe_info(True)
     probes_gui["create_particle"].on_click(create_particle)
-
+    probes_gui["toggle_advanced_parameters"].on_click(toggle_advanced_parameters)
     return probes_gui   
 
 def ui_select_sample_parameters(experiment):
