@@ -163,7 +163,7 @@ def ui_select_probe(experiment, **kwargs):
     def show_probe_info(change):
         probe_name = probes_gui["select_probe"].value
         if probe_name in experiment.config_probe_params.keys():
-            info_text = ""
+            info_text = "<b>Target: </b>"
             probe_info = experiment.config_probe_params[probe_name]
             if probe_info["target"]["type"] == "Atom_residue":
                 target_type = "residue"
@@ -201,6 +201,14 @@ def ui_select_probe(experiment, **kwargs):
     probes_gui.add_button("toggle_advanced_parameters", description="Toggle advanced parameters")
     # advaced parameters
     probes_gui.add_HTML("advanced_param_header", "Advanced parameters")
+    probes_gui.add_float_slider("labelling_efficiency",
+                                description="Labelling efficiency",
+                                min=0.0,
+                                max=1.0,
+                                value=1,
+                                continuous_update=False,
+                                style={'description_width': 'initial'})
+
     # change target type and value
     options_dictionary = dict(
             Protein="Sequence", Residue="Atom_residue", Primary_Probe="Primary"
@@ -261,6 +269,7 @@ def ui_select_probe(experiment, **kwargs):
     #
     def toggle_advanced_parameters(b): 
         probe_widgets_visibility["advanced_param_header"] = not probe_widgets_visibility["advanced_param_header"]
+        probe_widgets_visibility["labelling_efficiency"] = not probe_widgets_visibility["labelling_efficiency"]
         probe_widgets_visibility["mock_type"] = not probe_widgets_visibility["mock_type"]
         probe_widgets_visibility["mock_type_options1"] = not probe_widgets_visibility["mock_type_options1"]
         probe_widgets_visibility["mock_type_options2"] = not probe_widgets_visibility["mock_type_options2"]
