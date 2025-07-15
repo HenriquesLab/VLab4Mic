@@ -199,8 +199,8 @@ def ui_select_probe(experiment, **kwargs):
     probes_gui.add_HTML("probe_info", "")
     probes_gui["select_probe"].observe(show_probe_info, names="value")
     probes_gui.add_button("toggle_advanced_parameters", description="Toggle advanced parameters")
-    # advaced parameters
-    probes_gui.add_HTML("advanced_param_header", "Advanced parameters")
+    # advanced parameters
+    probes_gui.add_HTML("advanced_param_header", "<b>Advanced parameters</b>", style=dict(font_size='15px'))
     probes_gui.add_float_slider("labelling_efficiency",
                                 description="Labelling efficiency",
                                 min=0.0,
