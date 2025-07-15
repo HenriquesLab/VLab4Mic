@@ -162,7 +162,7 @@ def ui_select_probe(experiment, **kwargs):
 
     # widgets
     probes_gui.add_label("Seleced probes:")
-    probes_gui.add_HTML("message1", "No probes selected yet.", style = dict(font_weight='bold'))
+    probes_gui.add_HTML("message1", "No probes selected yet.", style = dict(font_weight='bold', font_size='15px'))
     probes_gui.add_dropdown("select_probe",
                             description="Choose a probe:",
                             options=probe_options)
@@ -175,7 +175,7 @@ def ui_select_probe(experiment, **kwargs):
     probes_gui.add_button("create_particle", 
                           description="Create labelled structure",
                           disabled=True)
-    probes_gui.add_HTML("message2", "No particle created yet.", style = dict(font_weight='bold'))
+    probes_gui.add_HTML("message2", "No labelled structure created yet.", style = dict(font_weight='bold', font_size='15px'))
     probes_gui["create_particle"].on_click(create_particle)
 
     return probes_gui   
