@@ -160,12 +160,27 @@ def ui_select_probe(experiment, **kwargs):
         else:
             probes_gui["message2"].value = "Labelled structure creation failed. Check the logs for details."
 
+    def show_probe_info(change):
+        probe_name = probes_gui["select_probe"].value
+        if probe_name in experiment.config_probe_params.keys():
+            info_text = ""
+            probe_info = experiment.config_probe_params[probe_name]
+            info_text += f"<b>Target type: </b>{probe_info['target']['type']}<br>"
+            info_text += f"<b>Target: </b>{probe_info['target']['value']}<br>"
+            if probe_info["target"]["type"] == "structure":
+                info_text += f"<b>Target structure: </b>{probe_info['target']['structure']}<br>"
+            probes_gui["probe_info"].value = info_text
+        else:
+            probes_gui["probe_info"].value = "No information available for this probe."
+
     # widgets
     probes_gui.add_label("Seleced probes:")
     probes_gui.add_HTML("message1", "No probes selected yet.", style = dict(font_weight='bold', font_size='15px'))
     probes_gui.add_dropdown("select_probe",
                             description="Choose a probe:",
                             options=probe_options)
+    probes_gui.add_HTML("probe_info", "")
+    probes_gui["select_probe"].observe(show_probe_info, names="value")
     probes_gui.add_callback(
         "add_probe",
         select_probe,
