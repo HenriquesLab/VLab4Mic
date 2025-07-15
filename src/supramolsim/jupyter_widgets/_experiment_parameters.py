@@ -183,6 +183,12 @@ def ui_select_probe(experiment, **kwargs):
             probes_gui["probe_info"].value = info_text
         else:
             probes_gui["probe_info"].value = "No information available for this probe."
+    def type_dropdown_change(change):
+            probes_gui["mock_type_options1"].options = options_per_type1[change.new]
+            probes_gui["mock_type_options1"].value = options_per_type1[change.new][0]
+            probes_gui["mock_type_options2"].options = options_per_type2[change.new]
+            probes_gui["mock_type_options2"].value = options_per_type2[change.new][0]
+
 
     # widgets
     probes_gui.add_label("Seleced probes:")
@@ -194,14 +200,70 @@ def ui_select_probe(experiment, **kwargs):
     probes_gui["select_probe"].observe(show_probe_info, names="value")
     probes_gui.add_button("toggle_advanced_parameters", description="Toggle advanced parameters")
     # advaced parameters
-    probes_gui.add_HTML("advance_param_header", "Advanced parameters")
-
-
-
-
+    probes_gui.add_HTML("advanced_param_header", "Advanced parameters")
+    # change target type and value
+    options_dictionary = dict(
+            Protein="Sequence", Residue="Atom_residue", Primary_Probe="Primary"
+        )
+    probes_gui.add_dropdown(
+            "mock_type",
+            options=list(options_dictionary.keys()),
+            description="I want this probe to target a: ",
+        )
+    list_of_proteins = experiment.structure.list_protein_names()
+    list_of_residues = [
+            "ALA",
+            "ARG",
+            "ASN",
+            "ASP",
+            "CYS",
+            "GLN",
+            "GLU",
+            "GLY",
+            "HIS",
+            "ILE",
+            "LEU",
+            "LYS",
+            "MET",
+            "PHE",
+            "PRO",
+            "SER",
+            "THR",
+            "TRP",
+            "TYR",
+            "VAL",
+        ]
+    options_per_type1 = dict(
+            Protein=list_of_proteins,
+            Residue=list_of_residues,
+            Primary_Probe=[
+                None,
+            ],
+        )
+    options_per_type2 = dict(
+            Protein=["cterminal", "nterminal"],
+            Residue=["CA"],
+            Primary_Probe=[
+                None,
+            ],
+        )
+    probes_gui.add_dropdown(
+            "mock_type_options1",
+            options=options_per_type1[probes_gui["mock_type"].value],
+            description="Which one: ",
+        )
+    probes_gui.add_dropdown(
+            "mock_type_options2",
+            options=options_per_type2[probes_gui["mock_type"].value],
+            description="Where: ",
+        )
+    probes_gui["mock_type"].observe(type_dropdown_change, names="value")
     #
     def toggle_advanced_parameters(b): 
-        probe_widgets_visibility["advance_param_header"] = not probe_widgets_visibility["advance_param_header"]
+        probe_widgets_visibility["advanced_param_header"] = not probe_widgets_visibility["advanced_param_header"]
+        probe_widgets_visibility["mock_type"] = not probe_widgets_visibility["mock_type"]
+        probe_widgets_visibility["mock_type_options1"] = not probe_widgets_visibility["mock_type_options1"]
+        probe_widgets_visibility["mock_type_options2"] = not probe_widgets_visibility["mock_type_options2"]
         update_widgets_visibility(probes_gui, probe_widgets_visibility)
 
     probes_gui.add_callback(
@@ -218,11 +280,11 @@ def ui_select_probe(experiment, **kwargs):
     for wgt in probes_gui.elements.keys():
         probe_widgets_visibility[wgt] = True
         probes_gui.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex")
-   
-   
+ 
     show_probe_info(True)
     probes_gui["create_particle"].on_click(create_particle)
     probes_gui["toggle_advanced_parameters"].on_click(toggle_advanced_parameters)
+    toggle_advanced_parameters(True)  # Initialize with default visibility
     return probes_gui   
 
 def ui_select_sample_parameters(experiment):
