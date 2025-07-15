@@ -438,10 +438,15 @@ class sweep_generator:
             self.generate_acquisitions()
         if self.reference_image is None:
             self.generate_reference_image()
+        if len(self.reference_image.shape) == 3:
+            # if reference image is 3D, take the first frame
+            reference_image = self.reference_image[0]
+        else:
+            reference_image = self.reference_image
         measurement_vectors, inputs, metric = sweep.analyse_sweep_single_reference(
             img_outputs=self.acquisition_outputs,
             img_params=self.acquisition_outputs_parameters,
-            reference_image=self.reference_image[0],
+            reference_image=reference_image,
             reference_params=self.reference_image_parameters,
             **self.analysis_parameters
         )
