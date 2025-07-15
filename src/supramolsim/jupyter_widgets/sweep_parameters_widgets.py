@@ -39,6 +39,29 @@ import matplotlib.pyplot as plt
 import numpy as np
 from ._widget_generator import widgen
 
+
+def update_widgets_visibility(ezwidget, visibility_dictionary):
+    """
+    Show or hide widgets in an EZInput widget based on a visibility dictionary.
+
+    Parameters
+    ----------
+    ezwidget : EZInput
+        The EZInput widget containing elements to show/hide.
+    visibility_dictionary : dict
+        Dictionary mapping widget names to booleans (True to show, False to hide).
+
+    Returns
+    -------
+    None
+    """
+    for widgetname in visibility_dictionary.keys():
+        if visibility_dictionary[widgetname]:
+            ezwidget[widgetname].layout.display = "inline-flex"
+        else:
+            ezwidget[widgetname].layout.display = "None"  
+
+
 def select_structure(sweep_gen):
     """
     Create a widget for selecting a structure to sweep over.
@@ -251,6 +274,22 @@ def set_reference(sweep_gen):
         disabled = True
     )
     reference.add_button(
+        "advanced_parameters",
+        description="Toggle advanced parameters",
+    )
+    # advanced parameters
+    reference.add_file_upload(
+        "File", description="Select from file", accept="*.tif", save_settings=False
+    )
+
+
+
+    def toggle_advanced_parameters(b):
+        ref_widgets_visibility["File"] = not ref_widgets_visibility["File"]
+        update_widgets_visibility(reference, ref_widgets_visibility)
+
+    #
+    reference.add_button(
         "set", description="Set reference"
     )
     reference.add_button(
@@ -260,8 +299,17 @@ def set_reference(sweep_gen):
     reference.add_output(
         "output", description="Reference output"
     )
+    
+    # visibility and layout
+    ref_widgets_visibility = {}
+    for wgt in reference.elements.keys():
+        ref_widgets_visibility[wgt] = True
+        reference.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex") 
+
     reference["set"].on_click(gen_ref)
     reference["preview"].on_click(show_reference)
+    reference["advanced_parameters"].on_click(toggle_advanced_parameters)
+    toggle_advanced_parameters(True)
     return reference
 
 def analyse_sweep(sweep_gen):
