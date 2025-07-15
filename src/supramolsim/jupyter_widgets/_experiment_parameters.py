@@ -165,10 +165,21 @@ def ui_select_probe(experiment, **kwargs):
         if probe_name in experiment.config_probe_params.keys():
             info_text = ""
             probe_info = experiment.config_probe_params[probe_name]
-            info_text += f"<b>Target type: </b>{probe_info['target']['type']}<br>"
-            info_text += f"<b>Target: </b>{probe_info['target']['value']}<br>"
-            if probe_info["target"]["type"] == "structure":
-                info_text += f"<b>Target structure: </b>{probe_info['target']['structure']}<br>"
+            if probe_info["target"]["type"] == "Atom_residue":
+                target_type = "residue"
+                target_value = probe_info['target']['value']["residues"]
+                info_text += f"This probe targets the {target_type}: "
+                info_text += f"{target_value}<br>"
+            elif probe_info["target"]["type"] == "Sequence":
+                target_type = "protein sequence"
+                target_value = probe_info['target']['value']
+                info_text += f"This probe targets the {target_type}: "
+                info_text += f"{target_value}<br>"
+            else:
+                target_type = probe_info["target"]["type"]
+                target_value = probe_info['target']['value']
+                info_text += f"This probe model does not contain a target.<br> If selected, it will be assigned a random target from the selected structure.<br>"
+            info_text += f"<b>Probe Model: </b>{probe_info['model']['ID']}<br>"
             probes_gui["probe_info"].value = info_text
         else:
             probes_gui["probe_info"].value = "No information available for this probe."
@@ -191,6 +202,7 @@ def ui_select_probe(experiment, **kwargs):
                           description="Create labelled structure",
                           disabled=True)
     probes_gui.add_HTML("message2", "No labelled structure created yet.", style = dict(font_weight='bold', font_size='15px'))
+    show_probe_info(True)
     probes_gui["create_particle"].on_click(create_particle)
 
     return probes_gui   
