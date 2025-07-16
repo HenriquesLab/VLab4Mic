@@ -98,12 +98,17 @@ def sweep_vasmples(
                     # copy p_param?
                     experiment.remove_probes()
                     if p_param is None:
-                        experiment.probe_parameters[probe] = default_params
+                        experiment.add_probe(
+                            probe_name=probe,
+                        )
+                        #experiment.probe_parameters[probe] = default_params
                     else:
                         p_param_copy = copy.deepcopy(p_param)
                         p_param_copy["fluorophore_id"] = default_fluorophore
-                        experiment.structure_label = probe
-                        experiment.probe_parameters[probe] = p_param_copy
+                        experiment.add_probe(
+                            probe_name=probe,
+                            **p_param_copy
+                        )
                     for defect_n, defects_pars in particle_defects.items():
                         particle_defects_copy = copy.deepcopy(defects_pars)
                         for d_key, d_val in particle_defects_copy.items():
@@ -114,6 +119,7 @@ def sweep_vasmples(
                             if d_key=="defect":
                                 experiment.defect_eps["defect"] = d_val
                         # print(experiment.defect_eps)
+                        print(experiment.probe_parameters)
                         experiment._build_particle(keep=True)
                         if experiment.generators_status("particle"):
                             if len(experiment.particle.emitters) == 0:
@@ -320,8 +326,12 @@ def generate_global_reference_sample(
         probe_parameters["fluorophore_id"] = default_reference_fluorophore
     experiment.structure_id = structure
     experiment._build_structure()
-    experiment.structure_label = probe
-    experiment.probe_parameters[probe] = probe_parameters
+    experiment.add_probe(
+        probe_name=probe,
+        **probe_parameters
+    )
+    #experiment.structure_label = probe
+    #experiment.probe_parameters[probe] = probe_parameters
     experiment._build_particle(keep=True)
     # combination += str(vsample_n)
     refernece_parameters = [structure, probe, probe_parameters, virtual_sample]
