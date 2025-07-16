@@ -2,7 +2,8 @@ import supramolsim.generate.labelled_instance as lp
 from supramolsim import workflows
 from supramolsim.utils import data_format
 import pytest
-
+import copy
+import numpy as np
 
 def test_empty_particle():
     particle = lp.LabeledInstance()
@@ -69,3 +70,22 @@ def test_add_generic_labels(structure_id, generic_label, configuration_directory
         structure, labels_list, configuration_path
     )
     assert particle.get_ref_point().shape == (3,)
+
+
+def test_add_probe_with_peptide_motif(experiment_7r5k_base):
+    test_experiment = copy.copy(experiment_7r5k_base)
+    test_experiment.remove_probes()
+    list_of_proteins = test_experiment.structure.list_protein_names()
+    chain_name = list_of_proteins[np.random.randint(0, len(list_of_proteins))]
+    probe_name = "Antibody"
+    test_experiment.add_probe(
+        probe_name=probe_name,
+        peptide_motif={
+            "chain_name": chain_name,
+            "position": "cterminal",
+        },
+    )
+    assert len(test_experiment.probe_parameters) == 1
+    assert test_experiment.probe_parameters[probe_name]["label_name"] == probe_name
+    assert test_experiment.probe_parameters[probe_name]["target_info"]["type"] == "Sequence"
+    assert type(test_experiment.probe_parameters[probe_name]["target_info"]["value"]) == str
