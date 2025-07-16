@@ -146,7 +146,36 @@ def ui_select_probe(experiment, **kwargs):
         update_probe_list()
     
     def select_custom_probe(b):
-        pass
+        probe_name = probes_gui["select_probe"].value
+        probe_target_type = options_dictionary[probes_gui["mock_type"].value]
+        probe_target_value = probes_gui["mock_type_options1"].value
+        probe_target_value2 = probes_gui["mock_type_options2"].value
+        if probe_target_type == "Sequence":
+            experiment.add_probe(
+                probe_name=probe_name,
+                probe_target_type=probe_target_type,
+                peptide_motif={
+                    "chain_name": probe_target_value,
+                    "position": probe_target_value2,
+                },
+            )
+        elif probe_target_type == "Atom_residue":
+            residue = probes_gui["mock_type_options1"].value
+            atom = probes_gui["mock_type_options2"].value
+            experiment.add_probe(
+                probe_name=probe_name,
+                probe_target_type=probe_target_type,
+                probe_target_value=dict(atoms=atom, residues=residue),
+            )
+        elif probe_target_type == "Primary":
+            experiment.add_probe(
+                probe_name=probe_name,
+                probe_target_type=probe_target_type,
+                probe_target_value=probe_target_value,
+            )
+        probes_gui["create_particle"].disabled = False
+        update_probe_list()
+        
             
         
 
@@ -302,6 +331,7 @@ def ui_select_probe(experiment, **kwargs):
     show_probe_info(True)
     probes_gui["create_particle"].on_click(create_particle)
     probes_gui["toggle_advanced_parameters"].on_click(toggle_advanced_parameters)
+    probes_gui["add_custom_probe"].on_click(select_custom_probe)
     toggle_advanced_parameters(True)  # Initialize with default visibility
     return probes_gui   
 
