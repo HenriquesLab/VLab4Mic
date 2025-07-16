@@ -147,6 +147,8 @@ def ui_select_probe(experiment, **kwargs):
     
     def select_custom_probe(b):
         probe_name = probes_gui["select_probe"].value
+        labelling_efficiency = probes_gui["labelling_efficiency"].value
+        probe_distance_to_epitope = probes_gui["distance_from_epitope"].value
         probe_target_type = options_dictionary[probes_gui["mock_type"].value]
         probe_target_value = probes_gui["mock_type_options1"].value
         probe_target_value2 = probes_gui["mock_type_options2"].value
@@ -158,6 +160,8 @@ def ui_select_probe(experiment, **kwargs):
                     "chain_name": probe_target_value,
                     "position": probe_target_value2,
                 },
+                labelling_efficiency=labelling_efficiency,
+                probe_distance_to_epitope=probe_distance_to_epitope,
             )
         elif probe_target_type == "Atom_residue":
             residue = probes_gui["mock_type_options1"].value
@@ -166,12 +170,16 @@ def ui_select_probe(experiment, **kwargs):
                 probe_name=probe_name,
                 probe_target_type=probe_target_type,
                 probe_target_value=dict(atoms=atom, residues=residue),
+                labelling_efficiency=labelling_efficiency,
+                probe_distance_to_epitope=probe_distance_to_epitope,
             )
         elif probe_target_type == "Primary":
             experiment.add_probe(
                 probe_name=probe_name,
                 probe_target_type=probe_target_type,
                 probe_target_value=probe_target_value,
+                labelling_efficiency=labelling_efficiency,
+                probe_distance_to_epitope=probe_distance_to_epitope,
             )
         probes_gui["create_particle"].disabled = False
         update_probe_list()
@@ -242,7 +250,13 @@ def ui_select_probe(experiment, **kwargs):
                                 value=1,
                                 continuous_update=False,
                                 style={'description_width': 'initial'})
-
+    probes_gui.add_float_slider("distance_from_epitope",
+                            description="Distance from epitope (Angstroms)",
+                            min=0.0,
+                            max=1000,
+                            value=1,
+                            continuous_update=False,
+                            style={'description_width': 'initial'})
     # change target type and value
     options_dictionary = dict(
             Protein="Sequence", Residue="Atom_residue", Primary_Probe="Primary"
@@ -307,6 +321,7 @@ def ui_select_probe(experiment, **kwargs):
     def toggle_advanced_parameters(b): 
         probe_widgets_visibility["advanced_param_header"] = not probe_widgets_visibility["advanced_param_header"]
         probe_widgets_visibility["labelling_efficiency"] = not probe_widgets_visibility["labelling_efficiency"]
+        probe_widgets_visibility["distance_from_epitope"] = not probe_widgets_visibility["distance_from_epitope"]
         probe_widgets_visibility["mock_type"] = not probe_widgets_visibility["mock_type"]
         probe_widgets_visibility["mock_type_options1"] = not probe_widgets_visibility["mock_type_options1"]
         probe_widgets_visibility["mock_type_options2"] = not probe_widgets_visibility["mock_type_options2"]
