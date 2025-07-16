@@ -411,7 +411,8 @@ class ExperimentParametrisation:
         labels_list = []
         for probe_name, probe_params in self.probe_parameters.items():
             labels_list.append(
-                label_builder_format(label_id=probe_name, **probe_params)
+                copy.deepcopy(self.probe_parameters[probe_name])
+                #
             )
         return labels_list
 
@@ -886,7 +887,7 @@ class ExperimentParametrisation:
                 probe_target_type = "Sequence"
                 probe_target_value = sequence
         if probe_target_type and probe_target_value:
-            probe_configuration["target_info"] = dict(
+            probe_configuration["target"] = dict(
                 type=probe_target_type, value=probe_target_value
             )
             if probe_target_type == "Primary" and probe_target_option:
@@ -902,7 +903,7 @@ class ExperimentParametrisation:
             # probe has no target info
             # a random target will be used
             protein_name, _1, site, sequence = self.structure.get_peptide_motif(position="cterminal") 
-            probe_configuration["target_info"] = dict(
+            probe_configuration["target"] = dict(
                 type="Sequence", value=sequence
             )
             #probe_configuration["target"]["type"] = "Sequence"
