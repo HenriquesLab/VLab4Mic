@@ -823,6 +823,7 @@ class ExperimentParametrisation:
         probe_wobbling=False,
         labelling_efficiency: float = 1.0,
         as_primary=False,
+        peptide_motif: dict = None,
         **kwargs,
     ):
         """
@@ -882,6 +883,11 @@ class ExperimentParametrisation:
             self.configuration_path, "probes", probe_name + ".yaml"
         )
         probe_configuration = load_yaml(probe_configuration_file)
+        if peptide_motif is not None:
+            protein_name, _1, site, sequence = self.structure.get_peptide_motif(**peptide_motif)
+            if len(sequence) > 0: 
+                probe_target_type = "Sequence"
+                probe_target_value = sequence
         if probe_target_type and probe_target_value:
             probe_configuration["target_info"] = dict(
                 type=probe_target_type, value=probe_target_value
@@ -895,7 +901,7 @@ class ExperimentParametrisation:
                         "probe_seconday_epitope"
                     ] = probe_target_option
         elif probe_configuration["target"]["type"] is None or probe_configuration["target"]["value"] is None:
-            print("No target info provided for the probe. Generating default sequence.")
+            print("No target info provided for the probe. Retrieving random sequence.")
             # probe has no target info
             # a random target will be used
             protein_name, _1, site, sequence = self.structure.get_peptide_motif(position="cterminal") 
