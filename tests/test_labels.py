@@ -9,10 +9,10 @@ def test_createlabel_from_config(configuration_directory):
     local_path_congfig = os.path.join(
         configuration_directory, "probes", labelcongf_filename
     )
-    fluorophoreID = "AF647"
     labelling_efficiency = 0.9
+    probe_params = load_yaml(local_path_congfig)
     label_object, label_params = labels.construct_label(
-        local_path_congfig, fluorophoreID, labelling_efficiency
+        label_config_dictionary=probe_params,lab_eff=labelling_efficiency
     )
 
 
