@@ -879,10 +879,7 @@ class ExperimentParametrisation:
         -----
         Updates the ``probe_parameters`` attribute with the new or modified probe configuration and calls the :meth:`_update_probes` method to refresh internal probe state.
         """
-        probe_configuration_file = os.path.join(
-            self.configuration_path, "probes", probe_name + ".yaml"
-        )
-        probe_configuration = load_yaml(probe_configuration_file)
+        probe_configuration = copy.deepcopy(self.config_probe_params[probe_name])
         if peptide_motif is not None:
             protein_name, _1, site, sequence = self.structure.get_peptide_motif(**peptide_motif)
             if len(sequence) > 0: 
