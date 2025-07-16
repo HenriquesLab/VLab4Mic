@@ -144,6 +144,11 @@ def ui_select_probe(experiment, **kwargs):
         )
         probes_gui["create_particle"].disabled = False
         update_probe_list()
+    
+    def select_custom_probe(b):
+        pass
+            
+        
 
     def update_probe_list():
         probes_gui["message1"].value = ""
@@ -265,6 +270,9 @@ def ui_select_probe(experiment, **kwargs):
             options=options_per_type2[probes_gui["mock_type"].value],
             description="Where: ",
         )
+    probes_gui.add_button("add_custom_probe",
+                          description="Select probe with custom parameters",
+                          disabled=False)
     probes_gui["mock_type"].observe(type_dropdown_change, names="value")
     #
     def toggle_advanced_parameters(b): 
@@ -273,6 +281,7 @@ def ui_select_probe(experiment, **kwargs):
         probe_widgets_visibility["mock_type"] = not probe_widgets_visibility["mock_type"]
         probe_widgets_visibility["mock_type_options1"] = not probe_widgets_visibility["mock_type_options1"]
         probe_widgets_visibility["mock_type_options2"] = not probe_widgets_visibility["mock_type_options2"]
+        probe_widgets_visibility["add_custom_probe"] = not probe_widgets_visibility["add_custom_probe"]
         update_widgets_visibility(probes_gui, probe_widgets_visibility)
 
     probes_gui.add_callback(
