@@ -313,6 +313,23 @@ def ui_select_probe(experiment, **kwargs):
             options=options_per_type2[probes_gui["mock_type"].value],
             description="Where: ",
         )
+    probes_gui.add_HTML("as_linker_info",
+        "Activate this option if you intent to use a secondary that recognises the current probe"
+    )
+    probes_gui.add_checkbox(
+        "as_linker",
+        description="Model as primary with epitope for secondary probe",
+        value=False,
+    )
+    probes_gui.add_checkbox("wobble", description="Enable wobble", value=False)
+    probes_gui.add_float_slider(
+        "wobble_theta",
+        value=10,
+        min=0,
+        max=45,
+        step=1,
+        description="Wobble cone range (degrees)",
+    )
     probes_gui.add_button("add_custom_probe",
                           description="Select probe with custom parameters",
                           disabled=False)
@@ -325,6 +342,10 @@ def ui_select_probe(experiment, **kwargs):
         probe_widgets_visibility["mock_type"] = not probe_widgets_visibility["mock_type"]
         probe_widgets_visibility["mock_type_options1"] = not probe_widgets_visibility["mock_type_options1"]
         probe_widgets_visibility["mock_type_options2"] = not probe_widgets_visibility["mock_type_options2"]
+        probe_widgets_visibility["as_linker_info"] = not probe_widgets_visibility["as_linker_info"]
+        probe_widgets_visibility["as_linker"] = not probe_widgets_visibility["as_linker"]
+        probe_widgets_visibility["wobble"] = not probe_widgets_visibility["wobble"]
+        probe_widgets_visibility["wobble_theta"] = not probe_widgets_visibility["wobble_theta"]
         probe_widgets_visibility["add_custom_probe"] = not probe_widgets_visibility["add_custom_probe"]
         update_widgets_visibility(probes_gui, probe_widgets_visibility)
 
