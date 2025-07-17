@@ -140,7 +140,7 @@ def ui_select_probe(experiment, **kwargs):
     # methods
     def select_probe(values):
         experiment.add_probe(
-            probe_name=values["select_probe"].value
+            probe_template=values["select_probe"].value
         )
         probes_gui["create_particle"].disabled = False
         update_probe_list()
@@ -161,7 +161,7 @@ def ui_select_probe(experiment, **kwargs):
             ]
         if probe_target_type == "Sequence":
             experiment.add_probe(
-                probe_name=probe_name,
+                probe_template=probe_name,
                 probe_target_type=probe_target_type,
                 peptide_motif={
                     "chain_name": probe_target_value,
@@ -177,7 +177,7 @@ def ui_select_probe(experiment, **kwargs):
             residue = probes_gui["mock_type_options1"].value
             atom = probes_gui["mock_type_options2"].value
             experiment.add_probe(
-                probe_name=probe_name,
+                probe_template=probe_name,
                 probe_target_type=probe_target_type,
                 probe_target_value=dict(atoms=atom, residues=residue),
                 labelling_efficiency=labelling_efficiency,
@@ -188,7 +188,7 @@ def ui_select_probe(experiment, **kwargs):
             )
         elif probe_target_type == "Primary":
             experiment.add_probe(
-                probe_name=probe_name,
+                probe_template=probe_name,
                 probe_target_type=probe_target_type,
                 probe_target_value=probe_target_value,
                 labelling_efficiency=labelling_efficiency,

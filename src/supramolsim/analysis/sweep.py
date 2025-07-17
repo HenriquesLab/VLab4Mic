@@ -99,14 +99,14 @@ def sweep_vasmples(
                     experiment.remove_probes()
                     if p_param is None:
                         experiment.add_probe(
-                            probe_name=probe,
+                            probe_template=probe,
                         )
                         #experiment.probe_parameters[probe] = default_params
                     else:
                         p_param_copy = copy.deepcopy(p_param)
                         p_param_copy["fluorophore_id"] = default_fluorophore
                         experiment.add_probe(
-                            probe_name=probe,
+                            probe_template=probe,
                             **p_param_copy
                         )
                     for defect_n, defects_pars in particle_defects.items():
@@ -327,7 +327,7 @@ def generate_global_reference_sample(
     experiment.structure_id = structure
     experiment._build_structure()
     experiment.add_probe(
-        probe_name=probe,
+        probe_template=probe,
         **probe_parameters
     )
     #experiment.structure_label = probe

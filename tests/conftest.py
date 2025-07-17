@@ -39,7 +39,7 @@ def experiment_7r5k_base():
     modalities = ["Widefield", "Confocal", "SMLM", "STED"]
     imaging_output7r5k, exp7r5k = experiments.image_vsample(
         structure=structure_id,
-        probe_name=probe,
+        probe_template=probe,
         virtual_sample_template=virtual_sample,
         multimodal=modalities,
         run_simulation=False 

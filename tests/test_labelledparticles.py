@@ -34,7 +34,7 @@ def test_add_probe_with_peptide_motif(experiment_7r5k_base):
     chain_name = list_of_proteins[np.random.randint(0, len(list_of_proteins))]
     probe_name = "Antibody"
     test_experiment.add_probe(
-        probe_name=probe_name,
+        probe_template=probe_name,
         peptide_motif={
             "chain_name": chain_name,
             "position": "cterminal",
