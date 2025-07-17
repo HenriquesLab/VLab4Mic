@@ -15,6 +15,6 @@ def test_primary_secondary_fromExperiment():
         probe_template = "Antibody",
         probe_target_type = "Primary",
         probe_target_value = "Linker")
-    test_experiment.build()
+    test_experiment.build(modules=["particle"])
     assert test_experiment.particle is not None
     assert test_experiment.exported_coordinate_field['field_emitters'] != {}
