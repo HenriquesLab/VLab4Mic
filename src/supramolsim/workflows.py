@@ -168,6 +168,7 @@ def probe_model(
             print(f"epitope site: {probe_epitope}")
         except:
             print("No epitope generated")
+            print(kwargs["epitope"])
 
     # print(structural_model.label_targets)
     
@@ -234,6 +235,8 @@ def particle_from_structure(
                     # secondary label for this specific probe
                     label_object.set_emitters(probe_epitope["coordinates"])
                 else:
+                    print(probe_epitope["coordinates"], label_params["as_linker"])
+                    print("Setting emitters from probe conjugation sites")
                     label_object.set_emitters(probe_emitter_sites)
                 label_params["coordinates"] = label_object.gen_labeling_entity()
                 print(label_params["coordinates"])

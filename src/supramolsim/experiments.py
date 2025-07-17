@@ -932,7 +932,10 @@ class ExperimentParametrisation:
         if probe_wobbling:
             probe_configuration["enable_wobble"] = probe_wobbling
         if as_primary:
-            probe_configuration["as_linker"] = as_primary
+            print("Adding probe as primary linker")
+            probe_configuration["as_linker"] = True
+        else:
+            probe_configuration["as_linker"] = False
         if probe_steric_hindrance is not None:
             probe_configuration["distance_between_epitope"] = probe_steric_hindrance
         self.probe_parameters[probe_name] = probe_configuration
