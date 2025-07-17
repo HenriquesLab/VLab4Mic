@@ -809,7 +809,8 @@ class ExperimentParametrisation:
 
     def add_probe(
         self,
-        probe_name: str = "NHS_ester",
+        probe_template: str = "NHS_ester",
+        probe_name: str = None,
         probe_target_type: str = None,
         probe_target_value: str = None,
         probe_target_option: str = None,
@@ -880,7 +881,9 @@ class ExperimentParametrisation:
         -----
         Updates the ``probe_parameters`` attribute with the new or modified probe configuration and calls the :meth:`_update_probes` method to refresh internal probe state.
         """
-        probe_configuration = copy.deepcopy(self.config_probe_params[probe_name])
+        probe_configuration = copy.deepcopy(self.config_probe_params[probe_template])
+        if probe_name is None:
+            probe_name = probe_template
         if peptide_motif is not None:
             protein_name, _1, site, sequence = self.structure.get_peptide_motif(**peptide_motif)
             if len(sequence) > 0: 
