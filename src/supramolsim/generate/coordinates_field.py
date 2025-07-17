@@ -3,6 +3,7 @@ import copy
 import matplotlib.pyplot as plt
 import yaml
 from ..analysis import metrics
+import math
 
 from .labelled_instance import LabeledInstance
 from .molecular_structure import MolecularReplicates
@@ -808,7 +809,7 @@ def create_min_field(number_of_particles=1, random_placing=False, random_orienta
     return coordinates_field
 
 
-def gen_positions_from_image(img, mode="mask", pixelsize = None, **kwargs):
+def gen_positions_from_image(img, mode="mask", pixelsize = None, min_distance = None, **kwargs):
     """
     Generate relative positions from an image using either a mask or local maxima.
 
@@ -830,6 +831,11 @@ def gen_positions_from_image(img, mode="mask", pixelsize = None, **kwargs):
     image_physical_size : numpy.ndarray
         Physical size of the image.
     """
+    if min_distance is None:
+        min_distance = 1
+    else:
+        min_dist_pixels = min_distance/pixelsize
+        min_distance = math.ceil(min_dist_pixels)
     npixels = list(img.shape)
     image_physical_size = np.zeros(shape=(2))
     image_physical_size[0] = pixelsize * npixels[0]
@@ -839,11 +845,6 @@ def gen_positions_from_image(img, mode="mask", pixelsize = None, **kwargs):
             npositions = 1
         else:
             npositions = kwargs["npositions"]
-        if "min_distance" not in kwargs.keys():
-            min_distance = 1
-        else:
-            min_distance = kwargs["min_distance"]
-        #
         pixel_positions = sampl.get_random_pixels(
             img, 
             num_pixels=npositions, 
@@ -862,10 +863,6 @@ def gen_positions_from_image(img, mode="mask", pixelsize = None, **kwargs):
             threshold = None
         else:
             threshold = kwargs["threshold"]
-        if "min_distance" not in kwargs.keys():
-            min_distance = 1
-        else:
-            min_distance = kwargs["min_distance"]
         pixel_positions, img_processed = metrics.local_maxima_positions(
             img, 
             min_distance=min_distance, 

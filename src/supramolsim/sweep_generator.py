@@ -225,6 +225,19 @@ class sweep_generator:
             )
         )
 
+    def load_reference_image(self, ref_image_path=None, ref_pixelsize=None, override=True):
+        """
+        Load a reference image from a specified path.
+        """
+        reference_parameters = {}
+        reference_parameters["Vector"] = None
+        ref_pixelsize
+        reference_parameters["ref_pixelsize"] = ref_pixelsize
+        ref_image = tiff.imread(ref_image_path)
+        if override:
+            self.reference_image = ref_image
+            self.reference_image_parameters = reference_parameters
+
     # previews
     def preview_acquisition_output(self, return_image=False):
         """
@@ -425,10 +438,15 @@ class sweep_generator:
             self.generate_acquisitions()
         if self.reference_image is None:
             self.generate_reference_image()
+        if len(self.reference_image.shape) == 3:
+            # if reference image is 3D, take the first frame
+            reference_image = self.reference_image[0]
+        else:
+            reference_image = self.reference_image
         measurement_vectors, inputs, metric = sweep.analyse_sweep_single_reference(
             img_outputs=self.acquisition_outputs,
             img_params=self.acquisition_outputs_parameters,
-            reference_image=self.reference_image[0],
+            reference_image=reference_image,
             reference_params=self.reference_image_parameters,
             **self.analysis_parameters
         )

@@ -39,6 +39,29 @@ import matplotlib.pyplot as plt
 import numpy as np
 from ._widget_generator import widgen
 
+
+def update_widgets_visibility(ezwidget, visibility_dictionary):
+    """
+    Show or hide widgets in an EZInput widget based on a visibility dictionary.
+
+    Parameters
+    ----------
+    ezwidget : EZInput
+        The EZInput widget containing elements to show/hide.
+    visibility_dictionary : dict
+        Dictionary mapping widget names to booleans (True to show, False to hide).
+
+    Returns
+    -------
+    None
+    """
+    for widgetname in visibility_dictionary.keys():
+        if visibility_dictionary[widgetname]:
+            ezwidget[widgetname].layout.display = "inline-flex"
+        else:
+            ezwidget[widgetname].layout.display = "None"  
+
+
 def select_structure(sweep_gen):
     """
     Create a widget for selecting a structure to sweep over.
@@ -251,7 +274,45 @@ def set_reference(sweep_gen):
         disabled = True
     )
     reference.add_button(
-        "set", description="Set reference"
+        "advanced_parameters",
+        description="Toggle advanced parameters",
+    )
+    # advanced parameters
+    reference.add_HTML(
+        tag="Upload_ref_message",
+        value="<b>Upload image for reference</b>",
+        style={'font_size': '15px'}
+    )
+    reference.add_file_upload(
+        "File", description="Select from file", accept="*.tif", save_settings=False
+    )
+    reference.add_bounded_float_text("pixel_size",
+        description="Pixel size (nm)",
+        value=100,
+        vmin=1,
+        vmax=1000,
+        step=0.1,
+        style={"description_width": "initial"},
+    )
+    reference.add_button("upload_and_set", description="Upload image reference", disabled=False)
+
+    def toggle_advanced_parameters(b):
+        ref_widgets_visibility["Upload_ref_message"] = not ref_widgets_visibility["Upload_ref_message"]
+        ref_widgets_visibility["File"] = not ref_widgets_visibility["File"]
+        ref_widgets_visibility["upload_and_set"] = not ref_widgets_visibility["upload_and_set"]
+        ref_widgets_visibility["pixel_size"] = not ref_widgets_visibility["pixel_size"]
+        update_widgets_visibility(reference, ref_widgets_visibility)
+
+    def upload_and_set(b):
+        sweep_gen.load_reference_image(
+            ref_image_path=reference["File"].selected,
+            ref_pixelsize=reference["pixel_size"].value
+        )
+        reference["feedback"].value = "Reference image uploaded and set."
+        reference["preview"].disabled = False
+    #
+    reference.add_button(
+        "set", description="Generate image reference"
     )
     reference.add_button(
         "preview", description="Preview reference", disabled = True
@@ -260,8 +321,18 @@ def set_reference(sweep_gen):
     reference.add_output(
         "output", description="Reference output"
     )
+    
+    # visibility and layout
+    ref_widgets_visibility = {}
+    for wgt in reference.elements.keys():
+        ref_widgets_visibility[wgt] = True
+        reference.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex") 
+
     reference["set"].on_click(gen_ref)
     reference["preview"].on_click(show_reference)
+    reference["advanced_parameters"].on_click(toggle_advanced_parameters)
+    reference["upload_and_set"].on_click(upload_and_set)
+    toggle_advanced_parameters(True)
     return reference
 
 def analyse_sweep(sweep_gen):

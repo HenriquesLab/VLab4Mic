@@ -501,6 +501,7 @@ class ExperimentParametrisation:
             exported_field, fieldobject = field_from_particle(
                 self.particle, **self.virtualsample_params, **kwargs
             )
+            self.virtualsample_params["minimal_distance"] = fieldobject.molecules_params["minimal_distance"]
             if keep:
                 self.exported_coordinate_field = exported_field
                 self.objects_created["exported_coordinate_field"] = True
@@ -822,6 +823,7 @@ class ExperimentParametrisation:
         probe_wobbling=False,
         labelling_efficiency: float = 1.0,
         as_primary=False,
+        peptide_motif: dict = None,
         **kwargs,
     ):
         """
@@ -881,6 +883,11 @@ class ExperimentParametrisation:
             self.configuration_path, "probes", probe_name + ".yaml"
         )
         probe_configuration = load_yaml(probe_configuration_file)
+        if peptide_motif is not None:
+            protein_name, _1, site, sequence = self.structure.get_peptide_motif(**peptide_motif)
+            if len(sequence) > 0: 
+                probe_target_type = "Sequence"
+                probe_target_value = sequence
         if probe_target_type and probe_target_value:
             probe_configuration["target_info"] = dict(
                 type=probe_target_type, value=probe_target_value
@@ -894,7 +901,7 @@ class ExperimentParametrisation:
                         "probe_seconday_epitope"
                     ] = probe_target_option
         elif probe_configuration["target"]["type"] is None or probe_configuration["target"]["value"] is None:
-            print("No target info provided for the probe. Generating default sequence.")
+            print("No target info provided for the probe. Retrieving random sequence.")
             # probe has no target info
             # a random target will be used
             protein_name, _1, site, sequence = self.structure.get_peptide_motif(position="cterminal") 
@@ -951,6 +958,7 @@ class ExperimentParametrisation:
         particle_positions: list = None,
         random_orientations: bool = None,
         random_placing: bool = None,
+        minimal_distance: float = None,
         **kwargs,
     ):
         """
@@ -994,6 +1002,7 @@ class ExperimentParametrisation:
             vsample_configuration["random_orientations"] = random_orientations
         if random_placing is not None:
             vsample_configuration["random_placing"] = random_placing
+        vsample_configuration["minimal_distance"] = minimal_distance
         self.virtualsample_params = vsample_configuration
 
     def use_image_for_positioning(
@@ -1050,13 +1059,25 @@ class ExperimentParametrisation:
             threshold=threshold,
             pixelsize=pixelsize,
             min_distance=min_distance,
+            **kwargs,
         )
-        self.virtualsample_params["relative_positions"] = xyz_relative
-        self.virtualsample_params["sample_dimensions"] = [
-            image_physical_size[0],
-            image_physical_size[1],
-            100,
-        ]
+        self.set_virtualsample_params(
+            sample_dimensions=[
+                image_physical_size[0],
+                image_physical_size[1],
+                100,],
+            particle_positions=xyz_relative,
+            number_of_particles=len(xyz_relative),
+            random_orientations=False,
+            random_placing=False,
+            minimal_distance=min_distance,
+        )
+        #self.virtualsample_params["relative_positions"] = xyz_relative
+        #self.virtualsample_params["sample_dimensions"] = [
+        #    image_physical_size[0],
+        #    image_physical_size[1],
+        #    100,
+        #]
         self.build(modules=["coordinate_field", "imager"])
 
     def current_settings(self, as_string=True, newline="<br>", modalities_acq_params=False):

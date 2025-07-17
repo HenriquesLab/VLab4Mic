@@ -41,6 +41,7 @@ from ipyfilechooser import FileChooser
 import copy
 from supramolsim.utils.visualisation.matplotlib_plots import slider_normalised
 import numpy as np
+import tifffile as tif
 
 def ui_select_structure(experiment):
     """
@@ -105,7 +106,7 @@ def update_widgets_visibility(ezwidget, visibility_dictionary):
         if visibility_dictionary[widgetname]:
             ezwidget[widgetname].layout.display = "inline-flex"
         else:
-            visibility_dictionary[widgetname].layout.display = "None"   
+            ezwidget[widgetname].layout.display = "None"   
 
 def ui_select_probe(experiment, **kwargs):
     """
@@ -143,6 +144,64 @@ def ui_select_probe(experiment, **kwargs):
         )
         probes_gui["create_particle"].disabled = False
         update_probe_list()
+    
+    def select_custom_probe(b):
+        probe_name = probes_gui["select_probe"].value
+        labelling_efficiency = probes_gui["labelling_efficiency"].value
+        probe_distance_to_epitope = probes_gui["distance_from_epitope"].value
+        probe_target_type = options_dictionary[probes_gui["mock_type"].value]
+        probe_target_value = probes_gui["mock_type_options1"].value
+        probe_target_value2 = probes_gui["mock_type_options2"].value
+        as_linker = probes_gui["as_linker"].value
+        wobble = probes_gui["wobble"].value
+        wobble_theta = probes_gui["wobble_theta"].value
+        if as_linker:
+            options_per_type1["Primary_Probe"] = [
+                probe_name,
+            ]
+        if probe_target_type == "Sequence":
+            experiment.add_probe(
+                probe_name=probe_name,
+                probe_target_type=probe_target_type,
+                peptide_motif={
+                    "chain_name": probe_target_value,
+                    "position": probe_target_value2,
+                },
+                labelling_efficiency=labelling_efficiency,
+                probe_distance_to_epitope=probe_distance_to_epitope,
+                as_linker=as_linker,
+                wobble=wobble,
+                wobble_theta=wobble_theta,
+            )
+        elif probe_target_type == "Atom_residue":
+            residue = probes_gui["mock_type_options1"].value
+            atom = probes_gui["mock_type_options2"].value
+            experiment.add_probe(
+                probe_name=probe_name,
+                probe_target_type=probe_target_type,
+                probe_target_value=dict(atoms=atom, residues=residue),
+                labelling_efficiency=labelling_efficiency,
+                probe_distance_to_epitope=probe_distance_to_epitope,
+                as_linker=as_linker,
+                wobble=wobble,
+                wobble_theta=wobble_theta,
+            )
+        elif probe_target_type == "Primary":
+            experiment.add_probe(
+                probe_name=probe_name,
+                probe_target_type=probe_target_type,
+                probe_target_value=probe_target_value,
+                labelling_efficiency=labelling_efficiency,
+                probe_distance_to_epitope=probe_distance_to_epitope,
+                as_linker=as_linker,
+                wobble=wobble,
+                wobble_theta=wobble_theta,
+            )
+        probes_gui["create_particle"].disabled = False
+        update_probe_list()
+        
+            
+        
 
     def update_probe_list():
         probes_gui["message1"].value = ""
@@ -159,12 +218,153 @@ def ui_select_probe(experiment, **kwargs):
         else:
             probes_gui["message2"].value = "Labelled structure creation failed. Check the logs for details."
 
+    def show_probe_info(change):
+        probe_name = probes_gui["select_probe"].value
+        if probe_name in experiment.config_probe_params.keys():
+            info_text = "<b>Target: </b>"
+            probe_info = experiment.config_probe_params[probe_name]
+            if probe_info["target"]["type"] == "Atom_residue":
+                target_type = "residue"
+                target_value = probe_info['target']['value']["residues"]
+                info_text += f"This probe targets the {target_type}: "
+                info_text += f"{target_value}<br>"
+            elif probe_info["target"]["type"] == "Sequence":
+                target_type = "protein sequence"
+                target_value = probe_info['target']['value']
+                info_text += f"This probe targets the {target_type}: "
+                info_text += f"{target_value}<br>"
+            else:
+                target_type = probe_info["target"]["type"]
+                target_value = probe_info['target']['value']
+                info_text += f"This probe model does not contain a target.<br> If selected, it will be assigned a random target from the selected structure.<br>"
+            info_text += f"<b>Probe Model: </b>{probe_info['model']['ID']}<br>"
+            probes_gui["probe_info"].value = info_text
+        else:
+            probes_gui["probe_info"].value = "No information available for this probe."
+    def type_dropdown_change(change):
+            probes_gui["mock_type_options1"].options = options_per_type1[change.new]
+            probes_gui["mock_type_options1"].value = options_per_type1[change.new][0]
+            probes_gui["mock_type_options2"].options = options_per_type2[change.new]
+            probes_gui["mock_type_options2"].value = options_per_type2[change.new][0]
+
+
     # widgets
     probes_gui.add_label("Seleced probes:")
-    probes_gui.add_HTML("message1", "No probes selected yet.", style = dict(font_weight='bold'))
+    probes_gui.add_HTML("message1", "No probes selected yet.", style = dict(font_weight='bold', font_size='15px'))
     probes_gui.add_dropdown("select_probe",
                             description="Choose a probe:",
                             options=probe_options)
+    probes_gui.add_HTML("probe_info", "")
+    probes_gui["select_probe"].observe(show_probe_info, names="value")
+    probes_gui.add_button("toggle_advanced_parameters", description="Toggle advanced parameters")
+    # advanced parameters
+    probes_gui.add_HTML("advanced_param_header", "<b>Advanced parameters</b>", style=dict(font_size='15px'))
+    probes_gui.add_float_slider("labelling_efficiency",
+                                description="Labelling efficiency",
+                                min=0.0,
+                                max=1.0,
+                                value=1,
+                                continuous_update=False,
+                                style={'description_width': 'initial'})
+    probes_gui.add_float_slider("distance_from_epitope",
+                            description="Distance from epitope (Angstroms)",
+                            min=0.0,
+                            max=1000,
+                            value=1,
+                            continuous_update=False,
+                            style={'description_width': 'initial'})
+    # change target type and value
+    options_dictionary = dict(
+            Protein="Sequence", Residue="Atom_residue", Primary_Probe="Primary"
+        )
+    probes_gui.add_dropdown(
+            "mock_type",
+            options=list(options_dictionary.keys()),
+            description="I want this probe to target a: ",
+        )
+    list_of_proteins = experiment.structure.list_protein_names()
+    list_of_residues = [
+            "ALA",
+            "ARG",
+            "ASN",
+            "ASP",
+            "CYS",
+            "GLN",
+            "GLU",
+            "GLY",
+            "HIS",
+            "ILE",
+            "LEU",
+            "LYS",
+            "MET",
+            "PHE",
+            "PRO",
+            "SER",
+            "THR",
+            "TRP",
+            "TYR",
+            "VAL",
+        ]
+    options_per_type1 = dict(
+            Protein=list_of_proteins,
+            Residue=list_of_residues,
+            Primary_Probe=[
+                None,
+            ],
+        )
+    options_per_type2 = dict(
+            Protein=["cterminal", "nterminal"],
+            Residue=["CA"],
+            Primary_Probe=[
+                None,
+            ],
+        )
+    probes_gui.add_dropdown(
+            "mock_type_options1",
+            options=options_per_type1[probes_gui["mock_type"].value],
+            description="Which one: ",
+        )
+    probes_gui.add_dropdown(
+            "mock_type_options2",
+            options=options_per_type2[probes_gui["mock_type"].value],
+            description="Where: ",
+        )
+    probes_gui.add_HTML("as_linker_info",
+        "Activate this option if you intent to use a secondary that recognises the current probe"
+    )
+    probes_gui.add_checkbox(
+        "as_linker",
+        description="Model as primary with epitope for secondary probe",
+        value=False,
+    )
+    probes_gui.add_checkbox("wobble", description="Enable wobble", value=False)
+    probes_gui.add_float_slider(
+        "wobble_theta",
+        value=10,
+        min=0,
+        max=45,
+        step=1,
+        description="Wobble cone range (degrees)",
+    )
+    probes_gui.add_button("add_custom_probe",
+                          description="Select probe with custom parameters",
+                          disabled=False)
+    probes_gui["mock_type"].observe(type_dropdown_change, names="value")
+    #
+    def toggle_advanced_parameters(b): 
+        probe_widgets_visibility["advanced_param_header"] = not probe_widgets_visibility["advanced_param_header"]
+        probe_widgets_visibility["labelling_efficiency"] = not probe_widgets_visibility["labelling_efficiency"]
+        probe_widgets_visibility["distance_from_epitope"] = not probe_widgets_visibility["distance_from_epitope"]
+        probe_widgets_visibility["mock_type"] = not probe_widgets_visibility["mock_type"]
+        probe_widgets_visibility["mock_type_options1"] = not probe_widgets_visibility["mock_type_options1"]
+        probe_widgets_visibility["mock_type_options2"] = not probe_widgets_visibility["mock_type_options2"]
+        probe_widgets_visibility["as_linker_info"] = not probe_widgets_visibility["as_linker_info"]
+        probe_widgets_visibility["as_linker"] = not probe_widgets_visibility["as_linker"]
+        probe_widgets_visibility["wobble"] = not probe_widgets_visibility["wobble"]
+        probe_widgets_visibility["wobble_theta"] = not probe_widgets_visibility["wobble_theta"]
+        probe_widgets_visibility["add_custom_probe"] = not probe_widgets_visibility["add_custom_probe"]
+        update_widgets_visibility(probes_gui, probe_widgets_visibility)
+
     probes_gui.add_callback(
         "add_probe",
         select_probe,
@@ -174,9 +374,17 @@ def ui_select_probe(experiment, **kwargs):
     probes_gui.add_button("create_particle", 
                           description="Create labelled structure",
                           disabled=True)
-    probes_gui.add_HTML("message2", "No particle created yet.", style = dict(font_weight='bold'))
+    probes_gui.add_HTML("message2", "No labelled structure created yet.", style = dict(font_weight='bold', font_size='15px'))
+    probe_widgets_visibility = {}
+    for wgt in probes_gui.elements.keys():
+        probe_widgets_visibility[wgt] = True
+        probes_gui.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex")
+ 
+    show_probe_info(True)
     probes_gui["create_particle"].on_click(create_particle)
-
+    probes_gui["toggle_advanced_parameters"].on_click(toggle_advanced_parameters)
+    probes_gui["add_custom_probe"].on_click(select_custom_probe)
+    toggle_advanced_parameters(True)  # Initialize with default visibility
     return probes_gui   
 
 def ui_select_sample_parameters(experiment):
@@ -203,11 +411,14 @@ def ui_select_sample_parameters(experiment):
         "message", ""
     )
     def update_message():
-        text = ""
-        for key, value in experiment.virtualsample_params.items():
-            if key in sample_gui.elements.keys():
-                text += f"{key}: {value}<br>"
-        sample_gui["message"].value = text
+        if experiment.virtualsample_params.items() is None:
+            sample_gui["message"].value = "No sample parameters selected yet."
+        else:
+            text = ""
+            for key, value in experiment.virtualsample_params.items():
+                if key in ["number_of_particles", "random_orientations", "minimal_distance"]:
+                    text += f"{key}: {value}<br>"
+            sample_gui["message"].value = text
     
 
     sample_gui.add_int_slider(
@@ -224,22 +435,155 @@ def ui_select_sample_parameters(experiment):
         description="Randomise orientations",
         value=True
     )
+    sample_gui.add_checkbox(
+            "use_min_from_particle",
+            value=True,
+            description="Use minimal distance from labelled particle dimensions",
+    )
+    sample_gui.add_bounded_int_text("minimal_distance_nm",
+        description="Set minimal distance between particles (nm)",
+        value=100,
+        vmin=1,
+        vmax=1000,
+        step=1,
+        style={"description_width": "initial"},
+    )
+    
+    sample_gui.add_button(
+        "advanced_parameters",
+        description="Toggle advanced parameters",
+    )
+    ####  advanced parameters ####
+    sample_gui.add_file_upload(
+            "File", description="Select from file", accept="*.tif", save_settings=False
+        )
+    sample_gui.add_bounded_int_text("pixel_size",
+        description="Pixel size (nm)",
+        value=100,
+        vmin=1,
+        vmax=1000,
+        step=1,
+        style={"description_width": "initial"},
+    )
+    sample_gui.add_bounded_int_text("background_intensity",
+        description="Background intensity",
+        value=0,
+        vmin=0,
+        vmax=100000,
+        step=1,
+        style={"description_width": "initial"},
+    )
+    sample_gui.add_bounded_int_text("blur_sigma",
+        description="Gaussian blurr sigma (nm)",
+        value=0,
+        vmin=0,
+        vmax=1000,
+        step=1,
+        style={"description_width": "initial"},
+    )
+    sample_gui.add_bounded_int_text("intensity_threshold",
+        description="Intensity threshold",
+        value=0,
+        vmin=0,
+        vmax=10000,
+        step=1,
+        style={"description_width": "initial"},
+    )
+    sample_gui.add_dropdown("detection_method",
+        description="Detection method",
+        options=["Local Maxima", "Mask"],
+        value="Local Maxima",
+        style={"description_width": "initial"},
+    )
+    sample_gui.add_checkbox(
+            "random",
+            value=True,
+            description="Randomise positions (enforced when there is more than one particle)",
+            style={"description_width": "initial"},   
+    )
     sample_gui.add_button(
         "select_sample_parameters",
         description="Select sample parameters",
         disabled=False
     )
+    sample_gui.add_button("upload_and_set", description="Load image and select parameters", disabled=False)
+    sample_gui.add_HTML("advanced_params_feedback", "", style=dict(font_weight='bold'))
     def select_virtual_sample_parameters(b):
+        if sample_gui["use_min_from_particle"].value:
+            min_distance = None
+        else:
+            min_distance = sample_gui["minimal_distance_nm"].value
         experiment.set_virtualsample_params(
             number_of_particles=sample_gui["number_of_particles"].value,
-            random_orientations=sample_gui["random_orientations"].value
+            random_orientations=sample_gui["random_orientations"].value,
+            minimal_distance=min_distance
         )
         experiment.build(modules=["coordinate_field"])
         if experiment.objects_created["imager"]:
             experiment.build(modules=["imager"])
         update_message()
+    
+    def upload_and_set(b):
+        filepath = sample_gui["File"].selected
+        img = tif.imread(filepath)
+        pixelsize = sample_gui["pixel_size"].value
+        min_distance = None
+        if sample_gui["detection_method"].value == "Local Maxima":
+            mode = "localmaxima"
+        elif sample_gui["detection_method"].value == "Mask":
+            mode = "mask"
+        else:
+            raise ValueError("Unknown detection method selected.")
+        if sample_gui["use_min_from_particle"].value:
+            min_distance = experiment.virtualsample_params["minimal_distance"]  
+        else:  
+            min_distance = sample_gui["minimal_distance_nm"].value
+        sigma = sample_gui["blur_sigma"].value
+        background = sample_gui["background_intensity"].value
+        threshold = sample_gui["intensity_threshold"].value
+        
+        npositions = sample_gui["number_of_particles"].value
+        experiment.use_image_for_positioning(
+            img = img,
+            mode=mode,
+            sigma=sigma,
+            background=background,
+            threshold=threshold,
+            pixelsize=pixelsize,
+            min_distance=min_distance,
+            npositions=npositions
+        )
+        sample_gui.save_settings()
+        update_message()
 
+    def toggle_advanced_parameters(b):
+        widgets_visibility["select_sample_parameters"] = not widgets_visibility["select_sample_parameters"]
+        widgets_visibility["upload_and_set"] = not widgets_visibility["upload_and_set"]
+        widgets_visibility["File"] = not widgets_visibility["File"]
+        widgets_visibility["pixel_size"] = not widgets_visibility["pixel_size"]
+        widgets_visibility["background_intensity"] = not widgets_visibility["background_intensity"]
+        widgets_visibility["blur_sigma"] = not widgets_visibility["blur_sigma"]
+        widgets_visibility["intensity_threshold"] = not widgets_visibility["intensity_threshold"]
+        widgets_visibility["detection_method"] = not widgets_visibility["detection_method"]
+        widgets_visibility["random"] = not widgets_visibility["random"]
+        update_widgets_visibility(sample_gui, widgets_visibility)
+    widgets_visibility = {}
+    for wgt in sample_gui.elements.keys():
+        widgets_visibility[wgt] = True
+        sample_gui.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex")    
+    widgets_visibility["upload_and_set"] = False
+    widgets_visibility["File"] = False
+    widgets_visibility["pixel_size"] = False
+    widgets_visibility["background_intensity"] = False
+    widgets_visibility["blur_sigma"] = False
+    widgets_visibility["intensity_threshold"] = False
+    widgets_visibility["detection_method"] = False
+    widgets_visibility["random"] = False
+    update_widgets_visibility(sample_gui, widgets_visibility)
     sample_gui["select_sample_parameters"].on_click(select_virtual_sample_parameters)
+    sample_gui["advanced_parameters"].on_click(toggle_advanced_parameters)
+    sample_gui["upload_and_set"].on_click(upload_and_set)
+    select_virtual_sample_parameters(True)  # Initialize with default parameters
     return sample_gui
 
 def ui_select_modality(experiment):
