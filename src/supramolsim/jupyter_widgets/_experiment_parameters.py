@@ -175,7 +175,7 @@ def ui_select_probe(experiment, **kwargs):
                 },
                 labelling_efficiency=labelling_efficiency,
                 probe_distance_to_epitope=probe_distance_to_epitope,
-                as_linker=as_linker,
+                as_primary=as_linker,
                 wobble=wobble,
                 wobble_theta=wobble_theta,
             )
@@ -189,7 +189,7 @@ def ui_select_probe(experiment, **kwargs):
                 probe_target_value=dict(atoms=atom, residues=residue),
                 labelling_efficiency=labelling_efficiency,
                 probe_distance_to_epitope=probe_distance_to_epitope,
-                as_linker=as_linker,
+                as_primary=as_linker,
                 wobble=wobble,
                 wobble_theta=wobble_theta,
             )
@@ -201,7 +201,7 @@ def ui_select_probe(experiment, **kwargs):
                 probe_target_value=probe_target_value,
                 labelling_efficiency=labelling_efficiency,
                 probe_distance_to_epitope=probe_distance_to_epitope,
-                as_linker=as_linker,
+                as_primary=as_linker,
                 wobble=wobble,
                 wobble_theta=wobble_theta,
             )
