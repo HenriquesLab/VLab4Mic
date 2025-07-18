@@ -239,7 +239,7 @@ class sweep_generator:
             self.reference_image_parameters = reference_parameters
 
     # previews
-    def preview_acquisition_output(self, return_image=False):
+    def preview_acquisition_output(self, parameter_id=None, replica_number=0, frame=0, return_image=False):
         """
         Preview or return the first acquisition output image.
 
@@ -253,14 +253,17 @@ class sweep_generator:
         numpy.ndarray or None
             The image array if `return_image` is True, otherwise None.
         """
-        param_id = list(self.acquisition_outputs_parameters.keys())[0]
-        repetition = 0
-        frame = 0
-        if return_image:
-            return self.acquisition_outputs[param_id][repetition][frame]
+        if parameter_id is None or parameter_id not in self.acquisition_outputs_parameters.keys():
+            parameter_id = list(self.acquisition_outputs_parameters.keys())[0]
+        if len(self.acquisition_outputs[parameter_id][replica_number].shape) == 3:
+            image = self.acquisition_outputs[parameter_id][replica_number][frame]
         else:
-            plt.imshow(self.acquisition_outputs[param_id][repetition][frame])
-            print(self.acquisition_outputs_parameters[param_id])
+            image = self.acquisition_outputs[parameter_id][replica_number]
+        if return_image:
+            return image
+        else:
+            plt.imshow(image)
+            print(self.acquisition_outputs_parameters[parameter_id])
 
     def preview_reference_image(self, return_image=False):
         """
