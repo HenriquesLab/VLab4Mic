@@ -377,6 +377,7 @@ def analyse_sweep(sweep_gen):
             print("Generating Virtual samples.")
             print("Once created, a progress bar will show the image simulation progression")
             sweep_gen.run_analysis(plots=plots, save=False)
+        analysis_widget["preview"].disabled = False
         analysis_widget["saving_directory"].disabled = False
         analysis_widget["save"].disabled = False
         analysis_widget["output_name"].disabled = False
@@ -417,11 +418,41 @@ def analyse_sweep(sweep_gen):
         "output_name", 
         value="vlab4mic_analysis", 
         description="Output name")
+    # preview
+    def update_plot(change):
+        image = sweep_gen.preview_image_output_by_ID(return_image=True)
+        figure, ax = plt.subplots(figsize=(8, 6))
+        ax.imshow(image, cmap='gray')
+        ax.axis('off')
+        ax.set_title(f"Preview of parameter sweeps results")
+        plt.close()
+        analysis_widget["preview_results"].clear_output()  
+        with analysis_widget["preview_results"]:
+            display(figure)
+    
+    def toggle_preview(b):
+        widgets_visibility["preview_results"] = not widgets_visibility["preview_results"]
+        update_widgets_visibility(analysis_widget, widgets_visibility)
+        update_plot(widgets_visibility["preview_results"])
+        
+    
+    analysis_widget.add_button(
+        "preview", description="Preview results", disabled=True
+    )
+    analysis_widget.add_output("preview_results", description="Preview results")
     analysis_widget.add_checkbox("save_images", description="Save images", value=False)
+    # save
     analysis_widget.add_button(
         "save", description="save analysis", disabled=True
     )
+    widgets_visibility = {}
+    for wgt in analysis_widget.elements.keys():
+        widgets_visibility[wgt] = True
+        analysis_widget.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex") 
+    widgets_visibility["preview_results"] = False
+    update_widgets_visibility(analysis_widget, widgets_visibility)
     analysis_widget["analyse"].on_click(analyse_sweep_action)
+    analysis_widget["preview"].on_click(toggle_preview)
     analysis_widget["save"].on_click(save_results)
     return analysis_widget
 
