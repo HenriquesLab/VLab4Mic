@@ -239,7 +239,7 @@ class sweep_generator:
             self.reference_image_parameters = reference_parameters
 
     # previews
-    def preview_acquisition_output(
+    def preview_image_output_by_ID(
             self,
             probe_template=0,
             probe_parameters=0,
@@ -280,6 +280,11 @@ class sweep_generator:
         else:
             plt.imshow(image)
             print(self.acquisition_outputs_parameters[parameter_id])
+
+    def preview_image_output_by_parameter_values(self,
+                                                 **kwargs):
+        pass
+    
 
     def preview_reference_image(self, return_image=False):
         """
