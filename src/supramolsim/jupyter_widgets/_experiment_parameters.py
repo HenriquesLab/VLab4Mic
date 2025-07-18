@@ -375,7 +375,7 @@ def ui_select_probe(experiment, **kwargs):
         "add_probe",
         select_probe,
         probes_gui.elements,
-        description="Select probe",
+        description="Select probe (with defaults)",
     )
     probes_gui.add_button("create_particle", 
                           description="Create labelled structure",

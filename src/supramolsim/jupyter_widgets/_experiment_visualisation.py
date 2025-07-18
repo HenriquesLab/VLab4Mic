@@ -199,6 +199,7 @@ def ui_show_labelled_structure(experiment):
             if not experiment.objects_created["particle"]:
                 display("Particle not created yet, please create it first.")
             else:
+                enable_view_widgets(True)
                 gui["emitter_plotsize"].disabled = False
                 gui["source_plotsize"].disabled = False
                 gui["hview"].disabled = False
@@ -258,8 +259,23 @@ def ui_show_labelled_structure(experiment):
         "show_labelled_structure",
         description="Show labelled structure",
     )
+    def enable_view_widgets(b):
+        widgets_visibility["emitter_plotsize"] = True
+        widgets_visibility["source_plotsize"] = True
+        widgets_visibility["hview"] = True
+        widgets_visibility["vview"] = True
+        update_widgets_visibility(gui, widgets_visibility)
     gui["show_labelled_structure"].on_click(show_labelled_structure)
     gui.add_output("preview_labelled_structure")
+    widgets_visibility = {}
+    for wgt in gui.elements.keys():
+        widgets_visibility[wgt] = True
+        gui.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex")
+    widgets_visibility["emitter_plotsize"] = False
+    widgets_visibility["source_plotsize"] = False
+    widgets_visibility["hview"] = False
+    widgets_visibility["vview"] = False
+    update_widgets_visibility(gui, widgets_visibility)
     return gui
 
 def ui_show_virtual_sample(experiment):
