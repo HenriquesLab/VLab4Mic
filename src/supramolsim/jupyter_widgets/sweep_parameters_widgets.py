@@ -420,7 +420,10 @@ def analyse_sweep(sweep_gen):
         description="Output name")
     # preview
     def update_plot(change):
-        image = sweep_gen.preview_image_output_by_ID(return_image=True)
+        modality_template = analysis_widget["modality_template"].value
+        image = sweep_gen.preview_image_output_by_ID(
+            modality_template=modality_template,
+            return_image=True)
         figure, ax = plt.subplots(figsize=(8, 6))
         ax.imshow(image, cmap='gray')
         ax.axis('off')
@@ -432,16 +435,24 @@ def analyse_sweep(sweep_gen):
     
     def toggle_preview(b):
         widgets_visibility["preview_results"] = not widgets_visibility["preview_results"]
+        widgets_visibility["modality_template"] = not widgets_visibility["modality_template"]
         update_widgets_visibility(analysis_widget, widgets_visibility)
         update_plot(widgets_visibility["preview_results"])
         
-    
+    # preview widgets
     analysis_widget.add_button(
         "preview", description="Preview results", disabled=True
     )
+    analysis_widget.add_int_slider(
+        "modality_template",
+        description="Modality",
+        min=0, max=len(sweep_gen.modalities)-1, value=0,
+        continuous_update=False,
+    )
     analysis_widget.add_output("preview_results", description="Preview results")
-    analysis_widget.add_checkbox("save_images", description="Save images", value=False)
+    analysis_widget["modality_template"].observe(update_plot, names='value')
     # save
+    analysis_widget.add_checkbox("save_images", description="Save images", value=False)
     analysis_widget.add_button(
         "save", description="save analysis", disabled=True
     )
@@ -450,6 +461,7 @@ def analyse_sweep(sweep_gen):
         widgets_visibility[wgt] = True
         analysis_widget.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex") 
     widgets_visibility["preview_results"] = False
+    widgets_visibility["modality_template"] = False
     update_widgets_visibility(analysis_widget, widgets_visibility)
     analysis_widget["analyse"].on_click(analyse_sweep_action)
     analysis_widget["preview"].on_click(toggle_preview)
