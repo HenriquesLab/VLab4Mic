@@ -60,11 +60,15 @@ def ui_select_structure(experiment):
     gui = EZInput("Select_structure")
     def select_structure(elements):
         elements["label_1"].value = "Current structure selected: Loading..."
-        elements["select_structure"].disabled = True
+        #elements["select_structure"].disabled = True
+        for wgt in elements.keys():
+            elements[wgt].disabled = True
         experiment.structure_id = experiment.structures_info_list[elements["structures"].value]
         experiment.build(modules="structure")
         update_structure_list()
-        elements["select_structure"].disabled = False
+        #elements["select_structure"].disabled = False
+        for wgt in elements.keys():
+            elements[wgt].disabled = False
 
     def update_structure_list():
         if experiment.structure_id is not None:

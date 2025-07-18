@@ -65,7 +65,7 @@ if not os.path.exists(output_path):
     os.makedirs(output_path)
 
 
-def _bind_widgets(parameters=None, visualisation=None, add_border=False):
+def _bind_widgets(parameters=None, visualisation=None, add_border=False, merge_into_parameters=False):
     """
     Bind the widgets to the parameters and visualisation objects.
 
@@ -83,22 +83,33 @@ def _bind_widgets(parameters=None, visualisation=None, add_border=False):
     EZInput
         A combined EZInput widget containing both parameter and visualisation elements.
     """
-    gui = EZInput("Main_widget")
-    if add_border:
-        gui.add_HTML("parameters_section", "Parameters section", style=dict(font_weight='bold', font_size='16px'))
- 
-    if parameters is not None:
-        for tag, element in parameters.elements.items():
-            gui.elements[tag] = element
-    if visualisation is not None:
-        if add_border:
-            gui.elements["divisor"] = widgets.Label("")
-            gui["divisor"].layout=widgets.Layout(border='1px solid black', height='0px', width='50%')
-            gui.add_HTML("visualisation_section","Visualisation section", style = dict(font_weight='bold',  font_size='16px') )
+    if merge_into_parameters:
+        if visualisation is not None:
+            if add_border:
+                parameters.elements["divisor"] = widgets.Label("")
+                parameters["divisor"].layout=widgets.Layout(border='1px solid black', height='0px', width='50%')
+                parameters.add_HTML("visualisation_section","Visualisation section", style = dict(font_weight='bold',  font_size='16px') )
 
-        for tag, element in visualisation.elements.items():
-            gui.elements[tag] = element
-    return gui
+            for tag, element in visualisation.elements.items():
+                parameters.elements[tag] = element
+        return parameters
+    else:
+        gui = EZInput("Main_widget")
+        if add_border:
+            gui.add_HTML("parameters_section", "Parameters section", style=dict(font_weight='bold', font_size='16px'))
+    
+        if parameters is not None:
+            for tag, element in parameters.elements.items():
+                gui.elements[tag] = element
+        if visualisation is not None:
+            if add_border:
+                gui.elements["divisor"] = widgets.Label("")
+                gui["divisor"].layout=widgets.Layout(border='1px solid black', height='0px', width='50%')
+                gui.add_HTML("visualisation_section","Visualisation section", style = dict(font_weight='bold',  font_size='16px') )
+
+            for tag, element in visualisation.elements.items():
+                gui.elements[tag] = element
+        return gui
 
 def select_structure_widget(experiment):
     """
@@ -116,7 +127,7 @@ def select_structure_widget(experiment):
     """
     structure_params = _experiment_parameters.ui_select_structure(experiment)
     view_structure = _experiment_visualisation.ui_show_structure(experiment)
-    select_structure = _bind_widgets(structure_params, view_structure)
+    select_structure = _bind_widgets(structure_params, view_structure, merge_into_parameters=True)
     return select_structure
 
 def select_probe_widget(experiment):
