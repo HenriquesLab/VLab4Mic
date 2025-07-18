@@ -884,6 +884,8 @@ class ExperimentParametrisation:
         probe_configuration = copy.deepcopy(self.config_probe_params[probe_template])
         if probe_name is None:
             probe_name = probe_template
+        else:
+            probe_configuration["label_name"] = probe_name
         if peptide_motif is not None:
             protein_name, _1, site, sequence = self.structure.get_peptide_motif(**peptide_motif)
             if len(sequence) > 0: 
