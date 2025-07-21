@@ -385,9 +385,24 @@ def analyse_sweep(sweep_gen):
         n_probes = len(sweep_gen.probes)
         n_modalities = len(sweep_gen.modalities)
         n_probe_parameters = len(sweep_gen.probe_parameters.keys())
+        if sweep_gen.defect_parameters is None:
+            n_defect_parameters = 1
+        else:
+            n_defect_parameters = len(sweep_gen.defect_parameters.keys())
+        if sweep_gen.vsample_parameters is None:
+            n_vsample_parameters = 1
+        else:
+            n_vsample_parameters = len(sweep_gen.vsample_parameters.keys())
+        if sweep_gen.acquisition_parameters is None:
+            n_acquisition_parameters = 1
+        else:
+            n_acquisition_parameters = len(sweep_gen.acquisition_parameters.keys())
         analysis_widget["modality_template"].max = n_modalities - 1
         analysis_widget["probe_template"].max = n_probes - 1
         analysis_widget["probe_parameters"].max = n_probe_parameters - 1
+        analysis_widget["defect_parameters"].max = n_defect_parameters - 1
+        analysis_widget["vsample_parameters"].max = n_vsample_parameters - 1
+        analysis_widget["acquisition_parameters"].max = n_acquisition_parameters - 1
         
     def save_results(b):
         output_directory = analysis_widget["saving_directory"].selected_path
@@ -452,6 +467,9 @@ def analyse_sweep(sweep_gen):
         widgets_visibility["modality_template"] = not widgets_visibility["modality_template"]
         widgets_visibility["probe_template"] = not widgets_visibility["probe_template"]
         widgets_visibility["probe_parameters"] = not widgets_visibility["probe_parameters"]
+        widgets_visibility["defect_parameters"] = not widgets_visibility["defect_parameters"]
+        widgets_visibility["vsample_parameters"] = not widgets_visibility["vsample_parameters"]
+        widgets_visibility["acquisition_parameters"] = not widgets_visibility["acquisition_parameters"]
 
         update_widgets_visibility(analysis_widget, widgets_visibility)
         update_plot(widgets_visibility["preview_results"])
@@ -478,10 +496,31 @@ def analyse_sweep(sweep_gen):
         min=0, max=0, value=0,
         continuous_update=False,
     )
+    analysis_widget.add_int_slider(
+        "defect_parameters",
+        description="Defect parameter",
+        min=0, max=0, value=0,
+        continuous_update=False,
+    )
+    analysis_widget.add_int_slider(
+        "vsample_parameters",
+        description="Vsample parameters",
+        min=0, max=0, value=0,
+        continuous_update=False,
+    )
+    analysis_widget.add_int_slider(
+        "acquisition_parameters",
+        description="acquisition parameters",
+        min=0, max=0, value=0,
+        continuous_update=False,
+    )
     # connect the preview widgets to the update function
     analysis_widget["modality_template"].observe(update_plot, names='value')
     analysis_widget["probe_template"].observe(update_plot, names='value')
     analysis_widget["probe_parameters"].observe(update_plot, names='value')
+    analysis_widget["defect_parameters"].observe(update_plot, names='value')
+    analysis_widget["vsample_parameters"].observe(update_plot, names='value')
+    analysis_widget["acquisition_parameters"].observe(update_plot, names='value')
     # output preview
     analysis_widget.add_output("preview_results", description="Preview results")
     # save
@@ -497,6 +536,9 @@ def analyse_sweep(sweep_gen):
     widgets_visibility["modality_template"] = False
     widgets_visibility["probe_template"] = False
     widgets_visibility["probe_parameters"] = False
+    widgets_visibility["defect_parameters"] = False
+    widgets_visibility["vsample_parameters"] = False
+    widgets_visibility["acquisition_parameters"] = False
     update_widgets_visibility(analysis_widget, widgets_visibility)
     analysis_widget["analyse"].on_click(analyse_sweep_action)
     analysis_widget["preview"].on_click(toggle_preview)
