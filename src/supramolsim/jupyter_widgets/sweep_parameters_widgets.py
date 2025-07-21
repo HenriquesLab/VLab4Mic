@@ -387,14 +387,17 @@ def analyse_sweep(sweep_gen):
         n_probe_parameters = len(sweep_gen.probe_parameters.keys())
         if sweep_gen.defect_parameters is None:
             n_defect_parameters = 1
+            analysis_widget["defect_parameters"].disabled = True
         else:
             n_defect_parameters = len(sweep_gen.defect_parameters.keys())
         if sweep_gen.vsample_parameters is None:
             n_vsample_parameters = 1
+            analysis_widget["vsample_parameters"].disabled = True
         else:
             n_vsample_parameters = len(sweep_gen.vsample_parameters.keys())
         if sweep_gen.acquisition_parameters is None:
             n_acquisition_parameters = 1
+            analysis_widget["acquisition_parameters"].disabled = True
         else:
             n_acquisition_parameters = len(sweep_gen.acquisition_parameters.keys())
         n_replicas = sweep_gen.sweep_repetitions
@@ -539,6 +542,7 @@ def analyse_sweep(sweep_gen):
     analysis_widget["defect_parameters"].observe(update_plot, names='value')
     analysis_widget["vsample_parameters"].observe(update_plot, names='value')
     analysis_widget["acquisition_parameters"].observe(update_plot, names='value')
+    analysis_widget["replica_number"].observe(update_plot, names='value')
     # output preview
     analysis_widget.add_output("preview_results", description="Preview results")
     # save
