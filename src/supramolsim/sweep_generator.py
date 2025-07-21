@@ -335,17 +335,19 @@ class sweep_generator:
             elif type(values) == tuple:
                 # 3 values are expected: min, max, steps
                 # generate a linspace
-                if self.parameter_settings[param_group][param_name]["wtype"] == "int_slider":
-                    step = np.ceil((values[1] - values[0]) / values[2])
-                    self.params_by_group[param_group][param_name] = np.arange(
-                        start=values[0],
-                        stop=values[1],
-                        step=step,
-                        dtype=int
-                    )
-                else:
-                    param_iterables = np.linspace(values[0], values[1], values[2])
-                    self.params_by_group[param_group][param_name] = param_iterables
+                if  param_group in self.parameter_settings.keys():
+                    if param_name in self.parameter_settings[param_group].keys():
+                        if self.parameter_settings[param_group][param_name]["wtype"] == "int_slider":
+                            step = np.ceil((values[1] - values[0]) / values[2])
+                            self.params_by_group[param_group][param_name] = np.arange(
+                                start=values[0],
+                                stop=values[1],
+                                step=step,
+                                dtype=int
+                            )
+                        else:
+                            param_iterables = np.linspace(values[0], values[1], values[2])
+                            self.params_by_group[param_group][param_name] = param_iterables
             self.parameters_with_set_values.append(param_name)
         else:
             print(f"{param_group} is not a valid parameter group")
@@ -379,7 +381,7 @@ class sweep_generator:
         if no_params_set:
             # set default with minimal options to iterate
             self.set_parameter_values(
-                "probe", "labelling_efficiency", values=(0.5, 1, 2)
+                "probe", "labelling_efficiency", values=[0.5,1]
             )
 
         self.probe_parameters = sweep.create_param_combinations(
