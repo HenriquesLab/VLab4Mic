@@ -384,7 +384,11 @@ def analyse_sweep(sweep_gen):
         #
         n_probes = len(sweep_gen.probes)
         n_modalities = len(sweep_gen.modalities)
-        n_probe_parameters = len(sweep_gen.probe_parameters.keys())
+        if sweep_gen.probe_parameters is None:
+            n_probe_parameters = 1
+            analysis_widget["probe_parameters"].disabled = True
+        else:
+            n_probe_parameters = len(sweep_gen.probe_parameters.keys())
         if sweep_gen.defect_parameters is None:
             n_defect_parameters = 1
             analysis_widget["defect_parameters"].disabled = True

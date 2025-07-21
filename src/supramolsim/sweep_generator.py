@@ -335,8 +335,17 @@ class sweep_generator:
             elif type(values) == tuple:
                 # 3 values are expected: min, max, steps
                 # generate a linspace
-                param_iterables = np.linspace(values[0], values[1], values[2])
-                self.params_by_group[param_group][param_name] = param_iterables
+                if self.parameter_settings[param_group][param_name]["wtype"] == "int_slider":
+                    step = np.ceil((values[1] - values[0]) / values[2])
+                    self.params_by_group[param_group][param_name] = np.arange(
+                        start=values[0],
+                        stop=values[1],
+                        step=step,
+                        dtype=int
+                    )
+                else:
+                    param_iterables = np.linspace(values[0], values[1], values[2])
+                    self.params_by_group[param_group][param_name] = param_iterables
             self.parameters_with_set_values.append(param_name)
         else:
             print(f"{param_group} is not a valid parameter group")
