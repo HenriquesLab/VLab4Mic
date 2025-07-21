@@ -243,7 +243,7 @@ class sweep_generator:
             self,
             probe_template=0,
             probe_parameters=0,
-            particle_defect_parameters=0,
+            defect_parameters=0,
             virtual_sample_parameters=0,
             modality_template=0,
             modality_parameters=0,
@@ -265,7 +265,7 @@ class sweep_generator:
             The image array if `return_image` is True, otherwise None.
         """
         parameter_id = str(probe_template) + "_" + str(probe_parameters) + "_" + str(
-            particle_defect_parameters
+            defect_parameters
         ) + "_" + str(virtual_sample_parameters) + "_" + str(modality_template) + "_" + str(
             modality_parameters
         ) + "_" + str(acquisition_parameters)

@@ -448,11 +448,19 @@ def analyse_sweep(sweep_gen):
         modality_template = analysis_widget["modality_template"].value
         probe_template = analysis_widget["probe_template"].value
         probe_parameters = analysis_widget["probe_parameters"].value
+        defect_parameters = analysis_widget["defect_parameters"].value
+        vsample_parameters = analysis_widget["vsample_parameters"].value
+        acquisition_parameters = analysis_widget["acquisition_parameters"].value
+        replica_number = analysis_widget["replica_number"].value
 
         image = sweep_gen.preview_image_output_by_ID(
             modality_template=modality_template,
             probe_template=probe_template,
             probe_parameters=probe_parameters,
+            defect_parameters=defect_parameters,
+            virtual_sample_parameters=vsample_parameters,
+            acquisition_parameters=acquisition_parameters,
+            replica_number=replica_number,
             return_image=True,
             )
         figure, ax = plt.subplots(figsize=(8, 6))
