@@ -381,6 +381,14 @@ def analyse_sweep(sweep_gen):
         analysis_widget["saving_directory"].disabled = False
         analysis_widget["save"].disabled = False
         analysis_widget["output_name"].disabled = False
+        #
+        n_probes = len(sweep_gen.probes)
+        n_modalities = len(sweep_gen.modalities)
+        n_probe_parameters = len(sweep_gen.probe_parameters.keys())
+        analysis_widget["modality_template"].max = n_modalities - 1
+        analysis_widget["probe_template"].max = n_probes - 1
+        analysis_widget["probe_parameters"].max = n_probe_parameters - 1
+        
     def save_results(b):
         output_directory = analysis_widget["saving_directory"].selected_path
         output_name = analysis_widget["output_name"].value
@@ -421,9 +429,15 @@ def analyse_sweep(sweep_gen):
     # preview
     def update_plot(change):
         modality_template = analysis_widget["modality_template"].value
+        probe_template = analysis_widget["probe_template"].value
+        probe_parameters = analysis_widget["probe_parameters"].value
+
         image = sweep_gen.preview_image_output_by_ID(
             modality_template=modality_template,
-            return_image=True)
+            probe_template=probe_template,
+            probe_parameters=probe_parameters,
+            return_image=True,
+            )
         figure, ax = plt.subplots(figsize=(8, 6))
         ax.imshow(image, cmap='gray')
         ax.axis('off')
@@ -436,6 +450,9 @@ def analyse_sweep(sweep_gen):
     def toggle_preview(b):
         widgets_visibility["preview_results"] = not widgets_visibility["preview_results"]
         widgets_visibility["modality_template"] = not widgets_visibility["modality_template"]
+        widgets_visibility["probe_template"] = not widgets_visibility["probe_template"]
+        widgets_visibility["probe_parameters"] = not widgets_visibility["probe_parameters"]
+
         update_widgets_visibility(analysis_widget, widgets_visibility)
         update_plot(widgets_visibility["preview_results"])
         
@@ -446,11 +463,27 @@ def analyse_sweep(sweep_gen):
     analysis_widget.add_int_slider(
         "modality_template",
         description="Modality",
-        min=0, max=len(sweep_gen.modalities)-1, value=0,
+        min=0, max=0, value=0,
         continuous_update=False,
     )
-    analysis_widget.add_output("preview_results", description="Preview results")
+    analysis_widget.add_int_slider(
+        "probe_template",
+        description="Probe",
+        min=0, max=0, value=0,
+        continuous_update=False,
+    )
+    analysis_widget.add_int_slider(
+        "probe_parameters",
+        description="Probe parameter",
+        min=0, max=0, value=0,
+        continuous_update=False,
+    )
+    # connect the preview widgets to the update function
     analysis_widget["modality_template"].observe(update_plot, names='value')
+    analysis_widget["probe_template"].observe(update_plot, names='value')
+    analysis_widget["probe_parameters"].observe(update_plot, names='value')
+    # output preview
+    analysis_widget.add_output("preview_results", description="Preview results")
     # save
     analysis_widget.add_checkbox("save_images", description="Save images", value=False)
     analysis_widget.add_button(
@@ -462,6 +495,8 @@ def analyse_sweep(sweep_gen):
         analysis_widget.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex") 
     widgets_visibility["preview_results"] = False
     widgets_visibility["modality_template"] = False
+    widgets_visibility["probe_template"] = False
+    widgets_visibility["probe_parameters"] = False
     update_widgets_visibility(analysis_widget, widgets_visibility)
     analysis_widget["analyse"].on_click(analyse_sweep_action)
     analysis_widget["preview"].on_click(toggle_preview)
