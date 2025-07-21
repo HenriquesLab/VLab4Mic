@@ -397,12 +397,14 @@ def analyse_sweep(sweep_gen):
             n_acquisition_parameters = 1
         else:
             n_acquisition_parameters = len(sweep_gen.acquisition_parameters.keys())
+        n_replicas = sweep_gen.sweep_repetitions
         analysis_widget["modality_template"].max = n_modalities - 1
         analysis_widget["probe_template"].max = n_probes - 1
         analysis_widget["probe_parameters"].max = n_probe_parameters - 1
         analysis_widget["defect_parameters"].max = n_defect_parameters - 1
         analysis_widget["vsample_parameters"].max = n_vsample_parameters - 1
         analysis_widget["acquisition_parameters"].max = n_acquisition_parameters - 1
+        analysis_widget["replica_number"].max = n_replicas - 1
         
     def save_results(b):
         output_directory = analysis_widget["saving_directory"].selected_path
@@ -470,6 +472,8 @@ def analyse_sweep(sweep_gen):
         widgets_visibility["defect_parameters"] = not widgets_visibility["defect_parameters"]
         widgets_visibility["vsample_parameters"] = not widgets_visibility["vsample_parameters"]
         widgets_visibility["acquisition_parameters"] = not widgets_visibility["acquisition_parameters"]
+        widgets_visibility["replica_number"] = not widgets_visibility["replica_number"]
+
 
         update_widgets_visibility(analysis_widget, widgets_visibility)
         update_plot(widgets_visibility["preview_results"])
@@ -514,6 +518,12 @@ def analyse_sweep(sweep_gen):
         min=0, max=0, value=0,
         continuous_update=False,
     )
+    analysis_widget.add_int_slider(
+        "replica_number",
+        description="Replica number",
+        min=0, max=0, value=0,
+        continuous_update=False,
+    )
     # connect the preview widgets to the update function
     analysis_widget["modality_template"].observe(update_plot, names='value')
     analysis_widget["probe_template"].observe(update_plot, names='value')
@@ -539,6 +549,7 @@ def analyse_sweep(sweep_gen):
     widgets_visibility["defect_parameters"] = False
     widgets_visibility["vsample_parameters"] = False
     widgets_visibility["acquisition_parameters"] = False
+    widgets_visibility["replica_number"] = False
     update_widgets_visibility(analysis_widget, widgets_visibility)
     analysis_widget["analyse"].on_click(analyse_sweep_action)
     analysis_widget["preview"].on_click(toggle_preview)
