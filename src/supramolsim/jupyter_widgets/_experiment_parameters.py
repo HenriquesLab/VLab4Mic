@@ -60,11 +60,15 @@ def ui_select_structure(experiment):
     gui = EZInput("Select_structure")
     def select_structure(elements):
         elements["label_1"].value = "Current structure selected: Loading..."
-        elements["select_structure"].disabled = True
+        #elements["select_structure"].disabled = True
+        for wgt in elements.keys():
+            elements[wgt].disabled = True
         experiment.structure_id = experiment.structures_info_list[elements["structures"].value]
         experiment.build(modules="structure")
         update_structure_list()
-        elements["select_structure"].disabled = False
+        #elements["select_structure"].disabled = False
+        for wgt in elements.keys():
+            elements[wgt].disabled = False
 
     def update_structure_list():
         if experiment.structure_id is not None:
@@ -140,13 +144,14 @@ def ui_select_probe(experiment, **kwargs):
     # methods
     def select_probe(values):
         experiment.add_probe(
-            probe_name=values["select_probe"].value
+            probe_template=values["select_probe_template"].value
         )
         probes_gui["create_particle"].disabled = False
         update_probe_list()
     
     def select_custom_probe(b):
-        probe_name = probes_gui["select_probe"].value
+        probe_template = probes_gui["select_probe_template"].value
+        probe_name = probes_gui["probe_name"].value
         labelling_efficiency = probes_gui["labelling_efficiency"].value
         probe_distance_to_epitope = probes_gui["distance_from_epitope"].value
         probe_target_type = options_dictionary[probes_gui["mock_type"].value]
@@ -161,6 +166,7 @@ def ui_select_probe(experiment, **kwargs):
             ]
         if probe_target_type == "Sequence":
             experiment.add_probe(
+                probe_template=probe_template,
                 probe_name=probe_name,
                 probe_target_type=probe_target_type,
                 peptide_motif={
@@ -169,7 +175,7 @@ def ui_select_probe(experiment, **kwargs):
                 },
                 labelling_efficiency=labelling_efficiency,
                 probe_distance_to_epitope=probe_distance_to_epitope,
-                as_linker=as_linker,
+                as_primary=as_linker,
                 wobble=wobble,
                 wobble_theta=wobble_theta,
             )
@@ -177,29 +183,30 @@ def ui_select_probe(experiment, **kwargs):
             residue = probes_gui["mock_type_options1"].value
             atom = probes_gui["mock_type_options2"].value
             experiment.add_probe(
+                probe_template=probe_template,
                 probe_name=probe_name,
                 probe_target_type=probe_target_type,
                 probe_target_value=dict(atoms=atom, residues=residue),
                 labelling_efficiency=labelling_efficiency,
                 probe_distance_to_epitope=probe_distance_to_epitope,
-                as_linker=as_linker,
+                as_primary=as_linker,
                 wobble=wobble,
                 wobble_theta=wobble_theta,
             )
         elif probe_target_type == "Primary":
             experiment.add_probe(
+                probe_template=probe_template,
                 probe_name=probe_name,
                 probe_target_type=probe_target_type,
                 probe_target_value=probe_target_value,
                 labelling_efficiency=labelling_efficiency,
                 probe_distance_to_epitope=probe_distance_to_epitope,
-                as_linker=as_linker,
+                as_primary=as_linker,
                 wobble=wobble,
                 wobble_theta=wobble_theta,
             )
         probes_gui["create_particle"].disabled = False
         update_probe_list()
-        
             
         
 
@@ -219,10 +226,11 @@ def ui_select_probe(experiment, **kwargs):
             probes_gui["message2"].value = "Labelled structure creation failed. Check the logs for details."
 
     def show_probe_info(change):
-        probe_name = probes_gui["select_probe"].value
-        if probe_name in experiment.config_probe_params.keys():
+        probe_template = probes_gui["select_probe_template"].value
+        probes_gui["probe_name"].value = probe_template
+        if probe_template in experiment.config_probe_params.keys():
             info_text = "<b>Target: </b>"
-            probe_info = experiment.config_probe_params[probe_name]
+            probe_info = experiment.config_probe_params[probe_template]
             if probe_info["target"]["type"] == "Atom_residue":
                 target_type = "residue"
                 target_value = probe_info['target']['value']["residues"]
@@ -251,14 +259,15 @@ def ui_select_probe(experiment, **kwargs):
     # widgets
     probes_gui.add_label("Seleced probes:")
     probes_gui.add_HTML("message1", "No probes selected yet.", style = dict(font_weight='bold', font_size='15px'))
-    probes_gui.add_dropdown("select_probe",
+    probes_gui.add_dropdown("select_probe_template",
                             description="Choose a probe:",
                             options=probe_options)
     probes_gui.add_HTML("probe_info", "")
-    probes_gui["select_probe"].observe(show_probe_info, names="value")
+    probes_gui["select_probe_template"].observe(show_probe_info, names="value")
     probes_gui.add_button("toggle_advanced_parameters", description="Toggle advanced parameters")
     # advanced parameters
     probes_gui.add_HTML("advanced_param_header", "<b>Advanced parameters</b>", style=dict(font_size='15px'))
+    probes_gui.add_text(tag="probe_name", value=probes_gui["select_probe_template"].value, description="Probe name")
     probes_gui.add_float_slider("labelling_efficiency",
                                 description="Labelling efficiency",
                                 min=0.0,
@@ -353,6 +362,7 @@ def ui_select_probe(experiment, **kwargs):
     #
     def toggle_advanced_parameters(b): 
         probe_widgets_visibility["advanced_param_header"] = not probe_widgets_visibility["advanced_param_header"]
+        probe_widgets_visibility["probe_name"] = not probe_widgets_visibility["probe_name"]
         probe_widgets_visibility["labelling_efficiency"] = not probe_widgets_visibility["labelling_efficiency"]
         probe_widgets_visibility["distance_from_epitope"] = not probe_widgets_visibility["distance_from_epitope"]
         probe_widgets_visibility["mock_type"] = not probe_widgets_visibility["mock_type"]
@@ -369,7 +379,7 @@ def ui_select_probe(experiment, **kwargs):
         "add_probe",
         select_probe,
         probes_gui.elements,
-        description="Select probe",
+        description="Select probe (with defaults)",
     )
     probes_gui.add_button("create_particle", 
                           description="Create labelled structure",

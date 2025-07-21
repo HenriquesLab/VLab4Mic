@@ -168,6 +168,7 @@ def probe_model(
             print(f"epitope site: {probe_epitope}")
         except:
             print("No epitope generated")
+            print(kwargs["epitope"])
 
     # print(structural_model.label_targets)
     
@@ -201,20 +202,11 @@ def particle_from_structure(
         label_params_list = []
         label_config_dir = os.path.join(config_dir, "probes")
         for label in labels:
-            label_name = label["label_id"] + ".yaml"
-            label_config_path = os.path.join(label_config_dir, label_name)
-            if "target_info" in label.keys():
-                label_object, label_params = construct_label(
-                    label_config_path=label_config_path,
-                    lab_eff=label["labelling_efficiency"],
-                    **label
-                )
-            else:
-                label_object, label_params = construct_label(
-                    label_config_path=label_config_path,
-                    fluorophore_id=label["fluorophore_id"],
-                    lab_eff=label["labelling_efficiency"],
-                )
+            #label_name = label["label_id"] + ".yaml"
+            #label_config_path = os.path.join(label_config_dir, label_name)
+            label_object, label_params = construct_label(
+                label_config_dictionary=label
+            )
             # get model for antibody and add to label params
             if label_object.model:
                 print("Generating conjugation sites")
@@ -243,6 +235,8 @@ def particle_from_structure(
                     # secondary label for this specific probe
                     label_object.set_emitters(probe_epitope["coordinates"])
                 else:
+                    print(probe_epitope["coordinates"], label_params["as_linker"])
+                    print("Setting emitters from probe conjugation sites")
                     label_object.set_emitters(probe_emitter_sites)
                 label_params["coordinates"] = label_object.gen_labeling_entity()
                 print(label_params["coordinates"])

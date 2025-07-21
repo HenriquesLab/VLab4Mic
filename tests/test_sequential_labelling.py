@@ -3,131 +3,36 @@ from supramolsim import workflows, experiments
 from supramolsim.utils import data_format
 
 
-probes_1XI5_primaries = []
-target_info1 = dict(type="Sequence", value="EQATETQ")
-fluorophore_id1 = "AF647"
-lab_eff1 = 1
-linker1 = data_format.structural_format.label_builder_format(
-    "Linker", fluorophore_id1, lab_eff1, target_info1
-)
-antibody = data_format.structural_format.label_builder_format(
-    "Antibody", fluorophore_id1, lab_eff1, target_info1, as_linker=False
-)
-antibody_as_linker = data_format.structural_format.label_builder_format(
-    "Antibody", fluorophore_id1, lab_eff1, target_info1, as_linker=True
-)
-primaries_1XI5 = [linker1, antibody, antibody_as_linker]
-
-# parameters for sequential labelling
-primaries_1X15_linkers = [linker1, antibody_as_linker]
-secondaries_ids = ["Linker", "Antibody"]
-
-
-@pytest.mark.parametrize("probe_primary", primaries_1XI5)
-def test_primaries_only(configuration_directory, probe_primary):
-    structure_id = "1XI5"
-    structure, structure_param = workflows.load_structure(
-        structure_id, configuration_directory
-    )
-    labels_list = [
-        probe_primary,
-    ]
-    particle, label_params_list = workflows.particle_from_structure(
-        structure, labels_list, configuration_directory
-    )
-    assert particle.get_ref_point().shape == (3,)
-
-
-@pytest.mark.parametrize("primary", primaries_1X15_linkers)
-@pytest.mark.parametrize("secondary_id", secondaries_ids)
-def test_primary_with_secondary(configuration_directory, primary, secondary_id):
-    structure_id = "1XI5"
-    structure, structure_param = workflows.load_structure(
-        structure_id, configuration_directory
-    )
-    target_info_secondary = dict(type="Primary", value=primary["label_id"])
-    fluorophore_id1 = "AF488"
-    lab_eff1 = 1
-    secondary_probe = data_format.structural_format.label_builder_format(
-        secondary_id, fluorophore_id1, lab_eff1, target_info_secondary
-    )
-    labels_list = [primary, secondary_probe]
-    particle, label_params_list = workflows.particle_from_structure(
-        structure, labels_list, configuration_directory
-    )
-    assert len(particle.secondary.keys()) > 0
-
-
-def test_linker_secondary(configuration_directory):
-    structure_id = "1XI5"
-    structure, structure_param = workflows.load_structure(
-        structure_id, configuration_directory
-    )
-    label_id1 = "Linker"
-    target_info1 = dict(type="Sequence", value="EQATETQ")
-    fluorophore_id1 = "AF647"
-    lab_eff1 = 1
-    tmp_label1 = data_format.structural_format.label_builder_format(
-        label_id1, fluorophore_id1, lab_eff1, target_info1
-    )
-
-    label_id2 = "Antibody"
-    target_info2 = dict(type="Primary", value="Linker")
-    fluorophore_id2 = "AF488"
-    lab_eff2 = 1
-    tmp_label2 = data_format.structural_format.label_builder_format(
-        label_id2, fluorophore_id2, lab_eff2, target_info2, as_linker=False
-    )
-    particle2, label_params_list = workflows.particle_from_structure(
-        structure, [tmp_label1, tmp_label2], configuration_directory
-    )
-    assert len(particle2.secondary.keys()) > 0
-    epitopes = particle2.source["targets"][label_id1]["coordinates"].shape
-    emitters = particle2.emitters[label_id1].shape
-    assert epitopes != emitters
-
-
-def test_primary_secondary(configuration_directory):
-    structure_id = "1XI5"
-    structure, structure_param = workflows.load_structure(
-        structure_id, configuration_directory
-    )
-    label_id1 = "Antibody"
-    target_info1 = dict(type="Sequence", value="EQATETQ")
-    fluorophore_id1 = "AF647"
-    lab_eff1 = 1
-    tmp_label1 = data_format.structural_format.label_builder_format(
-        label_id1, fluorophore_id1, lab_eff1, target_info1, as_linker=True
-    )
-
-    label_id2 = "Antibody"
-    target_info2 = dict(type="Primary", value="Antibody")
-    fluorophore_id2 = "AF488"
-    lab_eff2 = 1
-    tmp_label2 = data_format.structural_format.label_builder_format(
-        label_id2, fluorophore_id2, lab_eff2, target_info2
-    )
-    particle2, label_params_list = workflows.particle_from_structure(
-        structure, [tmp_label1, tmp_label2], configuration_directory
-    )
-    assert len(particle2.secondary.keys()) > 0
-    epitopes = particle2.source["targets"][label_id1]["coordinates"].shape
-    emitters = particle2.emitters[label_id1].shape
-    assert epitopes != emitters
-
-
 def test_primary_secondary_fromExperiment():
     sample, test_experiment = experiments.generate_virtual_sample(clear_probes=True)
     test_experiment.remove_probes()
     test_experiment.add_probe(
-        probe_name = "Linker",
+        probe_template = "Linker",
         probe_target_type = "Sequence",
         probe_target_value = "EQATETQ",
         )
     test_experiment.add_probe(
-        probe_name = "Antibody",
+        probe_template = "Antibody",
         probe_target_type = "Primary",
         probe_target_value = "Linker")
-    test_experiment.build()
+    test_experiment.build(modules=["particle"])
+    assert test_experiment.particle is not None
+    assert test_experiment.exported_coordinate_field['field_emitters'] != {}
+
+
+def test_primaryAB_secondaryAB_fromExperiment():
+    sample, test_experiment = experiments.generate_virtual_sample(clear_probes=True)
+    test_experiment.remove_probes()
+    test_experiment.add_probe(
+        probe_template = "Antibody",
+        probe_target_type = "Sequence",
+        probe_target_value = "EQATETQ",
+        as_primary=True,
+        )
+    test_experiment.add_probe(
+        probe_template = "Nanobody",
+        probe_target_type = "Primary",
+        probe_target_value = "Antibody")
+    test_experiment.build(modules=["particle"])
     assert test_experiment.particle is not None
     assert test_experiment.exported_coordinate_field['field_emitters'] != {}

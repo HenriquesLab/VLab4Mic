@@ -205,11 +205,10 @@ class Label:
 
 
 def construct_label(
-    label_config_path: str,
+    label_config_dictionary: None,
     fluorophore_id: str = "AF647",
     lab_eff: float = None,
     target_info=None,
-    as_linker=False,
     enable_wobble=False,
     wobble_theta=None,
     **kwargs,
@@ -226,8 +225,8 @@ def construct_label(
         label_params: (dictionary)
         fluorophore_params: (dictionary)
     """
-    label_params = load_yaml(label_config_path)
-    label_params["as_linker"] = as_linker
+    label_params = copy.deepcopy(label_config_dictionary)
+
     # keynames reserved for parameters that can be iteratet over
     if "model_ID" in kwargs.keys():
         label_params["model"]["ID"] = kwargs["model_ID"]

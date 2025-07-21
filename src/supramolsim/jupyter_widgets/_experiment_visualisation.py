@@ -83,8 +83,11 @@ def ui_show_structure(experiment):
     gui = EZInput(title="Structure")
     def show_structure(widget_elements):
         if experiment.objects_created["structure"]:
+            enable_view_widgets(True)
             widget_elements["preview_structure"].clear_output()
             total = experiment.structure.num_assembly_atoms
+            hview = widget_elements["hview"].value
+            vview = widget_elements["vview"].value
             widget_elements["n_atoms"].disabled = False
             atoms_number = widget_elements["n_atoms"].value
             if total > atoms_number:
@@ -93,7 +96,10 @@ def ui_show_structure(experiment):
                 fraction = 1.0
             with widget_elements["preview_structure"]:
                 display(
-                    experiment.structure.show_assembly_atoms(assembly_fraction=fraction)
+                    experiment.structure.show_assembly_atoms(
+                        assembly_fraction=fraction,
+                        view_init=[vview, hview, 0]
+                    )
                 )
                 plt.close()
         else:
@@ -110,19 +116,46 @@ def ui_show_structure(experiment):
 
     def update_plot(value):
         gui["preview_structure"].clear_output()
-        total = experiment.structure.num_assembly_atoms
-        if total > value.new:
-            fraction = value.new/total
-        else:
-            fraction = 1.0
-        with gui["preview_structure"]:
-            display(
-                experiment.structure.show_assembly_atoms(assembly_fraction=fraction)
-            )
-            plt.close()
+        show_structure(gui.elements)
 
     gui.add_int_slider("n_atoms", description="Atoms to use", min=1, max=10000, step=1, value = 1000, on_change=update_plot, continuous_update=False, disabled=True)
+    gui.add_int_slider(
+        "hview",
+        description="Horizontal view",
+        min=-90,
+        max=90,
+        step=1,
+        value=0,
+        on_change=update_plot,
+        continuous_update=False,
+    )
+    gui.add_int_slider(
+        "vview",
+        description="Vertical view",
+        min=-90,
+        max=90,
+        step=1,
+        value=0,
+        on_change=update_plot,
+        continuous_update=False,
+    )
+    def enable_view_widgets(b):
+        widgets_visibility["n_atoms"] = True
+        widgets_visibility["hview"] = True
+        widgets_visibility["vview"] = True
+        update_widgets_visibility(gui, widgets_visibility)
+
+    #gui.add_button("show_structure", description="Show structure")
     gui.add_output("preview_structure")
+    widgets_visibility = {}
+    for wgt in gui.elements.keys():
+        widgets_visibility[wgt] = True
+        gui.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex")
+    widgets_visibility["n_atoms"] = False
+    widgets_visibility["hview"] = False
+    widgets_visibility["vview"] = False
+    update_widgets_visibility(gui, widgets_visibility)
+
     gui["preview_structure"].clear_output()
     return gui
 
@@ -166,6 +199,7 @@ def ui_show_labelled_structure(experiment):
             if not experiment.objects_created["particle"]:
                 display("Particle not created yet, please create it first.")
             else:
+                enable_view_widgets(True)
                 gui["emitter_plotsize"].disabled = False
                 gui["source_plotsize"].disabled = False
                 gui["hview"].disabled = False
@@ -225,8 +259,23 @@ def ui_show_labelled_structure(experiment):
         "show_labelled_structure",
         description="Show labelled structure",
     )
+    def enable_view_widgets(b):
+        widgets_visibility["emitter_plotsize"] = True
+        widgets_visibility["source_plotsize"] = True
+        widgets_visibility["hview"] = True
+        widgets_visibility["vview"] = True
+        update_widgets_visibility(gui, widgets_visibility)
     gui["show_labelled_structure"].on_click(show_labelled_structure)
     gui.add_output("preview_labelled_structure")
+    widgets_visibility = {}
+    for wgt in gui.elements.keys():
+        widgets_visibility[wgt] = True
+        gui.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex")
+    widgets_visibility["emitter_plotsize"] = False
+    widgets_visibility["source_plotsize"] = False
+    widgets_visibility["hview"] = False
+    widgets_visibility["vview"] = False
+    update_widgets_visibility(gui, widgets_visibility)
     return gui
 
 def ui_show_virtual_sample(experiment):

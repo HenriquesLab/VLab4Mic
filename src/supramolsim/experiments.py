@@ -411,7 +411,8 @@ class ExperimentParametrisation:
         labels_list = []
         for probe_name, probe_params in self.probe_parameters.items():
             labels_list.append(
-                label_builder_format(label_id=probe_name, **probe_params)
+                copy.deepcopy(self.probe_parameters[probe_name])
+                #
             )
         return labels_list
 
@@ -808,7 +809,8 @@ class ExperimentParametrisation:
 
     def add_probe(
         self,
-        probe_name: str = "NHS_ester",
+        probe_template: str = "NHS_ester",
+        probe_name: str = None,
         probe_target_type: str = None,
         probe_target_value: str = None,
         probe_target_option: str = None,
@@ -879,17 +881,18 @@ class ExperimentParametrisation:
         -----
         Updates the ``probe_parameters`` attribute with the new or modified probe configuration and calls the :meth:`_update_probes` method to refresh internal probe state.
         """
-        probe_configuration_file = os.path.join(
-            self.configuration_path, "probes", probe_name + ".yaml"
-        )
-        probe_configuration = load_yaml(probe_configuration_file)
+        probe_configuration = copy.deepcopy(self.config_probe_params[probe_template])
+        if probe_name is None:
+            probe_name = probe_template
+        else:
+            probe_configuration["label_name"] = probe_name
         if peptide_motif is not None:
             protein_name, _1, site, sequence = self.structure.get_peptide_motif(**peptide_motif)
             if len(sequence) > 0: 
                 probe_target_type = "Sequence"
                 probe_target_value = sequence
         if probe_target_type and probe_target_value:
-            probe_configuration["target_info"] = dict(
+            probe_configuration["target"] = dict(
                 type=probe_target_type, value=probe_target_value
             )
             if probe_target_type == "Primary" and probe_target_option:
@@ -905,7 +908,7 @@ class ExperimentParametrisation:
             # probe has no target info
             # a random target will be used
             protein_name, _1, site, sequence = self.structure.get_peptide_motif(position="cterminal") 
-            probe_configuration["target_info"] = dict(
+            probe_configuration["target"] = dict(
                 type="Sequence", value=sequence
             )
             #probe_configuration["target"]["type"] = "Sequence"
@@ -931,7 +934,10 @@ class ExperimentParametrisation:
         if probe_wobbling:
             probe_configuration["enable_wobble"] = probe_wobbling
         if as_primary:
-            probe_configuration["as_linker"] = as_primary
+            print("Adding probe as primary linker")
+            probe_configuration["as_linker"] = True
+        else:
+            probe_configuration["as_linker"] = False
         if probe_steric_hindrance is not None:
             probe_configuration["distance_between_epitope"] = probe_steric_hindrance
         self.probe_parameters[probe_name] = probe_configuration

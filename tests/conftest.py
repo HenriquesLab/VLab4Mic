@@ -25,25 +25,9 @@ def structure_test(configuration_directory):
 
 @pytest.fixture(scope="module")
 def gt_structural_model_field(configuration_directory):
-    configuration_path = configuration_directory
-    fluorophore_id = "AF647"
-    structure_id = "2RCJ"
-    generic_label = "NHS_ester"
-    # loading structure
-    structure, structure_param = workflows.load_structure(
-        structure_id, configuration_path
-    )
-    labels_list = []
-    labels_list.append(
-        data_format.structural_format.label_builder_format(
-            generic_label, fluorophore_id
-        )
-    )
-    particle, label_params_list = workflows.particle_from_structure(
-        structure, labels_list, configuration_path
-    )
-    exported_field, coordinates_field = workflows.field_from_particle(particle)
-    return exported_field
+    coordinate_exp = experiments.ExperimentParametrisation()
+    coordinate_exp.exported_coordinate_field
+    return coordinate_exp.exported_coordinate_field
 
 
 @pytest.fixture(scope="module")
@@ -55,7 +39,7 @@ def experiment_7r5k_base():
     modalities = ["Widefield", "Confocal", "SMLM", "STED"]
     imaging_output7r5k, exp7r5k = experiments.image_vsample(
         structure=structure_id,
-        probe_name=probe,
+        probe_template=probe,
         virtual_sample_template=virtual_sample,
         multimodal=modalities,
         run_simulation=False 
