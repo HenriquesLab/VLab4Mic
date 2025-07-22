@@ -239,7 +239,18 @@ class sweep_generator:
             self.reference_image_parameters = reference_parameters
 
     # previews
-    def preview_acquisition_output(self, return_image=False):
+    def preview_image_output_by_ID(
+            self,
+            probe_template=0,
+            probe_parameters=0,
+            defect_parameters=0,
+            virtual_sample_parameters=0,
+            modality_template=0,
+            modality_parameters=0,
+            acquisition_parameters=0,
+            replica_number=0,
+            frame=0,
+            return_image=False):
         """
         Preview or return the first acquisition output image.
 
@@ -253,14 +264,27 @@ class sweep_generator:
         numpy.ndarray or None
             The image array if `return_image` is True, otherwise None.
         """
-        param_id = list(self.acquisition_outputs_parameters.keys())[0]
-        repetition = 0
-        frame = 0
-        if return_image:
-            return self.acquisition_outputs[param_id][repetition][frame]
+        parameter_id = str(probe_template) + "_" + str(probe_parameters) + "_" + str(
+            defect_parameters
+        ) + "_" + str(virtual_sample_parameters) + "_" + str(modality_template) + "_" + str(
+            modality_parameters
+        ) + "_" + str(acquisition_parameters)
+        if parameter_id is None or parameter_id not in self.acquisition_outputs_parameters.keys():
+            parameter_id = list(self.acquisition_outputs_parameters.keys())[0]
+        if len(self.acquisition_outputs[parameter_id][replica_number].shape) == 3:
+            image = self.acquisition_outputs[parameter_id][replica_number][frame]
         else:
-            plt.imshow(self.acquisition_outputs[param_id][repetition][frame])
-            print(self.acquisition_outputs_parameters[param_id])
+            image = self.acquisition_outputs[parameter_id][replica_number]
+        if return_image:
+            return image
+        else:
+            plt.imshow(image)
+            print(self.acquisition_outputs_parameters[parameter_id])
+
+    def preview_image_output_by_parameter_values(self,
+                                                 **kwargs):
+        pass
+    
 
     def preview_reference_image(self, return_image=False):
         """
@@ -311,8 +335,19 @@ class sweep_generator:
             elif type(values) == tuple:
                 # 3 values are expected: min, max, steps
                 # generate a linspace
-                param_iterables = np.linspace(values[0], values[1], values[2])
-                self.params_by_group[param_group][param_name] = param_iterables
+                if  param_group in self.parameter_settings.keys():
+                    if param_name in self.parameter_settings[param_group].keys():
+                        if self.parameter_settings[param_group][param_name]["wtype"] == "int_slider":
+                            step = np.ceil((values[1] - values[0]) / values[2])
+                            self.params_by_group[param_group][param_name] = np.arange(
+                                start=values[0],
+                                stop=values[1],
+                                step=step,
+                                dtype=int
+                            )
+                        else:
+                            param_iterables = np.linspace(values[0], values[1], values[2])
+                            self.params_by_group[param_group][param_name] = param_iterables
             self.parameters_with_set_values.append(param_name)
         else:
             print(f"{param_group} is not a valid parameter group")
@@ -346,7 +381,7 @@ class sweep_generator:
         if no_params_set:
             # set default with minimal options to iterate
             self.set_parameter_values(
-                "probe", "labelling_efficiency", values=(0.5, 1, 2)
+                "probe", "labelling_efficiency", values=[0.5,1]
             )
 
         self.probe_parameters = sweep.create_param_combinations(

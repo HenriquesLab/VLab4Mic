@@ -131,9 +131,14 @@ def sweep_vasmples(
                         for vsample_n, vsample_pars in virtual_samples.items():
                             _exported_field = None
                             # combination += str(vsample_n)
-                            _exported_field = experiment._build_coordinate_field(
-                                keep=False, use_self_particle=True, **vsample_pars
+                            experiment.set_virtualsample_params(
+                                **vsample_pars
                             )
+                            #_exported_field = experiment._build_coordinate_field(
+                            #    keep=False, use_self_particle=True, **vsample_pars
+                            #)
+                            experiment.build(modules=["coordinate_field"], use_self_particle=True)
+                            _exported_field = experiment.coordinate_field.export_field()
                             combination_n = (
                                 str(probe_n)
                                 + "_"

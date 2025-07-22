@@ -377,9 +377,42 @@ def analyse_sweep(sweep_gen):
             print("Generating Virtual samples.")
             print("Once created, a progress bar will show the image simulation progression")
             sweep_gen.run_analysis(plots=plots, save=False)
+        analysis_widget["preview"].disabled = False
         analysis_widget["saving_directory"].disabled = False
         analysis_widget["save"].disabled = False
         analysis_widget["output_name"].disabled = False
+        #
+        n_probes = len(sweep_gen.probes)
+        n_modalities = len(sweep_gen.modalities)
+        if sweep_gen.probe_parameters is None:
+            n_probe_parameters = 1
+            analysis_widget["probe_parameters"].disabled = True
+        else:
+            n_probe_parameters = len(sweep_gen.probe_parameters.keys())
+        if sweep_gen.defect_parameters is None:
+            n_defect_parameters = 1
+            analysis_widget["defect_parameters"].disabled = True
+        else:
+            n_defect_parameters = len(sweep_gen.defect_parameters.keys())
+        if sweep_gen.vsample_parameters is None:
+            n_vsample_parameters = 1
+            analysis_widget["vsample_parameters"].disabled = True
+        else:
+            n_vsample_parameters = len(sweep_gen.vsample_parameters.keys())
+        if sweep_gen.acquisition_parameters is None:
+            n_acquisition_parameters = 1
+            analysis_widget["acquisition_parameters"].disabled = True
+        else:
+            n_acquisition_parameters = len(sweep_gen.acquisition_parameters.keys())
+        n_replicas = sweep_gen.sweep_repetitions
+        analysis_widget["modality_template"].max = n_modalities - 1
+        analysis_widget["probe_template"].max = n_probes - 1
+        analysis_widget["probe_parameters"].max = n_probe_parameters - 1
+        analysis_widget["defect_parameters"].max = n_defect_parameters - 1
+        analysis_widget["vsample_parameters"].max = n_vsample_parameters - 1
+        analysis_widget["acquisition_parameters"].max = n_acquisition_parameters - 1
+        analysis_widget["replica_number"].max = n_replicas - 1
+        
     def save_results(b):
         output_directory = analysis_widget["saving_directory"].selected_path
         output_name = analysis_widget["output_name"].value
@@ -417,11 +450,125 @@ def analyse_sweep(sweep_gen):
         "output_name", 
         value="vlab4mic_analysis", 
         description="Output name")
+    # preview
+    def update_plot(change):
+        modality_template = analysis_widget["modality_template"].value
+        probe_template = analysis_widget["probe_template"].value
+        probe_parameters = analysis_widget["probe_parameters"].value
+        defect_parameters = analysis_widget["defect_parameters"].value
+        vsample_parameters = analysis_widget["vsample_parameters"].value
+        acquisition_parameters = analysis_widget["acquisition_parameters"].value
+        replica_number = analysis_widget["replica_number"].value
+
+        image = sweep_gen.preview_image_output_by_ID(
+            modality_template=modality_template,
+            probe_template=probe_template,
+            probe_parameters=probe_parameters,
+            defect_parameters=defect_parameters,
+            virtual_sample_parameters=vsample_parameters,
+            acquisition_parameters=acquisition_parameters,
+            replica_number=replica_number,
+            return_image=True,
+            )
+        figure, ax = plt.subplots(figsize=(8, 6))
+        ax.imshow(image, cmap='gray')
+        ax.axis('off')
+        ax.set_title(f"Preview of parameter sweeps results")
+        plt.close()
+        analysis_widget["preview_results"].clear_output()  
+        with analysis_widget["preview_results"]:
+            display(figure)
+    
+    def toggle_preview(b):
+        widgets_visibility["preview_results"] = not widgets_visibility["preview_results"]
+        widgets_visibility["modality_template"] = not widgets_visibility["modality_template"]
+        widgets_visibility["probe_template"] = not widgets_visibility["probe_template"]
+        widgets_visibility["probe_parameters"] = not widgets_visibility["probe_parameters"]
+        widgets_visibility["defect_parameters"] = not widgets_visibility["defect_parameters"]
+        widgets_visibility["vsample_parameters"] = not widgets_visibility["vsample_parameters"]
+        widgets_visibility["acquisition_parameters"] = not widgets_visibility["acquisition_parameters"]
+        widgets_visibility["replica_number"] = not widgets_visibility["replica_number"]
+
+
+        update_widgets_visibility(analysis_widget, widgets_visibility)
+        update_plot(widgets_visibility["preview_results"])
+        
+    # preview widgets
+    analysis_widget.add_button(
+        "preview", description="Preview results", disabled=True
+    )
+    analysis_widget.add_int_slider(
+        "modality_template",
+        description="Modality",
+        min=0, max=0, value=0,
+        continuous_update=False,
+    )
+    analysis_widget.add_int_slider(
+        "probe_template",
+        description="Probe",
+        min=0, max=0, value=0,
+        continuous_update=False,
+    )
+    analysis_widget.add_int_slider(
+        "probe_parameters",
+        description="Probe parameter",
+        min=0, max=0, value=0,
+        continuous_update=False,
+    )
+    analysis_widget.add_int_slider(
+        "defect_parameters",
+        description="Defect parameter",
+        min=0, max=0, value=0,
+        continuous_update=False,
+    )
+    analysis_widget.add_int_slider(
+        "vsample_parameters",
+        description="Vsample parameters",
+        min=0, max=0, value=0,
+        continuous_update=False,
+    )
+    analysis_widget.add_int_slider(
+        "acquisition_parameters",
+        description="acquisition parameters",
+        min=0, max=0, value=0,
+        continuous_update=False,
+    )
+    analysis_widget.add_int_slider(
+        "replica_number",
+        description="Replica number",
+        min=0, max=0, value=0,
+        continuous_update=False,
+    )
+    # connect the preview widgets to the update function
+    analysis_widget["modality_template"].observe(update_plot, names='value')
+    analysis_widget["probe_template"].observe(update_plot, names='value')
+    analysis_widget["probe_parameters"].observe(update_plot, names='value')
+    analysis_widget["defect_parameters"].observe(update_plot, names='value')
+    analysis_widget["vsample_parameters"].observe(update_plot, names='value')
+    analysis_widget["acquisition_parameters"].observe(update_plot, names='value')
+    analysis_widget["replica_number"].observe(update_plot, names='value')
+    # output preview
+    analysis_widget.add_output("preview_results", description="Preview results")
+    # save
     analysis_widget.add_checkbox("save_images", description="Save images", value=False)
     analysis_widget.add_button(
         "save", description="save analysis", disabled=True
     )
+    widgets_visibility = {}
+    for wgt in analysis_widget.elements.keys():
+        widgets_visibility[wgt] = True
+        analysis_widget.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex") 
+    widgets_visibility["preview_results"] = False
+    widgets_visibility["modality_template"] = False
+    widgets_visibility["probe_template"] = False
+    widgets_visibility["probe_parameters"] = False
+    widgets_visibility["defect_parameters"] = False
+    widgets_visibility["vsample_parameters"] = False
+    widgets_visibility["acquisition_parameters"] = False
+    widgets_visibility["replica_number"] = False
+    update_widgets_visibility(analysis_widget, widgets_visibility)
     analysis_widget["analyse"].on_click(analyse_sweep_action)
+    analysis_widget["preview"].on_click(toggle_preview)
     analysis_widget["save"].on_click(save_results)
     return analysis_widget
 
