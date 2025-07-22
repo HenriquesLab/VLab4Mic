@@ -47,6 +47,13 @@ select_colour = "#4daf4ac7"
 remove_colour = "#ff8000da"
 update_colour = "#00bfffda"
 
+select_icon = "fa-check"
+add_icon = "fa-plus"
+remove_icon = "fa-minus"
+loding_icon = "fa-spinner fa-spin"
+update_icon = "fa-wrench" # create
+toggle_icon = "fa-eye-slash"
+
 def ui_select_structure(experiment):
     """
     Create a widget for selecting the experiment structure.
