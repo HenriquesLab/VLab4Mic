@@ -216,6 +216,7 @@ class ExperimentParametrisation:
         lateral_resolution_nm: int = None,
         axial_resolution_nm: int = None,
         psf_voxel_nm: int = None,
+        depth_of_field_nm: int = None,
         remove=False,
     ):
         """
@@ -278,6 +279,12 @@ class ExperimentParametrisation:
                     psf_voxel_nm,
                     psf_voxel_nm,
                 ]
+                changes = True
+            if depth_of_field_nm is not None:
+                depth_in_slices = None
+                voxel_size = self.local_modalities_parameters[modality_name]["psf_params"]["voxelsize"][2]
+                depth=int(depth_of_field_nm / voxel_size)
+                self.imaging_modalities[modality_name]["psf_params"]["depth"] = depth
                 changes = True
             if changes:
                 self.imager.set_imaging_modality(
