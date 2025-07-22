@@ -112,6 +112,7 @@ def ui_show_structure(experiment):
         show_structure,
         gui.elements,
         description="Show structure",
+        icon="eye",
     )
 
     def update_plot(value):
@@ -151,6 +152,7 @@ def ui_show_structure(experiment):
     for wgt in gui.elements.keys():
         widgets_visibility[wgt] = True
         gui.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex")
+    gui["button"].layout = widgets.Layout(width='50%', align_items='center', justify_content='center')
     widgets_visibility["n_atoms"] = False
     widgets_visibility["hview"] = False
     widgets_visibility["vview"] = False
