@@ -65,6 +65,14 @@ def update_widgets_visibility(ezwidget, visibility_dictionary):
             ezwidget[widgetname].layout.display = "inline-flex"
         else:
             ezwidget[widgetname].layout.display = "None"
+            
+def _unstyle_widgets(ezwidget, visibility_dictionary):
+    for wgt in ezwidget.elements.keys():
+        visibility_dictionary[wgt] = True
+        if isinstance(ezwidget[wgt], widgets.Button):
+            ezwidget.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex", align_items="center", justify_content="center")
+        else:
+            ezwidget.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex")   
 
 def ui_show_structure(experiment):
     """
