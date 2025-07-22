@@ -53,6 +53,7 @@ remove_icon = "fa-minus"
 loding_icon = "fa-spinner fa-spin"
 update_icon = "fa-wrench" # create
 toggle_icon = "fa-eye-slash"
+upload_icon = "fa-upload"
 
 def ui_select_structure(experiment):
     """
@@ -379,10 +380,9 @@ def ui_select_probe(experiment, **kwargs):
         description="Wobble cone range (degrees)",
     )
     probes_gui.add_button("add_custom_probe",
-                          description="Select probe with custom parameters",
+                          description="Add probe with custom parameters",
                           disabled=False,
-                          icon=select_icon,
-                          style={"button_color": select_colour}
+                          icon=add_icon,
                           )
     probes_gui["mock_type"].observe(type_dropdown_change, names="value")
     #
@@ -405,14 +405,13 @@ def ui_select_probe(experiment, **kwargs):
         "add_probe",
         select_probe,
         probes_gui.elements,
-        description="Select probe (with defaults)",
-        icon="fa-check",
-        style={"button_color": select_colour},
+        description="Add probe (with defaults)",
+        icon=add_icon,
     )
     probes_gui.add_button("create_particle", 
                           description="Create labelled structure",
-                          style={"button_color": update_colour},
-                          icon=update_icon,
+                          style={"button_color": select_colour},
+                          icon=select_icon,
                           disabled=True)
     probes_gui.add_HTML("message2", "No labelled structure created yet.", style = dict(font_weight='bold', font_size='15px'))
     probe_widgets_visibility = {}
@@ -489,10 +488,11 @@ def ui_select_sample_parameters(experiment):
     sample_gui.add_button(
         "advanced_parameters",
         description="Toggle advanced parameters",
+        icon=toggle_icon,
     )
     ####  advanced parameters ####
     sample_gui.add_file_upload(
-            "File", description="Select from file", accept="*.tif", save_settings=False
+            "File", description="Select from file", accept="*.tif", save_settings=False,
         )
     sample_gui.add_bounded_int_text("pixel_size",
         description="Pixel size (nm)",
@@ -541,9 +541,12 @@ def ui_select_sample_parameters(experiment):
     sample_gui.add_button(
         "select_sample_parameters",
         description="Select sample parameters",
-        disabled=False
+        disabled=False,
+        icon=select_icon,
+        style={"button_color": select_colour},
     )
-    sample_gui.add_button("upload_and_set", description="Load image and select parameters", disabled=False)
+    sample_gui.add_button("upload_and_set", description="Load image and select parameters", disabled=False, 
+                          icon=upload_icon, style={"button_color": select_colour})
     sample_gui.add_HTML("advanced_params_feedback", "", style=dict(font_weight='bold'))
     def select_virtual_sample_parameters(b):
         if sample_gui["use_min_from_particle"].value:
@@ -606,19 +609,13 @@ def ui_select_sample_parameters(experiment):
         update_widgets_visibility(sample_gui, widgets_visibility)
     widgets_visibility = {}
     _unstyle_widgets(sample_gui, widgets_visibility)  
-    widgets_visibility["upload_and_set"] = False
-    widgets_visibility["File"] = False
-    widgets_visibility["pixel_size"] = False
-    widgets_visibility["background_intensity"] = False
-    widgets_visibility["blur_sigma"] = False
-    widgets_visibility["intensity_threshold"] = False
-    widgets_visibility["detection_method"] = False
-    widgets_visibility["random"] = False
     update_widgets_visibility(sample_gui, widgets_visibility)
     sample_gui["select_sample_parameters"].on_click(select_virtual_sample_parameters)
     sample_gui["advanced_parameters"].on_click(toggle_advanced_parameters)
     sample_gui["upload_and_set"].on_click(upload_and_set)
+    widgets_visibility["select_sample_parameters"] = False
     select_virtual_sample_parameters(True)  # Initialize with default parameters
+    toggle_advanced_parameters(True)  # Initialize with advanced parameters hidden
     return sample_gui
 
 def ui_select_modality(experiment):

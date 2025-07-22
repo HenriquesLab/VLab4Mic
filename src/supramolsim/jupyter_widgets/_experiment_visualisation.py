@@ -45,6 +45,20 @@ import numpy as np
 from IPython.utils import io
 from ..utils.visualisation.matplotlib_plots import plot_projection
 
+
+select_colour = "#4daf4ac7"
+remove_colour = "#ff8000da"
+update_colour = "#00bfffda"
+
+select_icon = "fa-check"
+add_icon = "fa-plus"
+show_icon = "fa-eye"
+remove_icon = "fa-minus"
+loding_icon = "fa-spinner fa-spin"
+update_icon = "fa-wrench" # create
+toggle_icon = "fa-eye-slash"
+upload_icon = "fa-upload"
+reset_icon = "fa-undo"
 def update_widgets_visibility(ezwidget, visibility_dictionary):
     """
     Show or hide widgets in an EZInput widget based on a visibility dictionary.
@@ -120,7 +134,7 @@ def ui_show_structure(experiment):
         show_structure,
         gui.elements,
         description="Show structure",
-        icon="eye",
+        icon=show_icon,
     )
 
     def update_plot(value):
@@ -218,7 +232,11 @@ def ui_show_labelled_structure(experiment):
                     hview=gui["hview"].value,
                     vview=gui["vview"].value
             ))
-    
+    gui.add_button(
+            "show_labelled_structure",
+            description="Show labelled structure",
+            icon=show_icon,
+        )
     gui.add_int_slider(
         "emitter_plotsize",
         description="Emitter size",
@@ -263,10 +281,7 @@ def ui_show_labelled_structure(experiment):
         on_change=show_labelled_structure,
         disabled=True
     )
-    gui.add_button(
-        "show_labelled_structure",
-        description="Show labelled structure",
-    )
+    
     def enable_view_widgets(b):
         widgets_visibility["emitter_plotsize"] = True
         widgets_visibility["source_plotsize"] = True
@@ -304,6 +319,9 @@ def ui_show_virtual_sample(experiment):
         gui["preview_virtual_sample"].clear_output()
         with gui["preview_virtual_sample"]:
             if experiment.generators_status("coordinate_field"):
+                widgets_visibility["horizontal_view"] = True
+                widgets_visibility["vertical_view"] = True
+                update_widgets_visibility(gui, widgets_visibility)
                 gui["horizontal_view"].disabled = False
                 gui["vertical_view"].disabled = False
                 hview = gui["horizontal_view"].value
@@ -318,6 +336,7 @@ def ui_show_virtual_sample(experiment):
     gui.add_button(
         "show_virtual_sample",
         description="Show virtual sample",
+        icon=show_icon,
     )
     gui.add_int_slider(
         "horizontal_view",
@@ -343,6 +362,9 @@ def ui_show_virtual_sample(experiment):
     )
     widgets_visibility = {}
     _unstyle_widgets(gui, widgets_visibility)
+    widgets_visibility["horizontal_view"] = False
+    widgets_visibility["vertical_view"] = False
+    update_widgets_visibility(gui, widgets_visibility)
     gui["show_virtual_sample"].on_click(update_plot)
     gui.add_output("preview_virtual_sample")
     return gui
@@ -639,8 +661,10 @@ def ui_set_acq_params(experiment):
     )
     acquisition_gui["Noise"].observe(preview_params_chage, names="value")
     acquisition_gui["Exposure"].observe(preview_params_chage, names="value")
-    acquisition_gui.add_button("Set", description="Update acquisition parameters")
-    acquisition_gui.add_button("Clear", description="Reset params")
+    acquisition_gui.add_button("Set", description="Update acquisition parameters", 
+                               icon=update_icon, style={"button_color": update_colour})
+    acquisition_gui.add_button("Clear", description="Reset params", 
+                               icon=reset_icon)
     acquisition_gui["Set"].on_click(set_params)
     acquisition_gui["Clear"].on_click(clear)
     acquisition_gui.add_checkbox(
