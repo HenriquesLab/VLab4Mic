@@ -125,7 +125,15 @@ def update_widgets_visibility(ezwidget, visibility_dictionary):
         if visibility_dictionary[widgetname]:
             ezwidget[widgetname].layout.display = "inline-flex"
         else:
-            ezwidget[widgetname].layout.display = "None"   
+            ezwidget[widgetname].layout.display = "None"
+
+def _unstyle_widgets(ezwidget, visibility_dictionary):
+    for wgt in ezwidget.elements.keys():
+        visibility_dictionary[wgt] = True
+        if isinstance(ezwidget[wgt], widgets.Button):
+            ezwidget.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex", align_items="center", justify_content="center")
+        else:
+            ezwidget.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex")   
 
 def ui_select_probe(experiment, **kwargs):
     """
@@ -403,13 +411,12 @@ def ui_select_probe(experiment, **kwargs):
     )
     probes_gui.add_button("create_particle", 
                           description="Create labelled structure",
+                          style={"button_color": update_colour},
+                          icon=update_icon,
                           disabled=True)
     probes_gui.add_HTML("message2", "No labelled structure created yet.", style = dict(font_weight='bold', font_size='15px'))
     probe_widgets_visibility = {}
-    for wgt in probes_gui.elements.keys():
-        probe_widgets_visibility[wgt] = True
-        probes_gui.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex", align_items="center", justify_content="center")
- 
+    _unstyle_widgets(probes_gui, probe_widgets_visibility)
     show_probe_info(True)
     probes_gui["create_particle"].on_click(create_particle)
     probes_gui["toggle_advanced_parameters"].on_click(toggle_advanced_parameters)
