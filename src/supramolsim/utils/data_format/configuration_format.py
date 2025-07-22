@@ -66,7 +66,7 @@ def compile_modality_parameters(
             emission=emission_behaviour,  # blinking or constant
             modality=modality_name,
         )
-        return modality_params
+        return modality_params, mod_pars
     else:
         if (
             "filters" not in mod_pars.keys()
@@ -99,7 +99,7 @@ def compile_modality_parameters(
             emission=emission_behaviour,  # blinking or constant
             modality=modality_name,
         )
-        return modality_params
+        return modality_params, mod_pars
 
 
 def define_emission_behaviour(mod_emission, fluo_emissions):

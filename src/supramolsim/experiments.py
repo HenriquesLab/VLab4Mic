@@ -67,12 +67,14 @@ class ExperimentParametrisation:
         modalities_dir = os.path.join(local_dir, "modalities")
         modalities_names_list = []
         modality_parameters = {}
+        self.config_modalities = dict()
         for mods in os.listdir(modalities_dir):
             if os.path.splitext(mods)[-1] == ".yaml" and "_template" not in mods:
                 modalities_names_list.append(os.path.splitext(mods)[0])
         for mod in modalities_names_list:
-            mod_info = configuration_format.compile_modality_parameters(mod, local_dir)
+            mod_info, mod_configuration = configuration_format.compile_modality_parameters(mod, local_dir)
             modality_parameters[mod] = mod_info
+            self.config_modalities[mod] = mod_configuration
         self.local_modalities_names = modalities_names_list
         self.local_modalities_parameters = modality_parameters
         probes_dir = os.path.join(local_dir, "probes")
