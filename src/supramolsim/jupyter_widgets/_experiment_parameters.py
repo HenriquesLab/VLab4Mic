@@ -71,7 +71,7 @@ def ui_select_structure(experiment):
     gui = EZInput("Select_structure")
     def select_structure(elements):
         elements["label_1"].value = "Current structure selected: Loading..."
-        elements["select_structure"].icon= "fa-spinner fa-spin"
+        elements["select_structure"].icon= loding_icon
         #elements["select_structure"].disabled = True
         for wgt in elements.keys():
             elements[wgt].disabled = True
@@ -79,7 +79,7 @@ def ui_select_structure(experiment):
         experiment.build(modules="structure")
         update_structure_list()
         #elements["select_structure"].disabled = False
-        elements["select_structure"].icon= "fa-check"
+        elements["select_structure"].icon= select_icon
         for wgt in elements.keys():
             elements[wgt].disabled = False
 
@@ -100,7 +100,7 @@ def ui_select_structure(experiment):
         select_structure,
         gui.elements,
         description="Select structure",
-        icon="fa-check",
+        icon=select_icon,
         style={"button_color": select_colour},
     )
     
@@ -279,7 +279,7 @@ def ui_select_probe(experiment, **kwargs):
                             options=probe_options)
     probes_gui.add_HTML("probe_info", "")
     probes_gui["select_probe_template"].observe(show_probe_info, names="value")
-    probes_gui.add_button("toggle_advanced_parameters", description="Toggle advanced parameters", icon="eye-slash")
+    probes_gui.add_button("toggle_advanced_parameters", description="Toggle advanced parameters", icon=toggle_icon)
     # advanced parameters
     probes_gui.add_HTML("advanced_param_header", "<b>Advanced parameters</b>", style=dict(font_size='15px'))
     probes_gui.add_text(tag="probe_name", value=probes_gui["select_probe_template"].value, description="Probe name")
@@ -372,7 +372,10 @@ def ui_select_probe(experiment, **kwargs):
     )
     probes_gui.add_button("add_custom_probe",
                           description="Select probe with custom parameters",
-                          disabled=False)
+                          disabled=False,
+                          icon=select_icon,
+                          style={"button_color": select_colour}
+                          )
     probes_gui["mock_type"].observe(type_dropdown_change, names="value")
     #
     def toggle_advanced_parameters(b): 
