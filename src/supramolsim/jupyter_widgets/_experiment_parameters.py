@@ -272,7 +272,7 @@ def ui_select_probe(experiment, **kwargs):
                             options=probe_options)
     probes_gui.add_HTML("probe_info", "")
     probes_gui["select_probe_template"].observe(show_probe_info, names="value")
-    probes_gui.add_button("toggle_advanced_parameters", description="Toggle advanced parameters")
+    probes_gui.add_button("toggle_advanced_parameters", description="Toggle advanced parameters", icon="eye-slash")
     # advanced parameters
     probes_gui.add_HTML("advanced_param_header", "<b>Advanced parameters</b>", style=dict(font_size='15px'))
     probes_gui.add_text(tag="probe_name", value=probes_gui["select_probe_template"].value, description="Probe name")
@@ -388,6 +388,8 @@ def ui_select_probe(experiment, **kwargs):
         select_probe,
         probes_gui.elements,
         description="Select probe (with defaults)",
+        icon="fa-check",
+        style={"button_color": select_colour},
     )
     probes_gui.add_button("create_particle", 
                           description="Create labelled structure",
@@ -396,7 +398,7 @@ def ui_select_probe(experiment, **kwargs):
     probe_widgets_visibility = {}
     for wgt in probes_gui.elements.keys():
         probe_widgets_visibility[wgt] = True
-        probes_gui.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex")
+        probes_gui.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex", align_items="center", justify_content="center")
  
     show_probe_info(True)
     probes_gui["create_particle"].on_click(create_particle)
