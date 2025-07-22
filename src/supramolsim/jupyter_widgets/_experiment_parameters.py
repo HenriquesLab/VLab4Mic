@@ -738,7 +738,8 @@ def ui_select_modality(experiment):
     b3 = widgets.Button(
                 description="Update modality parameters",
                 style={"button_color": "#4985b7d9"},
-                layout=widgets.Layout(width="100%")
+                layout=widgets.Layout(width="100%"),
+                icon="fa-wrench"
             )   
     modality_gui.add_custom_widget(
         "add_remove",
