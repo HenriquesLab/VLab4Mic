@@ -654,8 +654,8 @@ def ui_select_modality(experiment):
     
     def select_modalities(b):
         experiment.build(modules=["imager"])
-        modality_gui["add_modality"].disabled = True
-        modality_gui["remove_modality"].disabled = True
+        b1.disabled = True
+        b2.disabled = True
         modality_gui["select_modalities"].disabled = True 
 
     def update_plot(change):
@@ -670,11 +670,11 @@ def ui_select_modality(experiment):
                 half_xy - int(half_xy * xy_zoom_in) : half_xy + int(half_xy * xy_zoom_in),
                 :]
             dimension_plane = modality_gui["dimension_slice"].value
-            if dimension_plane == "YZ plane":
+            if dimension_plane == "YZ":
                 dimension = 0
-            elif dimension_plane == "XZ plane":
+            elif dimension_plane == "XZ":
                 dimension = 1
-            elif dimension_plane == "XY plane":
+            elif dimension_plane == "XY":
                 dimension = 2
              # mod info
             pixelsize = experiment.local_modalities_parameters[mod_name]["detector"]["pixelsize"]
@@ -692,8 +692,7 @@ def ui_select_modality(experiment):
             s3  = "Depth of field (nm): " + str(psf_depth)
             s4 = "PSF preview (on a 1x1 µm field of view)"
             modality_gui["modality_info"].value = (
-                "<b>Modality: </b>" + mod_name + "<br>"
-                + "<b>" + s1 + "</b><br>"
+                "<b>" + s1 + "</b><br>"
                 + "<b>" + s2 + "</b><br>"
                 + "<b>" + s3 + "</b><br>"
                 + "<b>" + s4 + "</b><br>"
@@ -711,21 +710,32 @@ def ui_select_modality(experiment):
         options=modalities_default,
         on_change=update_plot,
     )
-    modality_gui.add_button(
-        "add_modality",
-        description="Add modality",
-        disabled=False
-    )
-    modality_gui.add_button(
-        "remove_modality",
-        description="Remove modality",
-        disabled=False
+    b1 = widgets.Button(
+                description="Add Modality",
+                button_style="success",
+                layout=widgets.Layout(width="50%")
+            )
+    b2 = widgets.Button(
+                description="Remove Modality",
+                button_style="danger",
+                layout=widgets.Layout(width="50%")
+            )   
+    modality_gui.add_custom_widget(
+        "add_remove",
+        widgets.HBox,
+        children=[
+            b1,
+            b2
+        ]
     )
     modality_gui.add_button(
         "select_modalities",
         description="Select list and update virtual modalities",
     )
-    modality_gui.add_label("Modality information")
+    modality_gui.add_button(
+        "toggle_advanced_parameters",
+        description="Show/Hide modality info and PSF preview",
+    )
     modality_gui.add_HTML(
         "modality_info",
         ""
@@ -733,8 +743,8 @@ def ui_select_modality(experiment):
     modality_gui.add_custom_widget(
         "dimension_slice",
         widgets.ToggleButtons,
-        options=["XY plane", "XZ plane", "YZ plane"],
-        value="XY plane",
+        options=["XY", "XZ", "YZ"],
+        value="XY",
         on_change=update_plot,
         style={"description_width": "initial"},
         description="Plane of view: ",
@@ -744,11 +754,22 @@ def ui_select_modality(experiment):
         description="Preview of selected modality",
         style={"description_width": "initial"},
     )
-    
+    def toggle_advanced_parameters(b):
+        widgets_visibility["modality_info"] = not widgets_visibility["modality_info"]
+        widgets_visibility["dimension_slice"] = not widgets_visibility["dimension_slice"]
+        widgets_visibility["preview_modality"] = not widgets_visibility["preview_modality"]
+        update_widgets_visibility(modality_gui, widgets_visibility)
 
-    modality_gui["add_modality"].on_click(add_modality)
-    modality_gui["remove_modality"].on_click(remove_modality)
+    widgets_visibility = {}
+    for wgt in modality_gui.elements.keys():
+        widgets_visibility[wgt] = True
+        modality_gui.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex")   
+    modality_gui["dimension_slice"].style = dict(description_width="initial")
+    b1.on_click(add_modality)
+    b2.on_click(remove_modality)
     modality_gui["select_modalities"].on_click(select_modalities)
+    modality_gui["toggle_advanced_parameters"].on_click(toggle_advanced_parameters)
+    toggle_advanced_parameters(True)  # Initialize with default visibility
     update_message()
     update_plot(True)
     return modality_gui
