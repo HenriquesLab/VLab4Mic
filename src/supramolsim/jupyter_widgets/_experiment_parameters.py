@@ -635,6 +635,16 @@ def ui_select_modality(experiment):
             )
         update_message()
     
+    def update_modality_params(b):
+        selected_modality = modality_gui["modality"].value
+        if selected_modality != "All":
+            experiment.update_modality(
+                modality_name=selected_modality,
+                depth_of_field_nm=modality_gui["psf_depth"].value,
+            )
+            update_message()
+            update_plot(None)
+
     def remove_modality(b):
         selected_modality = modality_gui["modality"].value
         if selected_modality == "All":
@@ -660,7 +670,12 @@ def ui_select_modality(experiment):
 
     def update_plot(change):
         mod_name = modality_gui["modality"].value
+
         if mod_name != "All":
+            if mod_name not in experiment.imaging_modalities:
+                info = experiment.local_modalities_parameters[mod_name]
+            else:
+                info = experiment.imaging_modalities[mod_name]
             psf_stack = preview_experiment.imager.get_modality_psf_stack(mod_name)
             psf_shape = psf_stack.shape
             half_xy = int(psf_shape[0] / 2)
@@ -677,15 +692,15 @@ def ui_select_modality(experiment):
             elif dimension_plane == "XY":
                 dimension = 2
              # mod info
-            pixelsize = experiment.local_modalities_parameters[mod_name]["detector"]["pixelsize"]
+            pixelsize = info["detector"]["pixelsize"]
             pixelsize_nm = pixelsize * 1000
             psf_voxel = np.array(
-                        experiment.local_modalities_parameters[mod_name]["psf_params"]["voxelsize"]
+                        info["psf_params"]["voxelsize"]
                     )
             psf_sd = np.array(
-                        experiment.local_modalities_parameters[mod_name]["psf_params"]["std_devs"]
+                        info["psf_params"]["std_devs"]
                     )
-            psf_depth = experiment.local_modalities_parameters[mod_name]["psf_params"]["depth"]
+            psf_depth = info["psf_params"]["depth"]*psf_voxel[0]
             s1 = "Detector pixelsize (nm): " + str(pixelsize_nm)
             psf_sd_metric = np.multiply(psf_voxel, psf_sd)
             s2 = "PSF sd (nm): " + str(psf_sd_metric)
@@ -712,13 +727,18 @@ def ui_select_modality(experiment):
     )
     b1 = widgets.Button(
                 description="Add Modality",
-                button_style="success",
+                style={"button_color": "#4daf4ac7"},
                 layout=widgets.Layout(width="50%")
             )
     b2 = widgets.Button(
                 description="Remove Modality",
-                button_style="danger",
+                style={"button_color": "#ff8000da"},
                 layout=widgets.Layout(width="50%")
+            ) 
+    b3 = widgets.Button(
+                description="Update modality parameters",
+                style={"button_color": "#4985b7d9"},
+                layout=widgets.Layout(width="100%")
             )   
     modality_gui.add_custom_widget(
         "add_remove",
@@ -733,8 +753,29 @@ def ui_select_modality(experiment):
         description="Select list and update virtual modalities",
     )
     modality_gui.add_button(
+        "toggle_advanced_parameters",
+        description="Toggle advanced parameters",  
+    )
+    modality_gui.add_int_slider(
+        "psf_depth",
+        description="PSF depth (nm)",
+        min=10,
+        max=1000,
+        step=10,
+        value=100,
+        continuous_update=False,
+        style={"description_width": "initial"},
+    )
+    modality_gui.add_custom_widget(
+        "update_modality_params",
+        widgets.HBox,
+        children=[
+            b3,
+        ]
+    )
+    modality_gui.add_button(
         "toggle_preview",
-        description="Show/Hide modality info and PSF preview",
+        description="Toggle modality info and PSF preview",
     )
     modality_gui.add_HTML(
         "modality_info",
@@ -760,6 +801,11 @@ def ui_select_modality(experiment):
         widgets_visibility["preview_modality"] = not widgets_visibility["preview_modality"]
         update_widgets_visibility(modality_gui, widgets_visibility)
 
+    def toggle_advanced_parameters(b):
+        widgets_visibility["psf_depth"] = not widgets_visibility["psf_depth"]
+        widgets_visibility["update_modality_params"] = not widgets_visibility["update_modality_params"]
+        update_widgets_visibility(modality_gui, widgets_visibility)
+
     widgets_visibility = {}
     for wgt in modality_gui.elements.keys():
         widgets_visibility[wgt] = True
@@ -768,8 +814,11 @@ def ui_select_modality(experiment):
     b1.on_click(add_modality)
     b2.on_click(remove_modality)
     modality_gui["select_modalities"].on_click(select_modalities)
+    modality_gui["toggle_advanced_parameters"].on_click(toggle_advanced_parameters)
+    b3.on_click(update_modality_params)
     modality_gui["toggle_preview"].on_click(toggle_preview)
     toggle_preview(True)  # Initialize with default visibility
+    toggle_advanced_parameters(True)  # Initialize with default visibility
     update_message()
     update_plot(True)
     return modality_gui
