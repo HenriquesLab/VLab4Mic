@@ -65,7 +65,7 @@ def update_widgets_visibility(ezwidget, visibility_dictionary):
             ezwidget[widgetname].layout.display = "inline-flex"
         else:
             ezwidget[widgetname].layout.display = "None"
-            
+
 def _unstyle_widgets(ezwidget, visibility_dictionary):
     for wgt in ezwidget.elements.keys():
         visibility_dictionary[wgt] = True
@@ -157,9 +157,7 @@ def ui_show_structure(experiment):
     #gui.add_button("show_structure", description="Show structure")
     gui.add_output("preview_structure")
     widgets_visibility = {}
-    for wgt in gui.elements.keys():
-        widgets_visibility[wgt] = True
-        gui.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex")
+    _unstyle_widgets(gui, widgets_visibility)
     gui["button"].layout = widgets.Layout(width='50%', align_items='center', justify_content='center')
     widgets_visibility["n_atoms"] = False
     widgets_visibility["hview"] = False
@@ -278,9 +276,7 @@ def ui_show_labelled_structure(experiment):
     gui["show_labelled_structure"].on_click(show_labelled_structure)
     gui.add_output("preview_labelled_structure")
     widgets_visibility = {}
-    for wgt in gui.elements.keys():
-        widgets_visibility[wgt] = True
-        gui.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex")
+    _unstyle_widgets(gui, widgets_visibility)
     widgets_visibility["emitter_plotsize"] = False
     widgets_visibility["source_plotsize"] = False
     widgets_visibility["hview"] = False
@@ -345,7 +341,8 @@ def ui_show_virtual_sample(experiment):
         on_change=update_plot,
         disabled=True,
     )
-    
+    widgets_visibility = {}
+    _unstyle_widgets(gui, widgets_visibility)
     gui["show_virtual_sample"].on_click(update_plot)
     gui.add_output("preview_virtual_sample")
     return gui
@@ -665,11 +662,7 @@ def ui_set_acq_params(experiment):
     acquisition_gui.add_output("image_output")
     
     acq_widgets = {}
-    for wgt in acquisition_gui.elements.keys():
-        acq_widgets[wgt] = False
-        acquisition_gui.elements[wgt].layout = widgets.Layout(
-            width="50%", display="None"
-        )
+    _unstyle_widgets(acquisition_gui, acq_widgets)
     acquisition_gui.show()
     acq_widgets["Frames"] = True
     acq_widgets["Set"] = True
