@@ -451,9 +451,9 @@ def ui_select_sample_parameters(experiment):
             sample_gui["message"].value = "No sample parameters selected yet."
         else:
             text = ""
-            for key, value in experiment.virtualsample_params.items():
-                if key in ["number_of_particles", "random_orientations", "minimal_distance"]:
-                    text += f"{key}: {value}<br>"
+            for param in ["number_of_particles", "random_orientations", "minimal_distance"]:
+                value = experiment.virtualsample_params[param]
+                text += f"{param}: {value}<br>"
             sample_gui["message"].value = text
     
 
@@ -471,6 +471,13 @@ def ui_select_sample_parameters(experiment):
         description="Randomise orientations",
         value=True
     )
+    
+    sample_gui.add_button(
+        "advanced_parameters",
+        description="Toggle advanced parameters",
+        icon=toggle_icon,
+    )
+    ####  advanced parameters ####
     sample_gui.add_checkbox(
             "use_min_from_particle",
             value=True,
@@ -484,13 +491,6 @@ def ui_select_sample_parameters(experiment):
         step=1,
         style={"description_width": "initial"},
     )
-    
-    sample_gui.add_button(
-        "advanced_parameters",
-        description="Toggle advanced parameters",
-        icon=toggle_icon,
-    )
-    ####  advanced parameters ####
     sample_gui.add_file_upload(
             "File", description="Select from file", accept="*.tif", save_settings=False,
         )
@@ -539,8 +539,14 @@ def ui_select_sample_parameters(experiment):
             style={"description_width": "initial"},   
     )
     sample_gui.add_button(
+        "update_sample_parameters",
+        description="Update sample parameters",
+        icon=update_icon,
+        style={"button_color": update_colour},
+    )
+    sample_gui.add_button(
         "select_sample_parameters",
-        description="Select sample parameters",
+        description="Select parameters and build virtual sample",
         disabled=False,
         icon=select_icon,
         style={"button_color": select_colour},
@@ -548,16 +554,23 @@ def ui_select_sample_parameters(experiment):
     sample_gui.add_button("upload_and_set", description="Load image and select parameters", disabled=False, 
                           icon=upload_icon, style={"button_color": select_colour})
     sample_gui.add_HTML("advanced_params_feedback", "", style=dict(font_weight='bold'))
-    def select_virtual_sample_parameters(b):
+    
+    def update_parameters(b):
         if sample_gui["use_min_from_particle"].value:
-            min_distance = None
+            experiment.set_virtualsample_params(
+                number_of_particles=sample_gui["number_of_particles"].value,
+                random_orientations=sample_gui["random_orientations"].value,
+            )
         else:
             min_distance = sample_gui["minimal_distance_nm"].value
-        experiment.set_virtualsample_params(
-            number_of_particles=sample_gui["number_of_particles"].value,
-            random_orientations=sample_gui["random_orientations"].value,
-            minimal_distance=min_distance
-        )
+            experiment.set_virtualsample_params(
+                number_of_particles=sample_gui["number_of_particles"].value,
+                random_orientations=sample_gui["random_orientations"].value,
+                minimal_distance=min_distance
+            )
+        update_message()
+    
+    def select_virtual_sample_parameters(b):
         experiment.build(modules=["coordinate_field"])
         if experiment.objects_created["imager"]:
             experiment.build(modules=["imager"])
@@ -597,6 +610,8 @@ def ui_select_sample_parameters(experiment):
         update_message()
 
     def toggle_advanced_parameters(b):
+        widgets_visibility["minimal_distance_nm"] = not widgets_visibility["minimal_distance_nm"]
+        widgets_visibility["use_min_from_particle"] = not widgets_visibility["use_min_from_particle"]
         widgets_visibility["select_sample_parameters"] = not widgets_visibility["select_sample_parameters"]
         widgets_visibility["upload_and_set"] = not widgets_visibility["upload_and_set"]
         widgets_visibility["File"] = not widgets_visibility["File"]
@@ -613,7 +628,9 @@ def ui_select_sample_parameters(experiment):
     sample_gui["select_sample_parameters"].on_click(select_virtual_sample_parameters)
     sample_gui["advanced_parameters"].on_click(toggle_advanced_parameters)
     sample_gui["upload_and_set"].on_click(upload_and_set)
+    sample_gui["update_sample_parameters"].on_click(update_parameters)
     widgets_visibility["select_sample_parameters"] = False
+    update_parameters(True)
     select_virtual_sample_parameters(True)  # Initialize with default parameters
     toggle_advanced_parameters(True)  # Initialize with advanced parameters hidden
     return sample_gui
