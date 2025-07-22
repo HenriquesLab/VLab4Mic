@@ -733,7 +733,7 @@ def ui_select_modality(experiment):
         description="Select list and update virtual modalities",
     )
     modality_gui.add_button(
-        "toggle_advanced_parameters",
+        "toggle_preview",
         description="Show/Hide modality info and PSF preview",
     )
     modality_gui.add_HTML(
@@ -754,7 +754,7 @@ def ui_select_modality(experiment):
         description="Preview of selected modality",
         style={"description_width": "initial"},
     )
-    def toggle_advanced_parameters(b):
+    def toggle_preview(b):
         widgets_visibility["modality_info"] = not widgets_visibility["modality_info"]
         widgets_visibility["dimension_slice"] = not widgets_visibility["dimension_slice"]
         widgets_visibility["preview_modality"] = not widgets_visibility["preview_modality"]
@@ -768,8 +768,8 @@ def ui_select_modality(experiment):
     b1.on_click(add_modality)
     b2.on_click(remove_modality)
     modality_gui["select_modalities"].on_click(select_modalities)
-    modality_gui["toggle_advanced_parameters"].on_click(toggle_advanced_parameters)
-    toggle_advanced_parameters(True)  # Initialize with default visibility
+    modality_gui["toggle_preview"].on_click(toggle_preview)
+    toggle_preview(True)  # Initialize with default visibility
     update_message()
     update_plot(True)
     return modality_gui
