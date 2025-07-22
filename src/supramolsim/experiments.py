@@ -1001,6 +1001,10 @@ class ExperimentParametrisation:
         None
         """
         # load default configuration for virtual sample
+        try:
+            particle_minimal_distance = self.coordinate_field.molecules_params["minimal_distance"]
+        except:
+            particle_minimal_distance = None
         virtual_sample_template = os.path.join(
             self.configuration_path,
             "virtualsample",
@@ -1017,7 +1021,10 @@ class ExperimentParametrisation:
             vsample_configuration["random_orientations"] = random_orientations
         if random_placing is not None:
             vsample_configuration["random_placing"] = random_placing
-        vsample_configuration["minimal_distance"] = minimal_distance
+        if minimal_distance is not None:
+            vsample_configuration["minimal_distance"] = minimal_distance
+        else:
+            vsample_configuration["minimal_distance"] = particle_minimal_distance
         self.virtualsample_params = vsample_configuration
 
     def use_image_for_positioning(
