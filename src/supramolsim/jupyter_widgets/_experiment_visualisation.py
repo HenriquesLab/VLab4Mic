@@ -624,7 +624,7 @@ def ui_set_acq_params(experiment):
             
 
     def _mods_text_update(mods_text_base, mod_acq_params, keys_to_use = ["exp_time", "noise"]):
-        mods_text = mods_text_base + "<br>"
+        mods_text = "<b>"+mods_text_base+"</b>" + "<br>"
         for modality_name, acq_params in mod_acq_params.items():
             if acq_params is None:
                 acq_params = "Default"

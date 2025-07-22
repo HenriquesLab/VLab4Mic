@@ -789,7 +789,7 @@ def ui_select_modality(experiment):
         ]
     )
     select_modalities_button = widgets.Button(
-        description="Select modalities",
+        description="Select modalities and update virtual microscope",
         style={"button_color": "#4daf4ac7"},
         layout=widgets.Layout(width="100%"),
         icon="fa-check"
