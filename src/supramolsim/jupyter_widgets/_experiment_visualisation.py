@@ -661,6 +661,14 @@ def ui_set_acq_params(experiment):
     )
     acquisition_gui["Noise"].observe(preview_params_chage, names="value")
     acquisition_gui["Exposure"].observe(preview_params_chage, names="value")
+    acquisition_gui.add_HTML(
+        "current_parameters",
+        _mods_text_update(
+            mods_text_base="Current acquisition parameters for modalities: ",
+            mod_acq_params=experiment.selected_mods,
+            keys_to_use=["exp_time", "noise", "nframes"],
+        ),
+    )
     acquisition_gui.add_button("Set", description="Update acquisition parameters", 
                                icon=update_icon, style={"button_color": update_colour})
     acquisition_gui.add_button("Clear", description="Reset params", 
@@ -698,14 +706,6 @@ def ui_set_acq_params(experiment):
     acq_widgets["Clear"] = True
     acq_widgets["show_preview"] = True
     acq_widgets["show_as_volume"] = True
-    acquisition_gui.add_HTML(
-        "current_parameters",
-        _mods_text_update(
-            mods_text_base="Current acquisition parameters for modalities: ",
-            mod_acq_params=experiment.selected_mods,
-            keys_to_use=["exp_time", "noise", "nframes"],
-        ),
-    )
     
     update_widgets_visibility(acquisition_gui, acq_widgets)
     return acquisition_gui
