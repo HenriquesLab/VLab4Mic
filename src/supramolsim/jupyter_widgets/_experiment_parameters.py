@@ -727,13 +727,13 @@ def ui_select_modality(experiment):
     )
     b1 = widgets.Button(
                 description="Add Modality",
-                style={"button_color": "#4daf4ac7"},
-                layout=widgets.Layout(width="50%")
+                layout=widgets.Layout(width="50%"),
+                icon="fa-plus"
             )
     b2 = widgets.Button(
                 description="Remove Modality",
-                style={"button_color": "#ff8000da"},
-                layout=widgets.Layout(width="50%")
+                layout=widgets.Layout(width="50%"),
+                icon="fa-minus"
             ) 
     b3 = widgets.Button(
                 description="Update modality parameters",
@@ -749,13 +749,30 @@ def ui_select_modality(experiment):
             b2
         ]
     )
-    modality_gui.add_button(
-        "select_modalities",
-        description="Select list and update virtual modalities",
+    select_modalities_button = widgets.Button(
+        description="Select modalities",
+        style={"button_color": "#4daf4ac7"},
+        layout=widgets.Layout(width="100%"),
+        icon="fa-check"
     )
-    modality_gui.add_button(
+    modality_gui.add_custom_widget(
+        "select_modalities",
+        widgets.HBox,
+        children=[
+            select_modalities_button
+        ]
+    )
+    button_toggle_advanced_parameters = widgets.Button(
+        description="Toggle advanced parameters",
+        layout=widgets.Layout(width="100%"),
+        icon="eye-slash",
+    )
+    modality_gui.add_custom_widget(
         "toggle_advanced_parameters",
-        description="Toggle advanced parameters",  
+        widgets.HBox,
+        children=[
+            button_toggle_advanced_parameters
+        ]
     )
     modality_gui.add_int_slider(
         "psf_depth",
@@ -774,9 +791,17 @@ def ui_select_modality(experiment):
             b3,
         ]
     )
-    modality_gui.add_button(
+    button_toggle_preview = widgets.Button(
+                description="Toggle modality info and PSF preview",
+                layout=widgets.Layout(width="100%"),
+                icon="eye-slash",
+            )
+    modality_gui.add_custom_widget(
         "toggle_preview",
-        description="Toggle modality info and PSF preview",
+        widgets.HBox,
+        children=[
+            button_toggle_preview
+        ]
     )
     modality_gui.add_HTML(
         "modality_info",
@@ -810,14 +835,14 @@ def ui_select_modality(experiment):
     widgets_visibility = {}
     for wgt in modality_gui.elements.keys():
         widgets_visibility[wgt] = True
-        modality_gui.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex")   
+        modality_gui.elements[wgt].layout = widgets.Layout(width="50%")   
     modality_gui["dimension_slice"].style = dict(description_width="initial")
     b1.on_click(add_modality)
     b2.on_click(remove_modality)
-    modality_gui["select_modalities"].on_click(select_modalities)
-    modality_gui["toggle_advanced_parameters"].on_click(toggle_advanced_parameters)
+    select_modalities_button.on_click(select_modalities)
+    button_toggle_advanced_parameters.on_click(toggle_advanced_parameters)
     b3.on_click(update_modality_params)
-    modality_gui["toggle_preview"].on_click(toggle_preview)
+    button_toggle_preview.on_click(toggle_preview)
     toggle_preview(True)  # Initialize with default visibility
     toggle_advanced_parameters(True)  # Initialize with default visibility
     update_message()
