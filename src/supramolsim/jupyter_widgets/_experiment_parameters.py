@@ -43,6 +43,10 @@ from supramolsim.utils.visualisation.matplotlib_plots import slider_normalised
 import numpy as np
 import tifffile as tif
 
+select_colour = "#4daf4ac7"
+remove_colour = "#ff8000da"
+update_colour = "#00bfffda"
+
 def ui_select_structure(experiment):
     """
     Create a widget for selecting the experiment structure.
@@ -60,6 +64,7 @@ def ui_select_structure(experiment):
     gui = EZInput("Select_structure")
     def select_structure(elements):
         elements["label_1"].value = "Current structure selected: Loading..."
+        elements["select_structure"].icon= "fa-spinner fa-spin"
         #elements["select_structure"].disabled = True
         for wgt in elements.keys():
             elements[wgt].disabled = True
@@ -67,6 +72,7 @@ def ui_select_structure(experiment):
         experiment.build(modules="structure")
         update_structure_list()
         #elements["select_structure"].disabled = False
+        elements["select_structure"].icon= "fa-check"
         for wgt in elements.keys():
             elements[wgt].disabled = False
 
@@ -87,6 +93,8 @@ def ui_select_structure(experiment):
         select_structure,
         gui.elements,
         description="Select structure",
+        icon="fa-check",
+        style={"button_color": select_colour},
     )
     
     return gui
