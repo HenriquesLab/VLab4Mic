@@ -577,10 +577,10 @@ def ui_set_acq_params(experiment):
             )
             acquisition_gui["image_output"].clear_output()
             slider = widgets.IntSlider(
-                value=45,
+                value=0,
                 min=0,
                 max=180,
-                step=1,
+                step=20,
                 description='Angle:',
                 continuous_update=False,
             )
