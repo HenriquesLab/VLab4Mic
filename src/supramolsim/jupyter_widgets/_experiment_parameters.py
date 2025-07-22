@@ -605,9 +605,7 @@ def ui_select_sample_parameters(experiment):
         widgets_visibility["random"] = not widgets_visibility["random"]
         update_widgets_visibility(sample_gui, widgets_visibility)
     widgets_visibility = {}
-    for wgt in sample_gui.elements.keys():
-        widgets_visibility[wgt] = True
-        sample_gui.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex")    
+    _unstyle_widgets(sample_gui, widgets_visibility)  
     widgets_visibility["upload_and_set"] = False
     widgets_visibility["File"] = False
     widgets_visibility["pixel_size"] = False
@@ -860,9 +858,7 @@ def ui_select_modality(experiment):
         update_widgets_visibility(modality_gui, widgets_visibility)
 
     widgets_visibility = {}
-    for wgt in modality_gui.elements.keys():
-        widgets_visibility[wgt] = True
-        modality_gui.elements[wgt].layout = widgets.Layout(width="50%")   
+    _unstyle_widgets(modality_gui, widgets_visibility)   
     modality_gui["dimension_slice"].style = dict(description_width="initial")
     b1.on_click(add_modality)
     b2.on_click(remove_modality)
