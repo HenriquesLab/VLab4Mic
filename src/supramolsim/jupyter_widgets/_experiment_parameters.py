@@ -51,6 +51,7 @@ update_colour = "#00bfffda"
 select_icon = "fa-check"
 add_icon = "fa-plus"
 remove_icon = "fa-minus"
+clear_icon = "fa-trash"
 loding_icon = "fa-spinner fa-spin"
 update_icon = "fa-wrench" # create
 toggle_icon = "fa-eye-slash"
@@ -283,9 +284,16 @@ def ui_select_probe(experiment, **kwargs):
             probes_gui["mock_type_options2"].options = options_per_type2[change.new]
             probes_gui["mock_type_options2"].value = options_per_type2[change.new][0]
 
+    def clear_probes(b):
+        experiment.remove_probes()
+        probes_gui["message1"].value = "No probes selected yet."
+        probes_gui["message2"].value = "No labelled structure created yet."
+        probes_gui["add_probe"].disabled = False
+        probes_gui["create_particle"].disabled = True
+        update_probe_list()
 
     # widgets
-    probes_gui.add_label("Seleced probes:")
+    probes_gui.add_HTML(tag="Header_message", value="<b>Selected probes:</b>")
     probes_gui.add_HTML("message1", "No probes selected yet.", style = dict(font_weight='bold', font_size='15px'))
     probes_gui.add_dropdown("select_probe_template",
                             description="Choose a probe:",
@@ -412,8 +420,9 @@ def ui_select_probe(experiment, **kwargs):
         description="Add probe (with defaults)",
         icon=add_icon,
     )
+    probes_gui.add_button("clear_probes", description="Clear all probes", icon=clear_icon, style={"button_color": remove_colour})
     probes_gui.add_button("create_particle", 
-                          description="Create labelled structure",
+                          description="Select probes and create labelled structure",
                           style={"button_color": select_colour},
                           icon=select_icon,
                           disabled=True)
@@ -422,6 +431,7 @@ def ui_select_probe(experiment, **kwargs):
     _unstyle_widgets(probes_gui, probe_widgets_visibility)
     show_probe_info(True)
     probes_gui["create_particle"].on_click(create_particle)
+    probes_gui["clear_probes"].on_click(clear_probes)
     probes_gui["toggle_advanced_parameters"].on_click(toggle_advanced_parameters)
     probes_gui["add_custom_probe"].on_click(select_custom_probe)
     toggle_advanced_parameters(True)  # Initialize with default visibility
