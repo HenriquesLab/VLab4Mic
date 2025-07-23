@@ -22,5 +22,5 @@ acquisition:
   exp_time:
     ptype: numeric
     wtype: float_slider
-    range: [0, 1, 0.001]
+    range: [0, 0.01, 0.0001]
     nintervals: 2
