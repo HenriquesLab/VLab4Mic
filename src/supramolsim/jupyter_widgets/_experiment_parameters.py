@@ -42,6 +42,7 @@ import copy
 from supramolsim.utils.visualisation.matplotlib_plots import slider_normalised
 import numpy as np
 import tifffile as tif
+from IPython.utils import io
 
 select_colour = "#4daf4ac7"
 remove_colour = "#ff8000da"
@@ -54,6 +55,7 @@ loding_icon = "fa-spinner fa-spin"
 update_icon = "fa-wrench" # create
 toggle_icon = "fa-eye-slash"
 upload_icon = "fa-upload"
+
 
 def ui_select_structure(experiment):
     """
@@ -77,7 +79,8 @@ def ui_select_structure(experiment):
         for wgt in elements.keys():
             elements[wgt].disabled = True
         experiment.structure_id = experiment.structures_info_list[elements["structures"].value]
-        experiment.build(modules="structure")
+        with io.outoutput.capture() as captured:
+            experiment.build(modules="structure")
         update_structure_list()
         #elements["select_structure"].disabled = False
         elements["select_structure"].icon= select_icon
@@ -241,7 +244,8 @@ def ui_select_probe(experiment, **kwargs):
 
     def create_particle(b):
         probes_gui["message2"].value = "Creating labelled structure..."
-        experiment.build(modules=["particle"])
+        with io.outoutput.capture() as captured:
+            experiment.build(modules=["particle"])
         probes_gui["add_probe"].disabled = True
         probes_gui["create_particle"].disabled = True
         if experiment.generators_status("particle"):
@@ -571,10 +575,11 @@ def ui_select_sample_parameters(experiment):
         update_message()
     
     def select_virtual_sample_parameters(b):
-        experiment.build(modules=["coordinate_field"])
-        if experiment.objects_created["imager"]:
-            experiment.build(modules=["imager"])
-        update_message()
+        with io.outoutput.capture() as captured:
+            experiment.build(modules=["coordinate_field"])
+            if experiment.objects_created["imager"]:
+                experiment.build(modules=["imager"])
+            update_message()
     
     def upload_and_set(b):
         filepath = sample_gui["File"].selected
@@ -702,7 +707,8 @@ def ui_select_modality(experiment):
         update_message()
     
     def select_modalities(b):
-        experiment.build(modules=["imager"])
+        with io.outoutput.capture() as captured:
+            experiment.build(modules=["imager"])
         b1.disabled = True
         b2.disabled = True
         modality_gui["select_modalities"].disabled = True 
@@ -911,7 +917,8 @@ def ui_run_experiment(experiment):
             experiment.output_directory = sav_dir
             save = True
         experiment.experiment_id = run_gui["experiment_name"].value
-        output = experiment.run_simulation(save=save)
+        with io.outoutput.capture() as captured:   
+            output = experiment.run_simulation(save=save)
         run_gui.save_settings()
         if output is None:
             run_gui["message"].value = "Simulation failed. Make sure all parameters are set correctly."

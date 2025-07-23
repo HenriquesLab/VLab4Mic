@@ -59,6 +59,7 @@ update_icon = "fa-wrench" # create
 toggle_icon = "fa-eye-slash"
 upload_icon = "fa-upload"
 reset_icon = "fa-undo"
+
 def update_widgets_visibility(ezwidget, visibility_dictionary):
     """
     Show or hide widgets in an EZInput widget based on a visibility dictionary.
@@ -603,7 +604,8 @@ def ui_set_acq_params(experiment):
 
     def clear(b):
         print("Acquisition parameters cleared")
-        experiment.reset_to_defaults(module="acquisitions", save=True)
+        with io.capture_output() as captured:
+            experiment.reset_to_defaults(module="acquisitions", save=True)
         acquisition_gui["current_parameters"].value = _mods_text_update(
             mods_text_base="Current acquisition parameters for modalities: ",
             mod_acq_params=experiment.selected_mods,
