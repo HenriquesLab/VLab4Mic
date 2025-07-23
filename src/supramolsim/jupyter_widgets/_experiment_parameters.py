@@ -79,7 +79,7 @@ def ui_select_structure(experiment):
         for wgt in elements.keys():
             elements[wgt].disabled = True
         experiment.structure_id = experiment.structures_info_list[elements["structures"].value]
-        with io.outoutput.capture() as captured:
+        with io.capture_output() as captured:
             experiment.build(modules="structure")
         update_structure_list()
         #elements["select_structure"].disabled = False
@@ -244,7 +244,7 @@ def ui_select_probe(experiment, **kwargs):
 
     def create_particle(b):
         probes_gui["message2"].value = "Creating labelled structure..."
-        with io.outoutput.capture() as captured:
+        with io.capture_output() as captured:
             experiment.build(modules=["particle"])
         probes_gui["add_probe"].disabled = True
         probes_gui["create_particle"].disabled = True
@@ -575,7 +575,7 @@ def ui_select_sample_parameters(experiment):
         update_message()
     
     def select_virtual_sample_parameters(b):
-        with io.outoutput.capture() as captured:
+        with io.capture_output() as captured:
             experiment.build(modules=["coordinate_field"])
             if experiment.objects_created["imager"]:
                 experiment.build(modules=["imager"])
@@ -707,7 +707,7 @@ def ui_select_modality(experiment):
         update_message()
     
     def select_modalities(b):
-        with io.outoutput.capture() as captured:
+        with io.capture_output() as captured:
             experiment.build(modules=["imager"])
         b1.disabled = True
         b2.disabled = True
@@ -917,7 +917,7 @@ def ui_run_experiment(experiment):
             experiment.output_directory = sav_dir
             save = True
         experiment.experiment_id = run_gui["experiment_name"].value
-        with io.outoutput.capture() as captured:   
+        with io.capture_output() as captured:  
             output = experiment.run_simulation(save=save)
         run_gui.save_settings()
         if output is None:
