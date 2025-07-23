@@ -117,13 +117,14 @@ def ui_show_structure(experiment):
                 fraction = atoms_number/total
             else:
                 fraction = 1.0
-            with widget_elements["preview_structure"]:
-                display(
-                    experiment.structure.show_assembly_atoms(
-                        assembly_fraction=fraction,
-                        view_init=[vview, hview, 0]
-                    )
+            with io.capture_output() as captured:
+                fig = experiment.structure.show_assembly_atoms(
+                    assembly_fraction=fraction,
+                    view_init=[vview, hview, 0],
+                    return_plot=True
                 )
+            with widget_elements["preview_structure"]:
+                display(fig)
                 plt.close()
         else:
             widget_elements["preview_structure"].clear_output()

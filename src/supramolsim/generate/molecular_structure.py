@@ -853,7 +853,7 @@ class MolecularStructureParser:
             fig.show
 
     def show_assembly_atoms(
-        self, assembly_fraction=0.01, view_init=[0, 0, 0], axesoff=True
+        self, assembly_fraction=0.01, view_init=[0, 0, 0], axesoff=True,return_plot=False
     ):
         """
         Visualize a fraction of the assembly atoms.
@@ -888,7 +888,11 @@ class MolecularStructureParser:
         )
         if axesoff:
             ax.set_axis_off()
-        return fig
+        if return_plot:
+            plt.close()
+            return fig
+        else:
+            fig.show()
 
     def create_instance_builder(self, write=False, savingdir=None):
         """
