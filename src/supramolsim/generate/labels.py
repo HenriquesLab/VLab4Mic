@@ -209,8 +209,6 @@ def construct_label(
     fluorophore_id: str = "AF647",
     lab_eff: float = None,
     target_info=None,
-    enable_wobble=False,
-    wobble_theta=None,
     **kwargs,
 ):
     """
@@ -244,9 +242,8 @@ def construct_label(
         label_params["conjugation_sites"]["efficiency"] = kwargs["conjugation_efficiency"]
     if "epitope_target_info" in kwargs.keys():
         label_params["epitope"]["target"] = kwargs["epitope_target_info"]
-    if enable_wobble:
-        if label_params["binding"]["wobble_range"]["theta"] is None:
-            label_params["binding"]["wobble_range"]["theta"] = wobble_theta
+    if "wobble_theta" in label_params.keys():
+        label_params["binding"]["wobble_range"]["theta"] = label_params["wobble_theta"]
     else:
         label_params["binding"]["wobble_range"]["theta"] = None
     ######## information about target

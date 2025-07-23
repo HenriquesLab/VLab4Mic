@@ -837,7 +837,7 @@ class ExperimentParametrisation:
         probe_conjugation_target_info=None,
         probe_conjugation_efficiency: float = None,
         probe_seconday_epitope=None,
-        probe_wobbling=False,
+        probe_wobble_theta: float = None,
         labelling_efficiency: float = 1.0,
         as_primary=False,
         peptide_motif: dict = None,
@@ -946,8 +946,9 @@ class ExperimentParametrisation:
             probe_configuration["conjugation_efficiency"] = probe_conjugation_efficiency
         if probe_seconday_epitope is not None:
             probe_configuration["epitope_target_info"] = probe_seconday_epitope
-        if probe_wobbling:
-            probe_configuration["enable_wobble"] = probe_wobbling
+        if probe_wobble_theta is not None:
+            probe_configuration["enable_wobble"] = True
+            probe_configuration["wobble_theta"] = probe_wobble_theta
         if as_primary:
             print("Adding probe as primary linker")
             probe_configuration["as_linker"] = True

@@ -186,8 +186,10 @@ def ui_select_probe(experiment, **kwargs):
         probe_target_value = probes_gui["mock_type_options1"].value
         probe_target_value2 = probes_gui["mock_type_options2"].value
         as_linker = probes_gui["as_linker"].value
-        wobble = probes_gui["wobble"].value
-        wobble_theta = probes_gui["wobble_theta"].value
+        if probes_gui["wobble"].value:
+            probe_wobble_theta = probes_gui["wobble_theta"].value
+        else:
+            probe_wobble_theta = None
         if as_linker:
             options_per_type1["Primary_Probe"] = [
                 probe_name,
@@ -204,8 +206,7 @@ def ui_select_probe(experiment, **kwargs):
                 labelling_efficiency=labelling_efficiency,
                 probe_distance_to_epitope=probe_distance_to_epitope,
                 as_primary=as_linker,
-                wobble=wobble,
-                wobble_theta=wobble_theta,
+                probe_wobble_theta=probe_wobble_theta,
             )
         elif probe_target_type == "Atom_residue":
             residue = probes_gui["mock_type_options1"].value
@@ -218,8 +219,7 @@ def ui_select_probe(experiment, **kwargs):
                 labelling_efficiency=labelling_efficiency,
                 probe_distance_to_epitope=probe_distance_to_epitope,
                 as_primary=as_linker,
-                wobble=wobble,
-                wobble_theta=wobble_theta,
+                probe_wobble_theta=probe_wobble_theta,
             )
         elif probe_target_type == "Primary":
             experiment.add_probe(
@@ -230,8 +230,7 @@ def ui_select_probe(experiment, **kwargs):
                 labelling_efficiency=labelling_efficiency,
                 probe_distance_to_epitope=probe_distance_to_epitope,
                 as_primary=as_linker,
-                wobble=wobble,
-                wobble_theta=wobble_theta,
+                probe_wobble_theta=probe_wobble_theta,
             )
         probes_gui["create_particle"].disabled = False
         update_probe_list()
