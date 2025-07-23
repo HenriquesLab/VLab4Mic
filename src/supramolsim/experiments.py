@@ -20,8 +20,14 @@ import copy
 from supramolsim.utils.io import yaml_functions
 from IPython.utils import io
 from pathlib import Path
+import sys
 
-output_path = Path.home() / "vlab4mic_outputs"
+IN_COLAB = 'google.colab' in sys.modules
+if IN_COLAB:
+    output_path = "/content/vlab4mic_outputs"
+else:
+    output_path = Path.home() / "vlab4mic_outputs"
+
 
 if not os.path.exists(output_path):
     os.makedirs(output_path)
