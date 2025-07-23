@@ -43,6 +43,7 @@ from supramolsim.utils.visualisation.matplotlib_plots import slider_normalised
 import numpy as np
 import tifffile as tif
 from IPython.utils import io
+from ..experiments import build_virtual_microscope
 
 select_colour = "#4daf4ac7"
 remove_colour = "#ff8000da"
@@ -664,7 +665,7 @@ def ui_select_modality(experiment):
         Widget for modality selection and preview.
     """
     modalities_default = ["Widefield", "Confocal", "STED", "SMLM", "All"]
-    preview_experiment = copy.deepcopy(experiment)
+    imager, preview_experiment = build_virtual_microscope(multimodal=modalities_default)
     xy_zoom_in = 0.5
     for mod_names in modalities_default[0:len(modalities_default)-1]:
         preview_experiment.add_modality(modality_name=mod_names, save=True)
