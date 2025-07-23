@@ -276,7 +276,7 @@ class sweep_generator:
         else:
             image = self.acquisition_outputs[parameter_id][replica_number]
         if return_image:
-            return image
+            return image, self.acquisition_outputs_parameters[parameter_id]
         else:
             plt.imshow(image)
             print(self.acquisition_outputs_parameters[parameter_id])
