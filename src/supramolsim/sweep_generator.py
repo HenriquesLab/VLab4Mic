@@ -583,8 +583,6 @@ class sweep_generator:
         if plot_type not in self.analysis["plots"].keys():
             self.analysis["plots"][plot_type] = {}
         plot_params = self.plot_parameters[plot_type]
-        print(plot_type)
-        print(plot_params)
         if plot_type == "heatmaps":
             metric_plot = self._gen_heatmaps(
                 metric_name=metric_name,
@@ -640,7 +638,7 @@ class sweep_generator:
         if category is None:
             category = "modality_name"
         if param1 is None:
-            param1 = "labelling_efficiency"
+            param1 = self.parameters_with_set_values[0]
         if param2 is None:
             param2 = "probe_n"
         analysis_resut_df = self.get_analysis_output(keyname="dataframes")
