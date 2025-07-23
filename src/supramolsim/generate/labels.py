@@ -230,8 +230,10 @@ def construct_label(
     # keynames reserved for parameters that can be iteratet over
     if "model_ID" in kwargs.keys():
         label_params["model"]["ID"] = kwargs["model_ID"]
-    if "distance_to_epitope" in kwargs.keys():
-        label_params["binding"]["distance"]["to_target"] = kwargs["distance_to_epitope"]
+    if "distance_to_epitope" in label_params.keys():
+        label_params["binding"]["distance"]["to_target"] = label_params["distance_to_epitope"]
+    else:
+        print("No distance to epitope provided, using default value.")
     if "distance_between_epitope" in kwargs.keys():
         label_params["binding"]["distance"]["between_targets"] = kwargs["distance_between_epitope"]
     if "paratope" in kwargs.keys():
