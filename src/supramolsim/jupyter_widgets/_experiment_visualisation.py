@@ -755,6 +755,7 @@ def ui_preview_results(experiment):
     gui.add_button(
         "show_results",
         description="Show Results",
+        icon=show_icon,
     )
     
     def update_plot(change):

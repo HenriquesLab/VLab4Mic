@@ -947,6 +947,6 @@ def ui_run_experiment(experiment):
         "",
         style=dict(font_weight='bold')
     )
-    run_gui.add_button("Acquire", description="Run Simulation")
+    run_gui.add_button("Acquire", description="Run Simulation", icon=select_icon, style={"button_color": select_colour})
     run_gui["Acquire"].on_click(run_simulation)
     return run_gui
