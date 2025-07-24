@@ -102,6 +102,8 @@ def frame_by_volume_convolution(
         zfocus_slice - projection_depth_half,
         zfocus_slice + projection_depth_half,
     )
+    if projection_depth_half > int(convolved_intensity.shape[2] / 2):
+        projection_depth_half = int(convolved_intensity.shape[2] / 2)
     if asframe:
         frame = np.sum(
             np.array(
