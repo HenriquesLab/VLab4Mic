@@ -102,6 +102,7 @@ def select_structure(sweep_gen):
     """
     ez_sweep_structure = EZInput(title="structure")
     ez_sweep_structure.add_dropdown("structures", options=sweep_gen.structures_info_list.keys())
+    ez_sweep_structure.add_HTML("message", value="Note: parsing of the structure will be done when running the sweep", style={'font_size': '15px'})
     ez_sweep_structure.add_button("Select", description="Select", icon=select_icon, style={"button_color": select_colour})
 
     def select(b):
