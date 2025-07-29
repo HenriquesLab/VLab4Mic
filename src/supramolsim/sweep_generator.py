@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from IPython.utils import io
 import os
 from pathlib import Path
-from .utils.io.yaml_functions import load_yaml
+from .utils.io.yaml_functions import load_yaml, save_yaml
 from .analysis import _plots
 import numpy as np
 from datetime import datetime
@@ -822,7 +822,9 @@ class sweep_generator:
                 image = np.concatenate((image, replicates[i]))
             name = output_directory + param_combination_id + ".tiff"
             tiff.imwrite(name, image)
+        save_yaml(data=self.acquisition_outputs_parameters, name="acquisition_parameters", output_directory=output_directory) 
         if self.reference_image is not None:
             # save reference image
             name_ref = output_directory + "reference.tiff"
             tiff.imwrite(name_ref, self.reference_image)
+        
