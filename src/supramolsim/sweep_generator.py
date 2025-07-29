@@ -118,6 +118,7 @@ class sweep_generator:
         self.create_parameters_iterables()
         self.experiment, self.virtual_samples, self.virtual_samples_parameters = (
             sweep.sweep_vasmples(
+                experiment=self.experiment,
                 structures=self.structures,
                 probes=self.probes,
                 probe_parameters=self.probe_parameters,
