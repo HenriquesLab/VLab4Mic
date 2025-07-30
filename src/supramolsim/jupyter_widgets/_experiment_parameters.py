@@ -42,6 +42,22 @@ import copy
 from supramolsim.utils.visualisation.matplotlib_plots import slider_normalised
 import numpy as np
 import tifffile as tif
+from IPython.utils import io
+from ..experiments import build_virtual_microscope
+
+select_colour = "#4daf4ac7"
+remove_colour = "#ff8000da"
+update_colour = "#00bfffda"
+
+select_icon = "fa-check"
+add_icon = "fa-plus"
+remove_icon = "fa-minus"
+clear_icon = "fa-trash"
+loding_icon = "fa-spinner fa-spin"
+update_icon = "fa-wrench" # create
+toggle_icon = "fa-eye-slash"
+upload_icon = "fa-upload"
+
 
 def ui_select_structure(experiment):
     """
@@ -60,13 +76,16 @@ def ui_select_structure(experiment):
     gui = EZInput("Select_structure")
     def select_structure(elements):
         elements["label_1"].value = "Current structure selected: Loading..."
+        elements["select_structure"].icon= loding_icon
         #elements["select_structure"].disabled = True
         for wgt in elements.keys():
             elements[wgt].disabled = True
         experiment.structure_id = experiment.structures_info_list[elements["structures"].value]
-        experiment.build(modules="structure")
+        with io.capture_output() as captured:
+            experiment.build(modules="structure")
         update_structure_list()
         #elements["select_structure"].disabled = False
+        elements["select_structure"].icon= select_icon
         for wgt in elements.keys():
             elements[wgt].disabled = False
 
@@ -87,6 +106,8 @@ def ui_select_structure(experiment):
         select_structure,
         gui.elements,
         description="Select structure",
+        icon=select_icon,
+        style={"button_color": select_colour},
     )
     
     return gui
@@ -110,7 +131,15 @@ def update_widgets_visibility(ezwidget, visibility_dictionary):
         if visibility_dictionary[widgetname]:
             ezwidget[widgetname].layout.display = "inline-flex"
         else:
-            ezwidget[widgetname].layout.display = "None"   
+            ezwidget[widgetname].layout.display = "None"
+
+def _unstyle_widgets(ezwidget, visibility_dictionary):
+    for wgt in ezwidget.elements.keys():
+        visibility_dictionary[wgt] = True
+        if isinstance(ezwidget[wgt], widgets.Button):
+            ezwidget.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex", align_items="center", justify_content="center")
+        else:
+            ezwidget.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex")   
 
 def ui_select_probe(experiment, **kwargs):
     """
@@ -158,8 +187,10 @@ def ui_select_probe(experiment, **kwargs):
         probe_target_value = probes_gui["mock_type_options1"].value
         probe_target_value2 = probes_gui["mock_type_options2"].value
         as_linker = probes_gui["as_linker"].value
-        wobble = probes_gui["wobble"].value
-        wobble_theta = probes_gui["wobble_theta"].value
+        if probes_gui["wobble"].value:
+            probe_wobble_theta = probes_gui["wobble_theta"].value
+        else:
+            probe_wobble_theta = None
         if as_linker:
             options_per_type1["Primary_Probe"] = [
                 probe_name,
@@ -176,8 +207,7 @@ def ui_select_probe(experiment, **kwargs):
                 labelling_efficiency=labelling_efficiency,
                 probe_distance_to_epitope=probe_distance_to_epitope,
                 as_primary=as_linker,
-                wobble=wobble,
-                wobble_theta=wobble_theta,
+                probe_wobble_theta=probe_wobble_theta,
             )
         elif probe_target_type == "Atom_residue":
             residue = probes_gui["mock_type_options1"].value
@@ -190,8 +220,7 @@ def ui_select_probe(experiment, **kwargs):
                 labelling_efficiency=labelling_efficiency,
                 probe_distance_to_epitope=probe_distance_to_epitope,
                 as_primary=as_linker,
-                wobble=wobble,
-                wobble_theta=wobble_theta,
+                probe_wobble_theta=probe_wobble_theta,
             )
         elif probe_target_type == "Primary":
             experiment.add_probe(
@@ -202,8 +231,7 @@ def ui_select_probe(experiment, **kwargs):
                 labelling_efficiency=labelling_efficiency,
                 probe_distance_to_epitope=probe_distance_to_epitope,
                 as_primary=as_linker,
-                wobble=wobble,
-                wobble_theta=wobble_theta,
+                probe_wobble_theta=probe_wobble_theta,
             )
         probes_gui["create_particle"].disabled = False
         update_probe_list()
@@ -217,7 +245,8 @@ def ui_select_probe(experiment, **kwargs):
 
     def create_particle(b):
         probes_gui["message2"].value = "Creating labelled structure..."
-        experiment.build(modules=["particle"])
+        with io.capture_output() as captured:
+            experiment.build(modules=["particle"])
         probes_gui["add_probe"].disabled = True
         probes_gui["create_particle"].disabled = True
         if experiment.generators_status("particle"):
@@ -255,16 +284,23 @@ def ui_select_probe(experiment, **kwargs):
             probes_gui["mock_type_options2"].options = options_per_type2[change.new]
             probes_gui["mock_type_options2"].value = options_per_type2[change.new][0]
 
+    def clear_probes(b):
+        experiment.remove_probes()
+        probes_gui["message1"].value = "No probes selected yet."
+        probes_gui["message2"].value = "No labelled structure created yet."
+        probes_gui["add_probe"].disabled = False
+        probes_gui["create_particle"].disabled = True
+        update_probe_list()
 
     # widgets
-    probes_gui.add_label("Seleced probes:")
+    probes_gui.add_HTML(tag="Header_message", value="<b>Selected probes:</b>")
     probes_gui.add_HTML("message1", "No probes selected yet.", style = dict(font_weight='bold', font_size='15px'))
     probes_gui.add_dropdown("select_probe_template",
                             description="Choose a probe:",
                             options=probe_options)
     probes_gui.add_HTML("probe_info", "")
     probes_gui["select_probe_template"].observe(show_probe_info, names="value")
-    probes_gui.add_button("toggle_advanced_parameters", description="Toggle advanced parameters")
+    probes_gui.add_button("toggle_advanced_parameters", description="Toggle advanced parameters", icon=toggle_icon)
     # advanced parameters
     probes_gui.add_HTML("advanced_param_header", "<b>Advanced parameters</b>", style=dict(font_size='15px'))
     probes_gui.add_text(tag="probe_name", value=probes_gui["select_probe_template"].value, description="Probe name")
@@ -356,8 +392,10 @@ def ui_select_probe(experiment, **kwargs):
         description="Wobble cone range (degrees)",
     )
     probes_gui.add_button("add_custom_probe",
-                          description="Select probe with custom parameters",
-                          disabled=False)
+                          description="Add probe with custom parameters",
+                          disabled=False,
+                          icon=add_icon,
+                          )
     probes_gui["mock_type"].observe(type_dropdown_change, names="value")
     #
     def toggle_advanced_parameters(b): 
@@ -379,19 +417,21 @@ def ui_select_probe(experiment, **kwargs):
         "add_probe",
         select_probe,
         probes_gui.elements,
-        description="Select probe (with defaults)",
+        description="Add probe (with defaults)",
+        icon=add_icon,
     )
+    probes_gui.add_button("clear_probes", description="Clear all probes", icon=clear_icon, style={"button_color": remove_colour})
     probes_gui.add_button("create_particle", 
-                          description="Create labelled structure",
+                          description="Select probes and create labelled structure",
+                          style={"button_color": select_colour},
+                          icon=select_icon,
                           disabled=True)
     probes_gui.add_HTML("message2", "No labelled structure created yet.", style = dict(font_weight='bold', font_size='15px'))
     probe_widgets_visibility = {}
-    for wgt in probes_gui.elements.keys():
-        probe_widgets_visibility[wgt] = True
-        probes_gui.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex")
- 
+    _unstyle_widgets(probes_gui, probe_widgets_visibility)
     show_probe_info(True)
     probes_gui["create_particle"].on_click(create_particle)
+    probes_gui["clear_probes"].on_click(clear_probes)
     probes_gui["toggle_advanced_parameters"].on_click(toggle_advanced_parameters)
     probes_gui["add_custom_probe"].on_click(select_custom_probe)
     toggle_advanced_parameters(True)  # Initialize with default visibility
@@ -425,9 +465,9 @@ def ui_select_sample_parameters(experiment):
             sample_gui["message"].value = "No sample parameters selected yet."
         else:
             text = ""
-            for key, value in experiment.virtualsample_params.items():
-                if key in ["number_of_particles", "random_orientations", "minimal_distance"]:
-                    text += f"{key}: {value}<br>"
+            for param in ["number_of_particles", "random_orientations", "minimal_distance"]:
+                value = experiment.virtualsample_params[param]
+                text += f"{param}: {value}<br>"
             sample_gui["message"].value = text
     
 
@@ -445,6 +485,13 @@ def ui_select_sample_parameters(experiment):
         description="Randomise orientations",
         value=True
     )
+    
+    sample_gui.add_button(
+        "advanced_parameters",
+        description="Toggle advanced parameters",
+        icon=toggle_icon,
+    )
+    ####  advanced parameters ####
     sample_gui.add_checkbox(
             "use_min_from_particle",
             value=True,
@@ -458,14 +505,8 @@ def ui_select_sample_parameters(experiment):
         step=1,
         style={"description_width": "initial"},
     )
-    
-    sample_gui.add_button(
-        "advanced_parameters",
-        description="Toggle advanced parameters",
-    )
-    ####  advanced parameters ####
     sample_gui.add_file_upload(
-            "File", description="Select from file", accept="*.tif", save_settings=False
+            "File", description="Select from file", accept="*.tif", save_settings=False,
         )
     sample_gui.add_bounded_int_text("pixel_size",
         description="Pixel size (nm)",
@@ -512,26 +553,43 @@ def ui_select_sample_parameters(experiment):
             style={"description_width": "initial"},   
     )
     sample_gui.add_button(
-        "select_sample_parameters",
-        description="Select sample parameters",
-        disabled=False
+        "update_sample_parameters",
+        description="Update sample parameters",
+        icon=update_icon,
+        style={"button_color": update_colour},
     )
-    sample_gui.add_button("upload_and_set", description="Load image and select parameters", disabled=False)
+    sample_gui.add_button(
+        "select_sample_parameters",
+        description="Select parameters and build virtual sample",
+        disabled=False,
+        icon=select_icon,
+        style={"button_color": select_colour},
+    )
+    sample_gui.add_button("upload_and_set", description="Load image and select parameters", disabled=False, 
+                          icon=upload_icon, style={"button_color": select_colour})
     sample_gui.add_HTML("advanced_params_feedback", "", style=dict(font_weight='bold'))
-    def select_virtual_sample_parameters(b):
+    
+    def update_parameters(b):
         if sample_gui["use_min_from_particle"].value:
-            min_distance = None
+            experiment.set_virtualsample_params(
+                number_of_particles=sample_gui["number_of_particles"].value,
+                random_orientations=sample_gui["random_orientations"].value,
+            )
         else:
             min_distance = sample_gui["minimal_distance_nm"].value
-        experiment.set_virtualsample_params(
-            number_of_particles=sample_gui["number_of_particles"].value,
-            random_orientations=sample_gui["random_orientations"].value,
-            minimal_distance=min_distance
-        )
-        experiment.build(modules=["coordinate_field"])
-        if experiment.objects_created["imager"]:
-            experiment.build(modules=["imager"])
+            experiment.set_virtualsample_params(
+                number_of_particles=sample_gui["number_of_particles"].value,
+                random_orientations=sample_gui["random_orientations"].value,
+                minimal_distance=min_distance
+            )
         update_message()
+    
+    def select_virtual_sample_parameters(b):
+        with io.capture_output() as captured:
+            experiment.build(modules=["coordinate_field"])
+            if experiment.objects_created["imager"]:
+                experiment.build(modules=["imager"])
+            update_message()
     
     def upload_and_set(b):
         filepath = sample_gui["File"].selected
@@ -567,6 +625,8 @@ def ui_select_sample_parameters(experiment):
         update_message()
 
     def toggle_advanced_parameters(b):
+        widgets_visibility["minimal_distance_nm"] = not widgets_visibility["minimal_distance_nm"]
+        widgets_visibility["use_min_from_particle"] = not widgets_visibility["use_min_from_particle"]
         widgets_visibility["select_sample_parameters"] = not widgets_visibility["select_sample_parameters"]
         widgets_visibility["upload_and_set"] = not widgets_visibility["upload_and_set"]
         widgets_visibility["File"] = not widgets_visibility["File"]
@@ -578,22 +638,16 @@ def ui_select_sample_parameters(experiment):
         widgets_visibility["random"] = not widgets_visibility["random"]
         update_widgets_visibility(sample_gui, widgets_visibility)
     widgets_visibility = {}
-    for wgt in sample_gui.elements.keys():
-        widgets_visibility[wgt] = True
-        sample_gui.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex")    
-    widgets_visibility["upload_and_set"] = False
-    widgets_visibility["File"] = False
-    widgets_visibility["pixel_size"] = False
-    widgets_visibility["background_intensity"] = False
-    widgets_visibility["blur_sigma"] = False
-    widgets_visibility["intensity_threshold"] = False
-    widgets_visibility["detection_method"] = False
-    widgets_visibility["random"] = False
+    _unstyle_widgets(sample_gui, widgets_visibility)  
     update_widgets_visibility(sample_gui, widgets_visibility)
     sample_gui["select_sample_parameters"].on_click(select_virtual_sample_parameters)
     sample_gui["advanced_parameters"].on_click(toggle_advanced_parameters)
     sample_gui["upload_and_set"].on_click(upload_and_set)
+    sample_gui["update_sample_parameters"].on_click(update_parameters)
+    widgets_visibility["select_sample_parameters"] = False
+    update_parameters(True)
     select_virtual_sample_parameters(True)  # Initialize with default parameters
+    toggle_advanced_parameters(True)  # Initialize with advanced parameters hidden
     return sample_gui
 
 def ui_select_modality(experiment):
@@ -611,7 +665,7 @@ def ui_select_modality(experiment):
         Widget for modality selection and preview.
     """
     modalities_default = ["Widefield", "Confocal", "STED", "SMLM", "All"]
-    preview_experiment = copy.deepcopy(experiment)
+    imager, preview_experiment = build_virtual_microscope(multimodal=modalities_default)
     xy_zoom_in = 0.5
     for mod_names in modalities_default[0:len(modalities_default)-1]:
         preview_experiment.add_modality(modality_name=mod_names, save=True)
@@ -635,6 +689,16 @@ def ui_select_modality(experiment):
             )
         update_message()
     
+    def update_modality_params(b):
+        selected_modality = modality_gui["modality"].value
+        if selected_modality != "All":
+            experiment.update_modality(
+                modality_name=selected_modality,
+                depth_of_field_nm=modality_gui["psf_depth"].value,
+            )
+            update_message()
+            update_plot(None)
+
     def remove_modality(b):
         selected_modality = modality_gui["modality"].value
         if selected_modality == "All":
@@ -653,14 +717,20 @@ def ui_select_modality(experiment):
         update_message()
     
     def select_modalities(b):
-        experiment.build(modules=["imager"])
-        modality_gui["add_modality"].disabled = True
-        modality_gui["remove_modality"].disabled = True
+        with io.capture_output() as captured:
+            experiment.build(modules=["imager"])
+        b1.disabled = True
+        b2.disabled = True
         modality_gui["select_modalities"].disabled = True 
 
     def update_plot(change):
         mod_name = modality_gui["modality"].value
+
         if mod_name != "All":
+            if mod_name not in experiment.imaging_modalities:
+                info = experiment.local_modalities_parameters[mod_name]
+            else:
+                info = experiment.imaging_modalities[mod_name]
             psf_stack = preview_experiment.imager.get_modality_psf_stack(mod_name)
             psf_shape = psf_stack.shape
             half_xy = int(psf_shape[0] / 2)
@@ -670,30 +740,29 @@ def ui_select_modality(experiment):
                 half_xy - int(half_xy * xy_zoom_in) : half_xy + int(half_xy * xy_zoom_in),
                 :]
             dimension_plane = modality_gui["dimension_slice"].value
-            if dimension_plane == "YZ plane":
+            if dimension_plane == "YZ":
                 dimension = 0
-            elif dimension_plane == "XZ plane":
+            elif dimension_plane == "XZ":
                 dimension = 1
-            elif dimension_plane == "XY plane":
+            elif dimension_plane == "XY":
                 dimension = 2
              # mod info
-            pixelsize = experiment.local_modalities_parameters[mod_name]["detector"]["pixelsize"]
+            pixelsize = info["detector"]["pixelsize"]
             pixelsize_nm = pixelsize * 1000
             psf_voxel = np.array(
-                        experiment.local_modalities_parameters[mod_name]["psf_params"]["voxelsize"]
+                        info["psf_params"]["voxelsize"]
                     )
             psf_sd = np.array(
-                        experiment.local_modalities_parameters[mod_name]["psf_params"]["std_devs"]
+                        info["psf_params"]["std_devs"]
                     )
-            psf_depth = experiment.local_modalities_parameters[mod_name]["psf_params"]["depth"]
+            psf_depth = info["psf_params"]["depth"]*psf_voxel[0]
             s1 = "Detector pixelsize (nm): " + str(pixelsize_nm)
             psf_sd_metric = np.multiply(psf_voxel, psf_sd)
             s2 = "PSF sd (nm): " + str(psf_sd_metric)
             s3  = "Depth of field (nm): " + str(psf_depth)
             s4 = "PSF preview (on a 1x1 µm field of view)"
             modality_gui["modality_info"].value = (
-                "<b>Modality: </b>" + mod_name + "<br>"
-                + "<b>" + s1 + "</b><br>"
+                "<b>" + s1 + "</b><br>"
                 + "<b>" + s2 + "</b><br>"
                 + "<b>" + s3 + "</b><br>"
                 + "<b>" + s4 + "</b><br>"
@@ -711,21 +780,84 @@ def ui_select_modality(experiment):
         options=modalities_default,
         on_change=update_plot,
     )
-    modality_gui.add_button(
-        "add_modality",
-        description="Add modality",
-        disabled=False
+    b1 = widgets.Button(
+                description="Add Modality",
+                layout=widgets.Layout(width="50%"),
+                icon="fa-plus"
+            )
+    b2 = widgets.Button(
+                description="Remove Modality",
+                layout=widgets.Layout(width="50%"),
+                icon="fa-minus"
+            ) 
+    b3 = widgets.Button(
+                description="Update modality parameters",
+                style={"button_color": "#4985b7d9"},
+                layout=widgets.Layout(width="100%"),
+                icon="fa-wrench"
+            )   
+    modality_gui.add_custom_widget(
+        "add_remove",
+        widgets.HBox,
+        children=[
+            b1,
+            b2
+        ]
     )
-    modality_gui.add_button(
-        "remove_modality",
-        description="Remove modality",
-        disabled=False
+    select_modalities_button = widgets.Button(
+        description="Select modalities and update virtual microscope",
+        style={"button_color": "#4daf4ac7"},
+        layout=widgets.Layout(width="100%"),
+        icon="fa-check"
     )
-    modality_gui.add_button(
+    modality_gui.add_custom_widget(
         "select_modalities",
-        description="Select list and update virtual modalities",
+        widgets.HBox,
+        children=[
+            select_modalities_button
+        ]
     )
-    modality_gui.add_label("Modality information")
+    button_toggle_advanced_parameters = widgets.Button(
+        description="Toggle advanced parameters",
+        layout=widgets.Layout(width="100%"),
+        icon="eye-slash",
+    )
+    modality_gui.add_custom_widget(
+        "toggle_advanced_parameters",
+        widgets.HBox,
+        children=[
+            button_toggle_advanced_parameters
+        ]
+    )
+    modality_gui.add_int_slider(
+        "psf_depth",
+        description="PSF depth (nm)",
+        min=10,
+        max=1000,
+        step=10,
+        value=100,
+        continuous_update=False,
+        style={"description_width": "initial"},
+    )
+    modality_gui.add_custom_widget(
+        "update_modality_params",
+        widgets.HBox,
+        children=[
+            b3,
+        ]
+    )
+    button_toggle_preview = widgets.Button(
+                description="Toggle modality info and PSF preview",
+                layout=widgets.Layout(width="100%"),
+                icon="eye-slash",
+            )
+    modality_gui.add_custom_widget(
+        "toggle_preview",
+        widgets.HBox,
+        children=[
+            button_toggle_preview
+        ]
+    )
     modality_gui.add_HTML(
         "modality_info",
         ""
@@ -733,8 +865,8 @@ def ui_select_modality(experiment):
     modality_gui.add_custom_widget(
         "dimension_slice",
         widgets.ToggleButtons,
-        options=["XY plane", "XZ plane", "YZ plane"],
-        value="XY plane",
+        options=["XY", "XZ", "YZ"],
+        value="XY",
         on_change=update_plot,
         style={"description_width": "initial"},
         description="Plane of view: ",
@@ -744,11 +876,28 @@ def ui_select_modality(experiment):
         description="Preview of selected modality",
         style={"description_width": "initial"},
     )
-    
+    def toggle_preview(b):
+        widgets_visibility["modality_info"] = not widgets_visibility["modality_info"]
+        widgets_visibility["dimension_slice"] = not widgets_visibility["dimension_slice"]
+        widgets_visibility["preview_modality"] = not widgets_visibility["preview_modality"]
+        update_widgets_visibility(modality_gui, widgets_visibility)
 
-    modality_gui["add_modality"].on_click(add_modality)
-    modality_gui["remove_modality"].on_click(remove_modality)
-    modality_gui["select_modalities"].on_click(select_modalities)
+    def toggle_advanced_parameters(b):
+        widgets_visibility["psf_depth"] = not widgets_visibility["psf_depth"]
+        widgets_visibility["update_modality_params"] = not widgets_visibility["update_modality_params"]
+        update_widgets_visibility(modality_gui, widgets_visibility)
+
+    widgets_visibility = {}
+    _unstyle_widgets(modality_gui, widgets_visibility)   
+    modality_gui["dimension_slice"].style = dict(description_width="initial")
+    b1.on_click(add_modality)
+    b2.on_click(remove_modality)
+    select_modalities_button.on_click(select_modalities)
+    button_toggle_advanced_parameters.on_click(toggle_advanced_parameters)
+    b3.on_click(update_modality_params)
+    button_toggle_preview.on_click(toggle_preview)
+    toggle_preview(True)  # Initialize with default visibility
+    toggle_advanced_parameters(True)  # Initialize with default visibility
     update_message()
     update_plot(True)
     return modality_gui
@@ -778,7 +927,8 @@ def ui_run_experiment(experiment):
             experiment.output_directory = sav_dir
             save = True
         experiment.experiment_id = run_gui["experiment_name"].value
-        output = experiment.run_simulation(save=save)
+        with io.capture_output() as captured:  
+            output = experiment.run_simulation(save=save)
         run_gui.save_settings()
         if output is None:
             run_gui["message"].value = "Simulation failed. Make sure all parameters are set correctly."
@@ -807,6 +957,6 @@ def ui_run_experiment(experiment):
         "",
         style=dict(font_weight='bold')
     )
-    run_gui.add_button("Acquire", description="Run Simulation")
+    run_gui.add_button("Acquire", description="Run Simulation", icon=select_icon, style={"button_color": select_colour})
     run_gui["Acquire"].on_click(run_simulation)
     return run_gui

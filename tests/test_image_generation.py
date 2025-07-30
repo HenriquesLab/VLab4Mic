@@ -27,10 +27,8 @@ def test_image_from_field(configuration_directory, gt_structural_model_field):
     selected_mods = [
         "STED",
     ]
-    imaging_system, modality_parameters = workflows.create_imaging_system(
-        gt_structural_model_field, selected_mods, configuration_path
-    )
-    assert imaging_system.get_absoulte_reference_point().shape == (1, 3)
+    imgs, experiment_test = experiments.image_vsample(vsample=gt_structural_model_field, run_simulation=False, modalities=selected_mods, configuration_path=configuration_path)
+    assert experiment_test.imager.get_absoulte_reference_point().shape == (1, 3)
 
 
 def test_imager_optional_methods(experiment_7r5k_base):

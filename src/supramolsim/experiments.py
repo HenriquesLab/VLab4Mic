@@ -20,8 +20,14 @@ import copy
 from supramolsim.utils.io import yaml_functions
 from IPython.utils import io
 from pathlib import Path
+import sys
 
-output_path = Path.home() / "vlab4mic_outputs"
+IN_COLAB = 'google.colab' in sys.modules
+if IN_COLAB:
+    output_path = "/content/vlab4mic_outputs"
+else:
+    output_path = Path.home() / "vlab4mic_outputs"
+
 
 if not os.path.exists(output_path):
     os.makedirs(output_path)
@@ -67,12 +73,14 @@ class ExperimentParametrisation:
         modalities_dir = os.path.join(local_dir, "modalities")
         modalities_names_list = []
         modality_parameters = {}
+        self.config_modalities = dict()
         for mods in os.listdir(modalities_dir):
             if os.path.splitext(mods)[-1] == ".yaml" and "_template" not in mods:
                 modalities_names_list.append(os.path.splitext(mods)[0])
         for mod in modalities_names_list:
-            mod_info = configuration_format.compile_modality_parameters(mod, local_dir)
+            mod_info, mod_configuration = configuration_format.compile_modality_parameters(mod, local_dir)
             modality_parameters[mod] = mod_info
+            self.config_modalities[mod] = mod_configuration
         self.local_modalities_names = modalities_names_list
         self.local_modalities_parameters = modality_parameters
         probes_dir = os.path.join(local_dir, "probes")
@@ -214,6 +222,7 @@ class ExperimentParametrisation:
         lateral_resolution_nm: int = None,
         axial_resolution_nm: int = None,
         psf_voxel_nm: int = None,
+        depth_of_field_nm: int = None,
         remove=False,
     ):
         """
@@ -276,6 +285,12 @@ class ExperimentParametrisation:
                     psf_voxel_nm,
                     psf_voxel_nm,
                 ]
+                changes = True
+            if depth_of_field_nm is not None:
+                depth_in_slices = None
+                voxel_size = self.local_modalities_parameters[modality_name]["psf_params"]["voxelsize"][2]
+                depth=int(depth_of_field_nm / voxel_size)
+                self.imaging_modalities[modality_name]["psf_params"]["depth"] = depth
                 changes = True
             if changes:
                 self.imager.set_imaging_modality(
@@ -822,7 +837,7 @@ class ExperimentParametrisation:
         probe_conjugation_target_info=None,
         probe_conjugation_efficiency: float = None,
         probe_seconday_epitope=None,
-        probe_wobbling=False,
+        probe_wobble_theta: float = None,
         labelling_efficiency: float = 1.0,
         as_primary=False,
         peptide_motif: dict = None,
@@ -931,8 +946,9 @@ class ExperimentParametrisation:
             probe_configuration["conjugation_efficiency"] = probe_conjugation_efficiency
         if probe_seconday_epitope is not None:
             probe_configuration["epitope_target_info"] = probe_seconday_epitope
-        if probe_wobbling:
-            probe_configuration["enable_wobble"] = probe_wobbling
+        if probe_wobble_theta is not None:
+            probe_configuration["enable_wobble"] = True
+            probe_configuration["wobble_theta"] = probe_wobble_theta
         if as_primary:
             print("Adding probe as primary linker")
             probe_configuration["as_linker"] = True
@@ -992,6 +1008,10 @@ class ExperimentParametrisation:
         None
         """
         # load default configuration for virtual sample
+        try:
+            particle_minimal_distance = self.coordinate_field.molecules_params["minimal_distance"]
+        except:
+            particle_minimal_distance = None
         virtual_sample_template = os.path.join(
             self.configuration_path,
             "virtualsample",
@@ -1008,7 +1028,10 @@ class ExperimentParametrisation:
             vsample_configuration["random_orientations"] = random_orientations
         if random_placing is not None:
             vsample_configuration["random_placing"] = random_placing
-        vsample_configuration["minimal_distance"] = minimal_distance
+        if minimal_distance is not None:
+            vsample_configuration["minimal_distance"] = minimal_distance
+        else:
+            vsample_configuration["minimal_distance"] = particle_minimal_distance
         self.virtualsample_params = vsample_configuration
 
     def use_image_for_positioning(

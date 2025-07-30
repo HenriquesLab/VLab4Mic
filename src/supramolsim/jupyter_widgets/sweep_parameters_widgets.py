@@ -38,6 +38,22 @@ from IPython.utils import io
 import matplotlib.pyplot as plt
 import numpy as np
 from ._widget_generator import widgen
+import pprint
+
+
+select_colour = "#4daf4ac7"
+remove_colour = "#ff8000da"
+update_colour = "#00bfffda"
+
+select_icon = "fa-check"
+add_icon = "fa-plus"
+remove_icon = "fa-minus"
+loding_icon = "fa-spinner fa-spin"
+update_icon = "fa-wrench" # create
+toggle_icon = "fa-eye-slash"
+upload_icon = "fa-upload"
+view_icon = "fa-eye"
+save_icon = "fa-save"
 
 
 def update_widgets_visibility(ezwidget, visibility_dictionary):
@@ -61,6 +77,14 @@ def update_widgets_visibility(ezwidget, visibility_dictionary):
         else:
             ezwidget[widgetname].layout.display = "None"  
 
+def _unstyle_widgets(ezwidget, visibility_dictionary):
+    for wgt in ezwidget.elements.keys():
+        visibility_dictionary[wgt] = True
+        if isinstance(ezwidget[wgt], widgets.Button):
+            ezwidget.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex", align_items="center", justify_content="center")
+        else:
+            ezwidget.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex")  
+
 
 def select_structure(sweep_gen):
     """
@@ -78,7 +102,8 @@ def select_structure(sweep_gen):
     """
     ez_sweep_structure = EZInput(title="structure")
     ez_sweep_structure.add_dropdown("structures", options=sweep_gen.structures_info_list.keys())
-    ez_sweep_structure.add_button("Select", description="Select")
+    ez_sweep_structure.add_HTML("message", value="Note: parsing of the structure will be done when running the sweep", style={'font_size': '15px'})
+    ez_sweep_structure.add_button("Select", description="Select", icon=select_icon, style={"button_color": select_colour})
 
     def select(b):
         sweep_gen.structures = [sweep_gen.structures_info_list[
@@ -136,7 +161,7 @@ def select_probes_and_mods(sweep_gen):
         for name in tab_name:
             widget_modules[name].disabled = True
 
-    ez_sweep.add_button("Select", description="Select")
+    ez_sweep.add_button("Select", description="Select", icon=select_icon, style={"button_color": select_colour})
     ez_sweep["Select"].on_click(select_str)
     return ez_sweep
 
@@ -169,9 +194,11 @@ def add_parameters_values(sweep_gen):
             sweep_parameter_gui.add_label()
 
     sweep_parameter_gui.add_button("select_parameters",
-                                   "Select parameters for sweep")
+                                    "Select parameters for sweep",
+                                    icon=select_icon, style={"button_color": select_colour})
     sweep_parameter_gui.add_button("clear_parameters",
                                     "Clear all parameters",
+                                    icon=remove_icon, style={"button_color": remove_colour}
                                     )
     sweep_parameter_gui.add_HTML(
         tag="message",
@@ -276,6 +303,7 @@ def set_reference(sweep_gen):
     reference.add_button(
         "advanced_parameters",
         description="Toggle advanced parameters",
+        icon=toggle_icon
     )
     # advanced parameters
     reference.add_HTML(
@@ -294,7 +322,8 @@ def set_reference(sweep_gen):
         step=0.1,
         style={"description_width": "initial"},
     )
-    reference.add_button("upload_and_set", description="Upload image reference", disabled=False)
+    reference.add_button("upload_and_set", description="Upload image reference", disabled=False,
+                          icon=upload_icon)
 
     def toggle_advanced_parameters(b):
         ref_widgets_visibility["Upload_ref_message"] = not ref_widgets_visibility["Upload_ref_message"]
@@ -312,10 +341,12 @@ def set_reference(sweep_gen):
         reference["preview"].disabled = False
     #
     reference.add_button(
-        "set", description="Generate image reference"
+        "set", description="Generate image reference",
+        icon=select_colour, style={"button_color": select_colour}
     )
     reference.add_button(
-        "preview", description="Preview reference", disabled = True
+        "preview", description="Preview reference", disabled = True,
+        icon=view_icon
     )
     reference.elements["feedback"] = widgets.HTML("", style = dict(font_size= "15px", font_weight='bold'))
     reference.add_output(
@@ -324,9 +355,7 @@ def set_reference(sweep_gen):
     
     # visibility and layout
     ref_widgets_visibility = {}
-    for wgt in reference.elements.keys():
-        ref_widgets_visibility[wgt] = True
-        reference.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex") 
+    _unstyle_widgets(reference, ref_widgets_visibility)
 
     reference["set"].on_click(gen_ref)
     reference["preview"].on_click(show_reference)
@@ -434,7 +463,7 @@ def analyse_sweep(sweep_gen):
     )
     analysis_widget.add_checkbox("plots", description="Generate plots", value=True)
     analysis_widget.add_button(
-        "analyse", description="Run analysis"
+        "analyse", description="Run analysis", icon=select_colour, style={"button_color": select_colour}
     )
     analysis_widget.elements["feedback"] = widgets.HTML("", style = dict(font_size= "15px", font_weight='bold'))
     analysis_widget.elements["outputs"] = widgets.Output()
@@ -460,7 +489,7 @@ def analyse_sweep(sweep_gen):
         acquisition_parameters = analysis_widget["acquisition_parameters"].value
         replica_number = analysis_widget["replica_number"].value
 
-        image = sweep_gen.preview_image_output_by_ID(
+        image, parameters = sweep_gen.preview_image_output_by_ID(
             modality_template=modality_template,
             probe_template=probe_template,
             probe_parameters=probe_parameters,
@@ -477,6 +506,13 @@ def analyse_sweep(sweep_gen):
         plt.close()
         analysis_widget["preview_results"].clear_output()  
         with analysis_widget["preview_results"]:
+            print(f"Structure: {parameters[0]}")
+            print(f"Modality: {parameters[5]}")
+            print(f"Probe: {parameters[1]}")
+            print(f"Probe Parameters: {parameters[2]}")
+            print(f"Defect Parameters: {parameters[3]}")
+            print(f"Virtual Sample Parameters: {parameters[4]}")
+            print(f"Acquisition Parameters: {parameters[6]}")
             display(figure)
     
     def toggle_preview(b):
@@ -495,7 +531,8 @@ def analyse_sweep(sweep_gen):
         
     # preview widgets
     analysis_widget.add_button(
-        "preview", description="Preview results", disabled=True
+        "preview", description="Preview results", disabled=True,
+        icon=view_icon
     )
     analysis_widget.add_int_slider(
         "modality_template",
@@ -552,12 +589,11 @@ def analyse_sweep(sweep_gen):
     # save
     analysis_widget.add_checkbox("save_images", description="Save images", value=False)
     analysis_widget.add_button(
-        "save", description="save analysis", disabled=True
+        "save", description="save analysis", disabled=True,
+        icon=save_icon
     )
     widgets_visibility = {}
-    for wgt in analysis_widget.elements.keys():
-        widgets_visibility[wgt] = True
-        analysis_widget.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex") 
+    _unstyle_widgets(analysis_widget, widgets_visibility)
     widgets_visibility["preview_results"] = False
     widgets_visibility["modality_template"] = False
     widgets_visibility["probe_template"] = False

@@ -71,7 +71,7 @@ def sweep_vasmples(
         probe_filepath = os.path.join(local_dir, "probes", default_probe + ".yaml")
         default_params = load_yaml(probe_filepath)
         probe_parameters = dict()
-        probe_parameters[0] = default_params
+        probe_parameters[0] = None
     if particle_defects is None:
         particle_defects = dict()
         particle_defects[0] = {"use_defects": False}

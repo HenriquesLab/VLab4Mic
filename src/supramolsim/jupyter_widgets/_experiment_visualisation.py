@@ -45,6 +45,21 @@ import numpy as np
 from IPython.utils import io
 from ..utils.visualisation.matplotlib_plots import plot_projection
 
+
+select_colour = "#4daf4ac7"
+remove_colour = "#ff8000da"
+update_colour = "#00bfffda"
+
+select_icon = "fa-check"
+add_icon = "fa-plus"
+show_icon = "fa-eye"
+remove_icon = "fa-minus"
+loding_icon = "fa-spinner fa-spin"
+update_icon = "fa-wrench" # create
+toggle_icon = "fa-eye-slash"
+upload_icon = "fa-upload"
+reset_icon = "fa-undo"
+
 def update_widgets_visibility(ezwidget, visibility_dictionary):
     """
     Show or hide widgets in an EZInput widget based on a visibility dictionary.
@@ -65,6 +80,14 @@ def update_widgets_visibility(ezwidget, visibility_dictionary):
             ezwidget[widgetname].layout.display = "inline-flex"
         else:
             ezwidget[widgetname].layout.display = "None"
+
+def _unstyle_widgets(ezwidget, visibility_dictionary):
+    for wgt in ezwidget.elements.keys():
+        visibility_dictionary[wgt] = True
+        if isinstance(ezwidget[wgt], widgets.Button):
+            ezwidget.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex", align_items="center", justify_content="center")
+        else:
+            ezwidget.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex")   
 
 def ui_show_structure(experiment):
     """
@@ -94,13 +117,14 @@ def ui_show_structure(experiment):
                 fraction = atoms_number/total
             else:
                 fraction = 1.0
-            with widget_elements["preview_structure"]:
-                display(
-                    experiment.structure.show_assembly_atoms(
-                        assembly_fraction=fraction,
-                        view_init=[vview, hview, 0]
-                    )
+            with io.capture_output() as captured:
+                fig = experiment.structure.show_assembly_atoms(
+                    assembly_fraction=fraction,
+                    view_init=[vview, hview, 0],
+                    return_plot=True
                 )
+            with widget_elements["preview_structure"]:
+                display(fig)
                 plt.close()
         else:
             widget_elements["preview_structure"].clear_output()
@@ -112,6 +136,7 @@ def ui_show_structure(experiment):
         show_structure,
         gui.elements,
         description="Show structure",
+        icon=show_icon,
     )
 
     def update_plot(value):
@@ -148,9 +173,8 @@ def ui_show_structure(experiment):
     #gui.add_button("show_structure", description="Show structure")
     gui.add_output("preview_structure")
     widgets_visibility = {}
-    for wgt in gui.elements.keys():
-        widgets_visibility[wgt] = True
-        gui.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex")
+    _unstyle_widgets(gui, widgets_visibility)
+    gui["button"].layout = widgets.Layout(width='50%', align_items='center', justify_content='center')
     widgets_visibility["n_atoms"] = False
     widgets_visibility["hview"] = False
     widgets_visibility["vview"] = False
@@ -210,7 +234,11 @@ def ui_show_labelled_structure(experiment):
                     hview=gui["hview"].value,
                     vview=gui["vview"].value
             ))
-    
+    gui.add_button(
+            "show_labelled_structure",
+            description="Show labelled structure",
+            icon=show_icon,
+        )
     gui.add_int_slider(
         "emitter_plotsize",
         description="Emitter size",
@@ -255,10 +283,7 @@ def ui_show_labelled_structure(experiment):
         on_change=show_labelled_structure,
         disabled=True
     )
-    gui.add_button(
-        "show_labelled_structure",
-        description="Show labelled structure",
-    )
+    
     def enable_view_widgets(b):
         widgets_visibility["emitter_plotsize"] = True
         widgets_visibility["source_plotsize"] = True
@@ -268,9 +293,7 @@ def ui_show_labelled_structure(experiment):
     gui["show_labelled_structure"].on_click(show_labelled_structure)
     gui.add_output("preview_labelled_structure")
     widgets_visibility = {}
-    for wgt in gui.elements.keys():
-        widgets_visibility[wgt] = True
-        gui.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex")
+    _unstyle_widgets(gui, widgets_visibility)
     widgets_visibility["emitter_plotsize"] = False
     widgets_visibility["source_plotsize"] = False
     widgets_visibility["hview"] = False
@@ -298,6 +321,9 @@ def ui_show_virtual_sample(experiment):
         gui["preview_virtual_sample"].clear_output()
         with gui["preview_virtual_sample"]:
             if experiment.generators_status("coordinate_field"):
+                widgets_visibility["horizontal_view"] = True
+                widgets_visibility["vertical_view"] = True
+                update_widgets_visibility(gui, widgets_visibility)
                 gui["horizontal_view"].disabled = False
                 gui["vertical_view"].disabled = False
                 hview = gui["horizontal_view"].value
@@ -312,6 +338,7 @@ def ui_show_virtual_sample(experiment):
     gui.add_button(
         "show_virtual_sample",
         description="Show virtual sample",
+        icon=show_icon,
     )
     gui.add_int_slider(
         "horizontal_view",
@@ -335,7 +362,11 @@ def ui_show_virtual_sample(experiment):
         on_change=update_plot,
         disabled=True,
     )
-    
+    widgets_visibility = {}
+    _unstyle_widgets(gui, widgets_visibility)
+    widgets_visibility["horizontal_view"] = False
+    widgets_visibility["vertical_view"] = False
+    update_widgets_visibility(gui, widgets_visibility)
     gui["show_virtual_sample"].on_click(update_plot)
     gui.add_output("preview_virtual_sample")
     return gui
@@ -548,10 +579,10 @@ def ui_set_acq_params(experiment):
             )
             acquisition_gui["image_output"].clear_output()
             slider = widgets.IntSlider(
-                value=45,
+                value=0,
                 min=0,
                 max=180,
-                step=1,
+                step=20,
                 description='Angle:',
                 continuous_update=False,
             )
@@ -574,7 +605,8 @@ def ui_set_acq_params(experiment):
 
     def clear(b):
         print("Acquisition parameters cleared")
-        experiment.reset_to_defaults(module="acquisitions", save=True)
+        with io.capture_output() as captured:
+            experiment.reset_to_defaults(module="acquisitions", save=True)
         acquisition_gui["current_parameters"].value = _mods_text_update(
             mods_text_base="Current acquisition parameters for modalities: ",
             mod_acq_params=experiment.selected_mods,
@@ -595,7 +627,7 @@ def ui_set_acq_params(experiment):
             
 
     def _mods_text_update(mods_text_base, mod_acq_params, keys_to_use = ["exp_time", "noise"]):
-        mods_text = mods_text_base + "<br>"
+        mods_text = "<b>"+mods_text_base+"</b>" + "<br>"
         for modality_name, acq_params in mod_acq_params.items():
             if acq_params is None:
                 acq_params = "Default"
@@ -632,8 +664,18 @@ def ui_set_acq_params(experiment):
     )
     acquisition_gui["Noise"].observe(preview_params_chage, names="value")
     acquisition_gui["Exposure"].observe(preview_params_chage, names="value")
-    acquisition_gui.add_button("Set", description="Update acquisition parameters")
-    acquisition_gui.add_button("Clear", description="Reset params")
+    acquisition_gui.add_HTML(
+        "current_parameters",
+        _mods_text_update(
+            mods_text_base="Current acquisition parameters for modalities: ",
+            mod_acq_params=experiment.selected_mods,
+            keys_to_use=["exp_time", "noise", "nframes"],
+        ),
+    )
+    acquisition_gui.add_button("Set", description="Update acquisition parameters", 
+                               icon=update_icon, style={"button_color": update_colour})
+    acquisition_gui.add_button("Clear", description="Reset params", 
+                               icon=reset_icon)
     acquisition_gui["Set"].on_click(set_params)
     acquisition_gui["Clear"].on_click(clear)
     acquisition_gui.add_checkbox(
@@ -655,11 +697,7 @@ def ui_set_acq_params(experiment):
     acquisition_gui.add_output("image_output")
     
     acq_widgets = {}
-    for wgt in acquisition_gui.elements.keys():
-        acq_widgets[wgt] = False
-        acquisition_gui.elements[wgt].layout = widgets.Layout(
-            width="50%", display="None"
-        )
+    _unstyle_widgets(acquisition_gui, acq_widgets)
     acquisition_gui.show()
     acq_widgets["Frames"] = True
     acq_widgets["Set"] = True
@@ -671,14 +709,6 @@ def ui_set_acq_params(experiment):
     acq_widgets["Clear"] = True
     acq_widgets["show_preview"] = True
     acq_widgets["show_as_volume"] = True
-    acquisition_gui.add_HTML(
-        "current_parameters",
-        _mods_text_update(
-            mods_text_base="Current acquisition parameters for modalities: ",
-            mod_acq_params=experiment.selected_mods,
-            keys_to_use=["exp_time", "noise", "nframes"],
-        ),
-    )
     
     update_widgets_visibility(acquisition_gui, acq_widgets)
     return acquisition_gui
@@ -726,6 +756,7 @@ def ui_preview_results(experiment):
     gui.add_button(
         "show_results",
         description="Show Results",
+        icon=show_icon,
     )
     
     def update_plot(change):

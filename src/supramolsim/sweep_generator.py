@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from IPython.utils import io
 import os
 from pathlib import Path
-from .utils.io.yaml_functions import load_yaml
+from .utils.io.yaml_functions import load_yaml, save_yaml
 from .analysis import _plots
 import numpy as np
 from datetime import datetime
@@ -118,6 +118,7 @@ class sweep_generator:
         self.create_parameters_iterables()
         self.experiment, self.virtual_samples, self.virtual_samples_parameters = (
             sweep.sweep_vasmples(
+                experiment=self.experiment,
                 structures=self.structures,
                 probes=self.probes,
                 probe_parameters=self.probe_parameters,
@@ -276,7 +277,7 @@ class sweep_generator:
         else:
             image = self.acquisition_outputs[parameter_id][replica_number]
         if return_image:
-            return image
+            return image, self.acquisition_outputs_parameters[parameter_id]
         else:
             plt.imshow(image)
             print(self.acquisition_outputs_parameters[parameter_id])
@@ -583,8 +584,6 @@ class sweep_generator:
         if plot_type not in self.analysis["plots"].keys():
             self.analysis["plots"][plot_type] = {}
         plot_params = self.plot_parameters[plot_type]
-        print(plot_type)
-        print(plot_params)
         if plot_type == "heatmaps":
             metric_plot = self._gen_heatmaps(
                 metric_name=metric_name,
@@ -640,7 +639,7 @@ class sweep_generator:
         if category is None:
             category = "modality_name"
         if param1 is None:
-            param1 = "labelling_efficiency"
+            param1 = self.parameters_with_set_values[0]
         if param2 is None:
             param2 = "probe_n"
         analysis_resut_df = self.get_analysis_output(keyname="dataframes")
@@ -823,7 +822,9 @@ class sweep_generator:
                 image = np.concatenate((image, replicates[i]))
             name = output_directory + param_combination_id + ".tiff"
             tiff.imwrite(name, image)
+        save_yaml(data=self.acquisition_outputs_parameters, name="acquisition_parameters", output_directory=output_directory) 
         if self.reference_image is not None:
             # save reference image
             name_ref = output_directory + "reference.tiff"
             tiff.imwrite(name_ref, self.reference_image)
+        

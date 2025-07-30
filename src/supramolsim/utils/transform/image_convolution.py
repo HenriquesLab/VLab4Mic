@@ -76,7 +76,7 @@ def frame_by_volume_convolution(
     bin_size,
     kernel3D,
     zfocus_slice,
-    projection_depth=1,
+    projection_depth=2,
     asframe=True
 ):
     """
@@ -89,6 +89,7 @@ def frame_by_volume_convolution(
 
     IMPORTANT: All units are in the same scale, except image dimensions
     """
+    projection_depth_half = int(projection_depth / 2)
     intensity_voxel = voxelize_active_fluorophores_withrange(
         coordinates, photon_vector, ranges, bin_pixelsize=bin_size
     )
@@ -98,14 +99,16 @@ def frame_by_volume_convolution(
         # there's no need to calculate the convolution if there are no photons
         convolved_intensity = intensity_voxel
     subset_of_frames = (
-        zfocus_slice - projection_depth,
-        zfocus_slice + projection_depth,
+        zfocus_slice - projection_depth_half,
+        zfocus_slice + projection_depth_half,
     )
+    if projection_depth_half > int(convolved_intensity.shape[2] / 2):
+        projection_depth_half = int(convolved_intensity.shape[2] / 2)
     if asframe:
         frame = np.sum(
             np.array(
                 convolved_intensity[
-                    :, :, zfocus_slice - projection_depth : zfocus_slice + projection_depth
+                    :, :, zfocus_slice - projection_depth_half : zfocus_slice + projection_depth_half
                 ]
             ),
             axis=2,
