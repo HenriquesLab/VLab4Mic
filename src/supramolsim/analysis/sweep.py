@@ -64,6 +64,7 @@ def sweep_vasmples(
             "1XI5",
         ]
     if probes is None:
+        print("Probe list is None. Using default probe")
         probes = [
             default_probe,
         ]
@@ -89,54 +90,56 @@ def sweep_vasmples(
     for struct in structures:
         experiment.structure_id = struct
         experiment._build_structure()
-        for rep in range(repetitions):
-            probe_n = 0
-            for probe in probes:
-                print(f"probe: {probe}")
-                # probe_param_n = 0
-                for probe_param_n, p_param in probe_parameters.items():
-                    # copy p_param?
-                    experiment.remove_probes()
-                    if p_param is None:
-                        experiment.add_probe(
-                            probe_template=probe,
-                        )
-                        #experiment.probe_parameters[probe] = default_params
-                    else:
-                        p_param_copy = copy.deepcopy(p_param)
-                        p_param_copy["fluorophore_id"] = default_fluorophore
-                        experiment.add_probe(
-                            probe_template=probe,
-                            **p_param_copy
-                        )
-                    for defect_n, defects_pars in particle_defects.items():
-                        particle_defects_copy = copy.deepcopy(defects_pars)
-                        for d_key, d_val in particle_defects_copy.items():
-                            if d_key=="defect_small_cluster":
-                                experiment.defect_eps["eps1"] = d_val
-                            if d_key=="defect_large_cluster":
-                                experiment.defect_eps["eps2"] = d_val
-                            if d_key=="defect":
-                                experiment.defect_eps["defect"] = d_val
-                        # print(experiment.defect_eps)
-                        print(experiment.probe_parameters)
-                        experiment._build_particle(keep=True)
-                        if experiment.generators_status("particle"):
-                            if len(experiment.particle.emitters) == 0:
-                                print(f"Skipping {probe}. No emitters were generated")
-                                break
-                        else:
+        #for rep in range(repetitions):
+        probe_n = 0
+        for probe in probes:
+            print(f"probe: {probe}")
+            # probe_param_n = 0
+            for probe_param_n, p_param in probe_parameters.items():
+                # copy p_param?
+                experiment.remove_probes()
+                if p_param is None:
+                    experiment.add_probe(
+                        probe_template=probe,
+                    )
+                    #experiment.probe_parameters[probe] = default_params
+                else:
+                    p_param_copy = copy.deepcopy(p_param)
+                    p_param_copy["fluorophore_id"] = default_fluorophore
+                    experiment.add_probe(
+                        probe_template=probe,
+                        **p_param_copy
+                    )
+                for defect_n, defects_pars in particle_defects.items():
+                    particle_defects_copy = copy.deepcopy(defects_pars)
+                    for d_key, d_val in particle_defects_copy.items():
+                        if d_key=="defect_small_cluster":
+                            experiment.defect_eps["eps1"] = d_val
+                        if d_key=="defect_large_cluster":
+                            experiment.defect_eps["eps2"] = d_val
+                        if d_key=="defect":
+                            experiment.defect_eps["defect"] = d_val
+                    # print(experiment.defect_eps)
+                    print(experiment.probe_parameters)
+                    experiment._build_particle(keep=True)
+                    if experiment.generators_status("particle"):
+                        if len(experiment.particle.emitters) == 0:
+                            print(f"Skipping {probe}. No emitters were generated")
                             break
-                        #vsample_n = 0
-                        for vsample_n, vsample_pars in virtual_samples.items():
-                            _exported_field = None
-                            # combination += str(vsample_n)
-                            experiment.set_virtualsample_params(
-                                **vsample_pars
-                            )
-                            #_exported_field = experiment._build_coordinate_field(
-                            #    keep=False, use_self_particle=True, **vsample_pars
-                            #)
+                    else:
+                        break
+                    #vsample_n = 0
+                    for vsample_n, vsample_pars in virtual_samples.items():
+                        _exported_field = None
+                        # combination += str(vsample_n)
+                        experiment.set_virtualsample_params(
+                            **vsample_pars
+                        )
+                        #_exported_field = experiment._build_coordinate_field(
+                        #    keep=False, use_self_particle=True, **vsample_pars
+                        #)
+                        for rep in range(repetitions):
+                            experiment.clear_virtual_sample()
                             experiment.build(modules=["coordinate_field"], use_self_particle=True)
                             _exported_field = experiment.coordinate_field.export_field()
                             combination_n = (
@@ -159,11 +162,11 @@ def sweep_vasmples(
                                 vsample_params[combination_n] = _parameters
                                 vsample_outputs[combination_n] = []
                             vsample_outputs[combination_n].append(_exported_field)
-                            #
-                            #
-                            #vsample_n += 1
-                        # defect_n += 1
-                probe_n += 1
+                        #
+                        #
+                        #vsample_n += 1
+                    # defect_n += 1
+            probe_n += 1
     return experiment, vsample_outputs, vsample_params
 
 
