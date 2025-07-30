@@ -298,17 +298,20 @@ def get_circles(img,
     cirlce_params : dict
         Parameters used for circle detection.
     """
-    if blur_px:
-        gray_blurred = cv2.blur(img, (blur_px, blur_px), 0)
-    else: 
-        gray_blurred = img
+    gray_blurred = img
     if gray_blurred.min() < 0:
         gray_blurred += -gray_blurred.min()
     if gray_blurred.dtype != np.uint8:
         if gray_blurred.dtype in [np.float32, np.float64]:
-            gray_blurred = np.uint8(gray_blurred * 255)
+            #gray_blurred = np.uint8(gray_blurred * 255)
+            gray_blurred = np.uint8(gray_blurred/gray_blurred.max() * 255)
         else:
-            gray_blurred = gray_blurred.astype(np.uint8)
+            #gray_blurred = gray_blurred.astype(np.uint8)
+            gray_blurred = (gray_blurred/256).astype('uint8')
+    if blur_px:
+        gray_blurred = cv2.blur(gray_blurred, (blur_px, blur_px), 0)
+    else: 
+        gray_blurred = gray_blurred
     circles = cv2.HoughCircles(
         gray_blurred,
         cv2.HOUGH_GRADIENT,
