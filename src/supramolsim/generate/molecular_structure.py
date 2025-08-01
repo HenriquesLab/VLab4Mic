@@ -767,7 +767,8 @@ class MolecularStructureParser:
         axesoff=True,
         show_axis=True,
         with_normals=False,
-        return_plot=False
+        return_plot=False,
+        axis_object=None,
     ):
         """
         Visualize target labels and optionally assembly atoms and reference point.
@@ -798,9 +799,12 @@ class MolecularStructureParser:
         matplotlib.figure.Figure or None
             The figure if return_plot is True, otherwise None.
         """
-        if labelnames is None:
+        if axis_object is not None:
+            ax = axis_object
+        else:
             fig = plt.figure()
             ax = fig.add_subplot(111, projection="3d")
+        if labelnames is None:
             for trgt in list(self.label_targets.keys()):
                 if with_normals:
                     draw_nomral_segments(
@@ -846,11 +850,14 @@ class MolecularStructureParser:
         )
         if axesoff:
             ax.set_axis_off()
-        if return_plot:
-            plt.close()
-            return fig
+        if axis_object is not None:
+            return ax
         else:
-            fig.show
+            if return_plot:
+                plt.close()
+                return fig
+            else:
+                fig.show
 
     def show_assembly_atoms(
         self, assembly_fraction=0.01, view_init=[0, 0, 0], axesoff=True,return_plot=False
