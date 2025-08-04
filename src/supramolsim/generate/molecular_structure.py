@@ -769,6 +769,9 @@ class MolecularStructureParser:
         with_normals=False,
         return_plot=False,
         axis_object=None,
+        target_size = None,
+        atoms_size = None,
+        atoms_alpha = None,
     ):
         """
         Visualize target labels and optionally assembly atoms and reference point.
@@ -806,6 +809,8 @@ class MolecularStructureParser:
             ax = fig.add_subplot(111, projection="3d")
         if labelnames is None:
             for trgt in list(self.label_targets.keys()):
+                if target_size is not None:
+                    self.plotting_params[trgt]["plotsize"] = target_size
                 if with_normals:
                     draw_nomral_segments(
                         [self.get_target_normals(trgt), self.get_target_coords(trgt)],
@@ -824,6 +829,10 @@ class MolecularStructureParser:
             atoms_subset = cif_builder.array_coords_subset(
                 self.assembly_atoms, assembly_fraction
             )
+            if atoms_size is not None:
+                self.plotting_params["assemblyatoms"]["plotsize"] = atoms_size
+            if atoms_alpha is not None:
+                self.plotting_params["assemblyatoms"]["plotalpha"] = atoms_alpha
             add_ax_scatter(
                 ax,
                 format_coordinates(
