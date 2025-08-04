@@ -818,6 +818,7 @@ class LabeledInstance:
                 xlims = [-100,100],
                 ylims = [-100,100],
                 zlims = None,
+                central_axis=True,
                 **kwargs):
         """
         Visualize the probe structure in 3D.
@@ -868,15 +869,16 @@ class LabeledInstance:
                             plotsize=20
                     ),
                 )
-        add_ax_scatter(
-                    ax,
-                        format_coordinates(
-                            centered_axis,
-                            plotmarker="x",
-                            plotcolour="k",
-                            plotsize=20
-                        ),
-                    )
+        if central_axis:
+            add_ax_scatter(
+                        ax,
+                            format_coordinates(
+                                centered_axis,
+                                plotmarker="x",
+                                plotcolour="k",
+                                plotsize=20
+                            ),
+                        )
         ax.set_xlim(xlims)
         ax.set_ylim(ylims)
         if zlims is None:
