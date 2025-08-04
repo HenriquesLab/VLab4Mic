@@ -760,6 +760,10 @@ class LabeledInstance:
             if self.secondary[labeltype]["binding"]["distance"]["between_targets"] is not None:
                 self.secondary[labeltype]["binding"]["distance"]["between_targets"] *= probe_scaling_factor
             self.secondary[labeltype]["scale"] = new_scale
+        if self.defects:
+            self.defects_params["d_cluster_params"]["eps1"] *= scaling_factor
+            self.defects_params["d_cluster_params"]["eps2"] *= scaling_factor
+            self.defects_params["xmer_neigh_distance"] *= scaling_factor
 
     # methods to get emitters by target name    
 
