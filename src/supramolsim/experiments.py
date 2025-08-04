@@ -1138,7 +1138,8 @@ class ExperimentParametrisation:
 
 def generate_virtual_sample(
     structure: str = "1XI5",
-    probe_name: str = None,
+    probe_template: str = "NHS_ester",
+    probe_name:str = None,
     probe_target_type: str = None,
     probe_target_value: str = None,
     probe_distance_to_epitope: float = None,
@@ -1160,6 +1161,7 @@ def generate_virtual_sample(
     random_orientations=False,
     random_placing=False,
     clear_probes=False,
+    clear_experiment = False,
     **kwargs,
 ):
     """
@@ -1223,15 +1225,20 @@ def generate_virtual_sample(
         - ExperimentParametrisation: The experiment containing all modules that were generated to build the virtual sample, and the virtual sample module itself. This experiment can be further used and tweaked for subsequent analysis or branching workflows.
     """
     myexperiment = ExperimentParametrisation()
+    if clear_experiment:
+        myexperiment.clear_experiment()
     # load default configuration for probe
     if not clear_probes:
-        if probe_name is None:
-            probe_name = "NHS_ester"
+        print(probe_template)
         probe_configuration_file = os.path.join(
-            myexperiment.configuration_path, "probes", probe_name + ".yaml"
+            myexperiment.configuration_path, "probes", probe_template + ".yaml"
         )
         probe_configuration = load_yaml(probe_configuration_file)
-        probe_configuration["probe_name"] = probe_name
+        probe_configuration["probe_template"] = probe_template
+        if probe_name is None:
+            probe_name = probe_template
+        else:
+            probe_configuration["label_name"] = probe_name
         if probe_target_type and probe_target_value:
             probe_configuration["target_info"] = dict(
                 type=probe_target_type, value=probe_target_value
