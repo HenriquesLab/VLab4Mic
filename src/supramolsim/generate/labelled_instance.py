@@ -1007,6 +1007,7 @@ class LabeledInstance:
         source_plotsize=1,
         axis_object=None,
         emitter_plotsize=1,
+        source_plotcolour="#bbbbbb"
     ):
         """
         Generate a 3D axis plot for the labelled instance.
@@ -1055,7 +1056,7 @@ class LabeledInstance:
                             axis_object,
                             format_coordinates(
                                 self._get_source_coords_normals(labs)["coordinates"],
-                                plotcolour="#bbbbbb",
+                                plotcolour=source_plotcolour,
                                 plotalpha=0.5,
                                 plotsize=source_plotsize,
                             ),
