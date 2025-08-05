@@ -684,6 +684,11 @@ class LabeledInstance:
                 self.emitters[labeltype], _ = transform_displace_set(
                     self.get_emitter_by_target(labeltype), self.get_ref_point(), nref
                 )
+                # translate sources as well
+                self.source["targets"][labeltype]["coordinates"], _  = transform_displace_set(
+                    self._get_source_coords_normals(labeltype)["coordinates"], self.get_ref_point(), nref
+                )
+     
         # then replace reference point
         self._set_ref_point(nref)
         self.axis["pivot"] = nref
@@ -753,6 +758,8 @@ class LabeledInstance:
             probe_scaling_factor = self.secondary[labeltype]["scale"] / new_scale
             if self.secondary[labeltype]["emitters"] is not None:
                 self.secondary[labeltype]["emitters"] = self.secondary[labeltype]["emitters"].astype('float64') * probe_scaling_factor
+            if self.secondary[labeltype]["minimal_distance"] is not None:
+                self.secondary[labeltype]["minimal_distance"] *= probe_scaling_factor
             if "coordinates" in self.secondary[labeltype].keys():
                 self.secondary[labeltype]["coordinates"] = self.secondary[labeltype]["coordinates"].astype('float64') * probe_scaling_factor
             if self.secondary[labeltype]["binding"]["distance"]["to_target"] is not None:
@@ -856,7 +863,7 @@ class LabeledInstance:
             probe_name = self.emitters[first_probe]
         fig = plt.figure()
         ax = fig.add_subplot(111, projection="3d")
-        probe_plotting_params = self._get_label_plotting_params(probe_name)
+        #probe_plotting_params = self._get_label_plotting_params(probe_name)
         total_coordinates = copy.copy(self.labels[probe_name]["emitters"])
         total_number_coordinates = total_coordinates.shape[0]
         center = np.mean(total_coordinates, axis=0)
@@ -869,20 +876,15 @@ class LabeledInstance:
                     format_coordinates(
                         centered_emitters, 
                             plotmarker="o",
-                            plotcolour="#984ea3",
-                            plotsize=20
+                            plotsize=20,
+                            **kwargs
                     ),
                 )
         if central_axis:
-            add_ax_scatter(
-                        ax,
-                            format_coordinates(
-                                centered_axis,
-                                plotmarker="x",
-                                plotcolour="k",
-                                plotsize=20
-                            ),
-                        )
+            axis_segment = dict()
+            axis_segment["pivot"] = centered_axis[0]
+            axis_segment["direction"] = centered_axis[1] - centered_axis[0]
+            draw1nomral_segment(axis_segment, ax, lenght=100, colors=["g", "y"])
         ax.set_xlim(xlims)
         ax.set_ylim(ylims)
         if zlims is None:
