@@ -173,7 +173,7 @@ def probe_model(
     # print(structural_model.label_targets)
     
 
-    return structural_model, target_sites, anchor_point, direction_point, probe_epitope
+    return structural_model, target_sites, np.squeeze(anchor_point, axis=None), np.squeeze(direction_point, axis=None), probe_epitope
 
 
 def particle_from_structure(
