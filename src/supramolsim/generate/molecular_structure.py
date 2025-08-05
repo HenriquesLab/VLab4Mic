@@ -770,6 +770,7 @@ class MolecularStructureParser:
         return_plot=False,
         axis_object=None,
         target_size = None,
+        target_plotcolour = None,
         atoms_size = None,
         atoms_alpha = None,
     ):
@@ -811,6 +812,8 @@ class MolecularStructureParser:
             for trgt in list(self.label_targets.keys()):
                 if target_size is not None:
                     self.plotting_params[trgt]["plotsize"] = target_size
+                if target_plotcolour is not None:
+                    self.plotting_params[trgt]["plotcolour"] = target_plotcolour
                 if with_normals:
                     draw_nomral_segments(
                         [self.get_target_normals(trgt), self.get_target_coords(trgt)],

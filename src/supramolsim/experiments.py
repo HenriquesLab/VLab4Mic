@@ -1149,7 +1149,7 @@ def generate_virtual_sample(
     probe_conjugation_target_info=None,
     probe_conjugation_efficiency: float = None,
     probe_seconday_epitope=None,
-    probe_wobbling=False,
+    probe_wobble_theta=None,
     labelling_efficiency: float = 1.0,
     defect_small_cluster: float = None,
     defect_large_cluster: float = None,
@@ -1240,9 +1240,9 @@ def generate_virtual_sample(
         else:
             probe_configuration["label_name"] = probe_name
         if probe_target_type and probe_target_value:
-            probe_configuration["target_info"] = dict(
-                type=probe_target_type, value=probe_target_value
-            )
+            print(probe_target_type, probe_target_value)
+            probe_configuration["probe_target_type"] = probe_target_type
+            probe_configuration["probe_target_value"] = probe_target_value
         if probe_distance_to_epitope is not None:
             probe_configuration["distance_to_epitope"] = probe_distance_to_epitope
         if probe_fluorophore is not None:
@@ -1261,8 +1261,8 @@ def generate_virtual_sample(
             probe_configuration["conjugation_efficiency"] = probe_conjugation_efficiency
         if probe_seconday_epitope is not None:
             probe_configuration["epitope_target_info"] = probe_seconday_epitope
-        if probe_wobbling:
-            probe_configuration["enable_wobble"] = probe_wobbling
+        if probe_wobble_theta is not None:
+            probe_configuration["probe_wobble_theta"] = probe_wobble_theta
         myexperiment.add_probe(**probe_configuration)
     # load default configuration for virtual sample
     virtual_sample_template = os.path.join(
