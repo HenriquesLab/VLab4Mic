@@ -956,6 +956,7 @@ class ExperimentParametrisation:
             probe_configuration["as_linker"] = False
         if probe_steric_hindrance is not None:
             probe_configuration["distance_between_epitope"] = probe_steric_hindrance
+            probe_configuration["binding"]["distance"]["between_targets"] = probe_steric_hindrance
         self.probe_parameters[probe_name] = probe_configuration
         self._update_probes()
 
