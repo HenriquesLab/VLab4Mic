@@ -657,6 +657,14 @@ class Imager:
                         asframes=False,
                     )
                     beads = None
+            elif convolution_type == "raw_volume_activation":
+                    images = conv.generate_frames_volume_convolution(
+                        **field_data,
+                        **psf_data,
+                        asframes=False,
+                        activation_only=True
+                    )
+                    beads = None
             else:
                 images, beads = self.images_by_convolutions(
                     convolution_type, **simparams
@@ -669,7 +677,7 @@ class Imager:
 
             # wrap up the images from a single fluorophore in the channel
             output_per_fluoname[fluo] = dict(images=images, beads=beads)
-        if convolution_type != "raw_volume":
+        if convolution_type not in ["raw_volume", "raw_volume_activation"]:
             timeseries, beadstack = self._add_fluorophore_signals(output_per_fluoname)
             # # # Up to here only the photon information on arrival
             if noise:
