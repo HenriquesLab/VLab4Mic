@@ -309,6 +309,7 @@ class MolecularStructureParser:
         """
         # this function could use a small portion of the atoms defined only
         allatoms_defined = self.get_atoms_infile()  # Parse all atoms in file
+        self.atoms_in_file = allatoms_defined
         if self.assembly_operations is None:
             self.generate_assemmbly_operations()
         if self.assymetric_defined:
