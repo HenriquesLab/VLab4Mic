@@ -148,6 +148,9 @@ def stack_projection(stack, angle=45, axes=(1,2), method = "sd"):
         projection = np.std(rotated, axis=2)
     elif method == "mean":
         projection = np.mean(rotated, axis=2)
+    elif method == "sum":
+        projection = np.sum(rotated, axis=2)
+    
     return projection
 
 def plot_projection(stack, angle=45, plane="XY", method = "max"):
