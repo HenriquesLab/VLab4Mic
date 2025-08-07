@@ -138,12 +138,16 @@ def draw_nomral_segments(points_normal, figure, lenght=100, colors=["g", "y"]):
     return figure
 
 
-def stack_projection(stack, angle=45, axes=(1,2), method = "max"):
+def stack_projection(stack, angle=45, axes=(1,2), method = "sd"):
     projection = None
     zstack = copy.copy(stack)
     rotated = rotate(zstack, angle=angle, axes=axes, reshape=False, order=3)  # order=3: cubic interpolation
     if method == "max":
-        projection = np.max(rotated, axis=2) 
+        projection = np.max(rotated, axis=2)
+    elif method == "sd":
+        projection = np.std(rotated, axis=2)
+    elif method == "mean":
+        projection = np.mean(rotated, axis=2)
     return projection
 
 def plot_projection(stack, angle=45, plane="XY", method = "max"):
