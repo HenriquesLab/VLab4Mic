@@ -1076,6 +1076,7 @@ class Imager:
         initial_pos=True,
         reference_pt=False,
         axesoff=False,
+        emitters_plotsize=None,
         return_fig = False
     ):
         """
@@ -1118,7 +1119,7 @@ class Imager:
         zz = yy * 0 + (z_focus * factor)
         fig = plt.figure()
         ax = fig.add_subplot(111, projection="3d")
-        ax.plot_surface(xx, yy, zz, alpha=0.2, cmap="plasma")
+        ax.plot_surface(xx, yy, zz, alpha=0.2)
         # show ROI reference point
         if reference_pt:
             ref_pt = self.get_absoulte_reference_point() * factor
@@ -1127,6 +1128,8 @@ class Imager:
         if self.emitters_by_fluorophore is not None:
             for fname, coords in self.emitters_by_fluorophore.items():
                 # print(fname)
+                if emitters_plotsize is not None:
+                    self.plotting_params[fname]["plotsize"] = emitters_plotsize
                 add_ax_scatter(
                     ax,
                     format_coordinates(coords * factor, **self.plotting_params[fname]),

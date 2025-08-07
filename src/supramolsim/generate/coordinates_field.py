@@ -639,7 +639,7 @@ class Field:
         return dict(self.fluorophre_emitters)
 
     # methods for visualisation
-    def show_field(self, fluo_type="all", view_init=[30, 0, 0], initial_pos=True, return_fig=False):
+    def show_field(self, fluo_type="all", view_init=[30, 0, 0], initial_pos=True, return_fig=False, axesoff=False):
         """
         Visualize the field and emitters in 3D.
 
@@ -701,6 +701,8 @@ class Field:
             [ub - lb for lb, ub in (getattr(ax, f"get_{a}lim")() for a in "xyz")]
         )
         ax.view_init(elev=view_init[0], azim=view_init[1], roll=view_init[2])
+        if axesoff:
+            ax.set_axis_off()
         if return_fig:
             return fig
         else:
