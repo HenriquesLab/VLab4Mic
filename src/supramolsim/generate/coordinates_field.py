@@ -639,7 +639,7 @@ class Field:
         return dict(self.fluorophre_emitters)
 
     # methods for visualisation
-    def show_field(self, fluo_type="all", view_init=[30, 0, 0], initial_pos=True, return_fig=False, axesoff=False):
+    def show_field(self, fluo_type="all", view_init=[30, 0, 0], initial_pos=True, return_fig=False, axesoff=False, axis_object=None):
         """
         Visualize the field and emitters in 3D.
 
@@ -664,9 +664,13 @@ class Field:
             range(int(dimension_sizes[0])), range(int(dimension_sizes[1]))
         )
         zz = (yy) * 0
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection="3d")
-        ax.plot_surface(xx, yy, zz, alpha=0.2)
+        if axis_object is not None:
+            ax = axis_object
+            ax.plot_surface(xx, yy, zz, alpha=0.2)
+        else:
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection="3d")
+            ax.plot_surface(xx, yy, zz, alpha=0.2)
 
         if initial_pos:
             if self.molecules_params["absolute_positions"] is not None:
@@ -703,10 +707,13 @@ class Field:
         ax.view_init(elev=view_init[0], azim=view_init[1], roll=view_init[2])
         if axesoff:
             ax.set_axis_off()
-        if return_fig:
-            return fig
+        if axis_object is not None:
+            return ax
         else:
-            fig.show()
+            if return_fig:
+                return fig
+            else:
+                fig.show()
 
     def expand_isotropically(self, factor):
         """
