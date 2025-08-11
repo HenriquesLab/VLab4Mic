@@ -918,8 +918,8 @@ class LabeledInstance:
         show_axis=False,
         with_sources=False,
         return_plot=False,
-        source_size=1,
-        emitter_plotsize=1,
+        source_size=None,
+        emitter_plotsize=None,
     ):
         """
         Visualize the labelled instance in 3D.
@@ -955,7 +955,8 @@ class LabeledInstance:
             ax = fig.add_subplot(111, projection="3d")
             for labs in self.labelnames:
                 lab_plotparams = self._get_label_plotting_params(labs)
-                lab_plotparams["plotsize"] = emitter_plotsize
+                if emitter_plotsize is not None:
+                    lab_plotparams["plotsize"] = emitter_plotsize
                 add_ax_scatter(
                     ax,
                     format_coordinates(
@@ -963,6 +964,10 @@ class LabeledInstance:
                     ),
                 )
                 if with_sources:
+                    if source_size is not None:
+                        source_size=source_size
+                    else:
+                        source_size=1
                     add_ax_scatter(
                         ax,
                         format_coordinates(
