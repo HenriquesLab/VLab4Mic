@@ -10,7 +10,7 @@ from ..utils.transform.points_transforms import (
     transform_displace_set,
 )
 from ..utils.data_format.visualisation import format_coordinates, set_colorplot
-from ..utils.visualisation.matplotlib_plots import add_ax_scatter, draw1nomral_segment
+from ..utils.visualisation.matplotlib_plots import add_ax_scatter, draw1nomral_segment, draw_nomral_segments
 from ..utils.transform.cif_builder import create_instance_label
 from ..utils.transform.defects import xmersubset_byclustering
 from ..utils.data_format.structural_format import builder_format
@@ -1011,10 +1011,12 @@ class LabeledInstance:
         axesoff=True,
         show_axis=False,
         with_sources=False,
-        source_plotsize=1,
+        source_plotsize=None,
         axis_object=None,
-        emitter_plotsize=1,
-        source_plotcolour="#bbbbbb"
+        emitter_plotsize=None,
+        source_plotcolour="#bbbbbb",
+        with_normals=False,
+        **kwargs
     ):
         """
         Generate a 3D axis plot for the labelled instance.
@@ -1044,7 +1046,8 @@ class LabeledInstance:
         if labelnames == "All":
             for labs in self.labelnames:
                 lab_plotparams = self._get_label_plotting_params(labs)
-                lab_plotparams["plotsize"] = emitter_plotsize
+                if emitter_plotsize is not None:
+                    lab_plotparams["plotsize"] = emitter_plotsize
                 add_ax_scatter(
                     axis_object,
                     format_coordinates(self.emitters[labs], **lab_plotparams),
@@ -1052,6 +1055,10 @@ class LabeledInstance:
                 zlims[0] = np.min(self.emitters[labs])
                 zlims[1] = np.max(self.emitters[labs])
                 if with_sources:
+                    if source_plotsize is not None:
+                        source_plotsize = source_plotsize
+                    else:
+                        source_plotsize = 1
                     if self.defects_target_normals is not None:
                         add_ax_scatter(
                             axis_object,
@@ -1075,6 +1082,13 @@ class LabeledInstance:
                                 self._get_source_coords_normals(labs)["coordinates"],
                                 plotsize=source_plotsize,
                             ),
+                        )
+                    if with_normals:
+                        draw_nomral_segments(
+                            [self.source["targets"][labs]["normals"], self.source["targets"][labs]["coordinates"]],
+                            axis_object,
+                            colors=["grey", "green"],
+                            **kwargs
                         )
 
                 # add_ax_scatter(ax, format_coordinates(self.emitters[labs]))
