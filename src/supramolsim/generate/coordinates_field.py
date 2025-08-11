@@ -112,7 +112,9 @@ class Field:
         # set molecules params
         self.set_molecules_params(**molecules)
 
-    def create_minimal_field(self, nmolecules=1, random_placing=False, random_orientations=False, **kwargs):
+    def create_minimal_field(
+        self, nmolecules=1, random_placing=False, random_orientations=False, **kwargs
+    ):
         """
         Create a minimal field with a specified number of molecules and placement options.
 
@@ -158,7 +160,7 @@ class Field:
             }
         else:
             # if none of the above, this is the case of a single particle in the center
-            #point = self.get_field_param("absolute_reference_point")
+            # point = self.get_field_param("absolute_reference_point")
             self.set_molecule_param("nMolecules", 1)
             if random_placing:
                 self.random_placing = True
@@ -168,8 +170,6 @@ class Field:
             self.fluorophre_emitters = {fluo_name: point.reshape(1, 3)}
         self._set_fluo_plotting_params(fluo_name)
         self.random_orientations = random_orientations
-
-
 
     def calculate_absolute_reference(self):
         """
@@ -296,7 +296,9 @@ class Field:
         # print(f"Total positions: {npositions}")
         # this can only work after the size of field has been established
         if self.molecules_params["minimal_distance"] is not None:
-            print(f"distributing with minimal distance: {self.molecules_params['minimal_distance']}")
+            print(
+                f"distributing with minimal distance: {self.molecules_params['minimal_distance']}"
+            )
             self._random_pos_minimal_dist(npositions)
         else:
             print("Generating unconstrained random positions")
@@ -318,7 +320,7 @@ class Field:
             orientations.append(np.array(sampl.sample_spherical_normalised(1, ndim=3)))
         self.set_molecule_param("orientations", orientations)
 
-    def generate_global_orientation(self, global_orientation = None):
+    def generate_global_orientation(self, global_orientation=None):
         """
         Set a global orientation for all molecules.
 
@@ -372,19 +374,19 @@ class Field:
                 # print(np.linalg.norm(new - selected_positions[pos]))
                 if np.linalg.norm(new - selected_positions[pos]) < minimal_distance:
                     is_available = 0
-                    #break
+                    # break
             if is_available:
                 selected_positions.append(new)
         for abs_pos in selected_positions:
             rel_pos = abs_pos
-            rel_pos[0] = abs_pos[0]/maxabs_posx
-            rel_pos[1] = abs_pos[1]/maxabs_posy
-            rel_pos[2] = abs_pos[2]/maxabs_posz
+            rel_pos[0] = abs_pos[0] / maxabs_posx
+            rel_pos[1] = abs_pos[1] / maxabs_posy
+            rel_pos[2] = abs_pos[2] / maxabs_posz
             selected_relative.append(rel_pos)
         # print(f"end flag : {flag}")
         self.molecules_params["relative_positions"] = selected_relative
-        #self.set_molecule_param("absolute_positions", selected_positions)
-        #self.absolute_pos = selected_positions
+        # self.set_molecule_param("absolute_positions", selected_positions)
+        # self.absolute_pos = selected_positions
 
     def _calculate_absolute_position(self, relative_pos):
         fieldsizes = self.get_field_param("dimension_sizes")
@@ -444,9 +446,7 @@ class Field:
         particle_copy.scale_coordinates_system(self.get_field_param("scale"))
         self.molecules_default_orientation = particle_copy.get_axis()
         if self.molecules_params["minimal_distance"] is None:
-            self._set_molecule_minimal_distance(
-                dist=particle_copy.radial_hindance
-            )
+            self._set_molecule_minimal_distance(dist=particle_copy.radial_hindance)
         if self.random_placing:
             self.generate_random_positions()
         self._gen_abs_from_rel_positions()
@@ -468,7 +468,6 @@ class Field:
             self.generate_random_orientations()
             # self.relabel_molecules()
         self.relabel_molecules()
-        
 
     def _create_instances_from_pdb(self, cif_f, structure_id, label_file):
         # this is exactly the same as the high level function
@@ -513,7 +512,7 @@ class Field:
             for mol in self.molecules:
                 mol.generate_instance()
                 # mol.show_instance()
-                #mol.scale_coordinates_system(self.get_field_param("scale"))
+                # mol.scale_coordinates_system(self.get_field_param("scale"))
 
     def relocate_molecules(self):
         """
@@ -578,9 +577,11 @@ class Field:
             self._construct_channels_by_fluorophores()
         else:
             default_fluorophore = "AF647"
-            #self.get_molecule_param("absolute_positions")
+            # self.get_molecule_param("absolute_positions")
             self.fluorophre_emitters = {}
-            self.fluorophre_emitters[default_fluorophore] = self.get_molecule_param("absolute_positions")
+            self.fluorophre_emitters[default_fluorophore] = self.get_molecule_param(
+                "absolute_positions"
+            )
 
     def _construct_channels_by_fluorophores(self):
         """
@@ -639,7 +640,18 @@ class Field:
         return dict(self.fluorophre_emitters)
 
     # methods for visualisation
-    def show_field(self, fluo_type="all", view_init=[30, 0, 0], initial_pos=True, return_fig=False, axesoff=False, axis_object=None, zoom_in=None, **kwargs):
+    def show_field(
+        self,
+        fluo_type="all",
+        view_init=[30, 0, 0],
+        initial_pos=True,
+        return_fig=False,
+        axesoff=False,
+        axis_object=None,
+        zoom_in=None,
+        emitters_plotsize=None,
+        **kwargs,
+    ):
         """
         Visualize the field and emitters in 3D.
 
@@ -660,16 +672,14 @@ class Field:
             The figure if return_fig is True, otherwise None.
         """
         dimension_sizes = copy.copy(self.get_field_param("dimension_sizes"))
-        if zoom_in and zoom_in>0.2 and zoom_in<1:
-            x_to_remove = dimension_sizes[0]*zoom_in
+        if zoom_in and zoom_in > 0.2 and zoom_in < 1:
+            x_to_remove = dimension_sizes[0] * zoom_in
             x_size = dimension_sizes[0] - x_to_remove
-            y_to_remove = dimension_sizes[1]*zoom_in
+            y_to_remove = dimension_sizes[1] * zoom_in
             y_size = dimension_sizes[1] - y_to_remove
-            xx, yy = np.meshgrid(
-                range(int(x_size)), range(int(y_size))
-            )
-            xx = xx + (x_to_remove/2)
-            yy = yy + (y_to_remove/2)
+            xx, yy = np.meshgrid(range(int(x_size)), range(int(y_size)))
+            xx = xx + (x_to_remove / 2)
+            yy = yy + (y_to_remove / 2)
             zz = (yy) * 0
         else:
             xx, yy = np.meshgrid(
@@ -699,6 +709,8 @@ class Field:
             print("Showing all fluorophores")
             for fname in self.fluorophre_emitters.keys():
                 print(fname)
+                if emitters_plotsize is not None:
+                    self.plotting_params[fname]["plotsize"] = emitters_plotsize
                 add_ax_scatter(
                     ax,
                     format_coordinates(
@@ -706,6 +718,8 @@ class Field:
                     ),
                 )
         else:
+            if emitters_plotsize is not None:
+                    self.plotting_params[fname]["plotsize"] = emitters_plotsize
             add_ax_scatter(
                 ax,
                 format_coordinates(
@@ -797,7 +811,13 @@ class Field:
         return export_field
 
 
-def create_min_field(number_of_particles=1, random_placing=False, random_orientations=False, prints=False, **kwargs):
+def create_min_field(
+    number_of_particles=1,
+    random_placing=False,
+    random_orientations=False,
+    prints=False,
+    **kwargs,
+):
     """
     Create a minimal field with a specified number of particles.
 
@@ -822,19 +842,21 @@ def create_min_field(number_of_particles=1, random_placing=False, random_orienta
     if prints:
         print("Initialising default field")
     coordinates_field = Field()
-    #if molecule_pars:
+    # if molecule_pars:
     #    for key, value in molecule_pars.items():
     #        coordinates_field.molecules_params[key] = value
     coordinates_field.create_minimal_field(
         nmolecules=number_of_particles,
-        random_placing=random_placing, 
+        random_placing=random_placing,
         random_orientations=random_orientations,
-        **kwargs
+        **kwargs,
     )
     return coordinates_field
 
 
-def gen_positions_from_image(img, mode="mask", pixelsize = None, min_distance = None, **kwargs):
+def gen_positions_from_image(
+    img, mode="mask", pixelsize=None, min_distance=None, **kwargs
+):
     """
     Generate relative positions from an image using either a mask or local maxima.
 
@@ -859,7 +881,7 @@ def gen_positions_from_image(img, mode="mask", pixelsize = None, min_distance = 
     if min_distance is None:
         min_distance = 1
     else:
-        min_dist_pixels = min_distance/pixelsize
+        min_dist_pixels = min_distance / pixelsize
         min_distance = math.ceil(min_dist_pixels)
     npixels = list(img.shape)
     image_physical_size = np.zeros(shape=(2))
@@ -871,9 +893,7 @@ def gen_positions_from_image(img, mode="mask", pixelsize = None, min_distance = 
         else:
             npositions = kwargs["npositions"]
         pixel_positions = sampl.get_random_pixels(
-            img, 
-            num_pixels=npositions, 
-            min_distance=min_distance
+            img, num_pixels=npositions, min_distance=min_distance
         )
     elif mode == "localmaxima":
         if "background" not in kwargs.keys():
@@ -889,14 +909,13 @@ def gen_positions_from_image(img, mode="mask", pixelsize = None, min_distance = 
         else:
             threshold = kwargs["threshold"]
         pixel_positions, img_processed = metrics.local_maxima_positions(
-            img, 
-            min_distance=min_distance, 
-            threshold=threshold, 
-            sigma=sigma, 
-            background=background)
-    xyz_relative = metrics.pixel_positions_to_relative(
-            pixel_positions,
-            image_sizes=image_physical_size,
-            pixelsize=pixelsize
+            img,
+            min_distance=min_distance,
+            threshold=threshold,
+            sigma=sigma,
+            background=background,
         )
+    xyz_relative = metrics.pixel_positions_to_relative(
+        pixel_positions, image_sizes=image_physical_size, pixelsize=pixelsize
+    )
     return xyz_relative, image_physical_size
