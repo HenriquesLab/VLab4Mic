@@ -483,6 +483,9 @@ class ExperimentParametrisation:
                         deg_dissasembly=defect,
                     )
                 else:
+                    particle.add_defects(
+                        deg_dissasembly=0,
+                    )
                     print("Particle without defects")
                 if keep:
                     self.particle = particle
