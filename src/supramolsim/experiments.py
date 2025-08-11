@@ -942,6 +942,8 @@ class ExperimentParametrisation:
             probe_configuration["conjugation_target_info"] = (
                 probe_conjugation_target_info
             )
+            probe_configuration["conjugation_sites"]["target"]["type"]= probe_conjugation_target_info["type"]
+            probe_configuration["conjugation_sites"]["target"]["value"]= probe_conjugation_target_info["value"]
         if probe_conjugation_efficiency is not None:
             probe_configuration["conjugation_efficiency"] = probe_conjugation_efficiency
         if probe_seconday_epitope is not None:
