@@ -639,7 +639,7 @@ class Field:
         return dict(self.fluorophre_emitters)
 
     # methods for visualisation
-    def show_field(self, fluo_type="all", view_init=[30, 0, 0], initial_pos=True, return_fig=False, axesoff=False, axis_object=None):
+    def show_field(self, fluo_type="all", view_init=[30, 0, 0], initial_pos=True, return_fig=False, axesoff=False, axis_object=None, zoom_in=None, **kwargs):
         """
         Visualize the field and emitters in 3D.
 
@@ -659,11 +659,23 @@ class Field:
         matplotlib.figure.Figure or None
             The figure if return_fig is True, otherwise None.
         """
-        dimension_sizes = self.get_field_param("dimension_sizes")
-        xx, yy = np.meshgrid(
-            range(int(dimension_sizes[0])), range(int(dimension_sizes[1]))
-        )
-        zz = (yy) * 0
+        dimension_sizes = copy.copy(self.get_field_param("dimension_sizes"))
+        if zoom_in and zoom_in>0.2 and zoom_in<1:
+            x_to_remove = dimension_sizes[0]*zoom_in
+            x_size = dimension_sizes[0] - x_to_remove
+            y_to_remove = dimension_sizes[1]*zoom_in
+            y_size = dimension_sizes[1] - y_to_remove
+            xx, yy = np.meshgrid(
+                range(int(x_size)), range(int(y_size))
+            )
+            xx = xx + (x_to_remove/2)
+            yy = yy + (y_to_remove/2)
+            zz = (yy) * 0
+        else:
+            xx, yy = np.meshgrid(
+                range(int(dimension_sizes[0])), range(int(dimension_sizes[1]))
+            )
+            zz = (yy) * 0
         if axis_object is not None:
             ax = axis_object
             ax.plot_surface(xx, yy, zz, alpha=0.2)
@@ -707,6 +719,10 @@ class Field:
         ax.view_init(elev=view_init[0], azim=view_init[1], roll=view_init[2])
         if axesoff:
             ax.set_axis_off()
+        else:
+            ax.set_xlabel("X (Å)")
+            ax.set_ylabel("Y (Å)")
+            ax.set_zlabel("Z (Å)")
         if axis_object is not None:
             return ax
         else:
