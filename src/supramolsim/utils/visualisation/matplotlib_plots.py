@@ -114,7 +114,7 @@ def draw1nomral_segment(points_normal, figure, lenght=100, colors=["g", "y"]):
     figure.scatter(ends[0], ends[1], ends[2], color=colors[1], marker="o")
 
 
-def draw_nomral_segments(points_normal, figure, lenght=100, colors=["g", "y"]):
+def draw_nomral_segments(points_normal, figure, lenght=100, colors=["g", "y"], **kwargs):
     # points_normals is a list of 2 elements
     # first element are the normals
     # second element are ponts in space
