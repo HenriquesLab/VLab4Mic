@@ -503,18 +503,23 @@ class LabeledInstance:
         minsamples : int, optional
             Minimum samples for clustering. Default is 1.
         """
-        d_cluster_params = dict(
-            eps1=eps1,
-            minsamples1=minsamples,
-            eps2=xmer_neigh_distance,
-            minsamples2=minsamples,
-        )
-        self.defects_params["d_cluster_params"] = d_cluster_params
-        self.defects_params["deg_dissasembly"] = deg_dissasembly
-        self.defects_params["xmer_neigh_distance"] = xmer_neigh_distance
-        self.defects_params["fracture"] = fracture
-        self.defects = True
-        self.generate_instance()
+        if deg_dissasembly == 0:
+            self.defects = False
+            self.defects_target_normals = None
+            self.generate_instance()
+        else:
+            d_cluster_params = dict(
+                eps1=eps1,
+                minsamples1=minsamples,
+                eps2=xmer_neigh_distance,
+                minsamples2=minsamples,
+            )
+            self.defects_params["d_cluster_params"] = d_cluster_params
+            self.defects_params["deg_dissasembly"] = deg_dissasembly
+            self.defects_params["xmer_neigh_distance"] = xmer_neigh_distance
+            self.defects_params["fracture"] = fracture
+            self.defects = True
+            self.generate_instance()
 
     def _model_defects(self, target_normals_dictionary):
         """
@@ -899,9 +904,9 @@ class LabeledInstance:
         if axesoff:
             ax.set_axis_off()
         else:
-            ax.set_xlabel("X (Angstroms)")
-            ax.set_ylabel("Y (Angstroms)")
-            ax.set_zlabel("Z (Angstroms)")
+            ax.set_xlabel("X (Å)")
+            ax.set_ylabel("Y (Å)")
+            ax.set_zlabel("Z (Å)")
         if return_plot:
             return ax
         else:
