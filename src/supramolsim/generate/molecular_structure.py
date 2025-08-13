@@ -309,6 +309,7 @@ class MolecularStructureParser:
         """
         # this function could use a small portion of the atoms defined only
         allatoms_defined = self.get_atoms_infile()  # Parse all atoms in file
+        self.atoms_in_file = allatoms_defined
         if self.assembly_operations is None:
             self.generate_assemmbly_operations()
         if self.assymetric_defined:
@@ -767,7 +768,12 @@ class MolecularStructureParser:
         axesoff=True,
         show_axis=True,
         with_normals=False,
-        return_plot=False
+        return_plot=False,
+        axis_object=None,
+        target_size = None,
+        target_plotcolour = None,
+        atoms_size = None,
+        atoms_alpha = None,
     ):
         """
         Visualize target labels and optionally assembly atoms and reference point.
@@ -798,10 +804,17 @@ class MolecularStructureParser:
         matplotlib.figure.Figure or None
             The figure if return_plot is True, otherwise None.
         """
-        if labelnames is None:
+        if axis_object is not None:
+            ax = axis_object
+        else:
             fig = plt.figure()
             ax = fig.add_subplot(111, projection="3d")
+        if labelnames is None:
             for trgt in list(self.label_targets.keys()):
+                if target_size is not None:
+                    self.plotting_params[trgt]["plotsize"] = target_size
+                if target_plotcolour is not None:
+                    self.plotting_params[trgt]["plotcolour"] = target_plotcolour
                 if with_normals:
                     draw_nomral_segments(
                         [self.get_target_normals(trgt), self.get_target_coords(trgt)],
@@ -820,6 +833,10 @@ class MolecularStructureParser:
             atoms_subset = cif_builder.array_coords_subset(
                 self.assembly_atoms, assembly_fraction
             )
+            if atoms_size is not None:
+                self.plotting_params["assemblyatoms"]["plotsize"] = atoms_size
+            if atoms_alpha is not None:
+                self.plotting_params["assemblyatoms"]["plotalpha"] = atoms_alpha
             add_ax_scatter(
                 ax,
                 format_coordinates(
@@ -846,11 +863,14 @@ class MolecularStructureParser:
         )
         if axesoff:
             ax.set_axis_off()
-        if return_plot:
-            plt.close()
-            return fig
+        if axis_object is not None:
+            return ax
         else:
-            fig.show
+            if return_plot:
+                plt.close()
+                return fig
+            else:
+                fig.show
 
     def show_assembly_atoms(
         self, assembly_fraction=0.01, view_init=[0, 0, 0], axesoff=True,return_plot=False

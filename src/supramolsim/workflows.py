@@ -173,7 +173,7 @@ def probe_model(
     # print(structural_model.label_targets)
     
 
-    return structural_model, target_sites, anchor_point, direction_point, probe_epitope
+    return structural_model, target_sites, np.squeeze(anchor_point, axis=None), np.squeeze(direction_point, axis=None), probe_epitope
 
 
 def particle_from_structure(
@@ -225,7 +225,10 @@ def particle_from_structure(
                 )
                 if anchor_point.shape == (3,):
                     print("setting new axis")
-                    label_object.set_axis(pivot=anchor_point, direction=direction_point)
+                    print(anchor_point, direction_point)
+                    direction_vector = direction_point - anchor_point
+                    label_object.set_axis(pivot=anchor_point, direction=direction_vector)
+                    print(f'label object axis: {label_object.params["axis"]}')
                 if (
                     probe_epitope["coordinates"] is not None
                     and label_params["as_linker"]
@@ -240,7 +243,7 @@ def particle_from_structure(
                     label_object.set_emitters(probe_emitter_sites)
                 label_params["coordinates"] = label_object.gen_labeling_entity()
                 print(label_params["coordinates"])
-            label_params_list.append(label_params)
+            
             structure.add_label(label_object)
             if label_params["binding"]["distance"]["to_target"] is not None:
                 print("Label is indirect label")
@@ -250,6 +253,7 @@ def particle_from_structure(
             if label_params["binding"]["distance"]["between_targets"] == "estimate":
                 distances = pdist(label_params["coordinates"])
                 label_params["binding"]["distance"]["between_targets"] = np.max(distances)
+            label_params_list.append(label_params)
         inst_builder = structure.create_instance_builder()
         particle = labinstance.create_particle(
             source_builder=inst_builder, label_params_list=label_params_list

@@ -13,4 +13,7 @@ def test_add_defects(defect, experiment_7r5k_base):
         xmer_neigh_distance=600,
         deg_dissasembly=defect,
     )
-    assert experiment_7r5k_base.particle.defects_target_normals is not None
+    if defect == 0:
+        assert experiment_7r5k_base.particle.defects_target_normals is None
+    else:
+        assert experiment_7r5k_base.particle.defects_target_normals is not None

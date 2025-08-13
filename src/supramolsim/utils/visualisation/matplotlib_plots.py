@@ -114,7 +114,7 @@ def draw1nomral_segment(points_normal, figure, lenght=100, colors=["g", "y"]):
     figure.scatter(ends[0], ends[1], ends[2], color=colors[1], marker="o")
 
 
-def draw_nomral_segments(points_normal, figure, lenght=100, colors=["g", "y"]):
+def draw_nomral_segments(points_normal, figure, lenght=100, colors=["g", "y"], **kwargs):
     # points_normals is a list of 2 elements
     # first element are the normals
     # second element are ponts in space
@@ -138,15 +138,27 @@ def draw_nomral_segments(points_normal, figure, lenght=100, colors=["g", "y"]):
     return figure
 
 
-def stack_projection(stack, angle=45, axes=(1,2), method = "max"):
+def stack_projection(stack, angle=45, axes=(1,2), method = "sd", zdepth = False):
     projection = None
     zstack = copy.copy(stack)
     rotated = rotate(zstack, angle=angle, axes=axes, reshape=False, order=3)  # order=3: cubic interpolation
+    if zdepth:
+        nslices = rotated.shape[2]
+        for i in range(1, nslices):
+            #intensity_factor = np.log(1.8 + ((nslices - i)/(nslices)))
+            intensity_factor = 0.6 * np.exp(((nslices - i)/(nslices)) * (1/(i+1)))
+            rotated[:,:,i] = rotated[:,:,i]*intensity_factor
     if method == "max":
-        projection = np.max(rotated, axis=2) 
+        projection = np.max(rotated, axis=2)
+    elif method == "sd":
+        projection = np.std(rotated, axis=2)
+    elif method == "mean":
+        projection = np.mean(rotated, axis=2)
+    elif method == "sum":
+        projection = np.sum(rotated, axis=2)
     return projection
 
-def plot_projection(stack, angle=45, plane="XY", method = "max"):
+def plot_projection(stack, angle=45, plane="XY", method = "max", zdepth=False):
     if plane == "XY":
         axes = (1, 2)
     elif plane == "XZ": 
@@ -155,7 +167,7 @@ def plot_projection(stack, angle=45, plane="XY", method = "max"):
         axes = (0, 1)
     else:
         raise ValueError("Invalid plane. Choose from 'XY', 'XZ', or 'YZ'.")
-    projection = stack_projection(stack, angle=angle, axes=axes, method=method)
+    projection = stack_projection(stack, angle=angle, axes=axes, method=method, zdepth=zdepth)
     plt.imshow(projection, cmap='gray')
     plt.axis('off')
     plt.show()

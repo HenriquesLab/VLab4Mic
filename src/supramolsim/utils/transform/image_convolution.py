@@ -77,6 +77,7 @@ def frame_by_volume_convolution(
     kernel3D,
     zfocus_slice,
     projection_depth=2,
+    activation_only=False,
     asframe=True
 ):
     """
@@ -93,6 +94,8 @@ def frame_by_volume_convolution(
     intensity_voxel = voxelize_active_fluorophores_withrange(
         coordinates, photon_vector, ranges, bin_pixelsize=bin_size
     )
+    if activation_only:
+        return intensity_voxel
     if np.sum(photon_vector) > 0:
         convolved_intensity = convolve3D(intensity_voxel, kernel3D)
     else:
@@ -132,6 +135,7 @@ def generate_frames_volume_convolution(
     psf_focus_slice: int,
     psf_pixelsizeXY: float,
     asframes=True,
+    activation_only=False,
     psf_projection_depth=1,
     **kwargs,
 ):
@@ -202,7 +206,8 @@ def generate_frames_volume_convolution(
                 psf_array,
                 psf_focus_slice,
                 projection_depth=psf_projection_depth,
-                asframe=False
+                asframe=asframes,
+                activation_only=activation_only
             )
             volume_frames.append(v_frame)
         return volume_frames

@@ -10,7 +10,7 @@ from ..utils.transform.points_transforms import (
     transform_displace_set,
 )
 from ..utils.data_format.visualisation import format_coordinates, set_colorplot
-from ..utils.visualisation.matplotlib_plots import add_ax_scatter, draw1nomral_segment
+from ..utils.visualisation.matplotlib_plots import add_ax_scatter, draw1nomral_segment, draw_nomral_segments
 from ..utils.transform.cif_builder import create_instance_label
 from ..utils.transform.defects import xmersubset_byclustering
 from ..utils.data_format.structural_format import builder_format
@@ -503,18 +503,23 @@ class LabeledInstance:
         minsamples : int, optional
             Minimum samples for clustering. Default is 1.
         """
-        d_cluster_params = dict(
-            eps1=eps1,
-            minsamples1=minsamples,
-            eps2=xmer_neigh_distance,
-            minsamples2=minsamples,
-        )
-        self.defects_params["d_cluster_params"] = d_cluster_params
-        self.defects_params["deg_dissasembly"] = deg_dissasembly
-        self.defects_params["xmer_neigh_distance"] = xmer_neigh_distance
-        self.defects_params["fracture"] = fracture
-        self.defects = True
-        self.generate_instance()
+        if deg_dissasembly == 0:
+            self.defects = False
+            self.defects_target_normals = None
+            self.generate_instance()
+        else:
+            d_cluster_params = dict(
+                eps1=eps1,
+                minsamples1=minsamples,
+                eps2=xmer_neigh_distance,
+                minsamples2=minsamples,
+            )
+            self.defects_params["d_cluster_params"] = d_cluster_params
+            self.defects_params["deg_dissasembly"] = deg_dissasembly
+            self.defects_params["xmer_neigh_distance"] = xmer_neigh_distance
+            self.defects_params["fracture"] = fracture
+            self.defects = True
+            self.generate_instance()
 
     def _model_defects(self, target_normals_dictionary):
         """
@@ -684,6 +689,11 @@ class LabeledInstance:
                 self.emitters[labeltype], _ = transform_displace_set(
                     self.get_emitter_by_target(labeltype), self.get_ref_point(), nref
                 )
+                # translate sources as well
+                self.source["targets"][labeltype]["coordinates"], _  = transform_displace_set(
+                    self._get_source_coords_normals(labeltype)["coordinates"], self.get_ref_point(), nref
+                )
+     
         # then replace reference point
         self._set_ref_point(nref)
         self.axis["pivot"] = nref
@@ -753,6 +763,8 @@ class LabeledInstance:
             probe_scaling_factor = self.secondary[labeltype]["scale"] / new_scale
             if self.secondary[labeltype]["emitters"] is not None:
                 self.secondary[labeltype]["emitters"] = self.secondary[labeltype]["emitters"].astype('float64') * probe_scaling_factor
+            if self.secondary[labeltype]["minimal_distance"] is not None:
+                self.secondary[labeltype]["minimal_distance"] *= probe_scaling_factor
             if "coordinates" in self.secondary[labeltype].keys():
                 self.secondary[labeltype]["coordinates"] = self.secondary[labeltype]["coordinates"].astype('float64') * probe_scaling_factor
             if self.secondary[labeltype]["binding"]["distance"]["to_target"] is not None:
@@ -760,6 +772,10 @@ class LabeledInstance:
             if self.secondary[labeltype]["binding"]["distance"]["between_targets"] is not None:
                 self.secondary[labeltype]["binding"]["distance"]["between_targets"] *= probe_scaling_factor
             self.secondary[labeltype]["scale"] = new_scale
+        if self.defects:
+            self.defects_params["d_cluster_params"]["eps1"] *= scaling_factor
+            self.defects_params["d_cluster_params"]["eps2"] *= scaling_factor
+            self.defects_params["xmer_neigh_distance"] *= scaling_factor
 
     # methods to get emitters by target name    
 
@@ -818,6 +834,7 @@ class LabeledInstance:
                 xlims = [-100,100],
                 ylims = [-100,100],
                 zlims = None,
+                central_axis=True,
                 **kwargs):
         """
         Visualize the probe structure in 3D.
@@ -851,7 +868,7 @@ class LabeledInstance:
             probe_name = self.emitters[first_probe]
         fig = plt.figure()
         ax = fig.add_subplot(111, projection="3d")
-        probe_plotting_params = self._get_label_plotting_params(probe_name)
+        #probe_plotting_params = self._get_label_plotting_params(probe_name)
         total_coordinates = copy.copy(self.labels[probe_name]["emitters"])
         total_number_coordinates = total_coordinates.shape[0]
         center = np.mean(total_coordinates, axis=0)
@@ -864,19 +881,15 @@ class LabeledInstance:
                     format_coordinates(
                         centered_emitters, 
                             plotmarker="o",
-                            plotcolour="#984ea3",
-                            plotsize=20
+                            plotsize=20,
+                            **kwargs
                     ),
                 )
-        add_ax_scatter(
-                    ax,
-                        format_coordinates(
-                            centered_axis,
-                            plotmarker="x",
-                            plotcolour="k",
-                            plotsize=20
-                        ),
-                    )
+        if central_axis:
+            axis_segment = dict()
+            axis_segment["pivot"] = centered_axis[0]
+            axis_segment["direction"] = centered_axis[1] - centered_axis[0]
+            draw1nomral_segment(axis_segment, ax, lenght=100, colors=["g", "y"])
         ax.set_xlim(xlims)
         ax.set_ylim(ylims)
         if zlims is None:
@@ -891,9 +904,9 @@ class LabeledInstance:
         if axesoff:
             ax.set_axis_off()
         else:
-            ax.set_xlabel("X (Angstroms)")
-            ax.set_ylabel("Y (Angstroms)")
-            ax.set_zlabel("Z (Angstroms)")
+            ax.set_xlabel("X (Å)")
+            ax.set_ylabel("Y (Å)")
+            ax.set_zlabel("Z (Å)")
         if return_plot:
             return ax
         else:
@@ -910,8 +923,8 @@ class LabeledInstance:
         show_axis=False,
         with_sources=False,
         return_plot=False,
-        source_size=1,
-        emitter_plotsize=1,
+        source_size=None,
+        emitter_plotsize=None,
     ):
         """
         Visualize the labelled instance in 3D.
@@ -947,7 +960,8 @@ class LabeledInstance:
             ax = fig.add_subplot(111, projection="3d")
             for labs in self.labelnames:
                 lab_plotparams = self._get_label_plotting_params(labs)
-                lab_plotparams["plotsize"] = emitter_plotsize
+                if emitter_plotsize is not None:
+                    lab_plotparams["plotsize"] = emitter_plotsize
                 add_ax_scatter(
                     ax,
                     format_coordinates(
@@ -955,6 +969,10 @@ class LabeledInstance:
                     ),
                 )
                 if with_sources:
+                    if source_size is not None:
+                        source_size=source_size
+                    else:
+                        source_size=1
                     add_ax_scatter(
                         ax,
                         format_coordinates(
@@ -998,9 +1016,12 @@ class LabeledInstance:
         axesoff=True,
         show_axis=False,
         with_sources=False,
-        source_plotsize=1,
+        source_plotsize=None,
         axis_object=None,
-        emitter_plotsize=1,
+        emitter_plotsize=None,
+        source_plotcolour="#bbbbbb",
+        with_normals=False,
+        **kwargs
     ):
         """
         Generate a 3D axis plot for the labelled instance.
@@ -1030,7 +1051,8 @@ class LabeledInstance:
         if labelnames == "All":
             for labs in self.labelnames:
                 lab_plotparams = self._get_label_plotting_params(labs)
-                lab_plotparams["plotsize"] = emitter_plotsize
+                if emitter_plotsize is not None:
+                    lab_plotparams["plotsize"] = emitter_plotsize
                 add_ax_scatter(
                     axis_object,
                     format_coordinates(self.emitters[labs], **lab_plotparams),
@@ -1038,6 +1060,10 @@ class LabeledInstance:
                 zlims[0] = np.min(self.emitters[labs])
                 zlims[1] = np.max(self.emitters[labs])
                 if with_sources:
+                    if source_plotsize is not None:
+                        source_plotsize = source_plotsize
+                    else:
+                        source_plotsize = 1
                     if self.defects_target_normals is not None:
                         add_ax_scatter(
                             axis_object,
@@ -1049,7 +1075,7 @@ class LabeledInstance:
                             axis_object,
                             format_coordinates(
                                 self._get_source_coords_normals(labs)["coordinates"],
-                                plotcolour="#bbbbbb",
+                                plotcolour=source_plotcolour,
                                 plotalpha=0.5,
                                 plotsize=source_plotsize,
                             ),
@@ -1061,6 +1087,13 @@ class LabeledInstance:
                                 self._get_source_coords_normals(labs)["coordinates"],
                                 plotsize=source_plotsize,
                             ),
+                        )
+                    if with_normals:
+                        draw_nomral_segments(
+                            [self.source["targets"][labs]["normals"], self.source["targets"][labs]["coordinates"]],
+                            axis_object,
+                            colors=["grey", "green"],
+                            **kwargs
                         )
 
                 # add_ax_scatter(ax, format_coordinates(self.emitters[labs]))
