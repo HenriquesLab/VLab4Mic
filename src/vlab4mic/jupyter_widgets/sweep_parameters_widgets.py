@@ -30,6 +30,7 @@ Functions
 
 Each function returns an EZInput-based widget or ipywidgets element for use in a Jupyter notebook.
 """
+
 import copy
 import ipywidgets as widgets
 from ezinput import EZInput
@@ -40,7 +41,6 @@ import numpy as np
 from ._widget_generator import widgen
 import pprint
 
-
 select_colour = "#4daf4ac7"
 remove_colour = "#ff8000da"
 update_colour = "#00bfffda"
@@ -49,11 +49,45 @@ select_icon = "fa-check"
 add_icon = "fa-plus"
 remove_icon = "fa-minus"
 loding_icon = "fa-spinner fa-spin"
-update_icon = "fa-wrench" # create
+update_icon = "fa-wrench"  # create
 toggle_icon = "fa-eye-slash"
 upload_icon = "fa-upload"
 view_icon = "fa-eye"
 save_icon = "fa-save"
+
+
+def format_parameter_name(param_name):
+    """
+    Convert underscore parameter names to natural language format.
+
+    Parameters
+    ----------
+    param_name : str
+        Parameter name with underscores (e.g., 'defect_small_cluster')
+
+    Returns
+    -------
+    str
+        Formatted name in natural language (e.g., 'Defect Small Cluster')
+    """
+    # Handle specific parameter name mappings
+    name_mappings = {
+        "labelling_efficiency": "Labeling Efficiency",
+        "probe_distance_to_epitope": "Probe Distance to Epitope",
+        "defect_fraction": "Defect Fraction",
+        "defect_small_cluster": "Defect Small Cluster",
+        "defect_large_cluster": "Defect Large Cluster",
+        "random_orientations": "Random Orientations",
+        "number_of_particles": "Number of Particles",
+        "exp_time": "Exposure Time",
+    }
+
+    # Return mapped name if available, otherwise convert underscores to spaces
+    # and title case
+    if param_name in name_mappings:
+        return name_mappings[param_name]
+    else:
+        return param_name.replace("_", " ").title()
 
 
 def update_widgets_visibility(ezwidget, visibility_dictionary):
@@ -75,15 +109,23 @@ def update_widgets_visibility(ezwidget, visibility_dictionary):
         if visibility_dictionary[widgetname]:
             ezwidget[widgetname].layout.display = "inline-flex"
         else:
-            ezwidget[widgetname].layout.display = "None"  
+            ezwidget[widgetname].layout.display = "None"
+
 
 def _unstyle_widgets(ezwidget, visibility_dictionary):
     for wgt in ezwidget.elements.keys():
         visibility_dictionary[wgt] = True
         if isinstance(ezwidget[wgt], widgets.Button):
-            ezwidget.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex", align_items="center", justify_content="center")
+            ezwidget.elements[wgt].layout = widgets.Layout(
+                width="50%",
+                display="inline-flex",
+                align_items="center",
+                justify_content="center",
+            )
         else:
-            ezwidget.elements[wgt].layout = widgets.Layout(width="50%", display="inline-flex")  
+            ezwidget.elements[wgt].layout = widgets.Layout(
+                width="50%", display="inline-flex"
+            )
 
 
 def select_structure(sweep_gen):
@@ -101,18 +143,32 @@ def select_structure(sweep_gen):
         Widget for structure selection.
     """
     ez_sweep_structure = EZInput(title="structure")
-    ez_sweep_structure.add_dropdown("structures", options=sweep_gen.structures_info_list.keys())
-    ez_sweep_structure.add_HTML("message", value="Note: parsing of the structure will be done when running the sweep", style={'font_size': '15px'})
-    ez_sweep_structure.add_button("Select", description="Select", icon=select_icon, style={"button_color": select_colour})
+    ez_sweep_structure.add_dropdown(
+        "structures", options=sweep_gen.structures_info_list.keys()
+    )
+    ez_sweep_structure.add_HTML(
+        "message",
+        value="Note: parsing of the structure will be done when running the sweep",
+        style={"font_size": "15px"},
+    )
+    ez_sweep_structure.add_button(
+        "Select",
+        description="Select",
+        icon=select_icon,
+        style={"button_color": select_colour},
+    )
 
     def select(b):
-        sweep_gen.structures = [sweep_gen.structures_info_list[
-            ez_sweep_structure["structures"].value
-        ],]
+        sweep_gen.structures = [
+            sweep_gen.structures_info_list[
+                ez_sweep_structure["structures"].value
+            ],
+        ]
         ez_sweep_structure["structures"].disabled = True
 
     ez_sweep_structure["Select"].on_click(select)
     return ez_sweep_structure
+
 
 def select_probes_and_mods(sweep_gen):
     """
@@ -161,9 +217,15 @@ def select_probes_and_mods(sweep_gen):
         for name in tab_name:
             widget_modules[name].disabled = True
 
-    ez_sweep.add_button("Select", description="Select", icon=select_icon, style={"button_color": select_colour})
+    ez_sweep.add_button(
+        "Select",
+        description="Select",
+        icon=select_icon,
+        style={"button_color": select_colour},
+    )
     ez_sweep["Select"].on_click(select_str)
     return ez_sweep
+
 
 def add_parameters_values(sweep_gen):
     """
@@ -180,26 +242,33 @@ def add_parameters_values(sweep_gen):
         Widget for parameter range selection and sweep configuration.
     """
     range_widgets = create_param_widgets(sweep_gen)
-    sweep_parameter_gui = EZInput(title="sweep_parameters",)
+    sweep_parameter_gui = EZInput(
+        title="sweep_parameters",
+    )
 
     for group_name, params in sweep_gen.param_settings.items():
         sweep_parameter_gui.add_HTML(
             tag=group_name,
             value=f"<b>Parameter group: {group_name}</b>",
-            style={'font_size': '20px'}
+            style={"font_size": "20px"},
         )
         for param_name, param_info in params.items():
             param_widget = range_widgets[param_name]
             sweep_parameter_gui.elements[param_name] = param_widget
             sweep_parameter_gui.add_label()
 
-    sweep_parameter_gui.add_button("select_parameters",
-                                    "Select parameters for sweep",
-                                    icon=select_icon, style={"button_color": select_colour})
-    sweep_parameter_gui.add_button("clear_parameters",
-                                    "Clear all parameters",
-                                    icon=remove_icon, style={"button_color": remove_colour}
-                                    )
+    sweep_parameter_gui.add_button(
+        "select_parameters",
+        "Select parameters for sweep",
+        icon=select_icon,
+        style={"button_color": select_colour},
+    )
+    sweep_parameter_gui.add_button(
+        "clear_parameters",
+        "Clear all parameters",
+        icon=remove_icon,
+        style={"button_color": remove_colour},
+    )
     sweep_parameter_gui.add_HTML(
         tag="message",
         value="No parameters selected",
@@ -210,10 +279,16 @@ def add_parameters_values(sweep_gen):
             for param_name, param_info in params.items():
                 use = sweep_parameter_gui[param_name].children[1].value
                 if use:
-                    print(f"Setting parameter {param_name} in group {group_name}")
+                    print(
+                        f"Setting parameter {param_name} in group {group_name}"
+                    )
                     if param_info["wtype"] != "logical":
-                        start, end = sweep_parameter_gui[param_name].children[2].value
-                        steps = sweep_parameter_gui[param_name].children[3].value
+                        start, end = (
+                            sweep_parameter_gui[param_name].children[2].value
+                        )
+                        steps = (
+                            sweep_parameter_gui[param_name].children[3].value
+                        )
                         param_values = (start, end, steps)
                     else:
                         val = sweep_parameter_gui[param_name].children[2].value
@@ -239,6 +314,7 @@ def add_parameters_values(sweep_gen):
     sweep_parameter_gui["clear_parameters"].on_click(clear_parameters)
     return sweep_parameter_gui
 
+
 def set_reference(sweep_gen):
     """
     Create a widget for setting and previewing a reference image for analysis.
@@ -256,6 +332,7 @@ def set_reference(sweep_gen):
     my_exp = sweep_gen.experiment
     probes_per_structure = copy.copy(my_exp.config_probe_per_structure_names)
     reference = EZInput(title="reference")
+
     def gen_ref(b):
         reference["set"].disabled = True
         reference["feedback"].value = "Generating Reference..."
@@ -264,7 +341,8 @@ def set_reference(sweep_gen):
         sweep_gen.reference_structure = reference_structure
         sweep_gen.set_reference_parameters(
             reference_structure=reference_structure,
-            reference_probe=reference_probe)
+            reference_probe=reference_probe,
+        )
         with io.capture_output() as captured:
             sweep_gen.generate_reference_image(override=True)
         reference["feedback"].value = "Reference Set"
@@ -281,40 +359,49 @@ def set_reference(sweep_gen):
             ax.imshow(image)
             plt.close()
             display(fig)
+
     reference.add_dropdown(
-        "structure", options=sweep_gen.structures, 
+        "structure",
+        options=sweep_gen.structures,
         description="Structure",
-        disabled = False
+        disabled=False,
     )
-    options_probes = ["NHS_ester",]
+    options_probes = [
+        "NHS_ester",
+    ]
     if sweep_gen.structures[0] in probes_per_structure.keys():
         probe_list = probes_per_structure[sweep_gen.structures[0]]
         options_probes.extend(copy.copy(probe_list))
     reference.add_dropdown(
-        "probe", options=options_probes, 
-        description="Probe",
-        disabled = False
+        "probe", options=options_probes, description="Probe", disabled=False
     )
     reference.add_dropdown(
-        "modality", options=["Reference",], 
+        "modality",
+        options=[
+            "Reference",
+        ],
         description="Modality",
-        disabled = True
+        disabled=True,
     )
     reference.add_button(
         "advanced_parameters",
         description="Toggle advanced parameters",
-        icon=toggle_icon
+        icon=toggle_icon,
     )
     # advanced parameters
     reference.add_HTML(
         tag="Upload_ref_message",
         value="<b>Upload image for reference</b>",
-        style={'font_size': '15px'}
+        style={"font_size": "15px"},
     )
     reference.add_file_upload(
-        "File", description="Select from file", accept="*.tif", save_settings=False
+        "File",
+        description="Select from file",
+        accept="*.tif",
+        save_settings=False,
     )
-    reference.add_bounded_float_text("pixel_size",
+    reference.add_bounded_float_text(
+        "pixel_size",
         description="Pixel size (nm)",
         value=100,
         vmin=1,
@@ -322,37 +409,52 @@ def set_reference(sweep_gen):
         step=0.1,
         style={"description_width": "initial"},
     )
-    reference.add_button("upload_and_set", description="Upload image reference", disabled=False,
-                          icon=upload_icon)
+    reference.add_button(
+        "upload_and_set",
+        description="Upload image reference",
+        disabled=False,
+        icon=upload_icon,
+    )
 
     def toggle_advanced_parameters(b):
-        ref_widgets_visibility["Upload_ref_message"] = not ref_widgets_visibility["Upload_ref_message"]
+        ref_widgets_visibility["Upload_ref_message"] = (
+            not ref_widgets_visibility["Upload_ref_message"]
+        )
         ref_widgets_visibility["File"] = not ref_widgets_visibility["File"]
-        ref_widgets_visibility["upload_and_set"] = not ref_widgets_visibility["upload_and_set"]
-        ref_widgets_visibility["pixel_size"] = not ref_widgets_visibility["pixel_size"]
+        ref_widgets_visibility["upload_and_set"] = not ref_widgets_visibility[
+            "upload_and_set"
+        ]
+        ref_widgets_visibility["pixel_size"] = not ref_widgets_visibility[
+            "pixel_size"
+        ]
         update_widgets_visibility(reference, ref_widgets_visibility)
 
     def upload_and_set(b):
         sweep_gen.load_reference_image(
             ref_image_path=reference["File"].selected,
-            ref_pixelsize=reference["pixel_size"].value
+            ref_pixelsize=reference["pixel_size"].value,
         )
         reference["feedback"].value = "Reference image uploaded and set."
         reference["preview"].disabled = False
+
     #
     reference.add_button(
-        "set", description="Generate image reference",
-        icon=select_colour, style={"button_color": select_colour}
+        "set",
+        description="Generate image reference",
+        icon=select_colour,
+        style={"button_color": select_colour},
     )
     reference.add_button(
-        "preview", description="Preview reference", disabled = True,
-        icon=view_icon
+        "preview",
+        description="Preview reference",
+        disabled=True,
+        icon=view_icon,
     )
-    reference.elements["feedback"] = widgets.HTML("", style = dict(font_size= "15px", font_weight='bold'))
-    reference.add_output(
-        "output", description="Reference output"
+    reference.elements["feedback"] = widgets.HTML(
+        "", style=dict(font_size="15px", font_weight="bold")
     )
-    
+    reference.add_output("output", description="Reference output")
+
     # visibility and layout
     ref_widgets_visibility = {}
     _unstyle_widgets(reference, ref_widgets_visibility)
@@ -363,6 +465,7 @@ def set_reference(sweep_gen):
     reference["upload_and_set"].on_click(upload_and_set)
     toggle_advanced_parameters(True)
     return reference
+
 
 def analyse_sweep(sweep_gen):
     """
@@ -381,30 +484,40 @@ def analyse_sweep(sweep_gen):
     wgen = widgen()
     ouput_directory = getattr(sweep_gen, "ouput_directory", ".")
     analysis_widget = EZInput(title="analysis")
+
     def analyse_sweep_action(b):
-        analysis_widget["feedback"].value = "Running analysis sweep. This might take some minutes..."
+        analysis_widget["feedback"].value = (
+            "Running analysis sweep. This might take some minutes..."
+        )
         analysis_widget["analyse"].disabled = True
         plots = analysis_widget["plots"].value
         param_names_set = sweep_gen.parameters_with_set_values
         if len(param_names_set) >= 2:
             sweep_gen.set_plot_parameters(
-                "heatmaps", 
-                param1=param_names_set[0], 
-                param2=param_names_set[1])
+                "heatmaps",
+                param1=param_names_set[0],
+                param2=param_names_set[1],
+            )
         if analysis_widget["metric"].value == "All":
             metric_list = ["ssim", "pearson"]
         elif analysis_widget["metric"].value == "SSIM":
-            metric_list = ["ssim", ]
+            metric_list = [
+                "ssim",
+            ]
         elif analysis_widget["metric"].value == "Pearson":
-            metric_list = ["pearson", ]
+            metric_list = [
+                "pearson",
+            ]
         sweep_gen.set_number_of_repetitions(analysis_widget["reps"].value)
-        sweep_gen.set_analysis_parameters(metrics_list = metric_list)
+        sweep_gen.set_analysis_parameters(metrics_list=metric_list)
         with io.capture_output() as captured:
             if sweep_gen.reference_image is None:
                 sweep_gen.generate_reference_image()
         with analysis_widget["outputs"]:
             print("Generating Virtual samples.")
-            print("Once created, a progress bar will show the image simulation progression")
+            print(
+                "Once created, a progress bar will show the image simulation progression"
+            )
             sweep_gen.run_analysis(plots=plots, save=False)
         analysis_widget["preview"].disabled = False
         analysis_widget["saving_directory"].disabled = False
@@ -432,40 +545,52 @@ def analyse_sweep(sweep_gen):
             n_acquisition_parameters = 1
             analysis_widget["acquisition_parameters"].disabled = True
         else:
-            n_acquisition_parameters = len(sweep_gen.acquisition_parameters.keys())
+            n_acquisition_parameters = len(
+                sweep_gen.acquisition_parameters.keys()
+            )
         n_replicas = sweep_gen.sweep_repetitions
         analysis_widget["modality_template"].max = n_modalities - 1
         analysis_widget["probe_template"].max = n_probes - 1
         analysis_widget["probe_parameters"].max = n_probe_parameters - 1
         analysis_widget["defect_parameters"].max = n_defect_parameters - 1
         analysis_widget["vsample_parameters"].max = n_vsample_parameters - 1
-        analysis_widget["acquisition_parameters"].max = n_acquisition_parameters - 1
+        analysis_widget["acquisition_parameters"].max = (
+            n_acquisition_parameters - 1
+        )
         analysis_widget["replica_number"].max = n_replicas - 1
-        
+
     def save_results(b):
         output_directory = analysis_widget["saving_directory"].selected_path
         output_name = analysis_widget["output_name"].value
         save_images = analysis_widget["save_images"].value
         sweep_gen.ouput_directory = output_directory
-        sweep_gen.save_analysis(
-            output_name=output_name
-            )
+        sweep_gen.save_analysis(output_name=output_name)
         if save_images:
             sweep_gen.save_images()
+
     analysis_widget.elements["reps"] = wgen.gen_bound_int(
-            value=3, description="Repeats per parameter combination",
-            style={'description_width': 'initial'}
-        )
+        value=3,
+        description="Repeats per parameter combination",
+        style={"description_width": "initial"},
+    )
     analysis_widget.add_dropdown(
-        "metric", options=["SSIM", "Pearson", "All"], 
+        "metric",
+        options=["SSIM", "Pearson", "All"],
         description="Metric for image comparison",
-        disabled = False
+        disabled=False,
     )
-    analysis_widget.add_checkbox("plots", description="Generate plots", value=True)
+    analysis_widget.add_checkbox(
+        "plots", description="Generate plots", value=True
+    )
     analysis_widget.add_button(
-        "analyse", description="Run analysis", icon=select_colour, style={"button_color": select_colour}
+        "analyse",
+        description="Run analysis",
+        icon=select_colour,
+        style={"button_color": select_colour},
     )
-    analysis_widget.elements["feedback"] = widgets.HTML("", style = dict(font_size= "15px", font_weight='bold'))
+    analysis_widget.elements["feedback"] = widgets.HTML(
+        "", style=dict(font_size="15px", font_weight="bold")
+    )
     analysis_widget.elements["outputs"] = widgets.Output()
     analysis_widget.elements["saving_directory"] = FileChooser(
         ouput_directory,
@@ -473,12 +598,12 @@ def analyse_sweep(sweep_gen):
         show_hidden=False,
         select_default=True,
         show_only_dirs=True,
-        disabled=True
+        disabled=True,
     )
     analysis_widget.add_text_area(
-        "output_name", 
-        value="vlab4mic_analysis", 
-        description="Output name")
+        "output_name", value="vlab4mic_analysis", description="Output name"
+    )
+
     # preview
     def update_plot(change):
         modality_template = analysis_widget["modality_template"].value
@@ -486,7 +611,9 @@ def analyse_sweep(sweep_gen):
         probe_parameters = analysis_widget["probe_parameters"].value
         defect_parameters = analysis_widget["defect_parameters"].value
         vsample_parameters = analysis_widget["vsample_parameters"].value
-        acquisition_parameters = analysis_widget["acquisition_parameters"].value
+        acquisition_parameters = analysis_widget[
+            "acquisition_parameters"
+        ].value
         replica_number = analysis_widget["replica_number"].value
 
         image, parameters = sweep_gen.preview_image_output_by_ID(
@@ -498,13 +625,13 @@ def analyse_sweep(sweep_gen):
             acquisition_parameters=acquisition_parameters,
             replica_number=replica_number,
             return_image=True,
-            )
+        )
         figure, ax = plt.subplots(figsize=(8, 6))
-        ax.imshow(image, cmap='gray')
-        ax.axis('off')
+        ax.imshow(image, cmap="gray")
+        ax.axis("off")
         ax.set_title(f"Preview of parameter sweeps results")
         plt.close()
-        analysis_widget["preview_results"].clear_output()  
+        analysis_widget["preview_results"].clear_output()
         with analysis_widget["preview_results"]:
             print(f"Structure: {parameters[0]}")
             print(f"Modality: {parameters[5]}")
@@ -514,83 +641,116 @@ def analyse_sweep(sweep_gen):
             print(f"Virtual Sample Parameters: {parameters[4]}")
             print(f"Acquisition Parameters: {parameters[6]}")
             display(figure)
-    
-    def toggle_preview(b):
-        widgets_visibility["preview_results"] = not widgets_visibility["preview_results"]
-        widgets_visibility["modality_template"] = not widgets_visibility["modality_template"]
-        widgets_visibility["probe_template"] = not widgets_visibility["probe_template"]
-        widgets_visibility["probe_parameters"] = not widgets_visibility["probe_parameters"]
-        widgets_visibility["defect_parameters"] = not widgets_visibility["defect_parameters"]
-        widgets_visibility["vsample_parameters"] = not widgets_visibility["vsample_parameters"]
-        widgets_visibility["acquisition_parameters"] = not widgets_visibility["acquisition_parameters"]
-        widgets_visibility["replica_number"] = not widgets_visibility["replica_number"]
 
+    def toggle_preview(b):
+        widgets_visibility["preview_results"] = not widgets_visibility[
+            "preview_results"
+        ]
+        widgets_visibility["modality_template"] = not widgets_visibility[
+            "modality_template"
+        ]
+        widgets_visibility["probe_template"] = not widgets_visibility[
+            "probe_template"
+        ]
+        widgets_visibility["probe_parameters"] = not widgets_visibility[
+            "probe_parameters"
+        ]
+        widgets_visibility["defect_parameters"] = not widgets_visibility[
+            "defect_parameters"
+        ]
+        widgets_visibility["vsample_parameters"] = not widgets_visibility[
+            "vsample_parameters"
+        ]
+        widgets_visibility["acquisition_parameters"] = not widgets_visibility[
+            "acquisition_parameters"
+        ]
+        widgets_visibility["replica_number"] = not widgets_visibility[
+            "replica_number"
+        ]
 
         update_widgets_visibility(analysis_widget, widgets_visibility)
         update_plot(widgets_visibility["preview_results"])
-        
+
     # preview widgets
     analysis_widget.add_button(
-        "preview", description="Preview results", disabled=True,
-        icon=view_icon
+        "preview", description="Preview results", disabled=True, icon=view_icon
     )
     analysis_widget.add_int_slider(
         "modality_template",
         description="Modality",
-        min=0, max=0, value=0,
+        min=0,
+        max=0,
+        value=0,
         continuous_update=False,
     )
     analysis_widget.add_int_slider(
         "probe_template",
         description="Probe",
-        min=0, max=0, value=0,
+        min=0,
+        max=0,
+        value=0,
         continuous_update=False,
     )
     analysis_widget.add_int_slider(
         "probe_parameters",
         description="Probe parameter",
-        min=0, max=0, value=0,
+        min=0,
+        max=0,
+        value=0,
         continuous_update=False,
     )
     analysis_widget.add_int_slider(
         "defect_parameters",
         description="Defect parameter",
-        min=0, max=0, value=0,
+        min=0,
+        max=0,
+        value=0,
         continuous_update=False,
     )
     analysis_widget.add_int_slider(
         "vsample_parameters",
         description="Vsample parameters",
-        min=0, max=0, value=0,
+        min=0,
+        max=0,
+        value=0,
         continuous_update=False,
     )
     analysis_widget.add_int_slider(
         "acquisition_parameters",
         description="acquisition parameters",
-        min=0, max=0, value=0,
+        min=0,
+        max=0,
+        value=0,
         continuous_update=False,
     )
     analysis_widget.add_int_slider(
         "replica_number",
         description="Replica number",
-        min=0, max=0, value=0,
+        min=0,
+        max=0,
+        value=0,
         continuous_update=False,
     )
     # connect the preview widgets to the update function
-    analysis_widget["modality_template"].observe(update_plot, names='value')
-    analysis_widget["probe_template"].observe(update_plot, names='value')
-    analysis_widget["probe_parameters"].observe(update_plot, names='value')
-    analysis_widget["defect_parameters"].observe(update_plot, names='value')
-    analysis_widget["vsample_parameters"].observe(update_plot, names='value')
-    analysis_widget["acquisition_parameters"].observe(update_plot, names='value')
-    analysis_widget["replica_number"].observe(update_plot, names='value')
+    analysis_widget["modality_template"].observe(update_plot, names="value")
+    analysis_widget["probe_template"].observe(update_plot, names="value")
+    analysis_widget["probe_parameters"].observe(update_plot, names="value")
+    analysis_widget["defect_parameters"].observe(update_plot, names="value")
+    analysis_widget["vsample_parameters"].observe(update_plot, names="value")
+    analysis_widget["acquisition_parameters"].observe(
+        update_plot, names="value"
+    )
+    analysis_widget["replica_number"].observe(update_plot, names="value")
     # output preview
-    analysis_widget.add_output("preview_results", description="Preview results")
+    analysis_widget.add_output(
+        "preview_results", description="Preview results"
+    )
     # save
-    analysis_widget.add_checkbox("save_images", description="Save images", value=False)
+    analysis_widget.add_checkbox(
+        "save_images", description="Save images", value=False
+    )
     analysis_widget.add_button(
-        "save", description="save analysis", disabled=True,
-        icon=save_icon
+        "save", description="save analysis", disabled=True, icon=save_icon
     )
     widgets_visibility = {}
     _unstyle_widgets(analysis_widget, widgets_visibility)
@@ -607,6 +767,7 @@ def analyse_sweep(sweep_gen):
     analysis_widget["preview"].on_click(toggle_preview)
     analysis_widget["save"].on_click(save_results)
     return analysis_widget
+
 
 def create_param_widgets(sweep_gen):
     """
@@ -639,35 +800,41 @@ def create_param_widgets(sweep_gen):
                     minmaxstep=settings["range"],
                     orientation="horizontal",
                     description="Range",
-                    style={'description_width': 'initial'},
-                    layout=widgets.Layout(width='40%')
+                    style={"description_width": "initial"},
+                    layout=widgets.Layout(width="40%"),
                 )
                 inttext = wgen.gen_bound_int(
                     value=settings["nintervals"], description="Total values"
                 )
-                name = widgets.HTML(f"<b>" + parameter_name + "</b>", style={'font_size': '15px'})
+                # Use formatted parameter name for display
+                formatted_name = format_parameter_name(parameter_name)
+                name = widgets.HTML(
+                    f"<b>{formatted_name}</b>", style={"font_size": "15px"}
+                )
                 check = widgets.Checkbox(
-                            value=False,
-                            description="Use parameter",
-                            style={'description_width': 'initial'}
-                        )
+                    value=False,
+                    description="Use parameter",
+                    style={"description_width": "initial"},
+                )
                 items = [name, check, slider, inttext]
-                range_widgets[parameter_name] = widgets.VBox(
-                    items
-                )
+                range_widgets[parameter_name] = widgets.VBox(items)
             elif settings["wtype"] == "logical":
-                name = widgets.HTML(f"<b>" + parameter_name + "</b>", style={'font_size': '15px'})
-                check = widgets.Checkbox(
-                            value=False,
-                            description="Use parameter",
-                            style={'description_width': 'initial'}
-                        )      
-                items = [name, check]
-                items.append(wgen.gen_logicals(
-                    description="Select either True or False or both",
-                    layout=widgets.Layout(width='auto', height='auto')
-                ))
-                range_widgets[parameter_name] = widgets.VBox(
-                    items
+                # Use formatted parameter name for display
+                formatted_name = format_parameter_name(parameter_name)
+                name = widgets.HTML(
+                    f"<b>{formatted_name}</b>", style={"font_size": "15px"}
                 )
+                check = widgets.Checkbox(
+                    value=False,
+                    description="Use parameter",
+                    style={"description_width": "initial"},
+                )
+                items = [name, check]
+                items.append(
+                    wgen.gen_logicals(
+                        description="Select either True or False or both",
+                        layout=widgets.Layout(width="auto", height="auto"),
+                    )
+                )
+                range_widgets[parameter_name] = widgets.VBox(items)
     return range_widgets
