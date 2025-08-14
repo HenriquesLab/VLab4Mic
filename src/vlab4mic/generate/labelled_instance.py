@@ -194,7 +194,7 @@ class LabeledInstance:
         self,
         targets: dict,
         scale: float = 1e-10,
-        axis=dict(pivot=None, direction=None),
+        axis=None,
         label_name="NA",
         labelling_efficiency: float = 1.0,
         minimal_distance: float = 0.0,
@@ -226,6 +226,16 @@ class LabeledInstance:
         **kwargs
             Additional keyword arguments.
         """
+        # Set default axis if None is provided or if axis has None values
+        if axis is None:
+            axis = dict(pivot=[0, 0, 0], direction=[0, 0, 1])
+        else:
+            # Ensure axis has valid values, not None
+            if axis.get("pivot") is None:
+                axis["pivot"] = [0, 0, 0]
+            if axis.get("direction") is None:
+                axis["direction"] = [0, 0, 1]
+        
         # should check if the name is different
         label_name = label_name
         self.labelnames.append(label_name)

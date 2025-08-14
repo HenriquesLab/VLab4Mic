@@ -21,6 +21,14 @@ def ids2delete2(xmer_id, tree, neigh, upbound):
     # print(f"Result of tree.query distance: {distances}")
     # print(f"Result of tree.query index: {index_in_data}")
     # print(f"type of index: {type(index_in_data)}")
+    
+    # Handle the case when k=1, tree.query returns scalars instead of arrays
+    if neigh == 1:
+        if np.isscalar(index_in_data):
+            index_in_data = np.array([index_in_data])
+        if np.isscalar(distances):
+            distances = np.array([distances])
+    
     availabeids = index_in_data.shape[0]
     todelete = np.random.choice(np.arange(1, availabeids))
     ids2remove = np.random.choice(index_in_data, todelete, replace=False)

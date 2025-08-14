@@ -126,7 +126,13 @@ class Label:
     def gen_labeling_entity(self):
         labeling_emitters = copy.copy(self.params["emitters_coords"])
         p1 = np.array(self.params["axis"]["pivot"])
-        p2 = p1 + np.array(self.params["axis"]["direction"])
+        
+        # Safety check for axis direction - use default if None
+        direction = self.params["axis"]["direction"]
+        if direction is None:
+            direction = [0, 0, 1]  # Default axis direction
+            
+        p2 = p1 + np.array(direction)
         pivots = np.array([p1, p2])
         # print(f"pivots are: {pivots}")
         if len(labeling_emitters) < 1:
