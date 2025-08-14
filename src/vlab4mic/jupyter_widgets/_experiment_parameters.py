@@ -204,8 +204,25 @@ def ui_select_probe(experiment, **kwargs):
     # methods
     def select_probe(values):
         experiment.add_probe(
-            probe_template=values["select_probe_template"].value
+            probe_template=values["select_probe_template"].value,
         )
+
+        # Set defect parameters when using simple probe selection
+        defect_fraction = probes_gui["defect_fraction"].value
+        defect_small = probes_gui["defect_small_cluster"].value
+        defect_large = probes_gui["defect_large_cluster"].value
+
+        if defect_fraction > 0 and defect_small > 0 and defect_large > 0:
+            experiment.defect_eps["defect"] = float(defect_fraction)
+            experiment.defect_eps["eps1"] = float(defect_small)
+            experiment.defect_eps["eps2"] = float(defect_large)
+            experiment.defect_eps["use_defects"] = True
+        else:
+            experiment.defect_eps["defect"] = 0.0
+            experiment.defect_eps["eps1"] = 100.0
+            experiment.defect_eps["eps2"] = 200.0
+            experiment.defec_eps["use_defects"] = False
+
         probes_gui["create_particle"].disabled = False
         update_probe_list()
 
@@ -222,6 +239,28 @@ def ui_select_probe(experiment, **kwargs):
             probe_wobble_theta = probes_gui["wobble_theta"].value
         else:
             probe_wobble_theta = None
+
+        # Handle defect parameters
+        defect_fraction = probes_gui["defect_fraction"].value
+        defect_small_cluster = probes_gui["defect_small_cluster"].value
+        defect_large_cluster = probes_gui["defect_large_cluster"].value
+
+        # Set defect parameters in experiment if all are provided and non-zero
+        if (
+            defect_fraction > 0
+            and defect_small_cluster > 0
+            and defect_large_cluster > 0
+        ):
+            experiment.defect_eps["defect"] = float(defect_fraction)
+            experiment.defect_eps["eps1"] = float(defect_small_cluster)
+            experiment.defect_eps["eps2"] = float(defect_large_cluster)
+            experiment.defect_eps["use_defects"] = True
+        else:
+            experiment.defect_eps["defect"] = 0.0
+            experiment.defect_eps["eps1"] = 100.0
+            experiment.defect_eps["eps2"] = 200.0
+            experiment.defect_eps["use_defects"] = False
+
         if as_linker:
             options_per_type1["Primary_Probe"] = [
                 probe_name,
@@ -330,6 +369,11 @@ def ui_select_probe(experiment, **kwargs):
 
     def clear_probes(b):
         experiment.remove_probes()
+        # Clear defect parameters when clearing probes
+        experiment.defect_eps["defect"] = 0.0
+        experiment.defect_eps["eps1"] = 20.0
+        experiment.defect_eps["eps2"] = 100.0
+        experiment.defect_eps["use_defects"] = False
         probes_gui["message1"].value = "No probes selected yet."
         probes_gui["message2"].value = "No labelled structure created yet."
         probes_gui["add_probe"].disabled = False
@@ -458,6 +502,43 @@ def ui_select_probe(experiment, **kwargs):
         step=1,
         description="Wobble cone range (degrees)",
     )
+
+    # Defect parameters section
+    probes_gui.add_HTML(
+        "defects_section_header",
+        "<b>Structural Defect Parameters</b>",
+        style=dict(font_size="14px", color="darkblue"),
+    )
+    probes_gui.add_HTML(
+        "defects_info",
+        "Model structural defects in the macromolecular complex. All three parameters must be set to enable defects.",
+        style=dict(font_size="12px", color="gray"),
+    )
+    probes_gui.add_float_slider(
+        "defect_fraction",
+        description="Defect fraction (0-1)",
+        min=0.0,
+        max=1.0,
+        value=0.0,
+        step=0.001,
+        continuous_update=False,
+        style={"description_width": "initial"},
+    )
+    probes_gui.add_float_text(
+        "defect_small_cluster",
+        description="Small cluster distance (Å)",
+        value=100.0,
+        continuous_update=False,
+        style={"description_width": "initial"},
+    )
+    probes_gui.add_float_text(
+        "defect_large_cluster",
+        description="Large cluster distance (Å)",
+        value=200.0,
+        continuous_update=False,
+        style={"description_width": "initial"},
+    )
+
     probes_gui.add_button(
         "add_custom_probe",
         description="Add probe with custom parameters",
@@ -500,6 +581,22 @@ def ui_select_probe(experiment, **kwargs):
         ]
         probe_widgets_visibility["wobble_theta"] = (
             not probe_widgets_visibility["wobble_theta"]
+        )
+        # Defect parameters visibility
+        probe_widgets_visibility["defects_section_header"] = (
+            not probe_widgets_visibility["defects_section_header"]
+        )
+        probe_widgets_visibility["defects_info"] = (
+            not probe_widgets_visibility["defects_info"]
+        )
+        probe_widgets_visibility["defect_fraction"] = (
+            not probe_widgets_visibility["defect_fraction"]
+        )
+        probe_widgets_visibility["defect_small_cluster"] = (
+            not probe_widgets_visibility["defect_small_cluster"]
+        )
+        probe_widgets_visibility["defect_large_cluster"] = (
+            not probe_widgets_visibility["defect_large_cluster"]
         )
         probe_widgets_visibility["add_custom_probe"] = (
             not probe_widgets_visibility["add_custom_probe"]

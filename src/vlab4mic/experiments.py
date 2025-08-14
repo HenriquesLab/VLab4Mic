@@ -467,6 +467,8 @@ class ExperimentParametrisation:
             and self.defect_eps["eps2"]
         ):
             self.defect_eps["use_defects"] = True
+        else:
+            self.defect_eps["use_defects"] = False
 
     def _build_particle(self, lab_eff=1.0, defect_build=None, keep=False):
         """
@@ -494,7 +496,6 @@ class ExperimentParametrisation:
                     self.structure, labels_list, self.configuration_path
                 )
                 if self.defect_eps["use_defects"]:
-                    print("adding defects")
                     if defect_build is not None:
                         defect = defect_build
                     else:
@@ -508,7 +509,6 @@ class ExperimentParametrisation:
                     particle.add_defects(
                         deg_dissasembly=0,
                     )
-                    print("Particle without defects")
                 if keep:
                     self.particle = particle
                     self.objects_created["particle"] = True

@@ -21,14 +21,14 @@ def ids2delete2(xmer_id, tree, neigh, upbound):
     # print(f"Result of tree.query distance: {distances}")
     # print(f"Result of tree.query index: {index_in_data}")
     # print(f"type of index: {type(index_in_data)}")
-    
+
     # Handle the case when k=1, tree.query returns scalars instead of arrays
     if neigh == 1:
         if np.isscalar(index_in_data):
             index_in_data = np.array([index_in_data])
         if np.isscalar(distances):
             distances = np.array([distances])
-    
+
     availabeids = index_in_data.shape[0]
     todelete = np.random.choice(np.arange(1, availabeids))
     ids2remove = np.random.choice(index_in_data, todelete, replace=False)
@@ -134,7 +134,8 @@ def xmersubset_byclustering(
         else:
             return epitopes_coords
     clusters1 = DBSCAN(
-        eps=d_cluster_params["eps1"], min_samples=d_cluster_params["minsamples1"]
+        eps=d_cluster_params["eps1"],
+        min_samples=d_cluster_params["minsamples1"],
     ).fit(epitopes_coords)
     label_p_epitope = clusters1.labels_
     # obtain a center for each xmer
@@ -161,7 +162,9 @@ def xmersubset_byclustering(
     percentageoff = deg_dissasembly
     # create a list with the first proposal of xmers ids to delete
     # create the kdTree for the center_xmers
-    xmer_tree = scipy.spatial.cKDTree(center_xmers, leafsize=10, copy_data=True)
+    xmer_tree = scipy.spatial.cKDTree(
+        center_xmers, leafsize=10, copy_data=True
+    )
     # print(total_labels_dictionary.values())
     # print(f"max num of elements on clusters: {neighbors}")
     upbound = xmer_neigh_distance  # in angstroms
