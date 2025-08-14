@@ -31,14 +31,14 @@ If you are proposing a feature:
 
 ## **Get Started!**
 
-Ready to contribute? Here's how to set up **SupraMolSim** for local development.
+Ready to contribute? Here's how to set up **VLab4Mic** for local development.
 
-1. Fork the **SupraMolSim** repo on GitHub.
+1. Fork the **VLab4Mic** repo on GitHub.
 2. Clone your fork locally::
 
    `$ git clone git@github.com:your_name_here/SupraMolecularSimulator.git`
 
-3. Follow the installation instructions in the readme to install a SupraMolSim environment.
+3. Follow the installation instructions in the readme to install a VLab4Mic environment.
 
 4. Create a branch for local development::
 
@@ -50,7 +50,7 @@ Ready to contribute? Here's how to set up **SupraMolSim** for local development.
 
    `$ pytest`
 
-   Make sure you have installed the optional SupraMolSim testing dependencies.
+   Make sure you have installed the optional VLab4Mic testing dependencies.
 
 6. Commit your changes and push your branch to GitHub::
 
@@ -85,4 +85,4 @@ Please note that this project is follows a [Contributor Code of Conduct](https:/
 
 If you have questions, feel free to ask via GitHub issues. For general inquiries, please contact the project senior project lead Ricardo Henriques.
 
-Thank you for contributing to **SupraMolSim**! We appreciate your time and effort in making this project better.
+Thank you for contributing to **VLab4Mic**! We appreciate your time and effort in making this project better.

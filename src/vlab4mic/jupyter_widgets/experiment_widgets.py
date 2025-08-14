@@ -33,13 +33,14 @@ Functions
 Typical usage
 -------------
 
-    from supramolsim.jupyter_widgets import experiment_widgets
+    from vlab4mic.jupyter_widgets import experiment_widgets
     my_experiment = experiments.ExperimentParametrisation()
     structure_widget = experiment_widgets.select_structure_widget(my_experiment)
     structure_widget.show()
 
 Each function returns an EZInput-based widget that can be displayed in a Jupyter notebook.
 """
+
 from . import _experiment_parameters
 from ..experiments import ExperimentParametrisation
 from . import _experiment_visualisation
@@ -54,7 +55,7 @@ import io
 from ipyfilechooser import FileChooser
 from pathlib import Path
 
-IN_COLAB = 'google.colab' in sys.modules
+IN_COLAB = "google.colab" in sys.modules
 if IN_COLAB:
     output_path = "/content/vlab4mic_outputs"
 else:
@@ -65,7 +66,12 @@ if not os.path.exists(output_path):
     os.makedirs(output_path)
 
 
-def _bind_widgets(parameters=None, visualisation=None, add_border=False, merge_into_parameters=False):
+def _bind_widgets(
+    parameters=None,
+    visualisation=None,
+    add_border=False,
+    merge_into_parameters=False,
+):
     """
     Bind the widgets to the parameters and visualisation objects.
 
@@ -87,8 +93,14 @@ def _bind_widgets(parameters=None, visualisation=None, add_border=False, merge_i
         if visualisation is not None:
             if add_border:
                 parameters.elements["divisor"] = widgets.Label("")
-                parameters["divisor"].layout=widgets.Layout(border='1px solid black', height='0px', width='50%')
-                parameters.add_HTML("visualisation_section","Visualisation section", style = dict(font_weight='bold',  font_size='16px') )
+                parameters["divisor"].layout = widgets.Layout(
+                    border="1px solid black", height="0px", width="50%"
+                )
+                parameters.add_HTML(
+                    "visualisation_section",
+                    "Visualisation section",
+                    style=dict(font_weight="bold", font_size="16px"),
+                )
 
             for tag, element in visualisation.elements.items():
                 parameters.elements[tag] = element
@@ -96,20 +108,31 @@ def _bind_widgets(parameters=None, visualisation=None, add_border=False, merge_i
     else:
         gui = EZInput("Main_widget")
         if add_border:
-            gui.add_HTML("parameters_section", "Parameters section", style=dict(font_weight='bold', font_size='16px'))
-    
+            gui.add_HTML(
+                "parameters_section",
+                "Parameters section",
+                style=dict(font_weight="bold", font_size="16px"),
+            )
+
         if parameters is not None:
             for tag, element in parameters.elements.items():
                 gui.elements[tag] = element
         if visualisation is not None:
             if add_border:
                 gui.elements["divisor"] = widgets.Label("")
-                gui["divisor"].layout=widgets.Layout(border='1px solid black', height='0px', width='50%')
-                gui.add_HTML("visualisation_section","Visualisation section", style = dict(font_weight='bold',  font_size='16px') )
+                gui["divisor"].layout = widgets.Layout(
+                    border="1px solid black", height="0px", width="50%"
+                )
+                gui.add_HTML(
+                    "visualisation_section",
+                    "Visualisation section",
+                    style=dict(font_weight="bold", font_size="16px"),
+                )
 
             for tag, element in visualisation.elements.items():
                 gui.elements[tag] = element
         return gui
+
 
 def select_structure_widget(experiment):
     """
@@ -127,8 +150,11 @@ def select_structure_widget(experiment):
     """
     structure_params = _experiment_parameters.ui_select_structure(experiment)
     view_structure = _experiment_visualisation.ui_show_structure(experiment)
-    select_structure = _bind_widgets(structure_params, view_structure, merge_into_parameters=True)
+    select_structure = _bind_widgets(
+        structure_params, view_structure, merge_into_parameters=True
+    )
     return select_structure
+
 
 def select_probe_widget(experiment):
     """
@@ -145,9 +171,12 @@ def select_probe_widget(experiment):
         Widget for probe selection and labelled structure visualisation.
     """
     probes_params = _experiment_parameters.ui_select_probe(experiment)
-    view_probes = _experiment_visualisation.ui_show_labelled_structure(experiment)
+    view_probes = _experiment_visualisation.ui_show_labelled_structure(
+        experiment
+    )
     select_probe = _bind_widgets(probes_params, view_probes)
     return select_probe
+
 
 def select_sample_parameters_widget(experiment):
     """
@@ -163,10 +192,13 @@ def select_sample_parameters_widget(experiment):
     EZInput
         Widget for sample parameter selection and virtual sample visualisation.
     """
-    sample_params = _experiment_parameters.ui_select_sample_parameters(experiment)
+    sample_params = _experiment_parameters.ui_select_sample_parameters(
+        experiment
+    )
     view_sample = _experiment_visualisation.ui_show_virtual_sample(experiment)
     select_sample = _bind_widgets(sample_params, view_sample)
     return select_sample
+
 
 def select_modalities_widget(experiment):
     """
@@ -202,8 +234,9 @@ def select_acquisition_parameters_widget(experiment):
         Widget for acquisition parameter selection and preview.
     """
     view_acq_params = _experiment_visualisation.ui_set_acq_params(experiment)
-    select_acq_params = _bind_widgets(visualisation = view_acq_params)
+    select_acq_params = _bind_widgets(visualisation=view_acq_params)
     return select_acq_params
+
 
 def run_experiment_widget(experiment):
     """

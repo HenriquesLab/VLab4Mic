@@ -81,7 +81,7 @@ VLab4Mic can be used in three ways, depending on your coding experience:
 Here's a simple example to get you started with VLab4Mic:
 
 ```python
-import supramolsim as vlm
+import vlab4mic as vlm
 
 # Load a structure (e.g., Nuclear Pore Complex)
 structure, params = vlm.workflows.load_structure(
@@ -122,8 +122,8 @@ imager.save_results("output_directory/")
 For GUI-based usage without coding:
 
 ```python
-from supramolsim.jupyter_widgets import experiment_widgets
-from supramolsim import experiments
+from vlab4mic.jupyter_widgets import experiment_widgets
+from vlab4mic import experiments
 
 # Initialize experiment
 my_experiment = experiments.ExperimentParametrisation()
