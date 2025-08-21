@@ -55,6 +55,7 @@ class ExperimentParametrisation:
         pck_dir = os.path.dirname(os.path.abspath(vlab4mic.__file__))
         local_dir = os.path.join(pck_dir, "configs")
         self.configuration_path = local_dir
+        self.structure_path = None
         # keep track of objects created
         self.objects_created = dict(
             structure=False,
@@ -160,7 +161,7 @@ class ExperimentParametrisation:
         self.results = dict()
         self.create_example_experiment()
 
-    def select_structure(self, structure_id="1XI5", build=True):
+    def select_structure(self, structure_id="1XI5", build=True, structure_path:str = None):
         """
         Select a molecular structure by its identifier and optionally build the structure module.
 
@@ -175,7 +176,11 @@ class ExperimentParametrisation:
         -------
         None
         """
-        self.structure_id = structure_id
+        if structure_path is not None:
+            self.structure_path = structure_path
+            self.structure_id = structure_id
+        else:
+            self.structure_id = structure_id
         if build:
             self.build(modules=["structure"])
 
@@ -416,7 +421,13 @@ class ExperimentParametrisation:
         -------
         None
         """
-        if self.structure_id:
+        if self.structure_id and self.structure_path:
+            struct, struct_param = load_structure(
+                self.structure_id, self.configuration_path, self.structure_path
+            )
+            self.structure = struct
+            self.objects_created["structure"] = True
+        elif self.structure_id:
             struct, struct_param = load_structure(
                 self.structure_id, self.configuration_path
             )
