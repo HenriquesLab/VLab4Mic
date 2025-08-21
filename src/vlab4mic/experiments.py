@@ -193,6 +193,7 @@ class ExperimentParametrisation:
         None
         """
         self.structure_id = None
+        self.structure_path = None
         if self.generators_status("structure"):
             self.structure = None
         self.objects_created["structure"] = False
