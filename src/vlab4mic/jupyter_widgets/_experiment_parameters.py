@@ -276,7 +276,7 @@ def ui_select_probe(experiment, **kwargs):
             experiment.defect_eps["defect"] = 0.0
             experiment.defect_eps["eps1"] = 100.0
             experiment.defect_eps["eps2"] = 200.0
-            experiment.defec_eps["use_defects"] = False
+            experiment.defect_eps["use_defects"] = False
 
         probes_gui["create_particle"].disabled = False
         update_probe_list()
