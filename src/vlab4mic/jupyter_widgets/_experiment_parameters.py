@@ -111,11 +111,11 @@ def ui_select_structure(experiment):
 
     def update_structure_list():
         if experiment.structure_id is not None:
-            gui["label_1"].value = (
+            gui["Current_structure"].value = (
                 "Current structure selected: " + experiment.structure_id
             )
         else:
-            gui["label_1"].value = (
+            gui["Current_structure"].value = (
                 "Current structure selected: " + "No structure selected yet."
             )
 
@@ -128,15 +128,16 @@ def ui_select_structure(experiment):
             "select_structure_from_file"
         ]
         update_widgets_visibility(gui, widgets_visibility)
-
+    
+    current_structure_text = None
     if experiment.structure_id is not None:
-        gui.add_label(
-            value="Current structure selected: " + experiment.structure_id
-        )
+        current_structure_text = "Current structure selected: " + experiment.structure_id
     else:
-        gui.add_label(
-            value="Current structure selected: No structure selected yet"
-        )
+        current_structure_text = "Current structure selected: No structure selected yet"
+
+    gui.add_HTML("Current_structure",
+                 current_structure_text,
+                 style=dict(font_weight="bold", font_size="20px"))
     gui.add_dropdown(
         "structures",
         description="Select Structure:",
