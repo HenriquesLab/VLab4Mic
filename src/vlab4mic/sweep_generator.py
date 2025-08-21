@@ -93,6 +93,7 @@ class sweep_generator:
         # Use the directly loaded parameter_settings instead of experiment.param_settings
         # to ensure all parameter groups (including particle_defect) are available
         self.param_settings = self.parameter_settings
+        self.use_experiment_structure = False
         print("vLab4mic sweep generator initialised")
 
     def set_number_of_repetitions(self, repeats: int = 3):
@@ -120,19 +121,35 @@ class sweep_generator:
         None
         """
         self.create_parameters_iterables()
-        (
-            self.experiment,
-            self.virtual_samples,
-            self.virtual_samples_parameters,
-        ) = sweep.sweep_vasmples(
-            experiment=self.experiment,
-            structures=self.structures,
-            probes=self.probes,
-            probe_parameters=self.probe_parameters,
-            particle_defects=self.defect_parameters,
-            virtual_samples=self.vsample_parameters,
-            repetitions=self.sweep_repetitions,
-        )
+        if self.use_experiment_structure:
+                       (
+                self.experiment,
+                self.virtual_samples,
+                self.virtual_samples_parameters,
+            ) = sweep.sweep_vasmples(
+                experiment=self.experiment,
+                structures=self.structures,
+                probes=self.probes,
+                probe_parameters=self.probe_parameters,
+                particle_defects=self.defect_parameters,
+                virtual_samples=self.vsample_parameters,
+                repetitions=self.sweep_repetitions,
+                use_experiment_structure=True
+            )
+        else: 
+            (
+                self.experiment,
+                self.virtual_samples,
+                self.virtual_samples_parameters,
+            ) = sweep.sweep_vasmples(
+                experiment=self.experiment,
+                structures=self.structures,
+                probes=self.probes,
+                probe_parameters=self.probe_parameters,
+                particle_defects=self.defect_parameters,
+                virtual_samples=self.vsample_parameters,
+                repetitions=self.sweep_repetitions,
+            )
 
     def generate_acquisitions(self):
         """
@@ -202,13 +219,23 @@ class sweep_generator:
         -------
         None
         """
-        self.reference_virtual_sample, self.reference_virtual_sample_params = (
-            sweep.generate_global_reference_sample(
-                structure=self.reference_structure,
-                probe=self.reference_probe,
-                probe_parameters=self.reference_probe_parameters,
+        if self.use_experiment_structure:
+            self.reference_virtual_sample, self.reference_virtual_sample_params = (
+                sweep.generate_global_reference_sample(
+                    structure=self.reference_structure,
+                    probe=self.reference_probe,
+                    probe_parameters=self.reference_probe_parameters,
+                    structure_is_path=True,
+                )
             )
-        )
+        else:
+            self.reference_virtual_sample, self.reference_virtual_sample_params = (
+                sweep.generate_global_reference_sample(
+                    structure=self.reference_structure,
+                    probe=self.reference_probe,
+                    probe_parameters=self.reference_probe_parameters,
+                )
+            )
 
     def generate_reference_image(self, override=False):
         """
@@ -224,7 +251,11 @@ class sweep_generator:
         None
         """
         if self.reference_image is None or override:
-            self.generate_reference_sample()
+            if self.use_experiment_structure:
+                self.reference_structure = copy.copy(self.structure_path)
+                self.generate_reference_sample()
+            else:
+                self.generate_reference_sample()
         self.reference_image, self.reference_image_parameters = (
             sweep.generate_global_reference_modality(
                 reference_vsample=self.reference_virtual_sample,

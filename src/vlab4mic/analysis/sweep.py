@@ -19,6 +19,7 @@ def sweep_vasmples(
     particle_defects=None,
     virtual_samples=None,
     repetitions=1,
+    use_experiment_structure=False,
     **kwargs,
 ):
     """
@@ -90,8 +91,11 @@ def sweep_vasmples(
     vsample_outputs = dict()
 
     for struct in structures:
-        experiment.structure_id = struct
-        experiment._build_structure()
+        if use_experiment_structure:
+            experiment.build(modules=["structure",])
+        else:
+            experiment.structure_id = struct
+            experiment._build_structure()
         # for rep in range(repetitions):
         probe_n = 0
         for probe in probes:
@@ -317,6 +321,7 @@ def generate_global_reference_sample(
     probe=None,
     probe_parameters=None,
     virtual_sample=None,
+    structure_is_path=False,
 ):
     """
     Generate a global reference virtual sample.
@@ -358,8 +363,13 @@ def generate_global_reference_sample(
         probe_parameters["fluorophore_id"] = default_reference_fluorophore
     else:
         probe_parameters["fluorophore_id"] = default_reference_fluorophore
-    experiment.structure_id = structure
-    experiment._build_structure()
+    if structure_is_path:
+        experiment.select_structure(
+            structure_path=structure, structure_id="global_reference"
+        )
+    else:
+        experiment.structure_id = structure
+        experiment._build_structure()
     experiment.add_probe(probe_template=probe, **probe_parameters)
     # experiment.structure_label = probe
     # experiment.probe_parameters[probe] = probe_parameters

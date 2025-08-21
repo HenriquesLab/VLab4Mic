@@ -165,8 +165,68 @@ def select_structure(sweep_gen):
             ],
         ]
         ez_sweep_structure["structures"].disabled = True
+    
+    def select_structure_from_file(b):
+        selected_file = ez_sweep_structure["File"].selected
+        filename = ez_sweep_structure["File"].selected_filename
+        structure_id = filename.split(".")[0]
+        if selected_file:
+            sweep_gen.structures = [structure_id,]
+            sweep_gen.structure_path = selected_file
+            sweep_gen.experiment.select_structure(
+                structure_id=structure_id, 
+                structure_path=selected_file,
+                build=False
+            )
+            sweep_gen.use_experiment_structure = True
+            ez_sweep_structure["message"].value = (
+                f"Structure {sweep_gen.structures[0]} selected from file."
+            )
+            ez_sweep_structure["Select"].disabled = True
+            ez_sweep_structure["select_structure_from_file"].disabled = True
+        else:
+            ez_sweep_structure["message"].value = "No file selected."
+
+    def toggle_advanced_parameters(b):
+        widgets_visibility["advanced_param_header"] = not widgets_visibility[
+            "advanced_param_header"
+        ]
+        widgets_visibility["File"] = not widgets_visibility["File"]
+        widgets_visibility["select_structure_from_file"] = not widgets_visibility[
+            "select_structure_from_file"
+        ]
+        update_widgets_visibility(ez_sweep_structure, widgets_visibility)
+
+    ez_sweep_structure.add_button(
+        "toggle_advanced_parameters",
+        description="Toggle advanced parameters",
+        icon=toggle_icon,
+    )
+    # advanced parameters
+    ez_sweep_structure.add_HTML(
+        "advanced_param_header",
+        "<b>Upload a PDB/CIF file</b>",
+        style=dict(font_size="15px"),
+    )
+    ez_sweep_structure.add_file_upload(
+        "File",
+        description="Select from file",
+        accept=["*.pdb", "*.cif"],
+        save_settings=False,
+    )
+    ez_sweep_structure.add_button(
+        "select_structure_from_file",
+        description="Select structure from file",
+        icon=select_icon,
+        style={"button_color": select_colour},
+    )
+    widgets_visibility = {}
+    _unstyle_widgets(ez_sweep_structure, widgets_visibility)
+    ez_sweep_structure["toggle_advanced_parameters"].on_click(toggle_advanced_parameters)
+    ez_sweep_structure["select_structure_from_file"].on_click(select_structure_from_file)
 
     ez_sweep_structure["Select"].on_click(select)
+    toggle_advanced_parameters(True)
     return ez_sweep_structure
 
 
@@ -336,17 +396,25 @@ def set_reference(sweep_gen):
     def gen_ref(b):
         reference["set"].disabled = True
         reference["feedback"].value = "Generating Reference..."
-        reference_structure = reference["structure"].value
-        reference_probe = reference["probe"].value
-        sweep_gen.reference_structure = reference_structure
-        sweep_gen.set_reference_parameters(
-            reference_structure=reference_structure,
-            reference_probe=reference_probe,
-        )
-        with io.capture_output() as captured:
-            sweep_gen.generate_reference_image(override=True)
-        reference["feedback"].value = "Reference Set"
-        reference["preview"].disabled = False
+        if sweep_gen.use_experiment_structure:
+            #reference_structure = reference["structure"].value
+            sweep_gen.reference_structure = copy.copy(sweep_gen.structure_path)
+            with io.capture_output() as captured:
+                sweep_gen.generate_reference_image(override=True)
+            reference["feedback"].value = "Reference Set"
+            reference["preview"].disabled = False
+        else:
+            reference_structure = reference["structure"].value
+            reference_probe = reference["probe"].value
+            sweep_gen.reference_structure = reference_structure
+            sweep_gen.set_reference_parameters(
+                reference_structure=reference_structure,
+                reference_probe=reference_probe,
+            )
+            with io.capture_output() as captured:
+                sweep_gen.generate_reference_image(override=True)
+            reference["feedback"].value = "Reference Set"
+            reference["preview"].disabled = False
 
     def show_reference(b):
         reference["output"].clear_output()
