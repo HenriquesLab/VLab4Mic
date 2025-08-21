@@ -92,6 +92,23 @@ def ui_select_structure(experiment):
         for wgt in elements.keys():
             elements[wgt].disabled = False
 
+    def select_structure_from_file(b):
+        gui["label_1"].value = "Current structure selected: Loading..."
+        gui["select_structure"].icon = loding_icon
+        for wgt_name in gui.elements.keys():
+            gui[wgt_name].disabled = True
+        filepath = gui["File"].selected
+        filename = gui["File"].selected_filename
+        experiment.select_structure(
+            structure_id=filename.split(".")[0], 
+            structure_path=filepath
+        )
+        update_structure_list()
+        gui["select_structure"].icon = select_icon
+        for wgt_name in gui.elements.keys():
+            gui[wgt_name].disabled = False
+
+
     def update_structure_list():
         if experiment.structure_id is not None:
             gui["label_1"].value = (
@@ -101,6 +118,16 @@ def ui_select_structure(experiment):
             gui["label_1"].value = (
                 "Current structure selected: " + "No structure selected yet."
             )
+
+    def toggle_advanced_parameters(b):
+        widgets_visibility["advanced_param_header"] = not widgets_visibility[
+            "advanced_param_header"
+        ]
+        widgets_visibility["File"] = not widgets_visibility["File"]
+        widgets_visibility["select_structure_from_file"] = not widgets_visibility[
+            "select_structure_from_file"
+        ]
+        update_widgets_visibility(gui, widgets_visibility)
 
     if experiment.structure_id is not None:
         gui.add_label(
@@ -118,6 +145,29 @@ def ui_select_structure(experiment):
     gui.add_label(
         "Note: Time for structure loading varies depending on the size of the structure"
     )
+    gui.add_button(
+        "toggle_advanced_parameters",
+        description="Toggle advanced parameters",
+        icon=toggle_icon,
+    )
+    # advanced parameters
+    gui.add_HTML(
+        "advanced_param_header",
+        "<b>Upload a PDB/CIF file</b>",
+        style=dict(font_size="15px"),
+    )
+    gui.add_file_upload(
+        "File",
+        description="Select from file",
+        accept=["*.pdb", "*.cif"],
+        save_settings=False,
+    )
+    gui.add_button(
+        "select_structure_from_file",
+        description="Select structure from file",
+        icon=select_icon,
+        style={"button_color": select_colour},
+    )        
     gui.add_callback(
         "select_structure",
         select_structure,
@@ -126,7 +176,11 @@ def ui_select_structure(experiment):
         icon=select_icon,
         style={"button_color": select_colour},
     )
-
+    gui["toggle_advanced_parameters"].on_click(toggle_advanced_parameters)
+    gui["select_structure_from_file"].on_click(select_structure_from_file)
+    widgets_visibility = {}
+    _unstyle_widgets(gui, widgets_visibility)
+    toggle_advanced_parameters(True)
     return gui
 
 
