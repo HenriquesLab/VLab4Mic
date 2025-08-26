@@ -271,8 +271,8 @@ def select_probes_and_mods(sweep_gen):
     ez_sweep.elements["tabs"] = widgets.HBox(children)
 
     def select_str(b):
-        sweep_gen.selected_modalities = widget_modules["modalities"].value
-        sweep_gen.selected_probes = widget_modules["probes"].value
+        sweep_gen.modalities = list(widget_modules["modalities"].value)
+        sweep_gen.probes = list(widget_modules["probes"].value)
         ez_sweep["Select"].disabled = True
         for name in tab_name:
             widget_modules[name].disabled = True
