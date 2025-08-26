@@ -10,7 +10,7 @@ probe:
     range: [0, 300, 0.1]
     nintervals: 2
 particle_defect:
-  defect_fraction:
+  defect:
     ptype: numeric
     wtype: float_slider
     range: [0, 1, 0.05]
