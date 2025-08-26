@@ -60,6 +60,7 @@ def sweep_vasmples(
     default_fluorophore = "AF647"
     if experiment is None:
         experiment = ExperimentParametrisation()
+        experiment.clear_experiment()
     if structures is None:
         structures = [
             "1XI5",
@@ -229,6 +230,7 @@ def sweep_modalities_updatemod(
             default_vsample,
         ]
         # needs default sample. can be a minimal field with a single emitter
+    experiment.clear_modalities()
     if modalities == "all":
         list_of_locals = ["Widefield", "Confocal", "SMLM", "STED"]
         for local_mode in list_of_locals:
@@ -353,6 +355,7 @@ def generate_global_reference_sample(
     default_reference_fluorophore = "AF647"
     if experiment is None:
         experiment = ExperimentParametrisation()
+        experiment.clear_experiment()
     if probe is None:
         probe = default_reference_probe
     if probe_parameters is None:
