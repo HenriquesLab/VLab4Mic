@@ -885,7 +885,7 @@ class sweep_generator:
                             os.path.join(output_directory, figure_name)
                         )
 
-    def save_images(self, output_name=None, output_directory=None):
+    def save_images(self, output_name=None, output_directory=None, floats_as=float):
         """
         Saves simulated images and an optional reference image to disk in TIFF format.
 
@@ -925,11 +925,27 @@ class sweep_generator:
                 image = np.concatenate((image, replicates[i]))
             name = output_directory + param_combination_id + ".tiff"
             tiff.imwrite(name, image)
-        save_yaml(
-            data=self.acquisition_outputs_parameters,
-            name="acquisition_parameters",
-            output_directory=output_directory,
-        )
+        if floats_as is not None and callable(floats_as):
+            print("floats not none and callable")
+            copy_of_params = copy.deepcopy(self.acquisition_outputs_parameters)
+            for combination_id, list_of_parameters in copy_of_params.items():
+                for parameter in list_of_parameters:
+                    if type(parameter) is dict:
+                        for parameter_name in parameter.keys():
+                            if type(parameter[parameter_name]) is np.float64:
+                                parameter[parameter_name] = floats_as(parameter[parameter_name])
+            save_yaml(
+                data=copy_of_params,
+                name="acquisition_parameters",
+                output_directory=output_directory,
+            )            
+        else:
+            print("default floats")
+            save_yaml(
+                data=self.acquisition_outputs_parameters,
+                name="acquisition_parameters",
+                output_directory=output_directory,
+            )
         if self.reference_image is not None:
             # save reference image
             name_ref = output_directory + "reference.tiff"
