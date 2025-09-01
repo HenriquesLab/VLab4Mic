@@ -926,7 +926,6 @@ class sweep_generator:
             name = output_directory + param_combination_id + ".tiff"
             tiff.imwrite(name, image)
         if floats_as is not None and callable(floats_as):
-            print("floats not none and callable")
             copy_of_params = copy.deepcopy(self.acquisition_outputs_parameters)
             for combination_id, list_of_parameters in copy_of_params.items():
                 for parameter in list_of_parameters:
@@ -940,7 +939,6 @@ class sweep_generator:
                 output_directory=output_directory,
             )            
         else:
-            print("default floats")
             save_yaml(
                 data=self.acquisition_outputs_parameters,
                 name="acquisition_parameters",
