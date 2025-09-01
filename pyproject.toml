@@ -3,9 +3,9 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "supramolsim"
+name = "vlab4mic"
 version = "0.1.0"
-description = ""
+description = "VLab4Mic: A virtual laboratory for microscopy simulation and validation"
 authors = [
     { name = "Damián Martinez", email = "jdmartinez@igc.gulbenkian.pt" },
     { name = "Bruno Saraiva", email = "bruno.msaraiva2@gmail.com" },
@@ -41,7 +41,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-all = ["supramolsim[dev,test,jupyter]"]
+all = ["vlab4mic[dev,test,jupyter]"]
 dev = [
     "pre-commit>=3.7.0",
     "ipykernel>=6.29.4",
@@ -72,12 +72,12 @@ where = ["src"]
 "*" = ["*.yaml"]
 
 [tool.coverage.run]
-source = ["src/supramolsim"]
+source = ["src/vlab4mic"]
 omit = [
-    "*/supramolsim/jupyter_widgets/*",
+    "*/vlab4mic/jupyter_widgets/*",
     "*__init__.py",
     "*__*.py"
 ]
 
 [project.scripts]
-download-structures = "supramolsim.download:download_suggested_structures"
+download-structures = "vlab4mic.download:download_suggested_structures"

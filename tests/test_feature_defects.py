@@ -1,9 +1,10 @@
-from supramolsim.utils.data_format.structural_format import label_builder_format
+from vlab4mic.utils.data_format.structural_format import label_builder_format
 import pytest
 import numpy as np
-from supramolsim import workflows
+from vlab4mic import workflows
 
 defects = np.linspace(0, 1, 3)
+
 
 @pytest.mark.parametrize("defect", defects)
 def test_add_defects(defect, experiment_7r5k_base):

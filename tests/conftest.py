@@ -1,14 +1,14 @@
-import supramolsim
-from supramolsim import workflows
-from supramolsim.utils import data_format
-from supramolsim import experiments, sweep_generator
+import vlab4mic
+from vlab4mic import workflows
+from vlab4mic.utils import data_format
+from vlab4mic import experiments, sweep_generator
 import pytest
 import os
 
 
 @pytest.fixture(scope="module")
 def configuration_directory():
-    pck_dir = os.path.dirname(os.path.abspath(supramolsim.__file__))
+    pck_dir = os.path.dirname(os.path.abspath(vlab4mic.__file__))
     conf_dif = os.path.join(pck_dir, "configs")
     return conf_dif
 
@@ -35,14 +35,14 @@ def experiment_7r5k_base():
     structure_id = "7R5K"
     probe = "NPC_Nup96_Cterminal_direct"
     fluorophore_id = "AF647"
-    virtual_sample = "square1x1um_randomised" 
+    virtual_sample = "square1x1um_randomised"
     modalities = ["Widefield", "Confocal", "SMLM", "STED"]
     imaging_output7r5k, exp7r5k = experiments.image_vsample(
         structure=structure_id,
         probe_template=probe,
         virtual_sample_template=virtual_sample,
         multimodal=modalities,
-        run_simulation=False 
+        run_simulation=False,
     )
     return exp7r5k
 

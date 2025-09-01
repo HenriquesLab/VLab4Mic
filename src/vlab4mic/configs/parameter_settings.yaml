@@ -9,6 +9,22 @@ probe:
     wtype: float_slider
     range: [0, 300, 0.1]
     nintervals: 2
+particle_defect:
+  defect:
+    ptype: numeric
+    wtype: float_slider
+    range: [0, 1, 0.05]
+    nintervals: 4
+  defect_small_cluster:
+    ptype: numeric
+    wtype: float_slider
+    range: [0, 10000, 1]
+    nintervals: 3
+  defect_large_cluster:
+    ptype: numeric
+    wtype: float_slider
+    range: [0, 10000, 1]
+    nintervals: 3
 virtual_sample:
   random_orientations:
     ptype: logical

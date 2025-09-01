@@ -3,96 +3,184 @@
 VLab4Mic is a library for validation of experimental design from choosing a macromolecule to study, to its imaging through several imaging modalities.
 
 Current features include:
-- Creattion of a structural model from PDB/CIF data
-- Direct and indirect labelling of PDB/CIF structures
-- Modelling structural defects
-- Structure detection as Image Generation for common microscopy modalities
-- Parameter sweeps 
-- And more!
+- **Creation** of structural models from PDB/CIF data
+- **Direct and indirect labeling** of PDB/CIF structures with various probes
+- **Modeling of structural defects** and variations
+- **Image generation** for common microscopy modalities (widefield, confocal, STED, etc.)
+- **Parameter sweeps** for experimental design optimization
+- **Quantitative analysis** tools for validation
 
 # Installation
 
-VLab4Mic is compatible with Python 3.9, 3.10, 3.11 and 3.12 in MacOS, Windows and Linux.
-It is advisable to create a new Conda environment to use VLab4Mic. To create a new python environment using Conda, refer to the official [website](https://docs.anaconda.com/miniconda/)
+VLab4Mic is compatible with **Python 3.9, 3.10, 3.11, and 3.12** on macOS, Windows, and Linux.
 
-1.- Create new environment
-Run the following command (replace MYENV with your desired name for the environment):
+**We strongly recommend** creating a new Conda environment to use VLab4Mic. To create a new Python environment using Conda, refer to the official [Miniconda documentation](https://docs.anaconda.com/miniconda/).
+
+## Step 1: Create a New Environment
+
+Run the following command (replace `MYENV` with your desired environment name):
 
 ```bash
 conda create --name MYENV python=3.11
 ```
 
-Then activate it by running:
+Then activate it:
 ```bash
 conda activate MYENV
 ```
 
+## Step 2: Install VLab4Mic
 
-2.- Install VLab4Mic:
+Currently, VLab4Mic is available through GitHub (PyPI release coming soon!):
 
-Currently, you can only access VLab4Mic if
-you have access to the repository. If this is your case, run the following command:
-```shell
+```bash
 pip install git+https://github.com/HenriquesLab/SupraMolecularSimulator.git
 ```
-Soon you'll be able to acces it in a goolge colab! Stay tuned!
 
-# Wiki Tutorial
+**Coming soon:** Google Colab integration for browser-based usage!
 
-VLab4Mic, at its core, is designed as a collection of independent modules that work together via our workflows. An in-depth description of VLab4Mic workflows and modules are covered in our [Wiki Tutorial page](https://github.com/HenriquesLab/SupraMolecularSimulator.git).
+# Documentation & Tutorials
 
+VLab4Mic is designed as a collection of independent modules that work together through our workflows. Comprehensive documentation and tutorials are available on our [Wiki Tutorial page](https://github.com/HenriquesLab/SupraMolecularSimulator/wiki).
 
-We provide example models and configurations for each module:
--   Structure:
-    -   Nuclear Pore Complex
-    -   Clathrin Coated Pit
-    -   Matured HIV-capsid core
--   Probes
-    -   Antibody
-    -   Nanobody
-    -   GFP
-    -   Linker
-    -   NHS-ester
-    -   ... and more!
--   Imaging modalities
-    -   Widefield
-    -   Confocal
-    -   AiryScan
-    -   STED
-    -   Single Molecule Localisation Microscopy
+## Pre-configured Examples
 
-You can use VLab4Mic library through a jupyter notebook, with a graphical user interphase, or with a python stript according to your coding exprience.
+We provide ready-to-use models and configurations for:
 
+### Structures:
+- **Nuclear Pore Complex** - Multi-protein assemblies with 8-fold symmetry
+- **Clathrin Coated Pit** - Membrane trafficking structures
+- **Matured HIV-capsid core** - Viral capsid assemblies
 
-# How to use VLab4Mic
+### Labeling Probes:
+- **Primary/Secondary Antibodies** - Traditional immunofluorescence
+- **Nanobodies** - Single-domain antibodies for improved access
+- **Fluorescent Proteins** (GFP, mCherry, etc.) - Genetically encoded tags
+- **Chemical Linkers** - NHS-ester, click chemistry probes
+- **And many more** specialized labeling strategies
 
-VLab4Mic is a python library that can be used directly through our workflows and analysis module.
-For a detail use see our [script](https://github.com/HenriquesLab/SupraMolecularSimulator/)
+### Imaging Modalities:
+- **Widefield Microscopy** - Basic fluorescence imaging
+- **Confocal Microscopy** - Optical sectioning capability
+- **AiryScan** - Enhanced resolution confocal
+- **STED** - Super-resolution nanoscopy
+- **Single Molecule Localization Microscopy** (SMLM) - Nanometer precision
 
-## Codeless Jupyter Notebooks:
-| Category | Description | Last test | Notebook | Colab Link |
-| --- | --- | --- | --- | --- |
-| Main interphase | Create a virtual sample and simulate its image acquisition with multiple imaging modalities |  | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_main.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_main.ipynb) |
-| Parameter sweep | Generate and analyse simulations over a range of parameter combinatinos  |  | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb)  | 
+## Usage Options
+
+VLab4Mic can be used in three ways, depending on your coding experience:
+1. **Jupyter Notebooks with GUI** - No coding required (recommended for beginners)
+2. **Jupyter Notebooks with code** - Moderate coding (recommended for intermediate users)
+3. **Python scripts** - Full coding control (recommended for advanced users)
 
 
-### 1.- Following the installation instructions, activate your python environment where you installed VLab4Mic.
-### 2.- Lauch Jupyter Lab by running this command:
-```shell
+# Quick Start
+
+## Python Script Example
+
+Here's a simple example to get you started with VLab4Mic:
+
+```python
+import vlab4mic as vlm
+
+# Load a structure (e.g., Nuclear Pore Complex)
+structure, params = vlm.workflows.load_structure(
+    structure_id="5A9Q",  # NPC structure
+    config_dir="path/to/your/config"
+)
+
+# Create a labeled instance
+labeled_structure = vlm.workflows.create_labeled_structure(
+    structure=structure,
+    probe_config="antibody_primary",
+    labeling_strategy="epitope_based"
+)
+
+# Generate a virtual sample
+virtual_sample = vlm.workflows.create_virtual_sample(
+    labeled_structure=labeled_structure,
+    n_particles=50,
+    random_orientations=True,
+    sample_size=[10, 10, 2]  # micrometers
+)
+
+# Simulate imaging
+imager = vlm.workflows.simulate_imaging(
+    virtual_sample=virtual_sample,
+    modality="confocal",
+    pixel_size=20,  # nanometers
+    psf_config="standard_confocal"
+)
+
+# Generate and save images
+images = imager.generate_images()
+imager.save_results("output_directory/")
+```
+
+## Jupyter Notebook Usage
+
+For GUI-based usage without coding:
+
+```python
+from vlab4mic.jupyter_widgets import experiment_widgets
+from vlab4mic import experiments
+
+# Initialize experiment
+my_experiment = experiments.ExperimentParametrisation()
+
+# Display interactive widgets
+experiment_widgets.select_structure_widget(my_experiment).show()
+experiment_widgets.select_probe_widget(my_experiment).show()
+experiment_widgets.select_sample_parameters_widget(my_experiment).show()
+```
+
+# How to Use VLab4Mic
+
+VLab4Mic is a Python library that can be used directly through our workflows and analysis modules.
+For detailed usage examples, see our [example scripts](https://github.com/HenriquesLab/SupraMolecularSimulator/tree/main/examples).
+
+## Interactive Jupyter Notebooks
+
+| Category | Description | Notebook | Colab Link |
+| --- | --- | --- | --- |
+| **Main Interface** | Create virtual samples and simulate image acquisition with multiple imaging modalities | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_main.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_main.ipynb) |
+| **Parameter Sweeps** | Generate and analyze simulations over parameter ranges for optimization | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) |
+
+## Getting Started with Notebooks
+
+### Step 1: Activate Your Environment
+Following the installation instructions above, activate your Python environment:
+```bash
+conda activate MYENV  # Replace MYENV with your environment name
+```
+
+### Step 2: Launch Jupyter Lab
+```bash
 jupyter lab
 ```
-This command will open a Jupyter Lab interphase in your web browser. Once here, locate the folder containing VLab4Mic notebooks. You can download them from [here](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/)
+This will open Jupyter Lab in your web browser.
 
+### Step 3: Download and Open Notebooks
+Download the notebooks from our [repository](https://github.com/HenriquesLab/SupraMolecularSimulator/tree/main/notebooks) and open them in Jupyter Lab.
 
-### 3.- Select the notebook and start using VLab4Mic!
-If you have any doubt during the use of the notebook refer to the [code documentation](https://github.com/HenriquesLab/SupraMolecularSimulator/) or rise an [issue](https://github.com/HenriquesLab/SupraMolecularSimulator/issues/).
+### Step 4: Start Experimenting!
+Follow the interactive widgets and instructions in each notebook. For questions, refer to our [documentation](https://github.com/HenriquesLab/SupraMolecularSimulator/wiki) or [create an issue](https://github.com/HenriquesLab/SupraMolecularSimulator/issues).
 
 # Contributing
-Contributions are very welcome. Please read our [Contribution Guidelines](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/CONTRIBUTING.md) to know how to proceed.
 
-# Licence
-Distributed under the terms of the [MIT license](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/LICENSE.txt), VLab4Mic is free and open source software
+Contributions are very welcome! Please read our [Contribution Guidelines](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/CONTRIBUTING.md) to learn how to get involved.
 
-# Issues
-Shoud you encounter any problem, do not hesitate on [letting us know](https://github.com/HenriquesLab/SupraMolecularSimulator/issues/). Don't forget to incude a detail description.
+# License
+
+Distributed under the terms of the [MIT license](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/LICENSE.txt), VLab4Mic is free and open source software.
+
+# Issues & Support
+
+Should you encounter any problems, please don't hesitate to [let us know](https://github.com/HenriquesLab/SupraMolecularSimulator/issues). When reporting issues, please include:
+- A detailed description of the problem
+- Steps to reproduce the issue
+- Your operating system and Python version
+- Any error messages or screenshots
+
+For general questions, please use our [Discussions](https://github.com/HenriquesLab/SupraMolecularSimulator/discussions) section.
 

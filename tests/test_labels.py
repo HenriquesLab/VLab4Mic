@@ -1,6 +1,6 @@
-from supramolsim.generate import labels
-from supramolsim.workflows import probe_model
-from supramolsim.utils.io.yaml_functions import load_yaml
+from vlab4mic.generate import labels
+from vlab4mic.workflows import probe_model
+from vlab4mic.utils.io.yaml_functions import load_yaml
 import os
 
 
@@ -12,13 +12,15 @@ def test_createlabel_from_config(configuration_directory):
     labelling_efficiency = 0.9
     probe_params = load_yaml(local_path_congfig)
     label_object, label_params = labels.construct_label(
-        label_config_dictionary=probe_params,lab_eff=labelling_efficiency
+        label_config_dictionary=probe_params, lab_eff=labelling_efficiency
     )
 
 
 def test_probe_model(configuration_directory):
     label_file = "Antibody" + ".yaml"
-    local_path_congfig = os.path.join(configuration_directory, "probes", label_file)
+    local_path_congfig = os.path.join(
+        configuration_directory, "probes", label_file
+    )
     probe_params = load_yaml(local_path_congfig)
     probe, probe_emitters, anchor, ab_ref, probe_epitope = probe_model(
         **probe_params, config_dir=configuration_directory

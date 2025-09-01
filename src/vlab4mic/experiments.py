@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field, fields
 from typing import List, Dict
 import numpy as np
-import supramolsim
+import vlab4mic
 from .workflows import (
     load_structure,
     create_imaging_system,
@@ -13,16 +13,16 @@ from .generate import coordinates_field
 from .utils.data_format.structural_format import label_builder_format
 from .utils.data_format import configuration_format
 import os
-from supramolsim.utils.io.yaml_functions import load_yaml
+from vlab4mic.utils.io.yaml_functions import load_yaml
 import numpy as np
 import os
 import copy
-from supramolsim.utils.io import yaml_functions
+from vlab4mic.utils.io import yaml_functions
 from IPython.utils import io
 from pathlib import Path
 import sys
 
-IN_COLAB = 'google.colab' in sys.modules
+IN_COLAB = "google.colab" in sys.modules
 if IN_COLAB:
     output_path = "/content/vlab4mic_outputs"
 else:
@@ -52,9 +52,10 @@ class ExperimentParametrisation:
     example_modalities = ["Widefield", "Confocal", "STED", "SMLM"]
 
     def __post_init__(self):
-        pck_dir = os.path.dirname(os.path.abspath(supramolsim.__file__))
+        pck_dir = os.path.dirname(os.path.abspath(vlab4mic.__file__))
         local_dir = os.path.join(pck_dir, "configs")
         self.configuration_path = local_dir
+        self.structure_path = None
         # keep track of objects created
         self.objects_created = dict(
             structure=False,
@@ -75,10 +76,17 @@ class ExperimentParametrisation:
         modality_parameters = {}
         self.config_modalities = dict()
         for mods in os.listdir(modalities_dir):
-            if os.path.splitext(mods)[-1] == ".yaml" and "_template" not in mods:
+            if (
+                os.path.splitext(mods)[-1] == ".yaml"
+                and "_template" not in mods
+            ):
                 modalities_names_list.append(os.path.splitext(mods)[0])
         for mod in modalities_names_list:
-            mod_info, mod_configuration = configuration_format.compile_modality_parameters(mod, local_dir)
+            mod_info, mod_configuration = (
+                configuration_format.compile_modality_parameters(
+                    mod, local_dir
+                )
+            )
             modality_parameters[mod] = mod_info
             self.config_modalities[mod] = mod_configuration
         self.local_modalities_names = modalities_names_list
@@ -90,9 +98,12 @@ class ExperimentParametrisation:
         self.config_global_probes_names = []
         self.config_probe_per_structure_names = {}
         for p_file in os.listdir(probes_dir):
-            if os.path.splitext(p_file)[-1] == ".yaml" and "_template" not in p_file:
+            if (
+                os.path.splitext(p_file)[-1] == ".yaml"
+                and "_template" not in p_file
+            ):
                 label_config_path = os.path.join(probes_dir, p_file)
-                label_parmeters = supramolsim.load_yaml(label_config_path)
+                label_parmeters = vlab4mic.load_yaml(label_config_path)
                 # print(label_parmeters)
                 lablname = os.path.splitext(p_file)[0]
                 if "Mock" in label_parmeters["known_targets"]:
@@ -104,10 +115,13 @@ class ExperimentParametrisation:
                 else:
                     self.config_probe_params[lablname] = label_parmeters
                     for struct in label_parmeters["known_targets"]:
-                        if struct in self.config_probe_per_structure_names.keys():
-                            self.config_probe_per_structure_names[struct].append(
-                                lablname
-                            )
+                        if (
+                            struct
+                            in self.config_probe_per_structure_names.keys()
+                        ):
+                            self.config_probe_per_structure_names[
+                                struct
+                            ].append(lablname)
                         else:
                             self.config_probe_per_structure_names[struct] = [
                                 lablname,
@@ -116,11 +130,16 @@ class ExperimentParametrisation:
         # get available structure IDs
         self.structures_info_list = dict()
         structure_dir = os.path.join(self.configuration_path, "structures")
-        fluorophores_dir = os.path.join(self.configuration_path, "fluorophores")
+        fluorophores_dir = os.path.join(
+            self.configuration_path, "fluorophores"
+        )
         probes_dir = os.path.join(self.configuration_path, "probes")
         modalities_dir = os.path.join(self.configuration_path, "modalities")
         for file in os.listdir(structure_dir):
-            if os.path.splitext(file)[-1] == ".yaml" and "_template" not in file:
+            if (
+                os.path.splitext(file)[-1] == ".yaml"
+                and "_template" not in file
+            ):
                 structure_params = load_yaml(os.path.join(structure_dir, file))
                 struct_id = structure_params["model"]["ID"]
                 if struct_id in self.example_structures:
@@ -142,7 +161,7 @@ class ExperimentParametrisation:
         self.results = dict()
         self.create_example_experiment()
 
-    def select_structure(self, structure_id="1XI5", build=True):
+    def select_structure(self, structure_id="1XI5", build=True, structure_path:str = None):
         """
         Select a molecular structure by its identifier and optionally build the structure module.
 
@@ -157,10 +176,14 @@ class ExperimentParametrisation:
         -------
         None
         """
-        self.structure_id = structure_id
+        if structure_path is not None:
+            self.structure_path = structure_path
+            self.structure_id = structure_id
+        else:
+            self.structure_id = structure_id
         if build:
             self.build(modules=["structure"])
-    
+
     def clear_structure(self):
         """
         Clear the current structure by resetting the structure ID and related parameters.
@@ -170,6 +193,7 @@ class ExperimentParametrisation:
         None
         """
         self.structure_id = None
+        self.structure_path = None
         if self.generators_status("structure"):
             self.structure = None
         self.objects_created["structure"] = False
@@ -256,31 +280,33 @@ class ExperimentParametrisation:
         else:
             changes = False
             if pixelsize_nm is not None:
-                self.imaging_modalities[modality_name]["detector"]["pixelsize"] = (
-                    pixelsize_nm / 1000
-                )
+                self.imaging_modalities[modality_name]["detector"][
+                    "pixelsize"
+                ] = (pixelsize_nm / 1000)
                 changes = True
             if lateral_resolution_nm is not None:
-                voxel_size = self.imaging_modalities[modality_name]["psf_params"][
-                    "voxelsize"
-                ][0]
-                self.imaging_modalities[modality_name]["psf_params"]["std_devs"][0] = (
-                    lateral_resolution_nm / voxel_size
-                )
-                self.imaging_modalities[modality_name]["psf_params"]["std_devs"][1] = (
-                    lateral_resolution_nm / voxel_size
-                )
+                voxel_size = self.imaging_modalities[modality_name][
+                    "psf_params"
+                ]["voxelsize"][0]
+                self.imaging_modalities[modality_name]["psf_params"][
+                    "std_devs"
+                ][0] = (lateral_resolution_nm / voxel_size)
+                self.imaging_modalities[modality_name]["psf_params"][
+                    "std_devs"
+                ][1] = (lateral_resolution_nm / voxel_size)
                 changes = True
             if axial_resolution_nm is not None:
-                voxel_size = self.imaging_modalities[modality_name]["psf_params"][
-                    "voxelsize"
-                ][0]
-                self.imaging_modalities[modality_name]["psf_params"]["std_devs"][2] = (
-                    axial_resolution_nm / voxel_size
-                )
+                voxel_size = self.imaging_modalities[modality_name][
+                    "psf_params"
+                ]["voxelsize"][0]
+                self.imaging_modalities[modality_name]["psf_params"][
+                    "std_devs"
+                ][2] = (axial_resolution_nm / voxel_size)
                 changes = True
             if psf_voxel_nm is not None:
-                self.imaging_modalities[modality_name]["psf_params"]["voxelsize"] = [
+                self.imaging_modalities[modality_name]["psf_params"][
+                    "voxelsize"
+                ] = [
                     psf_voxel_nm,
                     psf_voxel_nm,
                     psf_voxel_nm,
@@ -288,9 +314,13 @@ class ExperimentParametrisation:
                 changes = True
             if depth_of_field_nm is not None:
                 depth_in_slices = None
-                voxel_size = self.local_modalities_parameters[modality_name]["psf_params"]["voxelsize"][2]
-                depth=int(depth_of_field_nm / voxel_size)
-                self.imaging_modalities[modality_name]["psf_params"]["depth"] = depth
+                voxel_size = self.local_modalities_parameters[modality_name][
+                    "psf_params"
+                ]["voxelsize"][2]
+                depth = int(depth_of_field_nm / voxel_size)
+                self.imaging_modalities[modality_name]["psf_params"][
+                    "depth"
+                ] = depth
                 changes = True
             if changes:
                 self.imager.set_imaging_modality(
@@ -354,9 +384,7 @@ class ExperimentParametrisation:
         """
         modality_names = list(self.imaging_modalities.keys())
         for modality_name in modality_names:
-            self.update_modality(
-                modality_name, remove=True
-            )
+            self.update_modality(modality_name, remove=True)
         if self.generators_status("imager"):
             self.imager = None
             self.objects_created["imager"] = False
@@ -394,7 +422,13 @@ class ExperimentParametrisation:
         -------
         None
         """
-        if self.structure_id:
+        if self.structure_id and self.structure_path:
+            struct, struct_param = load_structure(
+                self.structure_id, self.configuration_path, self.structure_path
+            )
+            self.structure = struct
+            self.objects_created["structure"] = True
+        elif self.structure_id:
             struct, struct_param = load_structure(
                 self.structure_id, self.configuration_path
             )
@@ -445,6 +479,8 @@ class ExperimentParametrisation:
             and self.defect_eps["eps2"]
         ):
             self.defect_eps["use_defects"] = True
+        else:
+            self.defect_eps["use_defects"] = False
 
     def _build_particle(self, lab_eff=1.0, defect_build=None, keep=False):
         """
@@ -472,7 +508,6 @@ class ExperimentParametrisation:
                     self.structure, labels_list, self.configuration_path
                 )
                 if self.defect_eps["use_defects"]:
-                    print("adding defects")
                     if defect_build is not None:
                         defect = defect_build
                     else:
@@ -486,14 +521,17 @@ class ExperimentParametrisation:
                     particle.add_defects(
                         deg_dissasembly=0,
                     )
-                    print("Particle without defects")
                 if keep:
                     self.particle = particle
                     self.objects_created["particle"] = True
                 return particle
 
     def _build_coordinate_field(
-        self, use_self_particle=True, keep=False, coordinate_field_path=None, **kwargs
+        self,
+        use_self_particle=True,
+        keep=False,
+        coordinate_field_path=None,
+        **kwargs,
     ):
         """
         Build the coordinate field for the experiment, either from the current particle or as a minimal field.
@@ -520,7 +558,9 @@ class ExperimentParametrisation:
             exported_field, fieldobject = field_from_particle(
                 self.particle, **self.virtualsample_params, **kwargs
             )
-            self.virtualsample_params["minimal_distance"] = fieldobject.molecules_params["minimal_distance"]
+            self.virtualsample_params["minimal_distance"] = (
+                fieldobject.molecules_params["minimal_distance"]
+            )
             if keep:
                 self.exported_coordinate_field = exported_field
                 self.objects_created["exported_coordinate_field"] = True
@@ -557,7 +597,9 @@ class ExperimentParametrisation:
         if self.imaging_modalities:
             # print(f"Using selected mods: {self.imaging_modalities.keys()}")
             mods_list = list(self.imaging_modalities.keys())
-            if use_local_field and self.generators_status("exported_coordinate_field"):
+            if use_local_field and self.generators_status(
+                "exported_coordinate_field"
+            ):
                 self.imager, modality_parameters = create_imaging_system(
                     exported_field=self.exported_coordinate_field,
                     modalities_id_list=mods_list,
@@ -626,7 +668,12 @@ class ExperimentParametrisation:
         """
         print("Building objects")
         if "all" in modules:
-            build_list = ["structure", "particle", "coordinate_field", "imager"]
+            build_list = [
+                "structure",
+                "particle",
+                "coordinate_field",
+                "imager",
+            ]
         else:
             build_list = modules
         if "structure" in build_list:
@@ -634,7 +681,9 @@ class ExperimentParametrisation:
         if "particle" in build_list:
             self._build_particle(keep=use_locals)
         if "coordinate_field" in build_list:
-            self._build_coordinate_field(use_self_particle=use_locals, keep=use_locals)
+            self._build_coordinate_field(
+                use_self_particle=use_locals, keep=use_locals
+            )
         if "imager" in build_list:
             self._build_imager(use_local_field=use_locals)
 
@@ -685,7 +734,8 @@ class ExperimentParametrisation:
             )
         else:
             reference_imager, ref_modality_parameters = create_imaging_system(
-                modalities_id_list=["Reference"], config_dir=self.configuration_path
+                modalities_id_list=["Reference"],
+                config_dir=self.configuration_path,
             )
             reference_imager.import_field(**tmp_exported_field)
             # make a copy
@@ -705,16 +755,16 @@ class ExperimentParametrisation:
                     imager_scale / 1e-9
                 )  # resulting pixel size in nanometers
                 _reference_parameters[mod_name] = dict(
-                    ref_pixelsize=reference_imager.modalities["Reference"]["detector"][
-                        "pixelsize"
-                    ]
+                    ref_pixelsize=reference_imager.modalities["Reference"][
+                        "detector"
+                    ]["pixelsize"]
                     * scalefactor
                 )
         if keep:
             self.experiment_reference = _reference
             self.objects_created["output_reference"] = True
         return _reference, _reference_parameters
-    
+
     def clear_labelled_structure(self):
         self.remove_probes()
 
@@ -743,8 +793,6 @@ class ExperimentParametrisation:
         self.clear_virtual_sample()
         self.clear_modalities()
         self.results = dict()
-        
-
 
     def run_simulation(
         self,
@@ -798,7 +846,9 @@ class ExperimentParametrisation:
         else:
             print(f"Simulating: {modality}")
             acq_p = self.selected_mods[modality]
-            timeseries, _ = self.imager.generate_imaging(modality=modality, **acq_p)
+            timeseries, _ = self.imager.generate_imaging(
+                modality=modality, **acq_p
+            )
             simulation_output = {}
             simulation_output[modality] = timeseries
             return simulation_output
@@ -899,14 +949,18 @@ class ExperimentParametrisation:
         -----
         Updates the ``probe_parameters`` attribute with the new or modified probe configuration and calls the :meth:`_update_probes` method to refresh internal probe state.
         """
-        probe_configuration = copy.deepcopy(self.config_probe_params[probe_template])
+        probe_configuration = copy.deepcopy(
+            self.config_probe_params[probe_template]
+        )
         if probe_name is None:
             probe_name = probe_template
         else:
             probe_configuration["label_name"] = probe_name
         if peptide_motif is not None:
-            protein_name, _1, site, sequence = self.structure.get_peptide_motif(**peptide_motif)
-            if len(sequence) > 0: 
+            protein_name, _1, site, sequence = (
+                self.structure.get_peptide_motif(**peptide_motif)
+            )
+            if len(sequence) > 0:
                 probe_target_type = "Sequence"
                 probe_target_value = sequence
         if probe_target_type and probe_target_value:
@@ -921,18 +975,27 @@ class ExperimentParametrisation:
                     self.probe_parameters[probe_target_value][
                         "probe_seconday_epitope"
                     ] = probe_target_option
-        elif probe_configuration["target"]["type"] is None or probe_configuration["target"]["value"] is None:
-            print("No target info provided for the probe. Retrieving random sequence.")
+        elif (
+            probe_configuration["target"]["type"] is None
+            or probe_configuration["target"]["value"] is None
+        ):
+            print(
+                "No target info provided for the probe. Retrieving random sequence."
+            )
             # probe has no target info
             # a random target will be used
-            protein_name, _1, site, sequence = self.structure.get_peptide_motif(position="cterminal") 
+            protein_name, _1, site, sequence = (
+                self.structure.get_peptide_motif(position="cterminal")
+            )
             probe_configuration["target"] = dict(
                 type="Sequence", value=sequence
             )
-            #probe_configuration["target"]["type"] = "Sequence"
-            #probe_configuration["target"]["value"] = sequence  
+            # probe_configuration["target"]["type"] = "Sequence"
+            # probe_configuration["target"]["value"] = sequence
         if probe_distance_to_epitope is not None:
-            probe_configuration["distance_to_epitope"] = probe_distance_to_epitope
+            probe_configuration["distance_to_epitope"] = (
+                probe_distance_to_epitope
+            )
         if probe_fluorophore is not None:
             probe_configuration["fluorophore_id"] = probe_fluorophore
         if labelling_efficiency is not None:
@@ -945,10 +1008,16 @@ class ExperimentParametrisation:
             probe_configuration["conjugation_target_info"] = (
                 probe_conjugation_target_info
             )
-            probe_configuration["conjugation_sites"]["target"]["type"]= probe_conjugation_target_info["type"]
-            probe_configuration["conjugation_sites"]["target"]["value"]= probe_conjugation_target_info["value"]
+            probe_configuration["conjugation_sites"]["target"]["type"] = (
+                probe_conjugation_target_info["type"]
+            )
+            probe_configuration["conjugation_sites"]["target"]["value"] = (
+                probe_conjugation_target_info["value"]
+            )
         if probe_conjugation_efficiency is not None:
-            probe_configuration["conjugation_efficiency"] = probe_conjugation_efficiency
+            probe_configuration["conjugation_efficiency"] = (
+                probe_conjugation_efficiency
+            )
         if probe_seconday_epitope is not None:
             probe_configuration["epitope_target_info"] = probe_seconday_epitope
         if probe_wobble_theta is not None:
@@ -960,8 +1029,12 @@ class ExperimentParametrisation:
         else:
             probe_configuration["as_linker"] = False
         if probe_steric_hindrance is not None:
-            probe_configuration["distance_between_epitope"] = probe_steric_hindrance
-            probe_configuration["binding"]["distance"]["between_targets"] = probe_steric_hindrance
+            probe_configuration["distance_between_epitope"] = (
+                probe_steric_hindrance
+            )
+            probe_configuration["binding"]["distance"][
+                "between_targets"
+            ] = probe_steric_hindrance
         self.probe_parameters[probe_name] = probe_configuration
         self._update_probes()
 
@@ -1015,7 +1088,9 @@ class ExperimentParametrisation:
         """
         # load default configuration for virtual sample
         try:
-            particle_minimal_distance = self.coordinate_field.molecules_params["minimal_distance"]
+            particle_minimal_distance = self.coordinate_field.molecules_params[
+                "minimal_distance"
+            ]
         except:
             particle_minimal_distance = None
         virtual_sample_template = os.path.join(
@@ -1037,7 +1112,9 @@ class ExperimentParametrisation:
         if minimal_distance is not None:
             vsample_configuration["minimal_distance"] = minimal_distance
         else:
-            vsample_configuration["minimal_distance"] = particle_minimal_distance
+            vsample_configuration["minimal_distance"] = (
+                particle_minimal_distance
+            )
         self.virtualsample_params = vsample_configuration
 
     def use_image_for_positioning(
@@ -1086,39 +1163,44 @@ class ExperimentParametrisation:
         -----
         Updates `self.virtualsample_params` with new relative positions and sample dimensions. Calls `self.build()` for the specified modules.
         """
-        xyz_relative, image_physical_size = coordinates_field.gen_positions_from_image(
-            img=img,
-            mode=mode,
-            sigma=sigma,
-            background=background,
-            threshold=threshold,
-            pixelsize=pixelsize,
-            min_distance=min_distance,
-            **kwargs,
+        xyz_relative, image_physical_size = (
+            coordinates_field.gen_positions_from_image(
+                img=img,
+                mode=mode,
+                sigma=sigma,
+                background=background,
+                threshold=threshold,
+                pixelsize=pixelsize,
+                min_distance=min_distance,
+                **kwargs,
+            )
         )
         self.set_virtualsample_params(
             sample_dimensions=[
                 image_physical_size[0],
                 image_physical_size[1],
-                100,],
+                100,
+            ],
             particle_positions=xyz_relative,
             number_of_particles=len(xyz_relative),
             random_orientations=False,
             random_placing=False,
             minimal_distance=min_distance,
         )
-        #self.virtualsample_params["relative_positions"] = xyz_relative
-        #self.virtualsample_params["sample_dimensions"] = [
+        # self.virtualsample_params["relative_positions"] = xyz_relative
+        # self.virtualsample_params["sample_dimensions"] = [
         #    image_physical_size[0],
         #    image_physical_size[1],
         #    100,
-        #]
+        # ]
         self.build(modules=["coordinate_field", "imager"])
 
-    def current_settings(self, as_string=True, newline="<br>", modalities_acq_params=False):
+    def current_settings(
+        self, as_string=True, newline="<br>", modalities_acq_params=False
+    ):
         """
         Print the current settings of the experiment, including structure, particle, coordinate field, and imaging modalities.
-        
+
         Returns
         -------
         None
@@ -1127,7 +1209,7 @@ class ExperimentParametrisation:
         string += f"Structure ID: {self.structure_id}" + newline
         string += f"Probes: {list(self.probe_parameters.keys())}" + newline
         string += f"Virtual sample: {self.coordinate_field_id}" + newline
-        string += "Imaging Modalities: " 
+        string += "Imaging Modalities: "
         for modality_name, acqparams in self.selected_mods.items():
             string += f"  {modality_name}"
             if modalities_acq_params:
@@ -1139,13 +1221,12 @@ class ExperimentParametrisation:
             print(string)
         else:
             return string
-        
 
 
 def generate_virtual_sample(
     structure: str = "1XI5",
     probe_template: str = "NHS_ester",
-    probe_name:str = None,
+    probe_name: str = None,
     probe_target_type: str = None,
     probe_target_value: str = None,
     probe_distance_to_epitope: float = None,
@@ -1167,7 +1248,7 @@ def generate_virtual_sample(
     random_orientations=False,
     random_placing=False,
     clear_probes=False,
-    clear_experiment = False,
+    clear_experiment=False,
     **kwargs,
 ):
     """
@@ -1250,7 +1331,9 @@ def generate_virtual_sample(
             probe_configuration["probe_target_type"] = probe_target_type
             probe_configuration["probe_target_value"] = probe_target_value
         if probe_distance_to_epitope is not None:
-            probe_configuration["distance_to_epitope"] = probe_distance_to_epitope
+            probe_configuration["distance_to_epitope"] = (
+                probe_distance_to_epitope
+            )
         if probe_fluorophore is not None:
             probe_configuration["fluorophore_id"] = probe_fluorophore
         if labelling_efficiency is not None:
@@ -1264,7 +1347,9 @@ def generate_virtual_sample(
                 probe_conjugation_target_info
             )
         if probe_conjugation_efficiency is not None:
-            probe_configuration["conjugation_efficiency"] = probe_conjugation_efficiency
+            probe_configuration["conjugation_efficiency"] = (
+                probe_conjugation_efficiency
+            )
         if probe_seconday_epitope is not None:
             probe_configuration["epitope_target_info"] = probe_seconday_epitope
         if probe_wobble_theta is not None:

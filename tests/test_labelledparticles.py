@@ -1,9 +1,10 @@
-import supramolsim.generate.labelled_instance as lp
-from supramolsim import workflows
-from supramolsim.utils import data_format
+import vlab4mic.generate.labelled_instance as lp
+from vlab4mic import workflows
+from vlab4mic.utils import data_format
 import pytest
 import copy
 import numpy as np
+
 
 def test_empty_particle():
     particle = lp.LabeledInstance()
@@ -27,6 +28,7 @@ generic_labels = [
     "NHS_ester",
 ]
 
+
 def test_add_probe_with_peptide_motif(experiment_7r5k_base):
     test_experiment = copy.copy(experiment_7r5k_base)
     test_experiment.remove_probes()
@@ -41,6 +43,15 @@ def test_add_probe_with_peptide_motif(experiment_7r5k_base):
         },
     )
     assert len(test_experiment.probe_parameters) == 1
-    assert test_experiment.probe_parameters[probe_name]["label_name"] == probe_name
-    assert test_experiment.probe_parameters[probe_name]["target"]["type"] == "Sequence"
-    assert type(test_experiment.probe_parameters[probe_name]["target"]["value"]) == str
+    assert (
+        test_experiment.probe_parameters[probe_name]["label_name"]
+        == probe_name
+    )
+    assert (
+        test_experiment.probe_parameters[probe_name]["target"]["type"]
+        == "Sequence"
+    )
+    assert (
+        type(test_experiment.probe_parameters[probe_name]["target"]["value"])
+        == str
+    )

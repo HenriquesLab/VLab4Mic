@@ -1,7 +1,7 @@
 from ..experiments import ExperimentParametrisation
 from ..utils.io.yaml_functions import load_yaml
 import os
-import supramolsim
+import vlab4mic
 from . import metrics
 import numpy as np
 import pandas as pd
@@ -19,6 +19,7 @@ def sweep_vasmples(
     particle_defects=None,
     virtual_samples=None,
     repetitions=1,
+    use_experiment_structure=False,
     **kwargs,
 ):
     """
@@ -53,12 +54,13 @@ def sweep_vasmples(
         Dictionary of parameter combinations for each sample.
     """
     # empty lists, but fill up with default
-    pck_dir = os.path.dirname(os.path.abspath(supramolsim.__file__))
+    pck_dir = os.path.dirname(os.path.abspath(vlab4mic.__file__))
     local_dir = os.path.join(pck_dir, "configs")
     default_probe = "NHS_ester"
     default_fluorophore = "AF647"
     if experiment is None:
         experiment = ExperimentParametrisation()
+        experiment.clear_experiment()
     if structures is None:
         structures = [
             "1XI5",
@@ -69,7 +71,9 @@ def sweep_vasmples(
             default_probe,
         ]
     if probe_parameters is None:
-        probe_filepath = os.path.join(local_dir, "probes", default_probe + ".yaml")
+        probe_filepath = os.path.join(
+            local_dir, "probes", default_probe + ".yaml"
+        )
         default_params = load_yaml(probe_filepath)
         probe_parameters = dict()
         probe_parameters[0] = None
@@ -81,16 +85,19 @@ def sweep_vasmples(
         # default_vsample =  load_yaml(vprobe_filepath)
         virtual_samples = dict()
         virtual_samples[0] = {"random_orientations": False}
-        #virtual_samples = [
+        # virtual_samples = [
         #    None,
-        #]
+        # ]
     vsample_params = dict()
     vsample_outputs = dict()
 
     for struct in structures:
-        experiment.structure_id = struct
-        experiment._build_structure()
-        #for rep in range(repetitions):
+        if use_experiment_structure:
+            experiment.build(modules=["structure",])
+        else:
+            experiment.structure_id = struct
+            experiment._build_structure()
+        # for rep in range(repetitions):
         probe_n = 0
         for probe in probes:
             print(f"probe: {probe}")
@@ -102,46 +109,48 @@ def sweep_vasmples(
                     experiment.add_probe(
                         probe_template=probe,
                     )
-                    #experiment.probe_parameters[probe] = default_params
+                    # experiment.probe_parameters[probe] = default_params
                 else:
                     p_param_copy = copy.deepcopy(p_param)
                     p_param_copy["fluorophore_id"] = default_fluorophore
-                    experiment.add_probe(
-                        probe_template=probe,
-                        **p_param_copy
-                    )
+                    experiment.add_probe(probe_template=probe, **p_param_copy)
                 for defect_n, defects_pars in particle_defects.items():
                     particle_defects_copy = copy.deepcopy(defects_pars)
                     for d_key, d_val in particle_defects_copy.items():
-                        if d_key=="defect_small_cluster":
+                        if d_key == "defect_small_cluster":
                             experiment.defect_eps["eps1"] = d_val
-                        if d_key=="defect_large_cluster":
+                        if d_key == "defect_large_cluster":
                             experiment.defect_eps["eps2"] = d_val
-                        if d_key=="defect":
+                        if d_key == "defect":
                             experiment.defect_eps["defect"] = d_val
                     # print(experiment.defect_eps)
                     print(experiment.probe_parameters)
                     experiment._build_particle(keep=True)
                     if experiment.generators_status("particle"):
                         if len(experiment.particle.emitters) == 0:
-                            print(f"Skipping {probe}. No emitters were generated")
+                            print(
+                                f"Skipping {probe}. No emitters were generated"
+                            )
                             break
                     else:
                         break
-                    #vsample_n = 0
+                    # vsample_n = 0
                     for vsample_n, vsample_pars in virtual_samples.items():
                         _exported_field = None
                         # combination += str(vsample_n)
-                        experiment.set_virtualsample_params(
-                            **vsample_pars
-                        )
-                        #_exported_field = experiment._build_coordinate_field(
+                        experiment.set_virtualsample_params(**vsample_pars)
+                        # _exported_field = experiment._build_coordinate_field(
                         #    keep=False, use_self_particle=True, **vsample_pars
-                        #)
+                        # )
                         for rep in range(repetitions):
                             experiment.clear_virtual_sample()
-                            experiment.build(modules=["coordinate_field"], use_self_particle=True)
-                            _exported_field = experiment.coordinate_field.export_field()
+                            experiment.build(
+                                modules=["coordinate_field"],
+                                use_self_particle=True,
+                            )
+                            _exported_field = (
+                                experiment.coordinate_field.export_field()
+                            )
                             combination_n = (
                                 str(probe_n)
                                 + "_"
@@ -161,10 +170,12 @@ def sweep_vasmples(
                             if combination_n not in vsample_params.keys():
                                 vsample_params[combination_n] = _parameters
                                 vsample_outputs[combination_n] = []
-                            vsample_outputs[combination_n].append(_exported_field)
+                            vsample_outputs[combination_n].append(
+                                _exported_field
+                            )
                         #
                         #
-                        #vsample_n += 1
+                        # vsample_n += 1
                     # defect_n += 1
             probe_n += 1
     return experiment, vsample_outputs, vsample_params
@@ -176,7 +187,7 @@ def sweep_modalities_updatemod(
     vsampl_pars=None,
     modalities: list = None,
     modality_params: dict = None,
-    modality_acq_prams: dict =None,
+    modality_acq_prams: dict = None,
 ):
     """
     Simulate image acquisitions for all virtual samples and modalities.
@@ -208,10 +219,7 @@ def sweep_modalities_updatemod(
         Dictionary of pixel sizes for each modality.
     """
     default_mod = "Confocal"
-    default_aqc = dict(
-        nframes=2,
-        exp_time=0.005
-    )
+    default_aqc = dict(nframes=2, exp_time=0.005)
     default_vsample = "None"
     mod_outputs = dict()
     mod_params = dict()
@@ -222,6 +230,7 @@ def sweep_modalities_updatemod(
             default_vsample,
         ]
         # needs default sample. can be a minimal field with a single emitter
+    experiment.clear_modalities()
     if modalities == "all":
         list_of_locals = ["Widefield", "Confocal", "SMLM", "STED"]
         for local_mode in list_of_locals:
@@ -253,7 +262,10 @@ def sweep_modalities_updatemod(
         desc="Unique parameter combination",
     ):
         for virtualsample in tqdm(
-            list(vsample_outputs[vsmpl_id]), position=1, leave=False, desc="Repeats"
+            list(vsample_outputs[vsmpl_id]),
+            position=1,
+            leave=False,
+            desc="Repeats",
         ):
             experiment.imager.import_field(**virtualsample)
             with io.capture_output() as captured:
@@ -261,17 +273,35 @@ def sweep_modalities_updatemod(
                 for modality_name in experiment.selected_mods.keys():
                     for mod_pars_number, mod_pars in modality_params.items():
                         experiment.update_modality(modality_name, **mod_pars)
-                        for mod_acq_number, acq_pars in modality_acq_prams.items():
+                        for (
+                            mod_acq_number,
+                            acq_pars,
+                        ) in modality_acq_prams.items():
                             if acq_pars:
                                 experiment.set_modality_acq(
-                                    modality_name=modality_name,
-                                    **acq_pars)
+                                    modality_name=modality_name, **acq_pars
+                                )
                             # iteration_name = combination
-                            modality_timeseries = experiment.run_simulation(name="", save=False, modality=modality_name)
-                            mod_comb = vsmpl_id + "_" + str(mod_n) + "_" + str(mod_pars_number) + "_" + str(mod_acq_number)
+                            modality_timeseries = experiment.run_simulation(
+                                name="", save=False, modality=modality_name
+                            )
+                            mod_comb = (
+                                vsmpl_id
+                                + "_"
+                                + str(mod_n)
+                                + "_"
+                                + str(mod_pars_number)
+                                + "_"
+                                + str(mod_acq_number)
+                            )
                             mod_parameters = copy.copy(vsampl_pars[vsmpl_id])
                             mod_parameters.append(modality_name)
-                            pxsize = experiment.imager.modalities[modality_name]["detector"]["pixelsize"]*1000
+                            pxsize = (
+                                experiment.imager.modalities[modality_name][
+                                    "detector"
+                                ]["pixelsize"]
+                                * 1000
+                            )
                             mod_params_copy = copy.deepcopy(mod_pars)
                             mod_params_copy["pixelsize"] = pxsize
                             mod_parameters.append(mod_params_copy)
@@ -279,9 +309,11 @@ def sweep_modalities_updatemod(
                             if mod_comb not in mod_params.keys():
                                 mod_params[mod_comb] = mod_parameters
                                 mod_outputs[mod_comb] = []
-                            mod_outputs[mod_comb].append(modality_timeseries[modality_name])
+                            mod_outputs[mod_comb].append(
+                                modality_timeseries[modality_name]
+                            )
                             mod_parameters = None
-                    mod_n += 1   
+                    mod_n += 1
     return experiment, mod_outputs, mod_params, pixelsizes
 
 
@@ -291,6 +323,7 @@ def generate_global_reference_sample(
     probe=None,
     probe_parameters=None,
     virtual_sample=None,
+    structure_is_path=False,
 ):
     """
     Generate a global reference virtual sample.
@@ -316,12 +349,13 @@ def generate_global_reference_sample(
         List of parameters used for the reference.
     """
     # empty lists, but fill up with default
-    pck_dir = os.path.dirname(os.path.abspath(supramolsim.__file__))
+    pck_dir = os.path.dirname(os.path.abspath(vlab4mic.__file__))
     local_dir = os.path.join(pck_dir, "configs")
     default_reference_probe = "NHS_ester"
     default_reference_fluorophore = "AF647"
     if experiment is None:
         experiment = ExperimentParametrisation()
+        experiment.clear_experiment()
     if probe is None:
         probe = default_reference_probe
     if probe_parameters is None:
@@ -332,14 +366,16 @@ def generate_global_reference_sample(
         probe_parameters["fluorophore_id"] = default_reference_fluorophore
     else:
         probe_parameters["fluorophore_id"] = default_reference_fluorophore
-    experiment.structure_id = structure
-    experiment._build_structure()
-    experiment.add_probe(
-        probe_template=probe,
-        **probe_parameters
-    )
-    #experiment.structure_label = probe
-    #experiment.probe_parameters[probe] = probe_parameters
+    if structure_is_path:
+        experiment.select_structure(
+            structure_path=structure, structure_id="global_reference"
+        )
+    else:
+        experiment.structure_id = structure
+        experiment._build_structure()
+    experiment.add_probe(probe_template=probe, **probe_parameters)
+    # experiment.structure_label = probe
+    # experiment.probe_parameters[probe] = probe_parameters
     experiment._build_particle(keep=True)
     # combination += str(vsample_n)
     refernece_parameters = [structure, probe, probe_parameters, virtual_sample]
@@ -354,7 +390,7 @@ def generate_global_reference_modality(
     reference_vsample=None,
     reference_vsample_params=None,
     modality=None,
-    modality_acquisition = None,
+    modality_acquisition=None,
 ):
     """
     Generate a global reference image for a given virtual sample and modality.
@@ -383,17 +419,17 @@ def generate_global_reference_modality(
         experiment = ExperimentParametrisation()
     if modality is None:
         modality = "Reference"
-        #modality_acquisition = None
+        # modality_acquisition = None
     if modality_acquisition is None:
         experiment.add_modality(modality)
-        
-        #experiment.selected_mods[modality] = (
+
+        # experiment.selected_mods[modality] = (
         #    configuration_format.format_modality_acquisition_params()
-        #)
+        # )
     else:
         experiment.add_modality(modality)
         experiment.set_modality_acq(modality, **modality_acquisition)
-        #experiment.selected_mods[modality] = modality_acquisition
+        # experiment.selected_mods[modality] = modality_acquisition
     experiment._build_imager(use_local_field=False)
     print(experiment.generators_status)
     experiment.imager.import_field(**reference_vsample)
@@ -405,14 +441,19 @@ def generate_global_reference_modality(
     ]
     reference_output = experiment.run_simulation(name="", save=False)
     imager_scale = experiment.imager.roi_params["scale"]
-    scalefactor = np.ceil(imager_scale / 1e-9)  # resulting pixel size in nanometers
+    scalefactor = np.ceil(
+        imager_scale / 1e-9
+    )  # resulting pixel size in nanometers
     reference_parameters["ref_pixelsize"] = (
-        experiment.imager.modalities[modality]["detector"]["pixelsize"] * scalefactor
+        experiment.imager.modalities[modality]["detector"]["pixelsize"]
+        * scalefactor
     )
     return reference_output[modality], reference_parameters
 
 
-def analyse_image_sweep(img_outputs, img_params, reference, analysis_case_params=None):
+def analyse_image_sweep(
+    img_outputs, img_params, reference, analysis_case_params=None
+):
     """
     Analyse a sweep of images against a reference image.
 
@@ -447,12 +488,25 @@ def analyse_image_sweep(img_outputs, img_params, reference, analysis_case_params
             rep_measurement, ref_used, qry_used = metrics.img_compare(
                 im_ref, im1, **analysis_case_params[mod_name]
             )
-            measurement_vectors.append([params_id, rep_number, rep_measurement])
+            measurement_vectors.append(
+                [params_id, rep_number, rep_measurement]
+            )
             inputs[params_id][rep_number] = [qry_used, im1]
             rep_number += 1
     return measurement_vectors, inputs
 
-def analyse_sweep_single_reference(img_outputs, img_params, reference_image, reference_params, zoom_in=0, metrics_list:list =["ssim",], **kwargs):
+
+def analyse_sweep_single_reference(
+    img_outputs,
+    img_params,
+    reference_image,
+    reference_params,
+    zoom_in=0,
+    metrics_list: list = [
+        "ssim",
+    ],
+    **kwargs,
+):
     """
     Analyse a sweep of images against a single reference image using specified metrics.
 
@@ -494,25 +548,31 @@ def analyse_sweep_single_reference(img_outputs, img_params, reference_image, ref
             im1 = img_r[0]
             im_ref = reference_image
             rep_measurement, ref_used, qry_used = metrics.img_compare(
-                im_ref, im1,
-                modality_pixelsize = modality_pixelsize,
-                ref_pixelsize = reference_params["ref_pixelsize"],
+                im_ref,
+                im1,
+                modality_pixelsize=modality_pixelsize,
+                ref_pixelsize=reference_params["ref_pixelsize"],
                 force_match=True,
                 zoom_in=zoom_in,
-                metric=metrics_list
+                metric=metrics_list,
             )
             r_vector = list([params_id, rep_number]) + list([*rep_measurement])
             measurement_vectors.append(r_vector)
-            #measurement_vectors = measurement_vectors + rep_measurement[0]
+            # measurement_vectors = measurement_vectors + rep_measurement[0]
             inputs[params_id][rep_number] = [qry_used, im1, ref_used]
             rep_number += 1
     return measurement_vectors, inputs, metrics_list
 
 
-
-
 def measurements_dataframe(
-    measurement_vectors, probe_parameters=None, p_defects=None, mod_names = None, sample_params=None, mod_params=None, mod_acq=None, metric_names=None
+    measurement_vectors,
+    probe_parameters=None,
+    p_defects=None,
+    mod_names=None,
+    sample_params=None,
+    mod_params=None,
+    mod_acq=None,
+    metric_names=None,
 ):
     """
     Create a pandas DataFrame from measurement vectors and parameter dictionaries.
@@ -557,16 +617,18 @@ def measurements_dataframe(
             "modality": ids_array[:, 4],
             "modality_parameters": ids_array[:, 5],
             "modality_acqusition": ids_array[:, 6],
-            "Replica": measurement_array[:, 1]
+            "Replica": measurement_array[:, 1],
         }
     )
     df_combined = data_frame
-    # 
+    #
     nmetrics = len(metric_names)
     metrics_dictionary = dict()
     for metric_number in range(nmetrics):
-        metricvector = measurement_array[:, 2+metric_number]
-        metrics_dictionary[metric_names[metric_number]] = np.array(metricvector, dtype=np.float64)
+        metricvector = measurement_array[:, 2 + metric_number]
+        metrics_dictionary[metric_names[metric_number]] = np.array(
+            metricvector, dtype=np.float64
+        )
     metrics_df = pd.DataFrame(metrics_dictionary)
     df_combined = df_combined.join(metrics_df)
     if probe_parameters:
@@ -590,7 +652,9 @@ def measurements_dataframe(
         for i in range(nrows):
             defect_par_comb_id = int(data_frame.iloc[i]["defects"])
             for column_name in defect_param_names:
-                tmp_df2[column_name].append(p_defects[defect_par_comb_id][column_name])
+                tmp_df2[column_name].append(
+                    p_defects[defect_par_comb_id][column_name]
+                )
         tmp2 = pd.DataFrame(tmp_df2)
         df_combined = df_combined.join(tmp2)
     if sample_params:
@@ -601,7 +665,9 @@ def measurements_dataframe(
         for i in range(nrows):
             sample_par_comb_id = int(data_frame.iloc[i]["vsample"])
             for column_name in sample_param_names:
-                tmp_df3[column_name].append(sample_params[sample_par_comb_id][column_name])
+                tmp_df3[column_name].append(
+                    sample_params[sample_par_comb_id][column_name]
+                )
         tmp3 = pd.DataFrame(tmp_df3)
         df_combined = df_combined.join(tmp3)
     if mod_params:
@@ -612,7 +678,9 @@ def measurements_dataframe(
         for i in range(nrows):
             acq_par_comb_id = int(data_frame.iloc[i]["modality_parameters"])
             for column_name in param_names:
-                tmp_df4[column_name].append(mod_params[acq_par_comb_id][column_name])
+                tmp_df4[column_name].append(
+                    mod_params[acq_par_comb_id][column_name]
+                )
         tmp4 = pd.DataFrame(tmp_df4)
         df_combined = df_combined.join(tmp4)
     if mod_acq:
@@ -623,7 +691,9 @@ def measurements_dataframe(
         for i in range(nrows):
             acq_par_comb_id = int(data_frame.iloc[i]["modality_acqusition"])
             for column_name in param_names:
-                tmp_df5[column_name].append(mod_acq[acq_par_comb_id][column_name])
+                tmp_df5[column_name].append(
+                    mod_acq[acq_par_comb_id][column_name]
+                )
         tmp5 = pd.DataFrame(tmp_df5)
         df_combined = df_combined.join(tmp5)
     if mod_names:
@@ -637,9 +707,6 @@ def measurements_dataframe(
             tmp_df6["modality_name"].append(mod_names_id[acq_par_comb_id])
         tmp6 = pd.DataFrame(tmp_df6)
         df_combined = df_combined.join(tmp6)
-
-
-
 
     return data_frame, df_combined
 
@@ -670,7 +737,9 @@ def create_param_combinations(**kwargs):
         return combinations_dict
 
 
-def pivot_dataframes_byCategory(dataframe, category_name, param1, param2, metric_name, **kwargs):
+def pivot_dataframes_byCategory(
+    dataframe, category_name, param1, param2, metric_name, **kwargs
+):
     """
     Pivot a DataFrame by category and two parameters, summarizing a metric.
 
@@ -715,24 +784,27 @@ def pivot_dataframes_byCategory(dataframe, category_name, param1, param2, metric
         condition_sd_pivot = summarised_group.pivot(
             index=param1, columns=param2, values="Std_Dev"
         ).round(4)
-        df_categories[str(category)] = [condition_mean_pivot, condition_sd_pivot]
+        df_categories[str(category)] = [
+            condition_mean_pivot,
+            condition_sd_pivot,
+        ]
     titles = dict(category=category_name, param1=param1, param2=param2)
     return df_categories, titles
 
 
 def probe_parameters_sweep(
-        probe_target_type: list[str] = None,
-        probe_target_value: list[str] = None,
-        probe_distance_to_epitope: float = None,
-        probe_model: list[str] = None,
-        probe_fluorophore: str = None,
-        probe_paratope: str = None,
-        probe_conjugation_target_info = None,
-        probe_conjugation_efficiency: list[float] = None,
-        probe_seconday_epitope = None,
-        probe_wobbling = None,
-        labelling_efficiency: list[float] = None,
-    ):
+    probe_target_type: list[str] = None,
+    probe_target_value: list[str] = None,
+    probe_distance_to_epitope: float = None,
+    probe_model: list[str] = None,
+    probe_fluorophore: str = None,
+    probe_paratope: str = None,
+    probe_conjugation_target_info=None,
+    probe_conjugation_efficiency: list[float] = None,
+    probe_seconday_epitope=None,
+    probe_wobbling=None,
+    labelling_efficiency: list[float] = None,
+):
     """
     Generate combinations of probe parameters for a sweep.
 
@@ -765,21 +837,24 @@ def probe_parameters_sweep(
                 if isinstance(value[0], (str, bool)):
                     probe_parameters_vectors[par] = value
                 else:
-                    sequence = np.linspace(value[0],value[1],value[2])
+                    sequence = np.linspace(value[0], value[1], value[2])
                     probe_parameters_vectors[par] = sequence
     probe_parameters = None
     if bool(probe_parameters_vectors):
-        probe_parameters = create_param_combinations(**probe_parameters_vectors)
+        probe_parameters = create_param_combinations(
+            **probe_parameters_vectors
+        )
     return probe_parameters
 
+
 def virtual_sample_parameters_sweep(
-        virtual_sample_template: str = None,
-        sample_dimensions: list[float] = None,
-        number_of_particles: int = None,
-        particle_positions: list[np.array] = None,
-        random_orientations = False,
-        random_placing = False,
-    ):
+    virtual_sample_template: str = None,
+    sample_dimensions: list[float] = None,
+    number_of_particles: int = None,
+    particle_positions: list[np.array] = None,
+    random_orientations=False,
+    random_placing=False,
+):
     """
     Generate combinations of virtual sample parameters for a sweep.
 
@@ -807,18 +882,21 @@ def virtual_sample_parameters_sweep(
                 if isinstance(value[0], (str, bool)):
                     field_parameters_vectors[par] = value
                 else:
-                    sequence = np.linspace(value[0],value[1],value[2])
+                    sequence = np.linspace(value[0], value[1], value[2])
                     field_parameters_vectors[par] = sequence
     field_parameters = None
     if bool(field_parameters_vectors):
-        field_parameters = create_param_combinations(**field_parameters_vectors)
+        field_parameters = create_param_combinations(
+            **field_parameters_vectors
+        )
     return field_parameters
 
+
 def defects_parameters_sweep(
-        defect_small_cluster: float = None,
-        defect_large_cluster: float = None,
-        defect: float = None,
-    ):
+    defect_small_cluster: float = None,
+    defect_large_cluster: float = None,
+    defect: float = None,
+):
     """
     Generate combinations of defect parameters for a sweep.
 
@@ -843,20 +921,23 @@ def defects_parameters_sweep(
                 if isinstance(value[0], (str, bool)):
                     defects_parameters_vectors[par] = value
                 else:
-                    sequence = np.linspace(value[0],value[1],value[2])
+                    sequence = np.linspace(value[0], value[1], value[2])
                     defects_parameters_vectors[par] = sequence
     defects_parameters = None
     if bool(defects_parameters_vectors):
-        defects_parameters = create_param_combinations(**defects_parameters_vectors)
+        defects_parameters = create_param_combinations(
+            **defects_parameters_vectors
+        )
     return defects_parameters
 
+
 def modality_parameters_sweep(
-        #modality_name: str = None,
-        pixelsize_nm: float = None,
-        lateral_resolution_nm: float = None,
-        axial_resolution_nm: float = None,
-        psf_voxel_nm: int = None,
-    ):
+    # modality_name: str = None,
+    pixelsize_nm: float = None,
+    lateral_resolution_nm: float = None,
+    axial_resolution_nm: float = None,
+    psf_voxel_nm: int = None,
+):
     """
     Generate combinations of modality parameters for a sweep.
 
@@ -882,20 +963,22 @@ def modality_parameters_sweep(
                 if isinstance(value[0], (str, bool)):
                     modality_parameters_vectors[par] = value
                 else:
-                    sequence = np.linspace(value[0],value[1],value[2])
+                    sequence = np.linspace(value[0], value[1], value[2])
                     modality_parameters_vectors[par] = sequence
     modality_parameters = None
     if bool(modality_parameters_vectors):
-        modality_parameters = create_param_combinations(**modality_parameters_vectors)
+        modality_parameters = create_param_combinations(
+            **modality_parameters_vectors
+        )
     return modality_parameters
 
 
 def acquisition_parameters_sweep(
-        exp_time: str = None,
-        noise: float = None,
-        nframes: float = None,
-        channels: float = None,
-    ):
+    exp_time: str = None,
+    noise: float = None,
+    nframes: float = None,
+    channels: float = None,
+):
     """
     Generate combinations of acquisition parameters for a sweep.
 
@@ -921,7 +1004,7 @@ def acquisition_parameters_sweep(
                 if isinstance(value[0], (str, bool)):
                     acq_parameters_vectors[par] = value
                 else:
-                    sequence = np.linspace(value[0],value[1],value[2])
+                    sequence = np.linspace(value[0], value[1], value[2])
                     acq_parameters_vectors[par] = sequence
     acq_parameters = None
     if bool(acq_parameters_vectors):

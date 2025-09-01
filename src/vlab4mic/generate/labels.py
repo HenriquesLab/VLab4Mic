@@ -3,7 +3,10 @@ import numpy as np
 import yaml
 import copy
 
-from ..utils.visualisation.matplotlib_plots import add_ax_scatter, draw1nomral_segment
+from ..utils.visualisation.matplotlib_plots import (
+    add_ax_scatter,
+    draw1nomral_segment,
+)
 from ..utils.data_format.visualisation import format_coordinates
 from ..utils.io.yaml_functions import load_yaml
 
@@ -73,7 +76,9 @@ class Label:
         for key, value in kwargs.items():
             self.binding[key] = value
 
-    def _set_epitope_params(self, target=None, normals=None, site=None, **kwargs):
+    def _set_epitope_params(
+        self, target=None, normals=None, site=None, **kwargs
+    ):
         self.epitope["target"] = target
         self.epitope["normals"] = normals
         self.epitope["site"] = site
@@ -126,7 +131,13 @@ class Label:
     def gen_labeling_entity(self):
         labeling_emitters = copy.copy(self.params["emitters_coords"])
         p1 = np.array(self.params["axis"]["pivot"])
-        p2 = p1 + np.array(self.params["axis"]["direction"])
+
+        # Safety check for axis direction - use default if None
+        direction = self.params["axis"]["direction"]
+        if direction is None:
+            direction = [0, 0, 1]  # Default axis direction
+
+        p2 = p1 + np.array(direction)
         pivots = np.array([p1, p2])
         # print(f"pivots are: {pivots}")
         if len(labeling_emitters) < 1:
@@ -164,7 +175,11 @@ class Label:
             yaml.dump(yaml_dict, file)
 
     def plot_emitters(
-        self, view_init=[0, 0, 0], axesoff=True, show_axis=True, return_plot=False
+        self,
+        view_init=[0, 0, 0],
+        axesoff=True,
+        show_axis=True,
+        return_plot=False,
     ):  # TODO: test
         if self.params["emitters_coords"] is None:
             print(
@@ -174,8 +189,12 @@ class Label:
         else:
             fig = plt.figure()
             ax = fig.add_subplot(111, projection="3d")
-            add_ax_scatter(ax, format_coordinates(self.params["emitters_coords"]))
-            ax.view_init(elev=view_init[0], azim=view_init[1], roll=view_init[2])
+            add_ax_scatter(
+                ax, format_coordinates(self.params["emitters_coords"])
+            )
+            ax.view_init(
+                elev=view_init[0], azim=view_init[1], roll=view_init[2]
+            )
             if show_axis:
                 draw1nomral_segment(
                     self.params["axis"], ax, lenght=150, colors=["g", "y"]
@@ -190,12 +209,15 @@ class Label:
             if axesoff:
                 ax.set_axis_off()
             ax.set_box_aspect(
-                [ub - lb for lb, ub in (getattr(ax, f"get_{a}lim")() for a in "xyz")]
+                [
+                    ub - lb
+                    for lb, ub in (getattr(ax, f"get_{a}lim")() for a in "xyz")
+                ]
             )
             if return_plot:
                 plt.close()
                 return fig
-            else: 
+            else:
                 fig.show
 
     def get_notNone_params(self):
@@ -229,21 +251,31 @@ def construct_label(
     if "model_ID" in kwargs.keys():
         label_params["model"]["ID"] = kwargs["model_ID"]
     if "distance_to_epitope" in label_params.keys():
-        label_params["binding"]["distance"]["to_target"] = label_params["distance_to_epitope"]
+        label_params["binding"]["distance"]["to_target"] = label_params[
+            "distance_to_epitope"
+        ]
     else:
         print("No distance to epitope provided, using default value.")
     if "distance_between_epitope" in kwargs.keys():
-        label_params["binding"]["distance"]["between_targets"] = kwargs["distance_between_epitope"]
+        label_params["binding"]["distance"]["between_targets"] = kwargs[
+            "distance_between_epitope"
+        ]
     if "paratope" in kwargs.keys():
         label_params["binding"]["paratope"] = kwargs["paratope"]
     if "conjugation_target_info" in kwargs.keys():
-        label_params["conjugation_sites"]["target"] = kwargs["conjugation_target_info"]
+        label_params["conjugation_sites"]["target"] = kwargs[
+            "conjugation_target_info"
+        ]
     if "conjugation_efficiency" in kwargs.keys():
-        label_params["conjugation_sites"]["efficiency"] = kwargs["conjugation_efficiency"]
+        label_params["conjugation_sites"]["efficiency"] = kwargs[
+            "conjugation_efficiency"
+        ]
     if "epitope_target_info" in kwargs.keys():
         label_params["epitope"]["target"] = kwargs["epitope_target_info"]
     if "wobble_theta" in label_params.keys():
-        label_params["binding"]["wobble_range"]["theta"] = label_params["wobble_theta"]
+        label_params["binding"]["wobble_range"]["theta"] = label_params[
+            "wobble_theta"
+        ]
     else:
         label_params["binding"]["wobble_range"]["theta"] = None
     ######## information about target
@@ -259,7 +291,9 @@ def construct_label(
             label_params["target"]["value"]["residues"],
         ]
         try:
-            label_params["position"] = label_params["target"]["value"]["position"]
+            label_params["position"] = label_params["target"]["value"][
+                "position"
+            ]
         except:
             label_params["position"] = None
     ######## Building the labelling entity: anribody, linker, direct...
@@ -288,7 +322,9 @@ def construct_label(
     elif label_params["binding"]["distance"]["to_target"]:
         # not from a PDB, checking if at least distance to make a rigid linker
         print("rigid linker")
-        label.set_params(length=label_params["binding"]["distance"]["to_target"])
+        label.set_params(
+            length=label_params["binding"]["distance"]["to_target"]
+        )
         label.set_axis(
             pivot=[0, 0, 0], direction=label_params["binding"]["orientation"]
         )

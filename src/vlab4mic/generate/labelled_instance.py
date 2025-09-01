@@ -10,7 +10,11 @@ from ..utils.transform.points_transforms import (
     transform_displace_set,
 )
 from ..utils.data_format.visualisation import format_coordinates, set_colorplot
-from ..utils.visualisation.matplotlib_plots import add_ax_scatter, draw1nomral_segment, draw_nomral_segments
+from ..utils.visualisation.matplotlib_plots import (
+    add_ax_scatter,
+    draw1nomral_segment,
+    draw_nomral_segments,
+)
 from ..utils.transform.cif_builder import create_instance_label
 from ..utils.transform.defects import xmersubset_byclustering
 from ..utils.data_format.structural_format import builder_format
@@ -26,9 +30,9 @@ class LabeledInstance:
         self.params["scale"] = 1e-10
         self.source = {}
         self.source["targets"] = None
-        #self.source["reference_pt"] = None
-        #self.source["scale"] = None
-        #self.source["axis"] = None
+        # self.source["reference_pt"] = None
+        # self.source["scale"] = None
+        # self.source["axis"] = None
         self.source["info"] = None
         self.labels = {}
         self.labelnames = list()
@@ -132,10 +136,10 @@ class LabeledInstance:
             axis["direction"] *= scaling_factor
 
         self._set_source_targets(dict(targets))  # making an explicit copy
-        #self._set_source_reference(reference_point)
+        # self._set_source_reference(reference_point)
         self._set_ref_point(reference_point)
         self._set_source_scale(scale)
-        #self._set_source_axis(axis)
+        # self._set_source_axis(axis)
         self.axis = copy.copy(axis)
         self._set_source_info(info)
         self.status["source"] = True
@@ -194,7 +198,7 @@ class LabeledInstance:
         self,
         targets: dict,
         scale: float = 1e-10,
-        axis=dict(pivot=None, direction=None),
+        axis=None,
         label_name="NA",
         labelling_efficiency: float = 1.0,
         minimal_distance: float = 0.0,
@@ -226,6 +230,16 @@ class LabeledInstance:
         **kwargs
             Additional keyword arguments.
         """
+        # Set default axis if None is provided or if axis has None values
+        if axis is None:
+            axis = dict(pivot=[0, 0, 0], direction=[0, 0, 1])
+        else:
+            # Ensure axis has valid values, not None
+            if axis.get("pivot") is None:
+                axis["pivot"] = [0, 0, 0]
+            if axis.get("direction") is None:
+                axis["direction"] = [0, 0, 1]
+
         # should check if the name is different
         label_name = label_name
         self.labelnames.append(label_name)
@@ -241,12 +255,14 @@ class LabeledInstance:
             label_type = "indirect"
             # add minimal distance to radial hindrance
             probe_max_dist = np.max(pdist(emitters))
-            new_hindrance = self.radial_hindance + 2*probe_max_dist
+            new_hindrance = self.radial_hindance + 2 * probe_max_dist
             if new_hindrance > self.radial_hindance:
                 self.radial_hindance = new_hindrance
         colour = set_colorplot(self.plotting_params)
         # print(f"colour assigned to label: {colour}")
-        plt_params = dict(plotsize=20, plotalpha=1, plotmarker="o", plotcolour=colour)
+        plt_params = dict(
+            plotsize=20, plotalpha=1, plotmarker="o", plotcolour=colour
+        )
         self.plotting_params[label_name] = plt_params
         label_params = dict(
             emitters=emitters,
@@ -356,7 +372,9 @@ class LabeledInstance:
         labelling_realisation_vectors = None
         if label4target is not None:
             labelling_realisation, labelling_realisation_vectors = (
-                create_instance_label(target_normals, target_type, label4target)
+                create_instance_label(
+                    target_normals, target_type, label4target
+                )
             )
             plotting_params = self._get_label_plotting_params(target_name)
             fluorophore_name = self._get_label_fluorophore(target_name)
@@ -448,8 +466,10 @@ class LabeledInstance:
         for target_name in self.primary["targets"].keys():
             emitters = self._label_primary(target_name)
             targets_labeled_instance[target_name] = emitters
-            #fluorophore_name = self._get_label_fluorophore(target_name)
-            label_fluorophore[target_name] = self.secondary[target_name]["fluorophore"]
+            # fluorophore_name = self._get_label_fluorophore(target_name)
+            label_fluorophore[target_name] = self.secondary[target_name][
+                "fluorophore"
+            ]
             plotting_params[target_name] = self.plotting_params[target_name]
 
         instance_constructor = dict(
@@ -537,7 +557,9 @@ class LabeledInstance:
         # print(f"in model_defects: {target_sites.shape}")
         # print(target_sites, self.defects_params)
         boolean_subset = xmersubset_byclustering(
-            epitopes_coords=target_sites, return_ids=True, **self.defects_params
+            epitopes_coords=target_sites,
+            return_ids=True,
+            **self.defects_params,
         )
         coor = target_normals_dictionary["coordinates"][boolean_subset,]
         if target_normals_dictionary["normals"] is not None:
@@ -596,7 +618,9 @@ class LabeledInstance:
             Additional keyword arguments.
         """
         self.labelnames = list(emitters_dictionary.keys())
-        self._add_emitters(dict(emitters_dictionary))  # making an explicit copy
+        self._add_emitters(
+            dict(emitters_dictionary)
+        )  # making an explicit copy
         self._set_ref_point(ref_point)
         self._set_scale(scale)
         self._set_axis(dict(axis))
@@ -636,7 +660,9 @@ class LabeledInstance:
             New orientation vector.
         """
         if np.linalg.norm(neworientation) == 0:
-            print(f"Norm for vector {neworientation} is 0. No reorientation done")
+            print(
+                f"Norm for vector {neworientation} is 0. No reorientation done"
+            )
         else:
             thet = np.arccos(
                 np.dot(self.axis["direction"], neworientation)
@@ -645,11 +671,11 @@ class LabeledInstance:
                     * np.linalg.norm(neworientation)
                 )
             )
-            #print(
+            # print(
             #    f"theta: {thet}, "
             #    f"new {neworientation}, "
             #    f"current: {self.axis['direction']}"
-            #)
+            # )
             if np.absolute(thet) == 1:
                 print(
                     f"input vector {neworientation} "
@@ -687,13 +713,21 @@ class LabeledInstance:
         for labeltype in self.emitters.keys():
             if self.get_emitter_by_target(labeltype) is not None:
                 self.emitters[labeltype], _ = transform_displace_set(
-                    self.get_emitter_by_target(labeltype), self.get_ref_point(), nref
+                    self.get_emitter_by_target(labeltype),
+                    self.get_ref_point(),
+                    nref,
                 )
                 # translate sources as well
-                self.source["targets"][labeltype]["coordinates"], _  = transform_displace_set(
-                    self._get_source_coords_normals(labeltype)["coordinates"], self.get_ref_point(), nref
+                self.source["targets"][labeltype]["coordinates"], _ = (
+                    transform_displace_set(
+                        self._get_source_coords_normals(labeltype)[
+                            "coordinates"
+                        ],
+                        self.get_ref_point(),
+                        nref,
+                    )
                 )
-     
+
         # then replace reference point
         self._set_ref_point(nref)
         self.axis["pivot"] = nref
@@ -717,19 +751,19 @@ class LabeledInstance:
 
     def scale_coordinates_system(self, new_scale: float):
         scaling_factor = self.params["scale"] / new_scale
-        #scaling_factor_source = self.source["scale"] / new_scale
+        # scaling_factor_source = self.source["scale"] / new_scale
         # scale object data
         self.params["ref_point"] = self.params["ref_point"] * scaling_factor
         self.axis["pivot"] = self.axis["pivot"] * scaling_factor
         self.radial_hindance *= scaling_factor
         self._set_scale(new_scale)
         # scale source data
-        #self.source["reference_pt"] *= scaling_factor_source
-        #self.source["axis"]['pivot'] *= scaling_factor_source
-        #self.source["scale"] = new_scale
+        # self.source["reference_pt"] *= scaling_factor_source
+        # self.source["axis"]['pivot'] *= scaling_factor_source
+        # self.source["scale"] = new_scale
         # scale emitters and each target in source
         for labeltype in self.emitters.keys():
-            #print("scaling")
+            # print("scaling")
             if self.get_emitter_by_target(labeltype) is not None:
                 # print(f'before: {self.emitters[labeltype]}')
                 self.emitters[labeltype] = (
@@ -738,46 +772,94 @@ class LabeledInstance:
             self.source["targets"][labeltype]["coordinates"] *= scaling_factor
             if self.source["targets"][labeltype]["normals"] is not None:
                 print(f"normals not NONE: {scaling_factor}")
-                print(self.source["targets"][labeltype]["normals"], )
+                print(
+                    self.source["targets"][labeltype]["normals"],
+                )
                 self.source["targets"][labeltype]["normals"] *= scaling_factor
         # scale probes data
         for labeltype in self.labels.keys():
             probe_scaling_factor = self.labels[labeltype]["scale"] / new_scale
             if self.labels[labeltype]["emitters"] is not None:
-                self.labels[labeltype]["emitters"] = self.labels[labeltype]["emitters"].astype('float64') * probe_scaling_factor
+                self.labels[labeltype]["emitters"] = (
+                    self.labels[labeltype]["emitters"].astype("float64")
+                    * probe_scaling_factor
+                )
             if self.labels[labeltype]["minimal_distance"] is not None:
-                self.labels[labeltype]["minimal_distance"] *= probe_scaling_factor
+                self.labels[labeltype][
+                    "minimal_distance"
+                ] *= probe_scaling_factor
             if "coordinates" in self.labels[labeltype].keys():
-                self.labels[labeltype]["coordinates"] = self.labels[labeltype]["coordinates"].astype('float64') * probe_scaling_factor
-            if self.labels[labeltype]["binding"]["distance"]["to_target"] is not None:
-                self.labels[labeltype]["binding"]["distance"]["to_target"] *= probe_scaling_factor
-            if self.labels[labeltype]["binding"]["distance"]["between_targets"] is not None:
-                self.labels[labeltype]["binding"]["distance"]["between_targets"] *= probe_scaling_factor
+                self.labels[labeltype]["coordinates"] = (
+                    self.labels[labeltype]["coordinates"].astype("float64")
+                    * probe_scaling_factor
+                )
+            if (
+                self.labels[labeltype]["binding"]["distance"]["to_target"]
+                is not None
+            ):
+                self.labels[labeltype]["binding"]["distance"][
+                    "to_target"
+                ] *= probe_scaling_factor
+            if (
+                self.labels[labeltype]["binding"]["distance"][
+                    "between_targets"
+                ]
+                is not None
+            ):
+                self.labels[labeltype]["binding"]["distance"][
+                    "between_targets"
+                ] *= probe_scaling_factor
             self.labels[labeltype]["scale"] = new_scale
             # update the primary targets if they exist
             if labeltype in self.primary["targets"].keys():
-                self.primary["targets"][labeltype]["coordinates"] *= probe_scaling_factor
-                if  self.primary["targets"][labeltype]["normals"] is not None:
-                    self.primary["targets"][labeltype]["normals"] *= probe_scaling_factor
+                self.primary["targets"][labeltype][
+                    "coordinates"
+                ] *= probe_scaling_factor
+                if self.primary["targets"][labeltype]["normals"] is not None:
+                    self.primary["targets"][labeltype][
+                        "normals"
+                    ] *= probe_scaling_factor
         for labeltype in self.secondary.keys():
-            probe_scaling_factor = self.secondary[labeltype]["scale"] / new_scale
+            probe_scaling_factor = (
+                self.secondary[labeltype]["scale"] / new_scale
+            )
             if self.secondary[labeltype]["emitters"] is not None:
-                self.secondary[labeltype]["emitters"] = self.secondary[labeltype]["emitters"].astype('float64') * probe_scaling_factor
+                self.secondary[labeltype]["emitters"] = (
+                    self.secondary[labeltype]["emitters"].astype("float64")
+                    * probe_scaling_factor
+                )
             if self.secondary[labeltype]["minimal_distance"] is not None:
-                self.secondary[labeltype]["minimal_distance"] *= probe_scaling_factor
+                self.secondary[labeltype][
+                    "minimal_distance"
+                ] *= probe_scaling_factor
             if "coordinates" in self.secondary[labeltype].keys():
-                self.secondary[labeltype]["coordinates"] = self.secondary[labeltype]["coordinates"].astype('float64') * probe_scaling_factor
-            if self.secondary[labeltype]["binding"]["distance"]["to_target"] is not None:
-                self.secondary[labeltype]["binding"]["distance"]["to_target"] *= probe_scaling_factor
-            if self.secondary[labeltype]["binding"]["distance"]["between_targets"] is not None:
-                self.secondary[labeltype]["binding"]["distance"]["between_targets"] *= probe_scaling_factor
+                self.secondary[labeltype]["coordinates"] = (
+                    self.secondary[labeltype]["coordinates"].astype("float64")
+                    * probe_scaling_factor
+                )
+            if (
+                self.secondary[labeltype]["binding"]["distance"]["to_target"]
+                is not None
+            ):
+                self.secondary[labeltype]["binding"]["distance"][
+                    "to_target"
+                ] *= probe_scaling_factor
+            if (
+                self.secondary[labeltype]["binding"]["distance"][
+                    "between_targets"
+                ]
+                is not None
+            ):
+                self.secondary[labeltype]["binding"]["distance"][
+                    "between_targets"
+                ] *= probe_scaling_factor
             self.secondary[labeltype]["scale"] = new_scale
         if self.defects:
             self.defects_params["d_cluster_params"]["eps1"] *= scaling_factor
             self.defects_params["d_cluster_params"]["eps2"] *= scaling_factor
             self.defects_params["xmer_neigh_distance"] *= scaling_factor
 
-    # methods to get emitters by target name    
+    # methods to get emitters by target name
 
     def get_emitter_by_target(self, targetname: str):
         """
@@ -826,16 +908,18 @@ class LabeledInstance:
         return pulled
 
     # Visualisation methods
-    def show_probe(self, 
-                probe_name = None, 
-                axesoff=False,
-                return_plot = False,
-                view_init = [30,0,0],
-                xlims = [-100,100],
-                ylims = [-100,100],
-                zlims = None,
-                central_axis=True,
-                **kwargs):
+    def show_probe(
+        self,
+        probe_name=None,
+        axesoff=False,
+        return_plot=False,
+        view_init=[30, 0, 0],
+        xlims=[-100, 100],
+        ylims=[-100, 100],
+        zlims=None,
+        central_axis=True,
+        **kwargs,
+    ):
         """
         Visualize the probe structure in 3D.
 
@@ -868,38 +952,49 @@ class LabeledInstance:
             probe_name = self.emitters[first_probe]
         fig = plt.figure()
         ax = fig.add_subplot(111, projection="3d")
-        #probe_plotting_params = self._get_label_plotting_params(probe_name)
+        # probe_plotting_params = self._get_label_plotting_params(probe_name)
         total_coordinates = copy.copy(self.labels[probe_name]["emitters"])
         total_number_coordinates = total_coordinates.shape[0]
         center = np.mean(total_coordinates, axis=0)
-        probe_emitters = total_coordinates[2:,:].reshape( total_number_coordinates - 2 ,3)
-        probe_axis =total_coordinates[0:2,:]
-        centered_emitters, translation_vector1 = transform_displace_set(probe_emitters, center, np.array([0,0,0]))
-        centered_axis, translation_vector2 = transform_displace_set(probe_axis, center, np.array([0,0,0]))
+        probe_emitters = total_coordinates[2:, :].reshape(
+            total_number_coordinates - 2, 3
+        )
+        probe_axis = total_coordinates[0:2, :]
+        centered_emitters, translation_vector1 = transform_displace_set(
+            probe_emitters, center, np.array([0, 0, 0])
+        )
+        centered_axis, translation_vector2 = transform_displace_set(
+            probe_axis, center, np.array([0, 0, 0])
+        )
         add_ax_scatter(
-                    ax,
-                    format_coordinates(
-                        centered_emitters, 
-                            plotmarker="o",
-                            plotsize=20,
-                            **kwargs
-                    ),
-                )
+            ax,
+            format_coordinates(
+                centered_emitters, plotmarker="o", plotsize=20, **kwargs
+            ),
+        )
         if central_axis:
             axis_segment = dict()
             axis_segment["pivot"] = centered_axis[0]
             axis_segment["direction"] = centered_axis[1] - centered_axis[0]
-            draw1nomral_segment(axis_segment, ax, lenght=100, colors=["g", "y"])
+            draw1nomral_segment(
+                axis_segment, ax, lenght=100, colors=["g", "y"]
+            )
         ax.set_xlim(xlims)
         ax.set_ylim(ylims)
         if zlims is None:
-            zlims = [np.min(centered_axis[:,2]), np.min(centered_emitters[:,2])]
+            zlims = [
+                np.min(centered_axis[:, 2]),
+                np.min(centered_emitters[:, 2]),
+            ]
             ax.set_zlim(zlims)
         else:
             ax.set_zlim(zlims)
         ax.view_init(elev=view_init[0], azim=view_init[1], roll=view_init[2])
         ax.set_box_aspect(
-            [ub - lb for lb, ub in (getattr(ax, f"get_{a}lim")() for a in "xyz")]
+            [
+                ub - lb
+                for lb, ub in (getattr(ax, f"get_{a}lim")() for a in "xyz")
+            ]
         )
         if axesoff:
             ax.set_axis_off()
@@ -911,8 +1006,6 @@ class LabeledInstance:
             return ax
         else:
             fig.show()
-
-
 
     def show_instance(
         self,
@@ -964,33 +1057,38 @@ class LabeledInstance:
                     lab_plotparams["plotsize"] = emitter_plotsize
                 add_ax_scatter(
                     ax,
-                    format_coordinates(
-                        self.emitters[labs], **lab_plotparams
-                    ),
+                    format_coordinates(self.emitters[labs], **lab_plotparams),
                 )
                 if with_sources:
                     if source_size is not None:
-                        source_size=source_size
+                        source_size = source_size
                     else:
-                        source_size=1
+                        source_size = 1
                     add_ax_scatter(
                         ax,
                         format_coordinates(
-                            self._get_source_coords_normals(labs)["coordinates"],
-                            plotsize=source_size
+                            self._get_source_coords_normals(labs)[
+                                "coordinates"
+                            ],
+                            plotsize=source_size,
                         ),
                     )
                 # add_ax_scatter(ax, format_coordinates(self.emitters[labs]))
         if reference_point:
             ref = self.get_ref_point()
             print(f"Reference point at {ref}")
-            ax.scatter(ref[0], ref[1], ref[2], c="k", label="ref", s=20, marker="x")
+            ax.scatter(
+                ref[0], ref[1], ref[2], c="k", label="ref", s=20, marker="x"
+            )
         if show_axis:
             print(f'current axis direction: {self.axis["direction"]}')
             draw1nomral_segment(self.axis, ax, lenght=150, colors=["g", "y"])
         ax.view_init(elev=view_init[0], azim=view_init[1], roll=view_init[2])
         ax.set_box_aspect(
-            [ub - lb for lb, ub in (getattr(ax, f"get_{a}lim")() for a in "xyz")]
+            [
+                ub - lb
+                for lb, ub in (getattr(ax, f"get_{a}lim")() for a in "xyz")
+            ]
         )
         if axesoff:
             ax.set_axis_off()
@@ -1021,7 +1119,7 @@ class LabeledInstance:
         emitter_plotsize=None,
         source_plotcolour="#bbbbbb",
         with_normals=False,
-        **kwargs
+        **kwargs,
     ):
         """
         Generate a 3D axis plot for the labelled instance.
@@ -1074,7 +1172,9 @@ class LabeledInstance:
                         add_ax_scatter(
                             axis_object,
                             format_coordinates(
-                                self._get_source_coords_normals(labs)["coordinates"],
+                                self._get_source_coords_normals(labs)[
+                                    "coordinates"
+                                ],
                                 plotcolour=source_plotcolour,
                                 plotalpha=0.5,
                                 plotsize=source_plotsize,
@@ -1084,16 +1184,21 @@ class LabeledInstance:
                         add_ax_scatter(
                             axis_object,
                             format_coordinates(
-                                self._get_source_coords_normals(labs)["coordinates"],
+                                self._get_source_coords_normals(labs)[
+                                    "coordinates"
+                                ],
                                 plotsize=source_plotsize,
                             ),
                         )
                     if with_normals:
                         draw_nomral_segments(
-                            [self.source["targets"][labs]["normals"], self.source["targets"][labs]["coordinates"]],
+                            [
+                                self.source["targets"][labs]["normals"],
+                                self.source["targets"][labs]["coordinates"],
+                            ],
                             axis_object,
                             colors=["grey", "green"],
-                            **kwargs
+                            **kwargs,
                         )
 
                 # add_ax_scatter(ax, format_coordinates(self.emitters[labs]))
@@ -1105,8 +1210,12 @@ class LabeledInstance:
             )
         if show_axis:
             print(f'current axis direction: {self.axis["direction"]}')
-            draw1nomral_segment(self.axis, axis_object, lenght=150, colors=["g", "y"])
-        axis_object.view_init(elev=view_init[0], azim=view_init[1], roll=view_init[2])
+            draw1nomral_segment(
+                self.axis, axis_object, lenght=150, colors=["g", "y"]
+            )
+        axis_object.view_init(
+            elev=view_init[0], azim=view_init[1], roll=view_init[2]
+        )
         if axesoff:
             axis_object.set_axis_off()
         else:
@@ -1116,11 +1225,15 @@ class LabeledInstance:
             axis_object.set_xlabel("X (Angstroms)", size=fontsize)
             axis_object.set_ylabel("Y (Angstroms)", size=fontsize)
             axis_object.set_zlabel("Z (Angstroms)", size=fontsize)
-            axis_object.tick_params(axis="both", which="major", labelsize=fontsize)
+            axis_object.tick_params(
+                axis="both", which="major", labelsize=fontsize
+            )
         axis_object.set_box_aspect(
             [
                 ub - lb
-                for lb, ub in (getattr(axis_object, f"get_{a}lim")() for a in "xyz")
+                for lb, ub in (
+                    getattr(axis_object, f"get_{a}lim")() for a in "xyz"
+                )
             ]
         )
 
@@ -1190,5 +1303,7 @@ def add_label_params_to_particle(particle: LabeledInstance, label_params):
         particle.sequential_labelling = secondary
         if "epitope_site" in lab.keys():
             print(f'assigning epitope site : {lab["epitope_site"]}')
-            particle.source["targets"]["epitope_site"] = copy.copy(lab["epitope_site"])
+            particle.source["targets"]["epitope_site"] = copy.copy(
+                lab["epitope_site"]
+            )
     return particle
