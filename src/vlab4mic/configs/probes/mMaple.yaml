@@ -22,8 +22,10 @@ conjugation_sites:
   target:
     type: Atom_residue
     value:
-      atoms: C1
-      residues: PIA
+      atoms: 
+      - C1
+      residues: 
+      - PIA
   efficiency: 1
 epitope: # for secondary
   target:

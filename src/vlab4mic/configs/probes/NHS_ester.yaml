@@ -2,8 +2,10 @@ label_name: NHS_ester
 target:
   type: Atom_residue
   value:
-    atoms: CA
-    residues: LYS
+    atoms: 
+    - CA
+    residues: 
+    - LYS
 known_targets:
   - Generic
 model:

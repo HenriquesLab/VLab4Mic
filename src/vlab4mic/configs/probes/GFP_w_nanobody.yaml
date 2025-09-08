@@ -20,8 +20,14 @@ binding:
   paratope: KGEEL
 conjugation_sites:
   target:
-    type: Sequence
-    value: ALV
+    type: Atom_residue
+    value:
+      atoms: 
+      - CA
+      residues: 
+      - LYS
+      chains: 
+      - B
   efficiency: 1
 epitope: # for secondary
   target:
