@@ -688,11 +688,11 @@ class Field:
             zz = (yy) * 0
         if axis_object is not None:
             ax = axis_object
-            ax.plot_surface(xx, yy, zz, alpha=0.2)
+            ax.plot_surface(xx, yy, zz, alpha=0.2, **kwargs)
         else:
             fig = plt.figure()
             ax = fig.add_subplot(111, projection="3d")
-            ax.plot_surface(xx, yy, zz, alpha=0.2)
+            ax.plot_surface(xx, yy, zz, alpha=0.2, **kwargs)
 
         if initial_pos:
             if self.molecules_params["absolute_positions"] is not None:
