@@ -22,8 +22,10 @@ conjugation_sites:
   target:
     type: Atom_residue
     value:
-      atoms: CAA
-      residues: OGQ
+      atoms: 
+      - CAA
+      residues: 
+      - OGQ
   efficiency: 1
 epitope: # for secondary
   target:
