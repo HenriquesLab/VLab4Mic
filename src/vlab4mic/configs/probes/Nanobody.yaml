@@ -22,8 +22,10 @@ conjugation_sites:
   target:
     type: Atom_residue
     value:
-      atoms: CA
-      residues: LYS
+      atoms: 
+      - CA
+      residues: 
+      - LYS
   efficiency: 1
 epitope: # for secondary
   target:

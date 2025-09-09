@@ -1117,7 +1117,11 @@ class LabeledInstance:
         source_plotsize=None,
         axis_object=None,
         emitter_plotsize=None,
-        source_plotcolour="#bbbbbb",
+        emitter_plotmarker="o",
+        emitter_plotcolour="#984ea3",
+        source_plotcolour="#01579D",
+        source_plotmarker="D",
+        source_plotalpha=1,
         with_normals=False,
         **kwargs,
     ):
@@ -1151,6 +1155,10 @@ class LabeledInstance:
                 lab_plotparams = self._get_label_plotting_params(labs)
                 if emitter_plotsize is not None:
                     lab_plotparams["plotsize"] = emitter_plotsize
+                if emitter_plotmarker is not None:
+                    lab_plotparams["plotmarker"] = emitter_plotmarker
+                if emitter_plotcolour is not None:
+                    lab_plotparams["plotcolour"] = emitter_plotcolour
                 add_ax_scatter(
                     axis_object,
                     format_coordinates(self.emitters[labs], **lab_plotparams),
@@ -1176,8 +1184,9 @@ class LabeledInstance:
                                     "coordinates"
                                 ],
                                 plotcolour=source_plotcolour,
-                                plotalpha=0.5,
                                 plotsize=source_plotsize,
+                                plotmarker=source_plotmarker,
+                                plotalpha=source_plotalpha
                             ),
                         )
                     else:
@@ -1187,7 +1196,10 @@ class LabeledInstance:
                                 self._get_source_coords_normals(labs)[
                                     "coordinates"
                                 ],
+                                plotcolour=source_plotcolour,
                                 plotsize=source_plotsize,
+                                plotmarker=source_plotmarker,
+                                plotalpha=source_plotalpha
                             ),
                         )
                     if with_normals:

@@ -22,8 +22,10 @@ conjugation_sites:
   target:
     type: Atom_residue
     value:
-      atoms: C1
-      residues: CRO
+      atoms:
+      - C1
+      residues: 
+      - CRO
   efficiency: 1
 epitope: # for secondary
   target:

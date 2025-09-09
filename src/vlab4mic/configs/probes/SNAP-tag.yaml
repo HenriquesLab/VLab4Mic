@@ -1,11 +1,11 @@
-label_name: GFP_w_nanobody
+label_name: SNAP-tag
 target:
   type:
   value:
 known_targets:
   - Mock
 model:
-  ID: 6XZF
+  ID: 6Y8P
   format: CIF
   database: RCSB
 binding:
@@ -17,17 +17,15 @@ binding:
   distance:
     to_target: 10
     between_targets: estimate
-  paratope: KGEEL
+  paratope: DCEMK
 conjugation_sites:
   target:
     type: Atom_residue
     value:
       atoms: 
-      - CA
+      - CAA
       residues: 
-      - LYS
-      chains: 
-      - B
+      - OGQ
   efficiency: 1
 epitope: # for secondary
   target:

@@ -485,7 +485,7 @@ class MolecularStructureParser:
         return np.array(myatoms)
 
     def get_atom_res_chains_assembly(
-        self, residues: list, atoms: list, position: int = None
+        self, residues: list, atoms: list, position: int = None, chains: list[str]=None,
     ):
         """
         Parse the structure and return atom coordinates for specified residues and atoms, including assembly partners if defined.
@@ -510,7 +510,10 @@ class MolecularStructureParser:
             self.generate_assembly_reference_point()  # Initialized as none
         if self.assembly_operations is None:
             self.generate_assemmbly_operations()
-        list_of_chains = list(self.chains_dict.keys())
+        if chains is None:
+            list_of_chains = list(self.chains_dict.keys())
+        else:
+            list_of_chains = chains
         # chains in structure on which to look for
         # print(f"Using chains {list_of_chains}")
         if position is None:
@@ -536,6 +539,7 @@ class MolecularStructureParser:
                              residues = None,
                              atoms = None,
                              position = None,
+                             chains = None,
                              **kwargs):
         """
         Generate target locations for labelling defined as direct labeling.
@@ -566,6 +570,7 @@ class MolecularStructureParser:
             residues,
             atoms,
             position,
+            chains
         )
         self.label_targets[label_name] = self._wrapup_label_dictionary(
             parsed, labeling_efficiency, fluorophore
