@@ -11,7 +11,7 @@ def test_simple_imaging_system():
 
 def test_get_raw_volume(experiment_7r5k_base):
     experiment_7r5k_base
-    images_volumes, beads = experiment_7r5k_base.imager.generate_imaging(
+    images_volumes, beads, img_noiseless, b_noiseless = experiment_7r5k_base.imager.generate_imaging(
         modality="SMLM", convolution_type="raw_volume", exp_time=0.001
     )
     assert images_volumes[0].shape == (200, 200, 150)
@@ -29,7 +29,7 @@ def test_image_from_field(configuration_directory, gt_structural_model_field):
     selected_mods = [
         "STED",
     ]
-    imgs, experiment_test = experiments.image_vsample(
+    imgs, imgs_noiseless, experiment_test = experiments.image_vsample(
         vsample=gt_structural_model_field,
         run_simulation=False,
         modalities=selected_mods,

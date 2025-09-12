@@ -8,7 +8,7 @@ def test_gen_virtual_sample():
 
 
 def test_image_sample():
-    images, experiment = experiments.image_vsample()
+    images,images_noiseless, experiment = experiments.image_vsample()
 
 
 def test_build_virtual_microscope():
@@ -33,7 +33,7 @@ structure_list = [
 
 @pytest.mark.parametrize("structure", structure_list)
 def test_image_sample_structures(structure):
-    images, experiment = experiments.image_vsample(
+    images,images_noiseless, experiment = experiments.image_vsample(
         structure=structure,
         labelling_efficiency=0.01,
     )
@@ -43,7 +43,7 @@ def test_image_sample_structures(structure):
 
 def test_multimodal_imaging():
     modalities = ["Widefield", "Confocal", "SMLM", "STED"]
-    images, experiment = experiments.image_vsample(multimodal=modalities)
+    images,images_noiseless, experiment = experiments.image_vsample(multimodal=modalities)
     modalityname = list(images.keys())[0]
     assert len(images[modalityname].shape) == 3
     assert len(list(images.keys())) == len(modalities)
@@ -52,7 +52,7 @@ def test_multimodal_imaging():
 def test_download_structure():
     structure9I0K = "9I0K"
     modalities = ["Widefield", "Confocal", "SMLM", "STED"]
-    images, experiment = experiments.image_vsample(
+    images,images_noiseless, experiment = experiments.image_vsample(
         structure=structure9I0K, multimodal=modalities
     )
     modalityname = list(images.keys())[0]

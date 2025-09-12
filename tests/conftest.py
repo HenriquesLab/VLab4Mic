@@ -37,7 +37,7 @@ def experiment_7r5k_base():
     fluorophore_id = "AF647"
     virtual_sample = "square1x1um_randomised"
     modalities = ["Widefield", "Confocal", "SMLM", "STED"]
-    imaging_output7r5k, exp7r5k = experiments.image_vsample(
+    imaging_output7r5k, images_noiseless, exp7r5k = experiments.image_vsample(
         structure=structure_id,
         probe_template=probe,
         virtual_sample_template=virtual_sample,
