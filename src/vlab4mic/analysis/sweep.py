@@ -399,6 +399,7 @@ def generate_global_reference_modality(
     reference_vsample_params=None,
     modality=None,
     modality_acquisition=None,
+    mod_threshold = None
 ):
     """
     Generate a global reference image for a given virtual sample and modality.
@@ -457,7 +458,8 @@ def generate_global_reference_modality(
         experiment.imager.modalities[modality]["detector"]["pixelsize"]
         * scalefactor
     )
-    mod_threshold = 1
+    if mod_threshold is None:
+        mod_threshold = 1
     reference_output_mask = reference_output_noiseless[modality] > mod_threshold
     return reference_output[modality], reference_parameters, reference_output_mask
 
