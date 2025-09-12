@@ -6,7 +6,7 @@ from skimage.feature import peak_local_max
 from scipy.stats import pearsonr
 import cv2
 
-def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, **kwargs):
+def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, ref_mask = None, query_mask = None, **kwargs):
     """
     Compare two images using specified similarity metrics.
 
@@ -43,6 +43,17 @@ def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, **kw
                 px_size_im2=kwargs['modality_pixelsize'],
                 zoom_in=zoom_in
             )
+            if ref_mask is not None and query_mask is not None:
+                print("interpolating mask")
+                print(ref_mask.shape, query_mask.shape)
+                ref_mask_interpolated, query_mask_interpolated = resize_images_interpolation(
+                    img1=ref_mask,
+                    img2=query_mask,
+                    px_size_im1=kwargs['ref_pixelsize'],
+                    px_size_im2=kwargs['modality_pixelsize'],
+                    zoom_in=zoom_in
+                )
+                print(ref_mask_interpolated.shape, query_mask_interpolated.shape)
         else:
             ref, query = resize_images_interpolation(
                 img1=ref,

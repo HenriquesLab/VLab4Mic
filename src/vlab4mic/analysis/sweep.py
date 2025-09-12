@@ -511,8 +511,10 @@ def analyse_image_sweep(
 
 def analyse_sweep_single_reference(
     img_outputs,
+    img_outputs_masks,
     img_params,
     reference_image,
+    reference_image_mask,
     reference_params,
     zoom_in=0,
     metrics_list: list = [
@@ -557,12 +559,16 @@ def analyse_sweep_single_reference(
         rep_number = 0
         mod_name = img_params[params_id][5]  # 5th item corresponds to Modality
         modality_pixelsize = img_params[params_id][6]["pixelsize"]
-        for img_r in img_outputs[params_id]:
+        for img_r, img_mask in zip(img_outputs[params_id], img_outputs_masks[params_id]):
             im1 = img_r[0]
+            im1_mask = img_mask
+            #print(f"query: {im1.shape},{im1_mask.shape}")
             im_ref = reference_image
             rep_measurement, ref_used, qry_used = metrics.img_compare(
-                im_ref,
-                im1,
+                ref = im_ref,
+                ref_mask=reference_image_mask,
+                query=im1,
+                query_mask=im1_mask,
                 modality_pixelsize=modality_pixelsize,
                 ref_pixelsize=reference_params["ref_pixelsize"],
                 force_match=True,
