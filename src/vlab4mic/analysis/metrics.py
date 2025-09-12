@@ -54,6 +54,9 @@ def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, ref_
                     zoom_in=zoom_in
                 )
                 print(ref_mask_interpolated.shape, query_mask_interpolated.shape)
+                union_mask = np.logical_or(
+                    ref_mask_interpolated,
+                    query_mask_interpolated)
         else:
             ref, query = resize_images_interpolation(
                 img1=ref,
@@ -63,12 +66,12 @@ def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, ref_
     similarity_vector = []
     for method in metric:
         if method == "ssim":
-            similarity = ssim(ref, query, data_range=query.max() - query.min())
+            similarity = ssim(ref[union_mask], query[union_mask], data_range=query[union_mask].max() - query[union_mask].min())
             similarity_vector.append(similarity)
         elif method == "pearson":
-            similarity, pval = pearsonr(ref.flatten(), query.flatten())
+            similarity, pval = pearsonr(ref[union_mask].flatten(), query[union_mask].flatten())
             similarity_vector.append(similarity)
-    return similarity_vector, ref, query, 
+    return similarity_vector, ref, query
 
 
 def _padding(img1, img2, zoom_in=0, **kwargs):
