@@ -412,6 +412,7 @@ def generate_multi_imaging_modalities(
     # there must be a default imaging parameter for all, like 10 frames for each
     image_generator.set_experiment_name(experiment_name)
     outputs = dict()
+    outputs_noiseless = dict()
     if acquisition_param is None:
         print("No acquisition parameters defined. Using default on all modalities")
         for mod in image_generator.modalities.keys():
@@ -420,10 +421,11 @@ def generate_multi_imaging_modalities(
                 savingdir = savingdir + os.sep
                 image_generator.set_writing_directory(savingdir)
             acq_params = format_modality_acquisition_params(save=write)
-            timeseries, calibration_beads = image_generator.generate_imaging(
+            timeseries, calibration_beads, timeseries_noiseless, calibration_beads_noiseless  = image_generator.generate_imaging(
                 modality=mod, **acq_params
             )
             outputs[mod] = timeseries
+            outputs_noiseless[mod] = timeseries_noiseless
     else:
         acquisition_parameters = copy.copy(acquisition_param)
         for mod, acq_param in acquisition_parameters.items():
@@ -438,8 +440,9 @@ def generate_multi_imaging_modalities(
                 image_generator.set_writing_directory(savingdir)
             for chan in acq_params["channels"]:
                 print(f"imaging channel: {chan}")
-                timeseries, calibration_beads = image_generator.generate_imaging(
+                timeseries, calibration_beads, timeseries_noiseless, calibration_beads_noiseless = image_generator.generate_imaging(
                     modality=mod, channel=chan, **acq_params
                 )
             outputs[mod] = timeseries
-    return outputs
+            outputs_noiseless[mod] = timeseries_noiseless
+    return outputs, outputs_noiseless

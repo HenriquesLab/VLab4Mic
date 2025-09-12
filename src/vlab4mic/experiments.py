@@ -846,12 +846,14 @@ class ExperimentParametrisation:
         else:
             print(f"Simulating: {modality}")
             acq_p = self.selected_mods[modality]
-            timeseries, _ = self.imager.generate_imaging(
+            timeseries_noise, beads_noise, timeseries_noiseless, beads_noiseless = self.imager.generate_imaging(
                 modality=modality, **acq_p
             )
             simulation_output = {}
-            simulation_output[modality] = timeseries
-            return simulation_output
+            simulation_output_noiseless = {}
+            simulation_output[modality] = timeseries_noise
+            simulation_output_noiseless[modality] = timeseries_noiseless
+            return simulation_output, simulation_output_noiseless
 
     def remove_probes(self):
         """
@@ -1485,6 +1487,7 @@ def image_vsample(
             )
         sample_experiment.imager.import_field(**vsample)
     imaging_output = dict()
+    imaging_output_noiseless = dict()
     if run_simulation:
-        imaging_output = sample_experiment.run_simulation()
-    return imaging_output, sample_experiment
+        imaging_output, imaging_output_noiseless = sample_experiment.run_simulation()
+    return imaging_output, imaging_output_noiseless, sample_experiment

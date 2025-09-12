@@ -282,7 +282,7 @@ def sweep_modalities_updatemod(
                                     modality_name=modality_name, **acq_pars
                                 )
                             # iteration_name = combination
-                            modality_timeseries = experiment.run_simulation(
+                            modality_timeseries, modality_timeseries_noiseless = experiment.run_simulation(
                                 name="", save=False, modality=modality_name
                             )
                             mod_comb = (
@@ -439,7 +439,7 @@ def generate_global_reference_modality(
         modality,
         modality_acquisition,
     ]
-    reference_output = experiment.run_simulation(name="", save=False)
+    reference_output, reference_output_noiseless = experiment.run_simulation(name="", save=False)
     imager_scale = experiment.imager.roi_params["scale"]
     scalefactor = np.ceil(
         imager_scale / 1e-9

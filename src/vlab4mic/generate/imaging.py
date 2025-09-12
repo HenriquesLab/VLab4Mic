@@ -678,27 +678,35 @@ class Imager:
             # wrap up the images from a single fluorophore in the channel
             output_per_fluoname[fluo] = dict(images=images, beads=beads)
         if convolution_type not in ["raw_volume", "raw_volume_activation"]:
-            timeseries, beadstack = self._add_fluorophore_signals(output_per_fluoname)
+            timeseries_noiseless, beadstack_noiseless = self._add_fluorophore_signals(output_per_fluoname)
             # # # Up to here only the photon information on arrival
             if noise:
                 print("Adding noise")
-                timeseries = self._crop_negative(timeseries)
+                timeseries_noise = np.zeros(
+                    shape = timeseries_noiseless.shape,
+                    dtype=np.float32)
+                timeseries_noise = self._crop_negative(timeseries_noiseless)
                 # print(np.max(timeseries), np.min(timeseries))
-                timeseries = self.add_detector_noise(modality, timeseries)
-                if beadstack is not None:
-                    beadstack = self.add_detector_noise(modality, beadstack)
+                timeseries_noise = self.add_detector_noise(modality, timeseries_noise)
+                if beadstack_noiseless is not None:
+                    beadstack_noise = np.zeros(
+                        shape=beadstack_noiseless.shape,
+                        dtype=np.float32)
+                    beadstack_noise = self.add_detector_noise(modality, beadstack_noiseless)
                 else:
-                    beadstack = None
+                    beadstack_noise = None
             if save:
                 # gt_positions = self.generate_ground_truth_positions(groundtruth_emitters)
-                timeseries = self._crop_negative(timeseries)
+                timeseries_noiseless = self._crop_negative(timeseries_noiseless)
                 beadstack = self._crop_negative(beadstack)
                 writing_notes_fluo = writing_notes_fluo + "_withNoise_"
 
-                self._save_timeseries_with_beads(timeseries, beadstack, writing_notes_fluo)
-            return timeseries, beadstack
+                self._save_timeseries_with_beads(timeseries_noiseless, beadstack, writing_notes_fluo)
+            return timeseries_noise, beadstack_noise, timeseries_noiseless, beadstack_noiseless
         else:
-            return images, beads
+            images_noiseless = None
+            beadstack_noiseless = None
+            return images, beads, images_noiseless, beadstack_noiseless
 
     def write_ground_truth_positions(
         self, emitters, header=None, notes="", no_emitters=False
