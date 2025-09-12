@@ -222,6 +222,7 @@ def sweep_modalities_updatemod(
     default_aqc = dict(nframes=2, exp_time=0.005)
     default_vsample = "None"
     mod_outputs = dict()
+    mod_outputs_masks = dict()
     mod_params = dict()
     if experiment is None:
         experiment = ExperimentParametrisation()
@@ -273,6 +274,7 @@ def sweep_modalities_updatemod(
                 for modality_name in experiment.selected_mods.keys():
                     for mod_pars_number, mod_pars in modality_params.items():
                         experiment.update_modality(modality_name, **mod_pars)
+                        mod_threshold = 1  # needs to be modality specific
                         for (
                             mod_acq_number,
                             acq_pars,
@@ -309,12 +311,18 @@ def sweep_modalities_updatemod(
                             if mod_comb not in mod_params.keys():
                                 mod_params[mod_comb] = mod_parameters
                                 mod_outputs[mod_comb] = []
+                            if mod_comb not in mod_outputs_masks.keys():
+                                mod_outputs_masks[mod_comb] = []
                             mod_outputs[mod_comb].append(
                                 modality_timeseries[modality_name]
                             )
+                            mask = modality_timeseries[modality_name][0] > mod_threshold
+                            mod_outputs_masks[mod_comb].append(
+                                mask
+                            )
                             mod_parameters = None
                     mod_n += 1
-    return experiment, mod_outputs, mod_params, pixelsizes
+    return experiment, mod_outputs, mod_params, pixelsizes, mod_outputs_masks
 
 
 def generate_global_reference_sample(

@@ -46,6 +46,7 @@ class sweep_generator:
     virtual_samples = None
     virtual_samples_parameters = None
     acquisition_outputs = None
+    acquisition_outputs_masks = None
     acquisition_outputs_parameters = None
     # analysis
     analysis = {}
@@ -169,6 +170,7 @@ class sweep_generator:
             self.acquisition_outputs,
             self.acquisition_outputs_parameters,
             mod_pixelsizes,
+            self.acquisition_outputs_masks
         ) = sweep.sweep_modalities_updatemod(
             experiment=self.experiment,
             vsample_outputs=self.virtual_samples,
