@@ -425,6 +425,7 @@ def generate_global_reference_modality(
     """
     if experiment is None:
         experiment = ExperimentParametrisation()
+        experiment.clear_experiment()
     if modality is None:
         modality = "Reference"
         # modality_acquisition = None
@@ -456,7 +457,9 @@ def generate_global_reference_modality(
         experiment.imager.modalities[modality]["detector"]["pixelsize"]
         * scalefactor
     )
-    return reference_output[modality], reference_parameters
+    mod_threshold = 1
+    reference_output_mask = reference_output_noiseless[modality] > mod_threshold
+    return reference_output[modality], reference_parameters, reference_output_mask
 
 
 def analyse_image_sweep(

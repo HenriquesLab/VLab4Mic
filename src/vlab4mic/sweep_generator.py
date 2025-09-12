@@ -43,6 +43,7 @@ class sweep_generator:
     reference_virtual_sample = None
     reference_virtual_sample_params = None
     reference_image = None
+    reference_image_mask = None
     virtual_samples = None
     virtual_samples_parameters = None
     acquisition_outputs = None
@@ -258,7 +259,7 @@ class sweep_generator:
                 self.generate_reference_sample()
             else:
                 self.generate_reference_sample()
-        self.reference_image, self.reference_image_parameters = (
+        self.reference_image, self.reference_image_parameters, self.reference_image_mask = (
             sweep.generate_global_reference_modality(
                 reference_vsample=self.reference_virtual_sample,
                 reference_vsample_params=self.reference_virtual_sample_params,
