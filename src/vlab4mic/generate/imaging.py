@@ -179,8 +179,9 @@ class Imager:
         field_emitters: dict,
         field_scale: float,
         plotting_params: dict,
-        reference_point,
-        field_sizes,
+        reference_point = None,
+        field_sizes = None,
+        particle_positions = None,
         **kwargs,
     ):
         """
@@ -215,6 +216,7 @@ class Imager:
         for fluoname, emitters in field_emitters.items():
             self.emitters_by_fluorophore[fluoname] = emitters * scaling_factor
         self.plotting_params = plotting_params
+        self.particle_positions = particle_positions * scaling_factor
 
     def recenter_roi(self):
         """
@@ -574,6 +576,7 @@ class Imager:
         save=False,
         noise=False,
         exp_time=0.001,
+        masks=False,
         **kwargs,
     ):
         """
@@ -598,7 +601,10 @@ class Imager:
         for fluo in fluonames:  # a channel could capture multiple fluorophores
             # print(fluo)
             writing_notes_fluo = writing_notes + str(fluo)
-            emitters = self.get_emitters_in_ROI(fluo)
+            if masks:
+                emitters = self.get_emitters_in_ROI(fluo, masks=masks)
+            else:
+                emitters = self.get_emitters_in_ROI(fluo)
             n_emitters = emitters.shape[0]
             if n_emitters < 1:
                 no_emitters = True
@@ -635,6 +641,8 @@ class Imager:
                 )
             if "convolution_type" in kwargs.keys():
                 convolution_type = kwargs["convolution_type"]
+            elif masks:
+                convolution_type = "mask"
             else:
                 convolution_type = self.modalities[modality]["psf"]["convolution_type"]
             psf_size = psf_data["psf_array"].shape
@@ -650,6 +658,15 @@ class Imager:
             )
             if convolution_type == "direct":
                 pass
+            elif convolution_type == "mask":
+                images = conv.generate_frames_volume_convolution(
+                        **field_data,
+                        **psf_data,
+                        asframes=True,
+                        as_mask=True,
+                    )
+                beads = None
+                noise = False
             elif convolution_type == "raw_volume":
                     images = conv.generate_frames_volume_convolution(
                         **field_data,
@@ -869,7 +886,7 @@ class Imager:
             downsampled_beads,
         )  # change at will if needed to get the original images
 
-    def get_emitters_in_ROI(self, fluoname: str):
+    def get_emitters_in_ROI(self, fluoname: str, masks=False):
         """
         Get emitters of a given fluorophore that are within the ROI.
 
@@ -887,7 +904,10 @@ class Imager:
         # to match the previous implementation
         # the limits must be from 0 to maxX in microns
         ranges = self.get_roi_params("ranges")
-        points = self._get_emitters_by_fluorophorename(fluoname)
+        if masks:
+            points = self.particle_positions
+        else:
+            points = self._get_emitters_by_fluorophorename(fluoname)
         # print(ranges, points)
         rangesT = np.array(ranges).T
         roi_corners = [rangesT[0].tolist(), rangesT[1].tolist()]
