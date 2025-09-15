@@ -218,7 +218,10 @@ class Imager:
             self.emitters_by_fluorophore[fluoname] = emitters * scaling_factor
         self.plotting_params = plotting_params
         self.particle_positions = particle_positions * scaling_factor
-        self.particle_size = particle_size * scaling_factor
+        if particle_size is not None:
+            self.particle_size = particle_size * scaling_factor
+        else: 
+            self.particle_size = 0
 
     def recenter_roi(self):
         """
