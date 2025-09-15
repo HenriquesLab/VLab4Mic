@@ -727,6 +727,37 @@ class Imager:
             beadstack_noiseless = None
             return images, beads, images_noiseless, beadstack_noiseless
 
+    def generate_modality_mask(self, modality=None):
+        _1, _2, vsample_binay_positions, _3 = self.generate_imaging(
+            modality=modality, 
+            masks="mask")
+        particle_positions = np.argwhere(vsample_binay_positions[0] > 0)
+        if particle_positions.shape[0] > 0:
+            psf_lateral_resolution = self.modalities["Widefield"]["psf"]["std_devs"][0]
+            pixelsize_detection = self.modalities[modality]["detector"]["pixelsize"]
+            modality_psf_width_px = int(np.ceil(pixelsize_detection*psf_lateral_resolution))
+            mask_with_psf = np.zeros(shape=vsample_binay_positions[0].shape)
+            max_x, max_y = vsample_binay_positions[0].shape
+            for i in range(particle_positions.shape[0]):
+                x, y = particle_positions[i]
+                low_x = np.floor(x - modality_psf_width_px)
+                if low_x < 0:
+                    low_x = 0
+                high_x = np.ceil(x + modality_psf_width_px)
+                if high_x > max_x:
+                    high_x = max_x
+                low_y = np.floor(y - modality_psf_width_px)
+                if low_y < 0:
+                    low_y = 0
+                high_y = np.ceil(y +  modality_psf_width_px)
+                if high_x > max_y:
+                    high_x = max_y
+                print(low_x, high_x, low_y, high_y)
+                mask_with_psf[low_x:high_x, low_y:high_y] = 1
+            return mask_with_psf
+        else:
+            return np.zeros(shape=vsample_binay_positions[0].shape)
+
     def write_ground_truth_positions(
         self, emitters, header=None, notes="", no_emitters=False
     ):
