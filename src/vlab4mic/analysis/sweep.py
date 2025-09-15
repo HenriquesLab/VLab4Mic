@@ -274,7 +274,9 @@ def sweep_modalities_updatemod(
                 for modality_name in experiment.selected_mods.keys():
                     for mod_pars_number, mod_pars in modality_params.items():
                         experiment.update_modality(modality_name, **mod_pars)
-                        mod_threshold = 1  # needs to be modality specific
+                        # calculate virtual sample mask per modality
+                        vsample_mask_per_mod = experiment.imager.generate_modality_mask(modality=modality_name)
+                        #mod_threshold = 1  # needs to be modality specific
                         for (
                             mod_acq_number,
                             acq_pars,
@@ -287,6 +289,7 @@ def sweep_modalities_updatemod(
                             modality_timeseries, modality_timeseries_noiseless = experiment.run_simulation(
                                 name="", save=False, modality=modality_name
                             )
+
                             mod_comb = (
                                 vsmpl_id
                                 + "_"
@@ -316,7 +319,8 @@ def sweep_modalities_updatemod(
                             mod_outputs[mod_comb].append(
                                 modality_timeseries[modality_name]
                             )
-                            mask = modality_timeseries[modality_name][0] > mod_threshold
+                            #mask = modality_timeseries[modality_name][0] > mod_threshold
+                            mask = vsample_mask_per_mod > 0
                             mod_outputs_masks[mod_comb].append(
                                 mask
                             )
