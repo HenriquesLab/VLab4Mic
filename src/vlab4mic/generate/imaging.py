@@ -680,6 +680,8 @@ class Imager:
         if convolution_type not in ["raw_volume", "raw_volume_activation"]:
             timeseries_noiseless, beadstack_noiseless = self._add_fluorophore_signals(output_per_fluoname)
             # # # Up to here only the photon information on arrival
+            timeseries_noise = None
+            beadstack_noise = None
             if noise:
                 print("Adding noise")
                 timeseries_noise = np.zeros(
