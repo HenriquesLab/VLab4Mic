@@ -160,6 +160,7 @@ class ExperimentParametrisation:
         self.param_settings = yaml_functions.load_yaml(param_settings_file)
         self.results = dict()
         self.create_example_experiment()
+        self.modality_noise_images = dict()
 
     def select_structure(self, structure_id="1XI5", build=True, structure_path:str = None):
         """
@@ -620,6 +621,12 @@ class ExperimentParametrisation:
         else:
             self.imager = None
             print("No modalities")
+
+    def _gen_modality_noise_images(self):
+        for modality_name in self.imager.modalities.keys():
+            self.modality_noise_images[modality_name], _beads, _im_noiseless, _b_noiseless = self.imager.generate_imaging(
+                modality=modality_name,
+                noise=True, exp_time=0)
 
     def generators_status(self, generator_name):
         """
