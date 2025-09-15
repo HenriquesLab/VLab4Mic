@@ -182,6 +182,7 @@ class Imager:
         reference_point = None,
         field_sizes = None,
         particle_positions = None,
+        particle_size = None,
         **kwargs,
     ):
         """
@@ -217,6 +218,7 @@ class Imager:
             self.emitters_by_fluorophore[fluoname] = emitters * scaling_factor
         self.plotting_params = plotting_params
         self.particle_positions = particle_positions * scaling_factor
+        self.particle_size = particle_size * scaling_factor
 
     def recenter_roi(self):
         """
@@ -734,8 +736,11 @@ class Imager:
         particle_positions = np.argwhere(vsample_binay_positions[0] > 0)
         if particle_positions.shape[0] > 0:
             psf_lateral_resolution = self.modalities["Widefield"]["psf"]["std_devs"][0]
-            pixelsize_detection = self.modalities[modality]["detector"]["pixelsize"]
-            modality_psf_width_px = int(np.ceil(pixelsize_detection*psf_lateral_resolution))
+            pixelsize_detection = self.modalities[modality]["detector"]["pixelsize"] * 1000
+            particle_size = self.particle_size * 100
+            particle_and_width = (psf_lateral_resolution + particle_size) * 10
+            modality_psf_width_px = int(np.ceil(particle_and_width/pixelsize_detection))
+            print(f"width: {modality_psf_width_px}, p_size: {particle_and_width}, psf_lateral_resolution: {psf_lateral_resolution}, {pixelsize_detection}")
             mask_with_psf = np.zeros(shape=vsample_binay_positions[0].shape)
             max_x, max_y = vsample_binay_positions[0].shape
             for i in range(particle_positions.shape[0]):
