@@ -336,6 +336,7 @@ def generate_global_reference_sample(
     probe_parameters=None,
     virtual_sample=None,
     structure_is_path=False,
+    **kwargs
 ):
     """
     Generate a global reference virtual sample.
@@ -389,6 +390,7 @@ def generate_global_reference_sample(
     # experiment.structure_label = probe
     # experiment.probe_parameters[probe] = probe_parameters
     experiment._build_particle(keep=True)
+    experiment.set_virtualsample_params(**kwargs)
     # combination += str(vsample_n)
     refernece_parameters = [structure, probe, probe_parameters, virtual_sample]
     reference_vsample = experiment._build_coordinate_field(

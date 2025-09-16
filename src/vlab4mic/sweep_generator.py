@@ -213,6 +213,9 @@ class sweep_generator:
             self.reference_probe = reference_probe
         if reference_probe_parameters is not None:
             self.reference_probe_parameters = reference_probe_parameters
+        self.reference_parameters_unsorted = dict()
+        for key, value in kwargs.items():
+            self.reference_parameters_unsorted[key] = value
 
     def generate_reference_sample(self):
         """
@@ -229,6 +232,7 @@ class sweep_generator:
                     probe=self.reference_probe,
                     probe_parameters=self.reference_probe_parameters,
                     structure_is_path=True,
+                    **self.reference_parameters_unsorted
                 )
             )
         else:
@@ -237,6 +241,7 @@ class sweep_generator:
                     structure=self.reference_structure,
                     probe=self.reference_probe,
                     probe_parameters=self.reference_probe_parameters,
+                    **self.reference_parameters_unsorted
                 )
             )
 
