@@ -738,7 +738,7 @@ class Imager:
             masks="mask")
         particle_positions = np.argwhere(vsample_binay_positions[0] > 0)
         if particle_positions.shape[0] > 0:
-            psf_lateral_resolution = self.modalities["Widefield"]["psf"]["std_devs"][0]
+            psf_lateral_resolution = self.modalities[modality]["psf"]["std_devs"][0]
             pixelsize_detection = self.modalities[modality]["detector"]["pixelsize"] * 1000
             particle_size = self.particle_size * 100
             particle_and_width = (psf_lateral_resolution + particle_size) * 10
