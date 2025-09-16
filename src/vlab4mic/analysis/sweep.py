@@ -462,9 +462,9 @@ def generate_global_reference_modality(
         experiment.imager.modalities[modality]["detector"]["pixelsize"]
         * scalefactor
     )
-    if mod_threshold is None:
-        mod_threshold = 1
-    reference_output_mask = reference_output_noiseless[modality] > mod_threshold
+    #if mod_threshold is None:
+    #    mod_threshold = 1
+    reference_output_mask = experiment.imager.generate_modality_mask(modality="Reference")
     return reference_output[modality], reference_parameters, reference_output_mask
 
 
