@@ -763,7 +763,7 @@ def create_param_combinations(**kwargs):
 
 
 def pivot_dataframes_byCategory(
-    dataframe, category_name, param1, param2, metric_name, **kwargs
+    dataframe, category_name, param1, param2, metric_name, pre_filter_dt=False, filter_dictionary:dict = None, **kwargs
 ):
     """
     Pivot a DataFrame by category and two parameters, summarizing a metric.
@@ -791,7 +791,12 @@ def pivot_dataframes_byCategory(
         Dictionary with category, param1, and param2 names.
     """
     df_categories = dict()
-    for category, group in dataframe.groupby(category_name):
+    dataframe_copy = copy.deepcopy(dataframe)
+    if pre_filter_dt and filter_dictionary is not None:
+        for parameter_name, parameter_value in filter_dictionary.items():
+            dataframe_copy = dataframe_copy[dataframe_copy[parameter_name] == parameter_value]
+        #print(dataframe_copy)
+    for category, group in dataframe_copy.groupby(category_name):
         summarised_group = None
         summarised_group = (
             group.groupby([param1, param2])

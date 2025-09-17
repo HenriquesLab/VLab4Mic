@@ -586,6 +586,7 @@ class sweep_generator:
                         plot_type=plot_type,
                         return_figure=True,
                         metric_name=metric_name,
+                        filter_dictionary=None,
                     )
         if save:
             self.save_analysis(
@@ -642,6 +643,8 @@ class sweep_generator:
         plot_type=None,
         metric_name=None,
         decimals: int = None,
+        return_figure=True,
+        filter_dictionary=None,
         **kwargs,
     ):
         """
@@ -682,9 +685,11 @@ class sweep_generator:
         if plot_type == "heatmaps":
             metric_plot = self._gen_heatmaps(
                 metric_name=metric_name,
-                return_figure=True,
+                return_figure=return_figure,
                 decimals=decimals,
+                filter_dictionary=filter_dictionary,
                 **plot_params,
+                **kwargs
             )
             self.analysis["plots"][plot_type][metric_name] = metric_plot
         elif plot_type == "lineplots":
@@ -692,7 +697,10 @@ class sweep_generator:
                 data=data,
                 metric_name=metric_name,
                 decimals=decimals,
+                return_figure=return_figure,
+                filter_dictionary=filter_dictionary,
                 **plot_params,
+                **kwargs
             )
             self.analysis["plots"][plot_type][metric_name] = metric_plot
 
@@ -704,6 +712,7 @@ class sweep_generator:
         param2: str = None,
         return_figure=False,
         decimals="%.4f",
+        filter_dictionary=None,
         **kwargs,
     ):
         """
@@ -745,12 +754,18 @@ class sweep_generator:
             df[param1] = df[param1].round(3)
         if is_numeric_dtype(df[param2]):
             df[param2] = df[param2].round(3)
+        pre_filter_dt = True
+        if filter_dictionary is not None:
+             pre_filter_dt = True
         df_categories, titles = sweep.pivot_dataframes_byCategory(
             dataframe=df,
             category_name=category,
             param1=param1,
             param2=param2,
             metric_name=metric_name,
+            pre_filter_dt=pre_filter_dt,
+            filter_dictionary=filter_dictionary,
+            **kwargs
         )
         plot = _plots.sns_heatmap_pivots(
             df_categories,
@@ -759,6 +774,7 @@ class sweep_generator:
             return_figure=return_figure,
             metric_name=metric_name,
             decimals=decimals,
+            **kwargs
         )
         return plot
 
@@ -774,6 +790,8 @@ class sweep_generator:
         errorbar="ci",
         figsize=[10, 10],
         decimals="%.4f",
+        return_figure=True,
+        filter_dictionary=None,
         **kwargs,
     ):
         """
@@ -830,6 +848,7 @@ class sweep_generator:
             estimator=estimator,
             errorbar=errorbar,
             ax=axes,
+            **kwargs
         )
         axes.yaxis.set_major_formatter(FormatStrFormatter(decimals))
         axes.xaxis.set_major_formatter(FormatStrFormatter(decimals))
