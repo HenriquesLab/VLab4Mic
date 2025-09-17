@@ -12,7 +12,9 @@ def sns_heatmap_pivots(
     cmaps_range="same",
     figsize=[12, 10],
     return_figure=False,
+    metric_name=None,
     decimals="%.4f",
+    fillna = True,
     **kwargs,
 ):
     conditions = list(df_pivots.keys())
@@ -30,12 +32,16 @@ def sns_heatmap_pivots(
         hist_params = dict()
     if conditions_cmaps is None:
         conditions_cmaps = ["mako"] * nconditions
-    if "metric_name" in kwargs.keys():
-        metric_name = kwargs["metric_name"]
+    if metric_name is not None:
+        metric_n = metric_name
     else:
-        metric_name = "Metric"
+        metric_n = "Metric"
     for n, cond in enumerate(conditions):
-        # print(cond, n)
+        if fillna:
+            mask = df_pivots[cond][0].isna()
+            df_pivots[cond][0][mask] = 0.0
+            print("Na as 0")
+            print(df_pivots[cond][0])
         # mean
         sns.heatmap(
             df_pivots[cond][0],
@@ -46,8 +52,9 @@ def sns_heatmap_pivots(
             # xticklabels=df_pivots[cond][0].columns.values.round(3),
             # yticklabels=df_pivots[cond][0].index.values.round(3),
             **hist_params,
+            **kwargs
         )
-        axes[n, 0].set_title(titles["category"] + ": " + cond + ". Mean " + metric_name)
+        axes[n, 0].set_title(titles["category"] + ": " + cond + ". Mean " + metric_n)
         #axes[n, 0].yaxis.set_major_formatter(FormatStrFormatter(decimals))
         #axes[n, 0].xaxis.set_major_formatter(FormatStrFormatter(decimals))
         # std
@@ -59,9 +66,10 @@ def sns_heatmap_pivots(
             cmap=conditions_cmaps[n],
             # xticklabels=df_pivots[cond][1].columns.values.round(3),
             # yticklabels=df_pivots[cond][1].index.values.round(3),
+            **kwargs
         )
         axes[n, 1].set_title(
-            titles["category"] + ": " + cond + ". Std Dev " + metric_name
+            titles["category"] + ": " + cond + ". Std Dev " + metric_n
         )
         #axes[n, 1].yaxis.set_major_formatter(FormatStrFormatter(decimals))
         #axes[n, 1].xaxis.set_major_formatter(FormatStrFormatter(decimals))
