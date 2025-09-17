@@ -1069,6 +1069,7 @@ class ExperimentParametrisation:
         random_orientations: bool = None,
         random_placing: bool = None,
         minimal_distance: float = None,
+        update_mode: bool = False,
         **kwargs,
     ):
         """
@@ -1102,12 +1103,15 @@ class ExperimentParametrisation:
             ]
         except:
             particle_minimal_distance = None
-        virtual_sample_template = os.path.join(
-            self.configuration_path,
-            "virtualsample",
-            virtualsample_template + ".yaml",
-        )
-        vsample_configuration = load_yaml(virtual_sample_template)
+        if update_mode:
+            vsample_configuration = copy.deepcopy(self.virtualsample_params)
+        else:
+            virtual_sample_template = os.path.join(
+                self.configuration_path,
+                "virtualsample",
+                virtualsample_template + ".yaml",
+            )
+            vsample_configuration = load_yaml(virtual_sample_template)
         if sample_dimensions is not None:
             vsample_configuration["sample_dimensions"] = sample_dimensions
         if number_of_particles is not None:
