@@ -138,7 +138,7 @@ def sweep_vasmples(
                     for vsample_n, vsample_pars in virtual_samples.items():
                         _exported_field = None
                         # combination += str(vsample_n)
-                        experiment.set_virtualsample_params(**vsample_pars)
+                        experiment.set_virtualsample_params(update_mode=True, **vsample_pars)
                         # _exported_field = experiment._build_coordinate_field(
                         #    keep=False, use_self_particle=True, **vsample_pars
                         # )
@@ -504,7 +504,7 @@ def analyse_image_sweep(
         for img_r in img_outputs[params_id]:
             im1 = img_r[0]
             im_ref = reference[0]
-            rep_measurement, ref_used, qry_used = metrics.img_compare(
+            rep_measurement, ref_used, qry_used_, masks_used = metrics.img_compare(
                 im_ref, im1, **analysis_case_params[mod_name]
             )
             measurement_vectors.append(
@@ -570,7 +570,7 @@ def analyse_sweep_single_reference(
             im1_mask = img_mask
             #print(f"query: {im1.shape},{im1_mask.shape}")
             im_ref = reference_image
-            rep_measurement, ref_used, qry_used = metrics.img_compare(
+            rep_measurement, ref_used, qry_used, masks_used = metrics.img_compare(
                 ref = im_ref,
                 ref_mask=reference_image_mask,
                 query=im1,
@@ -584,7 +584,7 @@ def analyse_sweep_single_reference(
             r_vector = list([params_id, rep_number]) + list([*rep_measurement])
             measurement_vectors.append(r_vector)
             # measurement_vectors = measurement_vectors + rep_measurement[0]
-            inputs[params_id][rep_number] = [qry_used, im1, ref_used]
+            inputs[params_id][rep_number] = [qry_used, im1, ref_used, masks_used]
             rep_number += 1
     return measurement_vectors, inputs, metrics_list
 
