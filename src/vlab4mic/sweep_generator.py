@@ -96,6 +96,7 @@ class sweep_generator:
         # to ensure all parameter groups (including particle_defect) are available
         self.param_settings = self.parameter_settings
         self.use_experiment_structure = False
+        self.reference_parameters_unsorted = dict()
         print("vLab4mic sweep generator initialised")
 
     def set_number_of_repetitions(self, repeats: int = 3):
@@ -213,7 +214,6 @@ class sweep_generator:
             self.reference_probe = reference_probe
         if reference_probe_parameters is not None:
             self.reference_probe_parameters = reference_probe_parameters
-        self.reference_parameters_unsorted = dict()
         for key, value in kwargs.items():
             self.reference_parameters_unsorted[key] = value
 

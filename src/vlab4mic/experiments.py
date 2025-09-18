@@ -1069,7 +1069,7 @@ class ExperimentParametrisation:
         random_orientations: bool = None,
         random_placing: bool = None,
         minimal_distance: float = None,
-        update_mode: bool = False,
+        update_mode: bool = True,
         **kwargs,
     ):
         """
@@ -1104,31 +1104,31 @@ class ExperimentParametrisation:
         except:
             particle_minimal_distance = None
         if update_mode:
-            vsample_configuration = copy.deepcopy(self.virtualsample_params)
+            pass
         else:
             virtual_sample_template = os.path.join(
                 self.configuration_path,
                 "virtualsample",
                 virtualsample_template + ".yaml",
             )
-            vsample_configuration = load_yaml(virtual_sample_template)
+            self.virtualsample_params = load_yaml(virtual_sample_template)
         if sample_dimensions is not None:
-            vsample_configuration["sample_dimensions"] = sample_dimensions
+            self.virtualsample_params["sample_dimensions"] = sample_dimensions
         if number_of_particles is not None:
-            vsample_configuration["number_of_particles"] = number_of_particles
+            self.virtualsample_params["number_of_particles"] = number_of_particles
         if particle_positions is not None:
-            vsample_configuration["relative_positions"] = particle_positions
+            self.virtualsample_params["relative_positions"] = particle_positions
         if random_orientations is not None:
-            vsample_configuration["random_orientations"] = random_orientations
+            self.virtualsample_params["random_orientations"] = random_orientations
         if random_placing is not None:
-            vsample_configuration["random_placing"] = random_placing
+            self.virtualsample_params["random_placing"] = random_placing
         if minimal_distance is not None:
-            vsample_configuration["minimal_distance"] = minimal_distance
+            self.virtualsample_params["minimal_distance"] = minimal_distance
         else:
-            vsample_configuration["minimal_distance"] = (
+            self.virtualsample_params["minimal_distance"] = (
                 particle_minimal_distance
             )
-        self.virtualsample_params = vsample_configuration
+
 
     def use_image_for_positioning(
         self,
