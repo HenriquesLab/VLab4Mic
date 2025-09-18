@@ -214,10 +214,12 @@ class sweep_generator:
             self.reference_probe = reference_probe
         if reference_probe_parameters is not None:
             self.reference_probe_parameters = reference_probe_parameters
+        if "relative_positions" in kwargs.keys():
+            self.reference_parameters_unsorted["particle_positions"] = kwargs.pop("relative_positions")
         for key, value in kwargs.items():
             self.reference_parameters_unsorted[key] = value
 
-    def generate_reference_sample(self):
+    def generate_reference_sample(self, use_experiment_probe=True, use_experiment_vsample=True):
         """
         Generate the reference virtual sample and its parameters.
 
@@ -226,24 +228,28 @@ class sweep_generator:
         None
         """
         if self.use_experiment_structure:
-            self.reference_virtual_sample, self.reference_virtual_sample_params = (
-                sweep.generate_global_reference_sample(
-                    structure=self.reference_structure,
-                    probe=self.reference_probe,
-                    probe_parameters=self.reference_probe_parameters,
-                    structure_is_path=True,
-                    **self.reference_parameters_unsorted
-                )
-            )
+            structure_is_path = True
+        else: 
+            structure_is_path = False
+        if use_experiment_probe:
+            reference_probe = list(self.probes)[0]
         else:
-            self.reference_virtual_sample, self.reference_virtual_sample_params = (
-                sweep.generate_global_reference_sample(
-                    structure=self.reference_structure,
-                    probe=self.reference_probe,
-                    probe_parameters=self.reference_probe_parameters,
-                    **self.reference_parameters_unsorted
-                )
+            reference_probe = None
+        if use_experiment_vsample:
+            reference_sample_params = copy.copy(self.experiment.virtualsample_params)
+        self.set_reference_parameters(
+            reference_probe=reference_probe,
+            **reference_sample_params
             )
+        self.reference_virtual_sample, self.reference_virtual_sample_params = (
+            sweep.generate_global_reference_sample(
+                structure=self.reference_structure,
+                probe=self.reference_probe,
+                probe_parameters=self.reference_probe_parameters,
+                structure_is_path=structure_is_path,
+                **self.reference_parameters_unsorted
+            )
+        )
 
     def generate_reference_image(self, override=False):
         """
