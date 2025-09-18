@@ -248,7 +248,8 @@ def sweep_modalities_updatemod(
         modality_acq_prams = {}
         modality_acq_prams[0] = None
     experiment._build_imager(use_local_field=False, prints=False)
-    experiment._gen_modality_noise_images()
+    with io.capture_output() as captured:
+        experiment._gen_modality_noise_images()
     pixelsizes = dict()
     imager_scale = experiment.imager.roi_params["scale"]
     scalefactor = np.ceil(imager_scale / 1e-9)  # in nanometers
