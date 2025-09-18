@@ -45,8 +45,6 @@ def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, ref_
             )
             masks_used = dict()
             if ref_mask is not None and query_mask is not None:
-                print("interpolating mask")
-                print(ref_mask.shape, query_mask.shape)
                 ref_mask_interpolated, query_mask_interpolated = resize_images_interpolation(
                     img1=ref_mask,
                     img2=query_mask,
@@ -55,7 +53,6 @@ def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, ref_
                     zoom_in=zoom_in,
                     interpolation_order=0 # becauese they are masks
                 )
-                print(ref_mask_interpolated.shape, query_mask_interpolated.shape)
                 union_mask = np.logical_or(
                     ref_mask_interpolated,
                     query_mask_interpolated)
