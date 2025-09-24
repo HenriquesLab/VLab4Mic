@@ -37,6 +37,7 @@ class Field:
         ).reshape((1, 3))
         self.molecules_params["absolute_positions"] = None
         self.molecules_params["orientations"] = None
+        self.molecules_params["rotations"] = None
         self.molecules_params["minimal_distance"] = None
 
         self.emitters_per_fluorophore = {}  # this can be exported
@@ -320,6 +321,18 @@ class Field:
             orientations.append(np.array(sampl.sample_spherical_normalised(1, ndim=3)))
         self.set_molecule_param("orientations", orientations)
 
+    def initialise_random_rotations(self, values: list = None):
+        """
+        Generate random rotations around central axis for all molecules in the field.
+        """
+        if values is None:
+            nrotations = self.get_molecule_param("nMolecules")
+            rng = np.random.default_rng()
+            rotations = rng.integers(360, size=nrotations)
+            self.set_molecule_param("rotations", rotations)
+        else:
+            self.set_molecule_param("rotations", values)
+
     def generate_global_orientation(self, global_orientation=None):
         """
         Set a global orientation for all molecules.
@@ -466,6 +479,8 @@ class Field:
         self.molecules = molecules
         if self.random_orientations:
             self.generate_random_orientations()
+        if self.random_rotations:
+            self.generate_random_rotations()
             # self.relabel_molecules()
         self.relabel_molecules()
 
