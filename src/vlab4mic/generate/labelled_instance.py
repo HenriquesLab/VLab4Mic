@@ -698,7 +698,7 @@ class LabeledInstance:
                         self.emitters[trgt] = reoriented
                         self.axis["direction"] = nori
 
-    def transform_rotate_around_axis(self, degree: float):
+    def transform_rotate_around_axis(self, degree: float = 0.0):
         theta_radians = degree * (math.pi / 180)
 
 
