@@ -160,6 +160,7 @@ class ExperimentParametrisation:
         self.param_settings = yaml_functions.load_yaml(param_settings_file)
         self.results = dict()
         self.create_example_experiment()
+        self.modality_noise_images = dict()
 
     def select_structure(self, structure_id="1XI5", build=True, structure_path:str = None):
         """
@@ -621,6 +622,12 @@ class ExperimentParametrisation:
             self.imager = None
             print("No modalities")
 
+    def _gen_modality_noise_images(self):
+        for modality_name in self.imager.modalities.keys():
+            self.modality_noise_images[modality_name], _beads, _im_noiseless, _b_noiseless = self.imager.generate_imaging(
+                modality=modality_name,
+                noise=True, exp_time=0)
+
     def generators_status(self, generator_name):
         """
         Return the status of the specified generator.
@@ -846,12 +853,14 @@ class ExperimentParametrisation:
         else:
             print(f"Simulating: {modality}")
             acq_p = self.selected_mods[modality]
-            timeseries, _ = self.imager.generate_imaging(
+            timeseries_noise, beads_noise, timeseries_noiseless, beads_noiseless = self.imager.generate_imaging(
                 modality=modality, **acq_p
             )
             simulation_output = {}
-            simulation_output[modality] = timeseries
-            return simulation_output
+            simulation_output_noiseless = {}
+            simulation_output[modality] = timeseries_noise
+            simulation_output_noiseless[modality] = timeseries_noiseless
+            return simulation_output, simulation_output_noiseless
 
     def remove_probes(self):
         """
@@ -1060,6 +1069,7 @@ class ExperimentParametrisation:
         random_orientations: bool = None,
         random_placing: bool = None,
         minimal_distance: float = None,
+        update_mode: bool = True,
         **kwargs,
     ):
         """
@@ -1093,29 +1103,32 @@ class ExperimentParametrisation:
             ]
         except:
             particle_minimal_distance = None
-        virtual_sample_template = os.path.join(
-            self.configuration_path,
-            "virtualsample",
-            virtualsample_template + ".yaml",
-        )
-        vsample_configuration = load_yaml(virtual_sample_template)
-        if sample_dimensions is not None:
-            vsample_configuration["sample_dimensions"] = sample_dimensions
-        if number_of_particles is not None:
-            vsample_configuration["number_of_particles"] = number_of_particles
-        if particle_positions is not None:
-            vsample_configuration["relative_positions"] = particle_positions
-        if random_orientations is not None:
-            vsample_configuration["random_orientations"] = random_orientations
-        if random_placing is not None:
-            vsample_configuration["random_placing"] = random_placing
-        if minimal_distance is not None:
-            vsample_configuration["minimal_distance"] = minimal_distance
+        if update_mode:
+            pass
         else:
-            vsample_configuration["minimal_distance"] = (
+            virtual_sample_template = os.path.join(
+                self.configuration_path,
+                "virtualsample",
+                virtualsample_template + ".yaml",
+            )
+            self.virtualsample_params = load_yaml(virtual_sample_template)
+        if sample_dimensions is not None:
+            self.virtualsample_params["sample_dimensions"] = sample_dimensions
+        if number_of_particles is not None:
+            self.virtualsample_params["number_of_particles"] = number_of_particles
+        if particle_positions is not None:
+            self.virtualsample_params["relative_positions"] = particle_positions
+        if random_orientations is not None:
+            self.virtualsample_params["random_orientations"] = random_orientations
+        if random_placing is not None:
+            self.virtualsample_params["random_placing"] = random_placing
+        if minimal_distance is not None:
+            self.virtualsample_params["minimal_distance"] = minimal_distance
+        else:
+            self.virtualsample_params["minimal_distance"] = (
                 particle_minimal_distance
             )
-        self.virtualsample_params = vsample_configuration
+
 
     def use_image_for_positioning(
         self,
@@ -1485,6 +1498,7 @@ def image_vsample(
             )
         sample_experiment.imager.import_field(**vsample)
     imaging_output = dict()
+    imaging_output_noiseless = dict()
     if run_simulation:
-        imaging_output = sample_experiment.run_simulation()
-    return imaging_output, sample_experiment
+        imaging_output, imaging_output_noiseless = sample_experiment.run_simulation()
+    return imaging_output, imaging_output_noiseless, sample_experiment

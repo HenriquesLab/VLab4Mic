@@ -78,7 +78,8 @@ def frame_by_volume_convolution(
     zfocus_slice,
     projection_depth=2,
     activation_only=False,
-    asframe=True
+    asframe=True,
+    as_mask=False,
 ):
     """
     Generate a 2D image from the  3D field of active emitters
@@ -94,6 +95,9 @@ def frame_by_volume_convolution(
     intensity_voxel = voxelize_active_fluorophores_withrange(
         coordinates, photon_vector, ranges, bin_pixelsize=bin_size
     )
+    if as_mask:
+        frame = np.sum(np.array(intensity_voxel),axis=2)
+        return frame
     if activation_only:
         return intensity_voxel
     if np.sum(photon_vector) > 0:
@@ -137,6 +141,7 @@ def generate_frames_volume_convolution(
     asframes=True,
     activation_only=False,
     psf_projection_depth=1,
+    as_mask=False,
     **kwargs,
 ):
     """
@@ -169,6 +174,7 @@ def generate_frames_volume_convolution(
                 psf_array,
                 psf_focus_slice,
                 projection_depth=psf_projection_depth,
+                as_mask=as_mask
             )
             cframes.append(frame_n)
 

@@ -179,8 +179,10 @@ class Imager:
         field_emitters: dict,
         field_scale: float,
         plotting_params: dict,
-        reference_point,
-        field_sizes,
+        reference_point = None,
+        field_sizes = None,
+        particle_positions = None,
+        particle_size = None,
         **kwargs,
     ):
         """
@@ -215,6 +217,11 @@ class Imager:
         for fluoname, emitters in field_emitters.items():
             self.emitters_by_fluorophore[fluoname] = emitters * scaling_factor
         self.plotting_params = plotting_params
+        self.particle_positions = particle_positions * scaling_factor
+        if particle_size is not None:
+            self.particle_size = particle_size * scaling_factor
+        else: 
+            self.particle_size = 0
 
     def recenter_roi(self):
         """
@@ -574,6 +581,7 @@ class Imager:
         save=False,
         noise=False,
         exp_time=0.001,
+        masks=False,
         **kwargs,
     ):
         """
@@ -598,7 +606,10 @@ class Imager:
         for fluo in fluonames:  # a channel could capture multiple fluorophores
             # print(fluo)
             writing_notes_fluo = writing_notes + str(fluo)
-            emitters = self.get_emitters_in_ROI(fluo)
+            if masks:
+                emitters = self.get_emitters_in_ROI(fluo, masks=masks)
+            else:
+                emitters = self.get_emitters_in_ROI(fluo)
             n_emitters = emitters.shape[0]
             if n_emitters < 1:
                 no_emitters = True
@@ -635,6 +646,8 @@ class Imager:
                 )
             if "convolution_type" in kwargs.keys():
                 convolution_type = kwargs["convolution_type"]
+            elif masks:
+                convolution_type = "mask"
             else:
                 convolution_type = self.modalities[modality]["psf"]["convolution_type"]
             psf_size = psf_data["psf_array"].shape
@@ -650,6 +663,15 @@ class Imager:
             )
             if convolution_type == "direct":
                 pass
+            elif convolution_type == "mask":
+                images = conv.generate_frames_volume_convolution(
+                        **field_data,
+                        **psf_data,
+                        asframes=True,
+                        as_mask=True,
+                    )
+                beads = None
+                noise = False
             elif convolution_type == "raw_volume":
                     images = conv.generate_frames_volume_convolution(
                         **field_data,
@@ -678,27 +700,71 @@ class Imager:
             # wrap up the images from a single fluorophore in the channel
             output_per_fluoname[fluo] = dict(images=images, beads=beads)
         if convolution_type not in ["raw_volume", "raw_volume_activation"]:
-            timeseries, beadstack = self._add_fluorophore_signals(output_per_fluoname)
+            timeseries_noiseless, beadstack_noiseless = self._add_fluorophore_signals(output_per_fluoname)
             # # # Up to here only the photon information on arrival
+            timeseries_noise = None
+            beadstack_noise = None
             if noise:
                 print("Adding noise")
-                timeseries = self._crop_negative(timeseries)
+                timeseries_noise = np.zeros(
+                    shape = timeseries_noiseless.shape,
+                    dtype=np.float32)
+                timeseries_noise = self._crop_negative(timeseries_noiseless)
                 # print(np.max(timeseries), np.min(timeseries))
-                timeseries = self.add_detector_noise(modality, timeseries)
-                if beadstack is not None:
-                    beadstack = self.add_detector_noise(modality, beadstack)
+                timeseries_noise = self.add_detector_noise(modality, timeseries_noise)
+                if beadstack_noiseless is not None:
+                    beadstack_noise = np.zeros(
+                        shape=beadstack_noiseless.shape,
+                        dtype=np.float32)
+                    beadstack_noise = self.add_detector_noise(modality, beadstack_noiseless)
                 else:
-                    beadstack = None
+                    beadstack_noise = None
             if save:
                 # gt_positions = self.generate_ground_truth_positions(groundtruth_emitters)
-                timeseries = self._crop_negative(timeseries)
+                timeseries_noiseless = self._crop_negative(timeseries_noiseless)
                 beadstack = self._crop_negative(beadstack)
                 writing_notes_fluo = writing_notes_fluo + "_withNoise_"
 
-                self._save_timeseries_with_beads(timeseries, beadstack, writing_notes_fluo)
-            return timeseries, beadstack
+                self._save_timeseries_with_beads(timeseries_noiseless, beadstack, writing_notes_fluo)
+            return timeseries_noise, beadstack_noise, timeseries_noiseless, beadstack_noiseless
         else:
-            return images, beads
+            images_noiseless = None
+            beadstack_noiseless = None
+            return images, beads, images_noiseless, beadstack_noiseless
+
+    def generate_modality_mask(self, modality=None):
+        _1, _2, vsample_binay_positions, _3 = self.generate_imaging(
+            modality=modality, 
+            masks="mask")
+        particle_positions = np.argwhere(vsample_binay_positions[0] > 0)
+        if particle_positions.shape[0] > 0:
+            psf_lateral_resolution = self.modalities[modality]["psf"]["std_devs"][0]
+            pixelsize_detection = self.modalities[modality]["detector"]["pixelsize"] * 1000
+            particle_size = self.particle_size * 100
+            particle_and_width = (psf_lateral_resolution + particle_size) * 10
+            modality_psf_width_px = int(np.ceil(particle_and_width/pixelsize_detection))
+            print(f"width: {modality_psf_width_px}, p_size: {particle_and_width}, psf_lateral_resolution: {psf_lateral_resolution}, {pixelsize_detection}")
+            mask_with_psf = np.zeros(shape=vsample_binay_positions[0].shape)
+            max_x, max_y = vsample_binay_positions[0].shape
+            for i in range(particle_positions.shape[0]):
+                x, y = particle_positions[i]
+                low_x = np.floor(x - modality_psf_width_px)
+                if low_x < 0:
+                    low_x = 0
+                high_x = np.ceil(x + modality_psf_width_px)
+                if high_x > max_x:
+                    high_x = max_x
+                low_y = np.floor(y - modality_psf_width_px)
+                if low_y < 0:
+                    low_y = 0
+                high_y = np.ceil(y +  modality_psf_width_px)
+                if high_x > max_y:
+                    high_x = max_y
+                print(low_x, high_x, low_y, high_y)
+                mask_with_psf[low_x:high_x, low_y:high_y] = 1
+            return mask_with_psf
+        else:
+            return np.zeros(shape=vsample_binay_positions[0].shape)
 
     def write_ground_truth_positions(
         self, emitters, header=None, notes="", no_emitters=False
@@ -859,7 +925,7 @@ class Imager:
             downsampled_beads,
         )  # change at will if needed to get the original images
 
-    def get_emitters_in_ROI(self, fluoname: str):
+    def get_emitters_in_ROI(self, fluoname: str, masks=False):
         """
         Get emitters of a given fluorophore that are within the ROI.
 
@@ -877,7 +943,10 @@ class Imager:
         # to match the previous implementation
         # the limits must be from 0 to maxX in microns
         ranges = self.get_roi_params("ranges")
-        points = self._get_emitters_by_fluorophorename(fluoname)
+        if masks:
+            points = self.particle_positions
+        else:
+            points = self._get_emitters_by_fluorophorename(fluoname)
         # print(ranges, points)
         rangesT = np.array(ranges).T
         roi_corners = [rangesT[0].tolist(), rangesT[1].tolist()]

@@ -34,7 +34,7 @@ format:
 	pre-commit run ruff-format --all-files
 
 pytest:
-	pytest --cov=supramolsim
+	pytest --cov=vlab4mic
 
 mypy:
 	mypy --ignore-missing-imports src
@@ -44,7 +44,7 @@ mypy-types:
 
 docs:
 	rm -rf docs
-	pdoc src/supramolsim -o docs
+	pdoc src/vlab4mic -o docs
 
 download-structures:
 	download-structures

@@ -6,7 +6,7 @@ from skimage.feature import peak_local_max
 from scipy.stats import pearsonr
 import cv2
 
-def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, **kwargs):
+def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, ref_mask = None, query_mask = None, **kwargs):
     """
     Compare two images using specified similarity metrics.
 
@@ -43,6 +43,22 @@ def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, **kw
                 px_size_im2=kwargs['modality_pixelsize'],
                 zoom_in=zoom_in
             )
+            masks_used = dict()
+            if ref_mask is not None and query_mask is not None:
+                ref_mask_interpolated, query_mask_interpolated = resize_images_interpolation(
+                    img1=ref_mask,
+                    img2=query_mask,
+                    px_size_im1=kwargs['ref_pixelsize'],
+                    px_size_im2=kwargs['modality_pixelsize'],
+                    zoom_in=zoom_in,
+                    interpolation_order=0 # becauese they are masks
+                )
+                union_mask = np.logical_or(
+                    ref_mask_interpolated,
+                    query_mask_interpolated)
+                masks_used["reference_mask"] = ref_mask_interpolated
+                masks_used["query_mask"] = query_mask
+                masks_used["union_mask"] = union_mask
         else:
             ref, query = resize_images_interpolation(
                 img1=ref,
@@ -50,14 +66,15 @@ def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, **kw
                 zoom_in=zoom_in
             )
     similarity_vector = []
+    
     for method in metric:
         if method == "ssim":
-            similarity = ssim(ref, query, data_range=query.max() - query.min())
+            similarity = ssim(ref[union_mask], query[union_mask], data_range=query[union_mask].max() - query[union_mask].min())
             similarity_vector.append(similarity)
         elif method == "pearson":
-            similarity, pval = pearsonr(ref.flatten(), query.flatten())
+            similarity, pval = pearsonr(ref[union_mask].flatten(), query[union_mask].flatten())
             similarity_vector.append(similarity)
-    return similarity_vector, ref, query, 
+    return similarity_vector, ref, query, masks_used
 
 
 def _padding(img1, img2, zoom_in=0, **kwargs):

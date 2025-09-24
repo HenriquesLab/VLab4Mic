@@ -556,7 +556,7 @@ def ui_set_acq_params(experiment):
                         channel=single_channel,
                     )
                     with io.capture_output() as captured:
-                        timeseries, calibration_beads = (
+                        timeseries, calibration_beads, timeseries_noiseless, _ = (
                             imaging_system.generate_imaging(
                                 modality=Modality, **single_mod_acq_params
                             )
@@ -605,7 +605,7 @@ def ui_set_acq_params(experiment):
                         convolution_type="raw_volume",
                     )
                     with io.capture_output() as captured:
-                        images_volumes, _beads = (
+                        images_volumes, _beads, _noisless, b_noiseless = (
                             imaging_system.generate_imaging(
                                 modality=Modality, **single_mod_acq_params
                             )

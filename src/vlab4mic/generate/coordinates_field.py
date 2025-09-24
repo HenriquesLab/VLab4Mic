@@ -807,6 +807,8 @@ class Field:
             plotting_params=plotting_params,
             reference_point=reference_point,
             field_sizes=field_sizes,
+            particle_positions=self.get_molecule_param("absolute_positions"),
+            particle_size = self.molecules_params["minimal_distance"]
         )
         return export_field
 

@@ -138,7 +138,7 @@ def sweep_vasmples(
                     for vsample_n, vsample_pars in virtual_samples.items():
                         _exported_field = None
                         # combination += str(vsample_n)
-                        experiment.set_virtualsample_params(**vsample_pars)
+                        experiment.set_virtualsample_params(update_mode=True, **vsample_pars)
                         # _exported_field = experiment._build_coordinate_field(
                         #    keep=False, use_self_particle=True, **vsample_pars
                         # )
@@ -222,6 +222,7 @@ def sweep_modalities_updatemod(
     default_aqc = dict(nframes=2, exp_time=0.005)
     default_vsample = "None"
     mod_outputs = dict()
+    mod_outputs_masks = dict()
     mod_params = dict()
     if experiment is None:
         experiment = ExperimentParametrisation()
@@ -247,7 +248,8 @@ def sweep_modalities_updatemod(
         modality_acq_prams = {}
         modality_acq_prams[0] = None
     experiment._build_imager(use_local_field=False, prints=False)
-    # print(experiment.objects_created["imager"])
+    with io.capture_output() as captured:
+        experiment._gen_modality_noise_images()
     pixelsizes = dict()
     imager_scale = experiment.imager.roi_params["scale"]
     scalefactor = np.ceil(imager_scale / 1e-9)  # in nanometers
@@ -273,6 +275,9 @@ def sweep_modalities_updatemod(
                 for modality_name in experiment.selected_mods.keys():
                     for mod_pars_number, mod_pars in modality_params.items():
                         experiment.update_modality(modality_name, **mod_pars)
+                        # calculate virtual sample mask per modality
+                        vsample_mask_per_mod = experiment.imager.generate_modality_mask(modality=modality_name)
+                        #mod_threshold = 1  # needs to be modality specific
                         for (
                             mod_acq_number,
                             acq_pars,
@@ -282,9 +287,10 @@ def sweep_modalities_updatemod(
                                     modality_name=modality_name, **acq_pars
                                 )
                             # iteration_name = combination
-                            modality_timeseries = experiment.run_simulation(
+                            modality_timeseries, modality_timeseries_noiseless = experiment.run_simulation(
                                 name="", save=False, modality=modality_name
                             )
+
                             mod_comb = (
                                 vsmpl_id
                                 + "_"
@@ -309,12 +315,19 @@ def sweep_modalities_updatemod(
                             if mod_comb not in mod_params.keys():
                                 mod_params[mod_comb] = mod_parameters
                                 mod_outputs[mod_comb] = []
+                            if mod_comb not in mod_outputs_masks.keys():
+                                mod_outputs_masks[mod_comb] = []
                             mod_outputs[mod_comb].append(
                                 modality_timeseries[modality_name]
                             )
+                            #mask = modality_timeseries[modality_name][0] > mod_threshold
+                            mask = vsample_mask_per_mod > 0
+                            mod_outputs_masks[mod_comb].append(
+                                mask
+                            )
                             mod_parameters = None
                     mod_n += 1
-    return experiment, mod_outputs, mod_params, pixelsizes
+    return experiment, mod_outputs, mod_params, pixelsizes, mod_outputs_masks
 
 
 def generate_global_reference_sample(
@@ -324,6 +337,7 @@ def generate_global_reference_sample(
     probe_parameters=None,
     virtual_sample=None,
     structure_is_path=False,
+    **kwargs
 ):
     """
     Generate a global reference virtual sample.
@@ -377,6 +391,7 @@ def generate_global_reference_sample(
     # experiment.structure_label = probe
     # experiment.probe_parameters[probe] = probe_parameters
     experiment._build_particle(keep=True)
+    experiment.set_virtualsample_params(**kwargs)
     # combination += str(vsample_n)
     refernece_parameters = [structure, probe, probe_parameters, virtual_sample]
     reference_vsample = experiment._build_coordinate_field(
@@ -391,6 +406,7 @@ def generate_global_reference_modality(
     reference_vsample_params=None,
     modality=None,
     modality_acquisition=None,
+    mod_threshold = None
 ):
     """
     Generate a global reference image for a given virtual sample and modality.
@@ -417,6 +433,7 @@ def generate_global_reference_modality(
     """
     if experiment is None:
         experiment = ExperimentParametrisation()
+        experiment.clear_experiment()
     if modality is None:
         modality = "Reference"
         # modality_acquisition = None
@@ -439,7 +456,7 @@ def generate_global_reference_modality(
         modality,
         modality_acquisition,
     ]
-    reference_output = experiment.run_simulation(name="", save=False)
+    reference_output, reference_output_noiseless = experiment.run_simulation(name="", save=False)
     imager_scale = experiment.imager.roi_params["scale"]
     scalefactor = np.ceil(
         imager_scale / 1e-9
@@ -448,7 +465,10 @@ def generate_global_reference_modality(
         experiment.imager.modalities[modality]["detector"]["pixelsize"]
         * scalefactor
     )
-    return reference_output[modality], reference_parameters
+    #if mod_threshold is None:
+    #    mod_threshold = 1
+    reference_output_mask = experiment.imager.generate_modality_mask(modality="Reference")
+    return reference_output[modality], reference_parameters, reference_output_mask
 
 
 def analyse_image_sweep(
@@ -485,7 +505,7 @@ def analyse_image_sweep(
         for img_r in img_outputs[params_id]:
             im1 = img_r[0]
             im_ref = reference[0]
-            rep_measurement, ref_used, qry_used = metrics.img_compare(
+            rep_measurement, ref_used, qry_used_, masks_used = metrics.img_compare(
                 im_ref, im1, **analysis_case_params[mod_name]
             )
             measurement_vectors.append(
@@ -498,8 +518,10 @@ def analyse_image_sweep(
 
 def analyse_sweep_single_reference(
     img_outputs,
+    img_outputs_masks,
     img_params,
     reference_image,
+    reference_image_mask,
     reference_params,
     zoom_in=0,
     metrics_list: list = [
@@ -544,12 +566,16 @@ def analyse_sweep_single_reference(
         rep_number = 0
         mod_name = img_params[params_id][5]  # 5th item corresponds to Modality
         modality_pixelsize = img_params[params_id][6]["pixelsize"]
-        for img_r in img_outputs[params_id]:
+        for img_r, img_mask in zip(img_outputs[params_id], img_outputs_masks[params_id]):
             im1 = img_r[0]
+            im1_mask = img_mask
+            #print(f"query: {im1.shape},{im1_mask.shape}")
             im_ref = reference_image
-            rep_measurement, ref_used, qry_used = metrics.img_compare(
-                im_ref,
-                im1,
+            rep_measurement, ref_used, qry_used, masks_used = metrics.img_compare(
+                ref = im_ref,
+                ref_mask=reference_image_mask,
+                query=im1,
+                query_mask=im1_mask,
                 modality_pixelsize=modality_pixelsize,
                 ref_pixelsize=reference_params["ref_pixelsize"],
                 force_match=True,
@@ -559,7 +585,7 @@ def analyse_sweep_single_reference(
             r_vector = list([params_id, rep_number]) + list([*rep_measurement])
             measurement_vectors.append(r_vector)
             # measurement_vectors = measurement_vectors + rep_measurement[0]
-            inputs[params_id][rep_number] = [qry_used, im1, ref_used]
+            inputs[params_id][rep_number] = [qry_used, im1, ref_used, masks_used]
             rep_number += 1
     return measurement_vectors, inputs, metrics_list
 
@@ -738,7 +764,7 @@ def create_param_combinations(**kwargs):
 
 
 def pivot_dataframes_byCategory(
-    dataframe, category_name, param1, param2, metric_name, **kwargs
+    dataframe, category_name, param1, param2, metric_name, pre_filter_dt=False, filter_dictionary:dict = None, **kwargs
 ):
     """
     Pivot a DataFrame by category and two parameters, summarizing a metric.
@@ -766,7 +792,12 @@ def pivot_dataframes_byCategory(
         Dictionary with category, param1, and param2 names.
     """
     df_categories = dict()
-    for category, group in dataframe.groupby(category_name):
+    dataframe_copy = copy.deepcopy(dataframe)
+    if pre_filter_dt and filter_dictionary is not None:
+        for parameter_name, parameter_value in filter_dictionary.items():
+            dataframe_copy = dataframe_copy[dataframe_copy[parameter_name] == parameter_value]
+        #print(dataframe_copy)
+    for category, group in dataframe_copy.groupby(category_name):
         summarised_group = None
         summarised_group = (
             group.groupby([param1, param2])

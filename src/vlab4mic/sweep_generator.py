@@ -43,9 +43,11 @@ class sweep_generator:
     reference_virtual_sample = None
     reference_virtual_sample_params = None
     reference_image = None
+    reference_image_mask = None
     virtual_samples = None
     virtual_samples_parameters = None
     acquisition_outputs = None
+    acquisition_outputs_masks = None
     acquisition_outputs_parameters = None
     # analysis
     analysis = {}
@@ -94,6 +96,7 @@ class sweep_generator:
         # to ensure all parameter groups (including particle_defect) are available
         self.param_settings = self.parameter_settings
         self.use_experiment_structure = False
+        self.reference_parameters_unsorted = dict()
         print("vLab4mic sweep generator initialised")
 
     def set_number_of_repetitions(self, repeats: int = 3):
@@ -169,6 +172,7 @@ class sweep_generator:
             self.acquisition_outputs,
             self.acquisition_outputs_parameters,
             mod_pixelsizes,
+            self.acquisition_outputs_masks
         ) = sweep.sweep_modalities_updatemod(
             experiment=self.experiment,
             vsample_outputs=self.virtual_samples,
@@ -210,8 +214,12 @@ class sweep_generator:
             self.reference_probe = reference_probe
         if reference_probe_parameters is not None:
             self.reference_probe_parameters = reference_probe_parameters
+        if "relative_positions" in kwargs.keys():
+            self.reference_parameters_unsorted["particle_positions"] = kwargs.pop("relative_positions")
+        for key, value in kwargs.items():
+            self.reference_parameters_unsorted[key] = value
 
-    def generate_reference_sample(self):
+    def generate_reference_sample(self, use_experiment_probe=True, use_experiment_vsample=True):
         """
         Generate the reference virtual sample and its parameters.
 
@@ -220,22 +228,28 @@ class sweep_generator:
         None
         """
         if self.use_experiment_structure:
-            self.reference_virtual_sample, self.reference_virtual_sample_params = (
-                sweep.generate_global_reference_sample(
-                    structure=self.reference_structure,
-                    probe=self.reference_probe,
-                    probe_parameters=self.reference_probe_parameters,
-                    structure_is_path=True,
-                )
-            )
+            structure_is_path = True
+        else: 
+            structure_is_path = False
+        if use_experiment_probe:
+            reference_probe = list(self.probes)[0]
         else:
-            self.reference_virtual_sample, self.reference_virtual_sample_params = (
-                sweep.generate_global_reference_sample(
-                    structure=self.reference_structure,
-                    probe=self.reference_probe,
-                    probe_parameters=self.reference_probe_parameters,
-                )
+            reference_probe = None
+        if use_experiment_vsample:
+            reference_sample_params = copy.copy(self.experiment.virtualsample_params)
+        self.set_reference_parameters(
+            reference_probe=reference_probe,
+            **reference_sample_params
             )
+        self.reference_virtual_sample, self.reference_virtual_sample_params = (
+            sweep.generate_global_reference_sample(
+                structure=self.reference_structure,
+                probe=self.reference_probe,
+                probe_parameters=self.reference_probe_parameters,
+                structure_is_path=structure_is_path,
+                **self.reference_parameters_unsorted
+            )
+        )
 
     def generate_reference_image(self, override=False):
         """
@@ -256,7 +270,7 @@ class sweep_generator:
                 self.generate_reference_sample()
             else:
                 self.generate_reference_sample()
-        self.reference_image, self.reference_image_parameters = (
+        self.reference_image, self.reference_image_parameters, self.reference_image_mask = (
             sweep.generate_global_reference_modality(
                 reference_vsample=self.reference_virtual_sample,
                 reference_vsample_params=self.reference_virtual_sample_params,
@@ -553,13 +567,17 @@ class sweep_generator:
         if len(self.reference_image.shape) == 3:
             # if reference image is 3D, take the first frame
             reference_image = self.reference_image[0]
+            reference_image_mask = self.reference_image_mask
         else:
             reference_image = self.reference_image
+            reference_image_mask = self.reference_image_mask
         measurement_vectors, inputs, metric = (
             sweep.analyse_sweep_single_reference(
                 img_outputs=self.acquisition_outputs,
+                img_outputs_masks=self.acquisition_outputs_masks,
                 img_params=self.acquisition_outputs_parameters,
                 reference_image=reference_image,
+                reference_image_mask=reference_image_mask,
                 reference_params=self.reference_image_parameters,
                 **self.analysis_parameters,
             )
@@ -574,6 +592,7 @@ class sweep_generator:
                         plot_type=plot_type,
                         return_figure=True,
                         metric_name=metric_name,
+                        filter_dictionary=None,
                     )
         if save:
             self.save_analysis(
@@ -630,6 +649,8 @@ class sweep_generator:
         plot_type=None,
         metric_name=None,
         decimals: int = None,
+        return_figure=True,
+        filter_dictionary=None,
         **kwargs,
     ):
         """
@@ -670,9 +691,11 @@ class sweep_generator:
         if plot_type == "heatmaps":
             metric_plot = self._gen_heatmaps(
                 metric_name=metric_name,
-                return_figure=True,
+                return_figure=return_figure,
                 decimals=decimals,
+                filter_dictionary=filter_dictionary,
                 **plot_params,
+                **kwargs
             )
             self.analysis["plots"][plot_type][metric_name] = metric_plot
         elif plot_type == "lineplots":
@@ -680,7 +703,10 @@ class sweep_generator:
                 data=data,
                 metric_name=metric_name,
                 decimals=decimals,
+                return_figure=return_figure,
+                filter_dictionary=filter_dictionary,
                 **plot_params,
+                **kwargs
             )
             self.analysis["plots"][plot_type][metric_name] = metric_plot
 
@@ -692,6 +718,7 @@ class sweep_generator:
         param2: str = None,
         return_figure=False,
         decimals="%.4f",
+        filter_dictionary=None,
         **kwargs,
     ):
         """
@@ -733,12 +760,18 @@ class sweep_generator:
             df[param1] = df[param1].round(3)
         if is_numeric_dtype(df[param2]):
             df[param2] = df[param2].round(3)
+        pre_filter_dt = True
+        if filter_dictionary is not None:
+             pre_filter_dt = True
         df_categories, titles = sweep.pivot_dataframes_byCategory(
             dataframe=df,
             category_name=category,
             param1=param1,
             param2=param2,
             metric_name=metric_name,
+            pre_filter_dt=pre_filter_dt,
+            filter_dictionary=filter_dictionary,
+            **kwargs
         )
         plot = _plots.sns_heatmap_pivots(
             df_categories,
@@ -747,6 +780,7 @@ class sweep_generator:
             return_figure=return_figure,
             metric_name=metric_name,
             decimals=decimals,
+            **kwargs
         )
         return plot
 
@@ -762,6 +796,8 @@ class sweep_generator:
         errorbar="ci",
         figsize=[10, 10],
         decimals="%.4f",
+        return_figure=True,
+        filter_dictionary=None,
         **kwargs,
     ):
         """
@@ -818,6 +854,7 @@ class sweep_generator:
             estimator=estimator,
             errorbar=errorbar,
             ax=axes,
+            **kwargs
         )
         axes.yaxis.set_major_formatter(FormatStrFormatter(decimals))
         axes.xaxis.set_major_formatter(FormatStrFormatter(decimals))
