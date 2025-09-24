@@ -64,6 +64,7 @@ class Field:
         self.random_placing = False
         self.random_orientations = False
         self.random_rotations = False
+        self.rotation_angles = None
         # print(f'Working scale of the Field of View is {self.scale} meters')
 
     # methods to initialise field parameteres
@@ -173,6 +174,8 @@ class Field:
         self._set_fluo_plotting_params(fluo_name)
         self.random_orientations = random_orientations
         self.random_rotations = random_rotations
+        if "rotation_angles" in kwargs.keys():
+            self.rotation_angles = kwargs["rotation_angles"]
 
     def calculate_absolute_reference(self):
         """
@@ -329,10 +332,12 @@ class Field:
         """
         nrotations = self.get_molecule_param("nMolecules")
         rng = np.random.default_rng()
-        if rotation_angles is None:
+        if self.rotation_angles is None:
+            print("random unconstrained rotations")
             rotations = rng.integers(360, size=nrotations) 
         else:
-            rotations = rng.choice(rotation_angles, nrotations, replace=True)
+            print("random rotations, from list")
+            rotations = rng.choice(self.rotation_angles, nrotations, replace=True)
         self.set_molecule_param("rotations", rotations)
 
     def generate_global_orientation(self, global_orientation=None):
