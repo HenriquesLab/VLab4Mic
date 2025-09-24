@@ -841,7 +841,7 @@ class ExperimentParametrisation:
                 acq_params = self.selected_mods
             if self.experiment_id:
                 name = self.experiment_id
-            simulation_output = generate_multi_imaging_modalities(
+            simulation_output, simulation_output_noiseless = generate_multi_imaging_modalities(
                 image_generator=self.imager,
                 experiment_name=name,
                 savingdir=self.output_directory,
@@ -1260,6 +1260,7 @@ def generate_virtual_sample(
     particle_positions: list[np.array] = None,
     random_orientations=False,
     random_placing=False,
+    random_rotations=False,
     clear_probes=False,
     clear_experiment=False,
     **kwargs,
@@ -1396,6 +1397,8 @@ def generate_virtual_sample(
         vsample_configuration["random_orientations"] = random_orientations
     if random_placing is not None:
         vsample_configuration["random_placing"] = random_placing
+    if random_rotations:
+        vsample_configuration["random_rotations"] = random_rotations
     myexperiment.virtualsample_params = vsample_configuration
     myexperiment.build(use_locals=True)
 
