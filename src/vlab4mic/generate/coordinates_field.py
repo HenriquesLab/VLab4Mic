@@ -480,7 +480,7 @@ class Field:
         if self.random_orientations:
             self.generate_random_orientations()
         if self.random_rotations:
-            self.generate_random_rotations()
+            self.initialise_random_rotations()
             # self.relabel_molecules()
         self.relabel_molecules()
 
@@ -553,6 +553,16 @@ class Field:
         else:
             pass
             # print("molecule orientations has not been set. No reorientation done.")
+    
+    def rotate_molecules(self):
+        """
+        Rotate each molecule in the field according to its assigned angle of rotation.
+        """
+        if self.get_molecule_param("rotatons") is not None:
+            for mol, angle_degree in zip(
+                self.molecules, self.get_molecule_param("rotations")
+            ):
+                mol.transform_rotate_around_axis(degree=angle_degree)
 
     def _set_plotting_params(self):
         for fluoname, labelname in self.fluo2labels.items():
@@ -565,7 +575,7 @@ class Field:
     # the rationale is, there will be emitters that correspond to one or other emitters
     # and all of them will be able to be visualised if the optics define it
 
-    def construct_static_field(self, relocate=True, reorient=True):
+    def construct_static_field(self, relocate=True, reorient=True, rotate=True):
         """
         Construct the static field by placing and orienting molecules and grouping emitters by fluorophore.
 
@@ -588,6 +598,8 @@ class Field:
                 self.relocate_molecules()
             if reorient:
                 self.reorient_molecules()
+            if rotate:
+                self.rotate_molecules()
             # pull emitters by fluorophores
             self._construct_channels_by_fluorophores()
         else:
