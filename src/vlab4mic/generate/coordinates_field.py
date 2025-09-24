@@ -63,6 +63,7 @@ class Field:
         self.fluoparams = dict()
         self.random_placing = False
         self.random_orientations = False
+        self.random_rotations = False
         # print(f'Working scale of the Field of View is {self.scale} meters')
 
     # methods to initialise field parameteres
@@ -114,7 +115,7 @@ class Field:
         self.set_molecules_params(**molecules)
 
     def create_minimal_field(
-        self, nmolecules=1, random_placing=False, random_orientations=False, **kwargs
+        self, nmolecules=1, random_placing=False, random_orientations=False, random_rotations=False, **kwargs
     ):
         """
         Create a minimal field with a specified number of molecules and placement options.
@@ -171,6 +172,7 @@ class Field:
             self.fluorophre_emitters = {fluo_name: point.reshape(1, 3)}
         self._set_fluo_plotting_params(fluo_name)
         self.random_orientations = random_orientations
+        self.random_rotations = random_rotations
 
     def calculate_absolute_reference(self):
         """
@@ -272,7 +274,7 @@ class Field:
         if random_orientations:
             self.generate_random_orientations()
         if random_rotations:
-            pass
+            self.initialise_random_rotations()
         for key, value in kwargs.items():
             self.molecules_params[key] = value
 
@@ -321,17 +323,17 @@ class Field:
             orientations.append(np.array(sampl.sample_spherical_normalised(1, ndim=3)))
         self.set_molecule_param("orientations", orientations)
 
-    def initialise_random_rotations(self, values: list = None):
+    def initialise_random_rotations(self, rotation_angles: list = None):
         """
         Generate random rotations around central axis for all molecules in the field.
         """
-        if values is None:
-            nrotations = self.get_molecule_param("nMolecules")
-            rng = np.random.default_rng()
-            rotations = rng.integers(360, size=nrotations)
-            self.set_molecule_param("rotations", rotations)
+        nrotations = self.get_molecule_param("nMolecules")
+        rng = np.random.default_rng()
+        if rotation_angles is None:
+            rotations = rng.integers(360, size=nrotations) 
         else:
-            self.set_molecule_param("rotations", values)
+            rotations = rng.choice(rotation_angles, nrotations, replace=True)
+        self.set_molecule_param("rotations", rotations)
 
     def generate_global_orientation(self, global_orientation=None):
         """
@@ -558,7 +560,7 @@ class Field:
         """
         Rotate each molecule in the field according to its assigned angle of rotation.
         """
-        if self.get_molecule_param("rotatons") is not None:
+        if self.get_molecule_param("rotations") is not None:
             for mol, angle_degree in zip(
                 self.molecules, self.get_molecule_param("rotations")
             ):
@@ -844,6 +846,7 @@ def create_min_field(
     number_of_particles=1,
     random_placing=False,
     random_orientations=False,
+    random_rotations=False,
     prints=False,
     **kwargs,
 ):
@@ -878,6 +881,7 @@ def create_min_field(
         nmolecules=number_of_particles,
         random_placing=random_placing,
         random_orientations=random_orientations,
+        random_rotations=random_rotations,
         **kwargs,
     )
     return coordinates_field
