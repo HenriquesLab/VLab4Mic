@@ -773,12 +773,16 @@ class sweep_generator:
             filter_dictionary=filter_dictionary,
             **kwargs
         )
+        conditions = list(df_categories.keys())
+        nconditions = len(conditions)
+        my_palette = sns.diverging_palette(20, 200, s=80, l=50, as_cmap=True)
         plot = _plots.sns_heatmap_pivots(
             df_categories,
             titles,
             annotations=True,
             return_figure=return_figure,
             metric_name=metric_name,
+            conditions_cmaps=[my_palette]*nconditions,
             decimals=decimals,
             **kwargs
         )
