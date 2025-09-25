@@ -139,3 +139,33 @@ def cleanup_labeling_entities(labels_on_epitopes):
             (fluorophores_xyz, labels_on_epitopes[i + 1][2:])
         )  # from i+1 since we already added the first
     return fluorophores_xyz
+
+
+def planar_rotation(points, points_reference, unitary_vector_of_rotation, theta):
+    """ 
+    Rotate a set of points around a given rotation axis.
+
+    Parameters
+    ----------
+    points : Nx3 array
+        Array containing the N points to rotate
+    points_reference : 1x3 array
+        reference point for the set 
+    unitary_vector_of_rotation: 1x3 array
+        Vector at the origin to define the rotation axis
+    theta: float
+        Angle for rotation, in radians
+
+    Returns
+    -------
+    numpy.ndarray or None
+        Emitter coordinates or None if not found.
+    """
+    translated_origin, displacement = transform_displace_set(
+        points, points_reference, np.array([0, 0, 0])
+    )
+    rotated_at_origin = rotate_set(translated_origin, unitary_vector_of_rotation, theta)
+    rotated, _ = transform_displace_set(
+        rotated_at_origin, np.array([0, 0, 0]), points_reference
+    )
+    return rotated

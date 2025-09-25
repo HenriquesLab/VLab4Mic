@@ -37,6 +37,7 @@ class Field:
         ).reshape((1, 3))
         self.molecules_params["absolute_positions"] = None
         self.molecules_params["orientations"] = None
+        self.molecules_params["rotations"] = None
         self.molecules_params["minimal_distance"] = None
 
         self.emitters_per_fluorophore = {}  # this can be exported
@@ -62,6 +63,8 @@ class Field:
         self.fluoparams = dict()
         self.random_placing = False
         self.random_orientations = False
+        self.random_rotations = False
+        self.rotation_angles = None
         # print(f'Working scale of the Field of View is {self.scale} meters')
 
     # methods to initialise field parameteres
@@ -113,7 +116,7 @@ class Field:
         self.set_molecules_params(**molecules)
 
     def create_minimal_field(
-        self, nmolecules=1, random_placing=False, random_orientations=False, **kwargs
+        self, nmolecules=1, random_placing=False, random_orientations=False, random_rotations=False, **kwargs
     ):
         """
         Create a minimal field with a specified number of molecules and placement options.
@@ -170,6 +173,9 @@ class Field:
             self.fluorophre_emitters = {fluo_name: point.reshape(1, 3)}
         self._set_fluo_plotting_params(fluo_name)
         self.random_orientations = random_orientations
+        self.random_rotations = random_rotations
+        if "rotation_angles" in kwargs.keys():
+            self.rotation_angles = kwargs["rotation_angles"]
 
     def calculate_absolute_reference(self):
         """
@@ -271,7 +277,7 @@ class Field:
         if random_orientations:
             self.generate_random_orientations()
         if random_rotations:
-            pass
+            self.initialise_random_rotations()
         for key, value in kwargs.items():
             self.molecules_params[key] = value
 
@@ -319,6 +325,20 @@ class Field:
         for i in range(norientations):
             orientations.append(np.array(sampl.sample_spherical_normalised(1, ndim=3)))
         self.set_molecule_param("orientations", orientations)
+
+    def initialise_random_rotations(self, rotation_angles: list = None):
+        """
+        Generate random rotations around central axis for all molecules in the field.
+        """
+        nrotations = self.get_molecule_param("nMolecules")
+        rng = np.random.default_rng()
+        if self.rotation_angles is None:
+            print("random unconstrained rotations")
+            rotations = rng.integers(360, size=nrotations) 
+        else:
+            print("random rotations, from list")
+            rotations = rng.choice(self.rotation_angles, nrotations, replace=True)
+        self.set_molecule_param("rotations", rotations)
 
     def generate_global_orientation(self, global_orientation=None):
         """
@@ -466,6 +486,8 @@ class Field:
         self.molecules = molecules
         if self.random_orientations:
             self.generate_random_orientations()
+        if self.random_rotations:
+            self.initialise_random_rotations()
             # self.relabel_molecules()
         self.relabel_molecules()
 
@@ -538,6 +560,16 @@ class Field:
         else:
             pass
             # print("molecule orientations has not been set. No reorientation done.")
+    
+    def rotate_molecules(self):
+        """
+        Rotate each molecule in the field according to its assigned angle of rotation.
+        """
+        if self.get_molecule_param("rotations") is not None:
+            for mol, angle_degree in zip(
+                self.molecules, self.get_molecule_param("rotations")
+            ):
+                mol.transform_rotate_around_axis(degree=angle_degree)
 
     def _set_plotting_params(self):
         for fluoname, labelname in self.fluo2labels.items():
@@ -550,7 +582,7 @@ class Field:
     # the rationale is, there will be emitters that correspond to one or other emitters
     # and all of them will be able to be visualised if the optics define it
 
-    def construct_static_field(self, relocate=True, reorient=True):
+    def construct_static_field(self, relocate=True, reorient=True, rotate=True):
         """
         Construct the static field by placing and orienting molecules and grouping emitters by fluorophore.
 
@@ -573,6 +605,8 @@ class Field:
                 self.relocate_molecules()
             if reorient:
                 self.reorient_molecules()
+            if rotate:
+                self.rotate_molecules()
             # pull emitters by fluorophores
             self._construct_channels_by_fluorophores()
         else:
@@ -817,6 +851,7 @@ def create_min_field(
     number_of_particles=1,
     random_placing=False,
     random_orientations=False,
+    random_rotations=False,
     prints=False,
     **kwargs,
 ):
@@ -851,6 +886,7 @@ def create_min_field(
         nmolecules=number_of_particles,
         random_placing=random_placing,
         random_orientations=random_orientations,
+        random_rotations=random_rotations,
         **kwargs,
     )
     return coordinates_field

@@ -3,11 +3,13 @@ import numpy as np
 import warnings
 import matplotlib.pyplot as plt
 import yaml
+import math
 from scipy.spatial.distance import pdist
 
 from ..utils.transform.points_transforms import (
     rotate_pts_by_vector,
     transform_displace_set,
+    planar_rotation
 )
 from ..utils.data_format.visualisation import format_coordinates, set_colorplot
 from ..utils.visualisation.matplotlib_plots import (
@@ -696,8 +698,25 @@ class LabeledInstance:
                         self.emitters[trgt] = reoriented
                         self.axis["direction"] = nori
 
-    def transform_rotate_around_axis(self, degree: float):
-        pass
+    def transform_rotate_around_axis(self, degree: float = 0.0):
+        theta_radians = degree * (math.pi / 180)
+
+
+        for labeltype in self.emitters.keys():
+            if self.get_emitter_by_target(labeltype) is not None:
+                self.emitters[labeltype] = planar_rotation(
+                    points=self.get_emitter_by_target(labeltype), 
+                    points_reference=self.get_ref_point(), 
+                    unitary_vector_of_rotation=self.axis["direction"], 
+                    theta=theta_radians)
+                # rotate sources as well
+                self.source["targets"][labeltype]["coordinates"] = planar_rotation(
+                    points=self._get_source_coords_normals(labeltype)[
+                            "coordinates"
+                        ], 
+                    points_reference=self.get_ref_point(), 
+                    unitary_vector_of_rotation=self.axis["direction"], 
+                    theta=theta_radians)
 
     def transform_translate(self, newcenter):
         """
