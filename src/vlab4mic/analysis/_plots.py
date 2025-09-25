@@ -40,6 +40,8 @@ def sns_heatmap_pivots(
         if fillna:
             mask = df_pivots[cond][0].isna()
             df_pivots[cond][0][mask] = 0.0
+            mask2 = df_pivots[cond][1].isna()
+            df_pivots[cond][1][mask2] = 0.0
             #print("Na as 0")
             #print(df_pivots[cond][0])
         # mean
