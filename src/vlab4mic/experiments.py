@@ -1261,7 +1261,7 @@ def generate_virtual_sample(
     random_orientations=False,
     random_placing=False,
     random_rotations=False,
-    particle_rotation_angles= [0,24,],
+    rotation_angles = [0, 24, ],
     clear_probes=False,
     clear_experiment=False,
     **kwargs,
@@ -1400,7 +1400,7 @@ def generate_virtual_sample(
         vsample_configuration["random_placing"] = random_placing
     if random_rotations:
         vsample_configuration["random_rotations"] = random_rotations
-    vsample_configuration["rotation_angles"] = particle_rotation_angles
+    vsample_configuration["rotation_angles"] = rotation_angles
     myexperiment.virtualsample_params = vsample_configuration
     myexperiment.build(use_locals=True)
 
