@@ -1261,7 +1261,7 @@ def generate_virtual_sample(
     random_orientations=False,
     random_placing=False,
     random_rotations=False,
-    rotation_angles = [0, 24, ],
+    rotation_angles = None,
     clear_probes=False,
     clear_experiment=False,
     **kwargs,
