@@ -882,7 +882,11 @@ class sweep_generator:
         if param1 is None:
             param1 = self.parameters_with_set_values[0]
         if param2 is None:
-            param2 = "probe_n"
+            param_names_set = self.parameters_with_set_values
+            if len(param_names_set) >= 2:
+                param2=self.parameters_with_set_values[1]
+            else:
+                param2 = "probe_n"
         analysis_resut_df = self.get_analysis_output(keyname="dataframes")
         df = copy.deepcopy(self.analysis["dataframes"])
         if is_numeric_dtype(df[param1]):
@@ -1130,6 +1134,7 @@ def run_parameter_sweep(
         analysis_plots: bool = True,
         save_sweep_images: bool = True,
         sweep_repetitions: int = 3,
+        return_generator: bool = False,
         **kwargs
 ):
     sweep_gen = sweep_generator()
@@ -1149,3 +1154,5 @@ def run_parameter_sweep(
             output_name=output_name, 
             output_directory=output_directory
         )
+    if return_generator:
+        return sweep_gen
