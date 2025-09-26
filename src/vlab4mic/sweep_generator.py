@@ -509,6 +509,37 @@ class sweep_generator:
         else:
             print(f"{param_group} is not a valid parameter group")
 
+    def set_sweep_parameters(
+            self,
+            probe_distance_to_epitope= None,
+            probe_steric_hindrance= None,
+            probe_conjugation_efficiency = None,
+            probe_wobble_theta = None,
+            labelling_efficiency = None,
+            **kwargs
+    ):
+        if probe_distance_to_epitope is not None:
+            self.set_parameter_values(
+                "probe", "distance_to_epitope", values=probe_distance_to_epitope
+            )
+        if probe_steric_hindrance is not None:
+            self.set_parameter_values(
+                "probe", "steric_hindrance", values=probe_steric_hindrance
+            )
+        if probe_conjugation_efficiency is not None:
+            self.set_parameter_values(
+                "probe", "conjugation_efficiency", values=probe_conjugation_efficiency
+            )
+        if probe_wobble_theta is not None:
+            self.set_parameter_values(
+                "probe", "wobble_theta", values=probe_wobble_theta
+            )
+        if labelling_efficiency is not None:
+            self.set_parameter_values(
+                "probe", "labelling_efficiency", values=labelling_efficiency
+            )
+        
+
     def clear_sweep_parameters(self):
         """
         Clear all parameters set for the sweep, resetting to default values.
@@ -1081,6 +1112,7 @@ def run_parameter_sweep(
     sweep_gen.select_modalities(modalities=modalities)
     sweep_gen.set_output_directory(output_directory=output_directory)
     sweep_gen.set_number_of_repetitions(sweep_repetitions)
+    sweep_gen.set_sweep_parameters(**kwargs)
     sweep_gen.run_analysis(
         save=save_analysis_results, 
         plots=analysis_plots,
