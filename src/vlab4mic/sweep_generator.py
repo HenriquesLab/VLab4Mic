@@ -511,15 +511,39 @@ class sweep_generator:
 
     def set_sweep_parameters(
             self,
+            # probe
+            probe_target_type = None,
+            probe_target_value = None,
+            probe_target_option= None,
+            probe_model = None,
+            probe_fluorophore = None,
+            probe_paratope = None,
+            probe_conjugation_target_info=None,
+            probe_seconday_epitope=None,
+            peptide_motif: dict = None,
             probe_distance_to_epitope= None,
             probe_steric_hindrance= None,
             probe_conjugation_efficiency = None,
             probe_wobble_theta = None,
             labelling_efficiency = None,
+            # defects
             defect=None,
             defect_small_cluster=None,
             defect_large_cluster=None,
-            number_of_particles=None,
+            # vsample
+            number_of_particles = None,
+            sample_dimensions = None,
+            particle_positions = None,
+            particle_orientations = None,
+            rotation_angles = None,
+            minimal_distance = None,
+            # modality params
+            pixelsize_nm = None,
+            lateral_resolution_nm = None,
+            axial_resolution_nm = None,
+            psf_voxel_nm = None,
+            depth_of_field_nm = None,
+            # imaging 
             exp_time=None,
             **kwargs
     ):
@@ -563,7 +587,80 @@ class sweep_generator:
             self.set_parameter_values(
                 "acquisition", "exp_time", values=exp_time
             )
-        
+        if pixelsize_nm is not None:
+            self.set_parameter_values(
+                "modality", "pixelsize_nm", values=pixelsize_nm
+            )
+        if lateral_resolution_nm is not None:
+            self.set_parameter_values(
+                "modality", "lateral_resolution_nm", values=lateral_resolution_nm
+            )
+        if axial_resolution_nm is not None:
+            self.set_parameter_values(
+                "modality", "axial_resolution_nm", values=axial_resolution_nm
+            )
+        if psf_voxel_nm is not None:
+            self.set_parameter_values(
+                "modality", "psf_voxel_nm", values=psf_voxel_nm
+            )
+        if depth_of_field_nm is not None:
+            self.set_parameter_values(
+                "modality", "depth_of_field_nm", values=depth_of_field_nm
+            )
+        if sample_dimensions is not None:
+            self.set_parameter_values(
+                "virtual_sample", "sample_dimensions", values=sample_dimensions
+            )
+        if particle_positions is not None:
+            self.set_parameter_values(
+                "virtual_sample", "particle_positions", values=particle_positions
+            )
+        if particle_orientations is not None:
+            self.set_parameter_values(
+                "virtual_sample", "particle_orientations", values=particle_orientations
+            )
+        if rotation_angles is not None:
+            self.set_parameter_values(
+                "virtual_sample", "rotation_angles", values=rotation_angles
+            )
+        if minimal_distance is not None:
+            self.set_parameter_values(
+                "virtual_sample", "minimal_distance", values=minimal_distance
+            )
+        if probe_target_type is not None:
+            self.set_parameter_values(
+                "probe", "probe_target_type", values=probe_target_type
+            )
+        if probe_target_value is not None:
+            self.set_parameter_values(
+                "probe", "probe_target_value", values=probe_target_value
+            )
+        if probe_target_option is not None:
+            self.set_parameter_values(
+                "probe", "probe_target_option", values=probe_target_option
+            )
+        if probe_model is not None:
+            self.set_parameter_values(
+                "probe", "probe_model", values=probe_model
+            )
+        if probe_fluorophore is not None:
+            self.set_parameter_values(
+                "probe", "fluorophore", values=probe_fluorophore
+            )
+        if probe_paratope is not None:
+            self.set_parameter_values(
+                "probe", "paratope", values=probe_paratope
+            )
+        if probe_conjugation_target_info is not None:
+            self.set_parameter_values(
+                "probe", "conjugation_target_info", values=probe_conjugation_target_info
+            )
+        if probe_seconday_epitope is not None:
+            self.set_parameter_values(
+                "probe", "secondary_epitope", values=probe_seconday_epitope
+            )
+        if peptide_motif is not None:
+            pass
         
 
     def clear_sweep_parameters(self):
