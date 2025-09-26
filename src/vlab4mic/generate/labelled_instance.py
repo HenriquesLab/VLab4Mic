@@ -368,26 +368,27 @@ class LabeledInstance:
             defect_target_normals = None
         ##### print(f"target_normals after breaking: {target_normals}")
         # print(target_normals, label4target)
-        labelling_realisation = None
-        plotting_params = None
-        fluorophore_name = None
+        labelling_realisation = np.array([])
+        plotting_params = self._get_label_plotting_params(target_name)
+        fluorophore_name = self._get_label_fluorophore(target_name)
         labelling_realisation_vectors = None
-        if label4target is not None:
-            labelling_realisation, labelling_realisation_vectors = (
-                create_instance_label(
-                    target_normals, target_type, label4target
+        if target_normals["coordinates"].shape[0] > 0:
+            if label4target is not None:
+                labelling_realisation, labelling_realisation_vectors = (
+                    create_instance_label(
+                        target_normals, target_type, label4target
+                    )
                 )
-            )
-            plotting_params = self._get_label_plotting_params(target_name)
-            fluorophore_name = self._get_label_fluorophore(target_name)
-        else:
-            warnings.warn(
-                f'No Label correspond to target "{target_name}". '
-                "Target will no be considered"
-            )
-        # generate the emitters positions
-        # create_instance_label is capable of cosidering direct and indirect labelling
-        # Once created, define the instance
+                plotting_params = self._get_label_plotting_params(target_name)
+                fluorophore_name = self._get_label_fluorophore(target_name)
+            else:
+                warnings.warn(
+                    f'No Label correspond to target "{target_name}". '
+                    "Target will no be considered"
+                )
+            # generate the emitters positions
+            # create_instance_label is capable of cosidering direct and indirect labelling
+            # Once created, define the instance
         return (
             labelling_realisation,
             labelling_realisation_vectors,

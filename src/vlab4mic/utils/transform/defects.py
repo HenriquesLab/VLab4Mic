@@ -133,6 +133,12 @@ def xmersubset_byclustering(
             return default_true
         else:
             return epitopes_coords
+    if deg_dissasembly == 1:
+        if return_ids:
+            default_false = [False] * epitopes_coords.shape[0]
+            return default_false
+        else:
+            return np.array([])
     clusters1 = DBSCAN(
         eps=d_cluster_params["eps1"],
         min_samples=d_cluster_params["minsamples1"],
@@ -184,8 +190,12 @@ def xmersubset_byclustering(
         d_cluster_params["minsamples2"],
     )
     if ids_validated is None:
-        print("error while simulating defects, returning all emitters")
-        return default_true
+        print("error while simulating defects, returning No emitters")
+        if return_ids:
+            default_false = [False] * epitopes_coords.shape[0]
+            return default_false
+        else:
+            return np.array([])
     # ids_validated are the ids of the center of each xmer that we want to preserve
     # we only need to then retreive the appropiate indices of the epitopes themselves
     # that correspond to these labels

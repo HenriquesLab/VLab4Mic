@@ -305,6 +305,7 @@ class sweep_generator:
         replica_number=0,
         frame=0,
         return_image=False,
+        cmap="Grays_r"
     ):
         """
         Preview or return the first acquisition output image.
@@ -351,13 +352,13 @@ class sweep_generator:
         if return_image:
             return image, self.acquisition_outputs_parameters[parameter_id]
         else:
-            plt.imshow(image)
+            plt.imshow(image, cmap=cmap)
             print(self.acquisition_outputs_parameters[parameter_id])
 
     def preview_image_output_by_parameter_values(self, **kwargs):
         pass
 
-    def preview_reference_image(self, return_image=False):
+    def preview_reference_image(self, return_image=False, cmap="Grays_r"):
         """
         Preview or return the reference image.
 
@@ -374,7 +375,7 @@ class sweep_generator:
         if return_image:
             return self.reference_image
         else:
-            plt.imshow(self.reference_image[0])
+            plt.imshow(self.reference_image[0], cmap=cmap)
             print(self.reference_image_parameters)
 
     # set and change parameters
@@ -773,12 +774,16 @@ class sweep_generator:
             filter_dictionary=filter_dictionary,
             **kwargs
         )
+        conditions = list(df_categories.keys())
+        nconditions = len(conditions)
+        my_palette = sns.diverging_palette(20, 200, s=80, l=50, as_cmap=True)
         plot = _plots.sns_heatmap_pivots(
             df_categories,
             titles,
             annotations=True,
             return_figure=return_figure,
             metric_name=metric_name,
+            conditions_cmaps=[my_palette]*nconditions,
             decimals=decimals,
             **kwargs
         )
