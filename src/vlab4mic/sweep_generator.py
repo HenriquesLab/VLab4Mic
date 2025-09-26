@@ -114,6 +114,25 @@ class sweep_generator:
         """
         self.sweep_repetitions = repeats
 
+    def select_structures(self, structures: list = None, **kwargs):
+        """
+        Select structures to use in the sweep.
+
+        Parameters
+        ----------
+        structures : list of str, optional
+            List of 4-letter PDB/CIF IDs or paths to structure files. If None, uses all available structures.
+        **kwargs
+            Additional keyword arguments.
+
+        Returns
+        -------
+        None
+        """
+        if structures is not None and type(structures) == list:
+            self.structures = structures
+            self.use_experiment_structure = False
+
     # generators
     def generate_virtual_samples(self):
         """
@@ -1001,7 +1020,7 @@ def run_parameter_sweep(
         save_analysis_results: bool = True,
         analysis_plots: bool = True,
         save_sweep_images: bool = True,
-        sweep_repetitions: int = 1,
+        sweep_repetitions: int = 3,
         **kwargs
 ):
     sweep_gen = sweep_generator()
