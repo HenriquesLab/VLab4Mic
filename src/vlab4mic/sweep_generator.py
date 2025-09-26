@@ -990,3 +990,33 @@ class sweep_generator:
             # save reference image
             name_ref = output_directory + "reference.tiff"
             tiff.imwrite(name_ref, self.reference_image)
+
+
+def run_parameter_sweep(
+        structures: list[str],
+        probe_templates: list[str],
+        modalities: list[str],
+        output_directory: str,
+        output_name: str = None,
+        save_analysis_results: bool = True,
+        analysis_plots: bool = True,
+        save_sweep_images: bool = True,
+        sweep_repetitions: int = 1,
+        **kwargs
+):
+    sweep_gen = sweep_generator()
+    sweep_gen.structures = structures
+    sweep_gen.probes = probe_templates
+    sweep_gen.modalities = modalities
+    sweep_gen.ouput_directory = output_directory
+    sweep_gen.set_number_of_repetitions(sweep_repetitions)
+    sweep_gen.run_analysis(
+        save=save_analysis_results, 
+        plots=analysis_plots,
+        output_name=output_name
+        )
+    if save_sweep_images:
+        sweep_gen.save_images(
+            output_name=output_name, 
+            output_directory=output_directory
+        )
