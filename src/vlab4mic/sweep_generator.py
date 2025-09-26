@@ -133,6 +133,25 @@ class sweep_generator:
             self.structures = structures
             self.use_experiment_structure = False
 
+    def select_probe_templates(self, probe_templates: list = None, **kwargs):
+        """
+        Select probe templates to use in the sweep.
+
+        Parameters
+        ----------
+        probe_templates : list of str, optional
+            List of probe configuration filenames. If None, uses all available probes.
+        **kwargs
+            Additional keyword arguments.
+
+        Returns
+        -------
+        None
+        """
+        if probe_templates is not None and type(probe_templates) == list:
+            self.probes = probe_templates
+
+
     # generators
     def generate_virtual_samples(self):
         """
@@ -1024,8 +1043,8 @@ def run_parameter_sweep(
         **kwargs
 ):
     sweep_gen = sweep_generator()
-    sweep_gen.structures = structures
-    sweep_gen.probes = probe_templates
+    sweep_gen.select_structures(structures=structures)
+    sweep_gen.select_probe_templates(probe_templates=probe_templates)
     sweep_gen.modalities = modalities
     sweep_gen.ouput_directory = output_directory
     sweep_gen.set_number_of_repetitions(sweep_repetitions)
