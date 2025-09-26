@@ -1229,9 +1229,12 @@ def run_parameter_sweep(
         save_sweep_images: bool = True,
         sweep_repetitions: int = 3,
         return_generator: bool = False,
+        clear_experiment=True,
         **kwargs
 ):
     sweep_gen = sweep_generator()
+    if clear_experiment:
+        sweep_gen.experiment.clear_experiment()
     sweep_gen.select_structures(structures=structures)
     sweep_gen.select_probe_templates(probe_templates=probe_templates)
     sweep_gen.select_modalities(modalities=modalities)
