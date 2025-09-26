@@ -151,6 +151,23 @@ class sweep_generator:
         if probe_templates is not None and type(probe_templates) == list:
             self.probes = probe_templates
 
+    def select_modalities(self, modalities: list = None, **kwargs):
+        """
+        Select imaging modalities to use in the sweep.
+
+        Parameters
+        ----------
+        modalities : list of str, optional
+            List of modality names. If None, uses all available modalities.
+        **kwargs
+            Additional keyword arguments.
+
+        Returns
+        -------
+        None
+        """
+        if modalities is not None and type(modalities) == list:
+            self.modalities = modalities
 
     # generators
     def generate_virtual_samples(self):
@@ -1045,7 +1062,7 @@ def run_parameter_sweep(
     sweep_gen = sweep_generator()
     sweep_gen.select_structures(structures=structures)
     sweep_gen.select_probe_templates(probe_templates=probe_templates)
-    sweep_gen.modalities = modalities
+    sweep_gen.select_modalities(modalities=modalities)
     sweep_gen.ouput_directory = output_directory
     sweep_gen.set_number_of_repetitions(sweep_repetitions)
     sweep_gen.run_analysis(
