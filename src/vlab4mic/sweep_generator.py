@@ -549,24 +549,57 @@ class sweep_generator:
     ):
         if probe_distance_to_epitope is not None:
             self.set_parameter_values(
-                "probe", "distance_to_epitope", values=probe_distance_to_epitope
+                "probe", "probe_distance_to_epitope", values=probe_distance_to_epitope
             )
         if probe_steric_hindrance is not None:
             self.set_parameter_values(
-                "probe", "steric_hindrance", values=probe_steric_hindrance
+                "probe", "probe_steric_hindrance", values=probe_steric_hindrance
             )
         if probe_conjugation_efficiency is not None:
             self.set_parameter_values(
-                "probe", "conjugation_efficiency", values=probe_conjugation_efficiency
+                "probe", "probe_conjugation_efficiency", values=probe_conjugation_efficiency
             )
         if probe_wobble_theta is not None:
             self.set_parameter_values(
-                "probe", "wobble_theta", values=probe_wobble_theta
+                "probe", "probe_wobble_theta", values=probe_wobble_theta
             )
         if labelling_efficiency is not None:
             self.set_parameter_values(
                 "probe", "labelling_efficiency", values=labelling_efficiency
             )
+        if probe_target_type is not None:
+            self.set_parameter_values(
+                "probe", "probe_target_type", values=probe_target_type
+            )
+        if probe_target_value is not None:
+            self.set_parameter_values(
+                "probe", "probe_target_value", values=probe_target_value
+            )
+        if probe_target_option is not None:
+            self.set_parameter_values(
+                "probe", "probe_target_option", values=probe_target_option
+            )
+        if probe_model is not None:
+            self.set_parameter_values(
+                "probe", "probe_model", values=probe_model
+            )
+        if probe_fluorophore is not None:
+            self.set_parameter_values(
+                "probe", "probe_fluorophore", values=probe_fluorophore
+            )
+        if probe_paratope is not None:
+            self.set_parameter_values(
+                "probe", "probe_paratope", values=probe_paratope
+            )
+        if probe_conjugation_target_info is not None:
+            self.set_parameter_values(
+                "probe", "probe_conjugation_target_info", values=probe_conjugation_target_info
+            )
+        if probe_seconday_epitope is not None:
+            self.set_parameter_values(
+                "probe", "probe_secondary_epitope", values=probe_seconday_epitope
+            )
+
         if defect is not None:
             self.set_parameter_values(
                 "particle_defect", "defect", values=defect
@@ -582,6 +615,22 @@ class sweep_generator:
         if number_of_particles is not None:
             self.set_parameter_values(
                 "virtual_sample", "number_of_particles", values=number_of_particles
+            )
+        if sample_dimensions is not None:
+            self.set_parameter_values(
+                "virtual_sample", "sample_dimensions", values=sample_dimensions
+            )
+        if particle_positions is not None:
+            self.set_parameter_values(
+                "virtual_sample", "particle_positions", values=particle_positions
+            )
+        if particle_orientations is not None:
+            self.set_parameter_values(
+                "virtual_sample", "particle_orientations", values=particle_orientations
+            )
+        if rotation_angles is not None:
+            self.set_parameter_values(
+                "virtual_sample", "rotation_angles", values=rotation_angles
             )
         if exp_time is not None:
             self.set_parameter_values(
@@ -606,58 +655,6 @@ class sweep_generator:
         if depth_of_field_nm is not None:
             self.set_parameter_values(
                 "modality", "depth_of_field_nm", values=depth_of_field_nm
-            )
-        if sample_dimensions is not None:
-            self.set_parameter_values(
-                "virtual_sample", "sample_dimensions", values=sample_dimensions
-            )
-        if particle_positions is not None:
-            self.set_parameter_values(
-                "virtual_sample", "particle_positions", values=particle_positions
-            )
-        if particle_orientations is not None:
-            self.set_parameter_values(
-                "virtual_sample", "particle_orientations", values=particle_orientations
-            )
-        if rotation_angles is not None:
-            self.set_parameter_values(
-                "virtual_sample", "rotation_angles", values=rotation_angles
-            )
-        if minimal_distance is not None:
-            self.set_parameter_values(
-                "virtual_sample", "minimal_distance", values=minimal_distance
-            )
-        if probe_target_type is not None:
-            self.set_parameter_values(
-                "probe", "probe_target_type", values=probe_target_type
-            )
-        if probe_target_value is not None:
-            self.set_parameter_values(
-                "probe", "probe_target_value", values=probe_target_value
-            )
-        if probe_target_option is not None:
-            self.set_parameter_values(
-                "probe", "probe_target_option", values=probe_target_option
-            )
-        if probe_model is not None:
-            self.set_parameter_values(
-                "probe", "probe_model", values=probe_model
-            )
-        if probe_fluorophore is not None:
-            self.set_parameter_values(
-                "probe", "fluorophore", values=probe_fluorophore
-            )
-        if probe_paratope is not None:
-            self.set_parameter_values(
-                "probe", "paratope", values=probe_paratope
-            )
-        if probe_conjugation_target_info is not None:
-            self.set_parameter_values(
-                "probe", "conjugation_target_info", values=probe_conjugation_target_info
-            )
-        if probe_seconday_epitope is not None:
-            self.set_parameter_values(
-                "probe", "secondary_epitope", values=probe_seconday_epitope
             )
         if peptide_motif is not None:
             pass
