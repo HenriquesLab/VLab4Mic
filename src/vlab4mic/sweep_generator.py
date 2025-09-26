@@ -516,6 +516,11 @@ class sweep_generator:
             probe_conjugation_efficiency = None,
             probe_wobble_theta = None,
             labelling_efficiency = None,
+            defect=None,
+            defect_small_cluster=None,
+            defect_large_cluster=None,
+            number_of_particles=None,
+            exp_time=None,
             **kwargs
     ):
         if probe_distance_to_epitope is not None:
@@ -538,6 +543,27 @@ class sweep_generator:
             self.set_parameter_values(
                 "probe", "labelling_efficiency", values=labelling_efficiency
             )
+        if defect is not None:
+            self.set_parameter_values(
+                "particle_defect", "defect", values=defect
+            )
+        if defect_small_cluster is not None:
+            self.set_parameter_values(
+                "particle_defect", "defect_small_cluster", values=defect_small_cluster
+            )
+        if defect_large_cluster is not None:
+            self.set_parameter_values(
+                "particle_defect", "defect_large_cluster", values=defect_large_cluster
+            )
+        if number_of_particles is not None:
+            self.set_parameter_values(
+                "virtual_sample", "number_of_particles", values=number_of_particles
+            )
+        if exp_time is not None:
+            self.set_parameter_values(
+                "acquisition", "exp_time", values=exp_time
+            )
+        
         
 
     def clear_sweep_parameters(self):
