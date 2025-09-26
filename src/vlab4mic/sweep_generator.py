@@ -14,7 +14,7 @@ import copy
 import tifffile as tiff
 from pandas.api.types import is_numeric_dtype
 
-output_dir = Path.home() / "vlab4mic_outputs"
+#output_dir = Path.home() / "vlab4mic_outputs"
 
 
 class sweep_generator:
@@ -39,7 +39,7 @@ class sweep_generator:
     reference_probe = "NHS_ester"
     reference_probe_parameters = {"labelling_efficiency": 1.0}
     ####  outputs
-    ouput_directory = output_dir
+    output_directory = None
     reference_virtual_sample = None
     reference_virtual_sample_params = None
     reference_image = None
@@ -58,7 +58,7 @@ class sweep_generator:
     analysis["dataframes"] = None
     analysis["plots"] = {}
     # saving
-    output_directory: str = None
+    #output_directory: str = None
 
     def __init__(self):
         # parameter dictionary
@@ -168,6 +168,22 @@ class sweep_generator:
         """
         if modalities is not None and type(modalities) == list:
             self.modalities = modalities
+
+    def set_output_directory(self, output_directory: str = None):
+        """
+        Set the output directory for saving results.
+
+        Parameters
+        ----------
+        output_directory : str, optional
+            Path to the desired output directory. If None, uses the default output directory.
+
+        Returns
+        -------
+        None
+        """
+        if output_directory is not None:
+            self.output_directory = output_directory
 
     # generators
     def generate_virtual_samples(self):
@@ -937,7 +953,7 @@ class sweep_generator:
             Base name for the output files. If None, defaults to "vLab4mic_results_".
             The current date (YYYYMMDD) will be appended to the name.
         output_directory : str, optional
-            Directory where the output files will be saved. If None, uses the instance's `ouput_directory` attribute.
+            Directory where the output files will be saved. If None, uses the instance's `output_directory` attribute.
         analysis_type : list of str, optional
             Types of analysis outputs to save. Can include "dataframes" and/or "plots".
             If None, both "dataframes" and "plots" are saved.
@@ -960,7 +976,7 @@ class sweep_generator:
             output_name = "vLab4mic_results_"
         output_name = output_name + dt_string
         if output_directory is None:
-            output_directory = self.ouput_directory
+            output_directory = self.output_directory
         for keyname in analysis_type:
             if keyname == "dataframes":
                 df = self.get_analysis_output(keyname)
@@ -992,7 +1008,7 @@ class sweep_generator:
             Base name for the output image files. Defaults to "vLab4mic_images_".
         output_directory : str, optional
             Directory where images will be saved. If not provided, uses a default path
-            based on `self.ouput_directory` under a "simulated_images" subdirectory. The directory is created if it does not exist.
+            based on `self.output_directory` under a "simulated_images" subdirectory. The directory is created if it does not exist.
 
         Returns
         -------
@@ -1008,7 +1024,7 @@ class sweep_generator:
             output_name = "vLab4mic_images_"
         if output_directory is None:
             output_directory = os.path.join(
-                self.ouput_directory, "simulated_images", ""
+                self.output_directory, "simulated_images", ""
             )
             if not os.path.exists(output_directory):
                 os.makedirs(output_directory)
@@ -1048,10 +1064,10 @@ class sweep_generator:
 
 
 def run_parameter_sweep(
-        structures: list[str],
-        probe_templates: list[str],
-        modalities: list[str],
-        output_directory: str,
+        structures: list[str] = None,
+        probe_templates: list[str] = None,
+        modalities: list[str] = None,
+        output_directory: str = None,
         output_name: str = None,
         save_analysis_results: bool = True,
         analysis_plots: bool = True,
@@ -1063,7 +1079,7 @@ def run_parameter_sweep(
     sweep_gen.select_structures(structures=structures)
     sweep_gen.select_probe_templates(probe_templates=probe_templates)
     sweep_gen.select_modalities(modalities=modalities)
-    sweep_gen.ouput_directory = output_directory
+    sweep_gen.set_output_directory(output_directory=output_directory)
     sweep_gen.set_number_of_repetitions(sweep_repetitions)
     sweep_gen.run_analysis(
         save=save_analysis_results, 
