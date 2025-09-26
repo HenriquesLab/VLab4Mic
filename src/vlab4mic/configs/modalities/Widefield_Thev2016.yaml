@@ -17,10 +17,10 @@ detector:
     binomial: 0.9
     gaussian:
       mean: 0
-      standard_dev: 140
+      standard_dev: 1
     gain: 1 
     baselevel:
-      mean: 4000
+      mean: 400
       standard_dev: 1
     ADU: 1
   
