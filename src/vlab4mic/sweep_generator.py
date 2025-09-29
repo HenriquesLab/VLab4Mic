@@ -410,7 +410,8 @@ class sweep_generator:
             parameter_id is None
             or parameter_id not in self.acquisition_outputs_parameters.keys()
         ):
-            parameter_id = list(self.acquisition_outputs_parameters.keys())[0]
+            # parameter_id = list(self.acquisition_outputs_parameters.keys())[0]
+            return None
         if (
             len(self.acquisition_outputs[parameter_id][replica_number].shape)
             == 3
