@@ -90,6 +90,14 @@ def sweep_vasmples(
         # ]
     vsample_params = dict()
     vsample_outputs = dict()
+    if "relative_positions" in experiment.virtualsample_params.keys():
+        relative_positions = copy.deepcopy(
+                experiment.virtualsample_params["relative_positions"]
+                )
+        relative_positions_exist = True
+    else:
+        relative_positions_exist = False
+        relative_positions = None
 
     for struct in structures:
         if use_experiment_structure:
@@ -138,16 +146,30 @@ def sweep_vasmples(
                     for vsample_n, vsample_pars in virtual_samples.items():
                         _exported_field = None
                         # combination += str(vsample_n)
-                        experiment.set_virtualsample_params(update_mode=True, **vsample_pars)
+                        #experiment.set_virtualsample_params(update_mode=True, **vsample_pars)
                         # _exported_field = experiment._build_coordinate_field(
                         #    keep=False, use_self_particle=True, **vsample_pars
                         # )
                         for rep in range(repetitions):
-                            experiment.clear_virtual_sample()
-                            experiment.build(
-                                modules=["coordinate_field"],
-                                use_self_particle=True,
-                            )
+                            if relative_positions_exist and relative_positions is not None:
+                                experiment.clear_virtual_sample()
+                                experiment.set_virtualsample_params(
+                                    update_mode=True,
+                                    particle_positions = relative_positions)
+                                experiment.build(
+                                    modules=["coordinate_field"],
+                                    use_self_particle=True,
+                                )
+                            else:
+                                experiment.clear_virtual_sample()
+                                experiment.build(
+                                    modules=["coordinate_field"],
+                                    use_self_particle=True,
+                                )
+                                relative_positions = copy.deepcopy(
+                                    experiment.coordinate_field.molecules_params["relative_positions"]
+                                    )
+                                relative_positions_exist = True
                             _exported_field = (
                                 experiment.coordinate_field.export_field()
                             )
@@ -387,12 +409,13 @@ def generate_global_reference_sample(
     else:
         experiment.structure_id = structure
         experiment._build_structure()
-    experiment.add_probe(probe_template=probe, **probe_parameters)
+    experiment.add_probe(probe_template=probe, **probe_parameters, **kwargs)
     # experiment.structure_label = probe
     # experiment.probe_parameters[probe] = probe_parameters
     experiment._build_particle(keep=True)
     experiment.set_virtualsample_params(**kwargs)
     # combination += str(vsample_n)
+    probe_parameters = experiment.probe_parameters[probe]
     refernece_parameters = [structure, probe, probe_parameters, virtual_sample]
     reference_vsample = experiment._build_coordinate_field(
         keep=False, use_self_particle=True
