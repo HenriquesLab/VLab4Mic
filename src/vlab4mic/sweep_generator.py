@@ -532,7 +532,6 @@ class sweep_generator:
             defect_small_cluster=None,
             defect_large_cluster=None,
             # vsample
-            number_of_particles = None,
             sample_dimensions = None,
             particle_positions = None,
             particle_orientations = None,
@@ -612,10 +611,6 @@ class sweep_generator:
         if defect_large_cluster is not None:
             self.set_parameter_values(
                 "particle_defect", "defect_large_cluster", values=defect_large_cluster
-            )
-        if number_of_particles is not None:
-            self.set_parameter_values(
-                "virtual_sample", "number_of_particles", values=number_of_particles
             )
         if sample_dimensions is not None:
             self.set_parameter_values(
@@ -1230,7 +1225,13 @@ def run_parameter_sweep(
         save_sweep_images: bool = True,
         sweep_repetitions: int = 3,
         return_generator: bool = False,
+        number_of_particles: int = 1,
+        particle_positions: int = None,
+        reference_structure = None,
+        reference_probe = None,
+        reference_parameters: dict = None,
         clear_experiment=True,
+        run_analysis=True,
         **kwargs
 ):
     sweep_gen = sweep_generator()
@@ -1241,16 +1242,34 @@ def run_parameter_sweep(
     sweep_gen.select_modalities(modalities=modalities)
     sweep_gen.set_output_directory(output_directory=output_directory)
     sweep_gen.set_number_of_repetitions(sweep_repetitions)
+    # number of particles accross sweep
+    if particle_positions is not None:
+        # set those positions
+        sweep_gen.experiment.set_virtualsample_params(
+            particle_positions=particle_positions
+            )
+    else:
+        sweep_gen.experiment.set_virtualsample_params(
+            number_of_particles=number_of_particles
+            )
+
     sweep_gen.set_sweep_parameters(**kwargs)
-    sweep_gen.run_analysis(
-        save=save_analysis_results, 
-        plots=analysis_plots,
-        output_name=output_name
-        )
-    if save_sweep_images:
-        sweep_gen.save_images(
-            output_name=output_name, 
-            output_directory=output_directory
-        )
+    if reference_parameters is None:
+        reference_parameters = dict()
+    sweep_gen.set_reference_parameters(
+        reference_structure=reference_structure,
+        reference_probe=reference_probe,
+        **reference_parameters)
+    if run_analysis:
+        sweep_gen.run_analysis(
+            save=save_analysis_results, 
+            plots=analysis_plots,
+            output_name=output_name
+            )
+        if save_sweep_images:
+            sweep_gen.save_images(
+                output_name=output_name, 
+                output_directory=output_directory
+            )
     if return_generator:
         return sweep_gen
