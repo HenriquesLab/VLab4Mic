@@ -725,6 +725,7 @@ def ui_select_sample_parameters(experiment):
                 "number_of_particles",
                 "random_orientations",
                 "minimal_distance",
+                "random_rotations",
             ]:
                 value = experiment.virtualsample_params[param]
                 text += f"{param}: {value}<br>"
@@ -742,7 +743,9 @@ def ui_select_sample_parameters(experiment):
     sample_gui.add_checkbox(
         "random_orientations", description="Randomise orientations", value=True
     )
-
+    sample_gui.add_checkbox(
+        "random_rotations", description="Randomise rotations in plane", value=True
+    )
     sample_gui.add_button(
         "advanced_parameters",
         description="Toggle advanced parameters",
@@ -847,6 +850,8 @@ def ui_select_sample_parameters(experiment):
             experiment.set_virtualsample_params(
                 number_of_particles=sample_gui["number_of_particles"].value,
                 random_orientations=sample_gui["random_orientations"].value,
+                random_rotations=sample_gui["random_rotations"].value
+                #rotation_angles=sample_gui["rotation_angles"].value
             )
         else:
             min_distance = sample_gui["minimal_distance_nm"].value
@@ -854,6 +859,8 @@ def ui_select_sample_parameters(experiment):
                 number_of_particles=sample_gui["number_of_particles"].value,
                 random_orientations=sample_gui["random_orientations"].value,
                 minimal_distance=min_distance,
+                random_rotations=sample_gui["random_rotations"].value
+                #rotation_angles=sample_gui["rotation_angles"].value
             )
         update_message()
 
