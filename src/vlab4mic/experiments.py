@@ -1072,6 +1072,8 @@ class ExperimentParametrisation:
         update_mode: bool = True,
         random_rotations=False,
         rotation_angles=None,
+        orientations_theta=None,
+        orientations_phi=None,
         **kwargs,
     ):
         """
@@ -1133,6 +1135,10 @@ class ExperimentParametrisation:
         self.virtualsample_params["random_rotations"] = random_rotations
         if rotation_angles is not None:
             self.virtualsample_params["rotation_angles"] = rotation_angles
+        if orientations_theta is not None:
+            self.virtualsample_params["orientations_theta"] = orientations_theta
+        if orientations_phi is not None:
+            self.virtualsample_params["orientations_phi"] = orientations_phi
 
 
 
@@ -1265,6 +1271,8 @@ def generate_virtual_sample(
     number_of_particles: int = None,
     particle_positions: list[np.array] = None,
     random_orientations=False,
+    orientations_theta = None,
+    orientations_phi = None,
     random_placing=False,
     random_rotations=False,
     rotation_angles = None,
@@ -1407,6 +1415,8 @@ def generate_virtual_sample(
     if random_rotations:
         vsample_configuration["random_rotations"] = random_rotations
     vsample_configuration["rotation_angles"] = rotation_angles
+    vsample_configuration["orientations_theta"] = orientations_theta
+    vsample_configuration["orientations_phi"] = orientations_phi
     myexperiment.virtualsample_params = vsample_configuration
     myexperiment.build(use_locals=True)
 
