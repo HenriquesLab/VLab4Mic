@@ -84,6 +84,9 @@ class sweep_generator:
         self.plot_parameters["heatmaps"]["category"] = "modality_name"
         self.plot_parameters["heatmaps"]["param1"] = None
         self.plot_parameters["heatmaps"]["param2"] = None
+        self.plot_parameters["heatmaps"]["annotations"] = False
+        self.plot_parameters["heatmaps"]["linewidth"] = 2
+        self.plot_parameters["heatmaps"]["palette"] = None
         self.parameters_with_set_values = []
         self.plot_parameters["lineplots"] = {}
         self.plot_parameters["lineplots"]["x_param"] = None
@@ -938,6 +941,8 @@ class sweep_generator:
         return_figure=False,
         decimals="%.4f",
         filter_dictionary=None,
+        annotations=False,
+        palette=None,
         **kwargs,
     ):
         """
@@ -998,14 +1003,17 @@ class sweep_generator:
         )
         conditions = list(df_categories.keys())
         nconditions = len(conditions)
-        my_palette = sns.diverging_palette(20, 200, s=80, l=50, as_cmap=True)
+        if palette is None:
+            cmap_palette = sns.diverging_palette(20, 200, s=80, l=50, as_cmap=True)
+        else: 
+            cmap_palette = palette
         plot = _plots.sns_heatmap_pivots(
             df_categories,
             titles,
-            annotations=True,
+            annotations=annotations,
             return_figure=return_figure,
             metric_name=metric_name,
-            conditions_cmaps=[my_palette]*nconditions,
+            conditions_cmaps=[cmap_palette]*nconditions,
             decimals=decimals,
             **kwargs
         )
