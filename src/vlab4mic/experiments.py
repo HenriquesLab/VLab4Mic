@@ -1070,6 +1070,8 @@ class ExperimentParametrisation:
         random_placing: bool = None,
         minimal_distance: float = None,
         update_mode: bool = True,
+        random_rotations=False,
+        rotation_angles=None,
         **kwargs,
     ):
         """
@@ -1128,6 +1130,10 @@ class ExperimentParametrisation:
             self.virtualsample_params["minimal_distance"] = (
                 particle_minimal_distance
             )
+        self.virtualsample_params["random_rotations"] = random_rotations
+        if rotation_angles is not None:
+            self.virtualsample_params["rotation_angles"] = rotation_angles
+
 
 
     def use_image_for_positioning(
