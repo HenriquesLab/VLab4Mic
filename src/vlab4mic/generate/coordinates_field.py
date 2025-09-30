@@ -467,6 +467,9 @@ class Field:
         self.molecules_default_orientation = particle_copy.get_axis()
         if self.molecules_params["minimal_distance"] is None:
             self._set_molecule_minimal_distance(dist=particle_copy.radial_hindance)
+        elif particle_copy.radial_hindance > self.molecules_params["minimal_distance"]:
+            self._set_molecule_minimal_distance(dist=particle_copy.radial_hindance)
+        #self._set_molecule_minimal_distance(dist=min_distance)
         if self.random_placing:
             self.generate_random_positions()
         self._gen_abs_from_rel_positions()
