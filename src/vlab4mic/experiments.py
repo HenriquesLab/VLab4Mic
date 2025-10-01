@@ -1072,8 +1072,9 @@ class ExperimentParametrisation:
         update_mode: bool = True,
         random_rotations=False,
         rotation_angles=None,
-        orientations_theta=None,
-        orientations_phi=None,
+        xy_orientations = None,
+        xz_orientations = None,
+        yz_orientations = None,
         **kwargs,
     ):
         """
@@ -1135,11 +1136,12 @@ class ExperimentParametrisation:
         self.virtualsample_params["random_rotations"] = random_rotations
         if rotation_angles is not None:
             self.virtualsample_params["rotation_angles"] = rotation_angles
-        if orientations_theta is not None:
-            self.virtualsample_params["orientations_theta"] = orientations_theta
-        if orientations_phi is not None:
-            self.virtualsample_params["orientations_phi"] = orientations_phi
-
+        if xy_orientations is not None:
+            self.virtualsample_params["xy_orientations"] = xy_orientations
+        if xz_orientations is not None:
+            self.virtualsample_params["xz_orientations"] = xz_orientations
+        if yz_orientations is not None:
+            self.virtualsample_params["yz_orientations"] = yz_orientations
 
 
     def use_image_for_positioning(
