@@ -654,7 +654,7 @@ class LabeledInstance:
         """
         return self.params["ref_point"]
 
-    def transform_reorient_xyz(self,phi=0, theta=0, psi=0, order = "zyx", **kwargs):
+    def reorient_axis_euler(self, phi=0, theta=0, psi=0, order = "zyx", reset_orientation=False, **kwargs):
         """
         Rotations are extrinsic.
 
@@ -663,19 +663,30 @@ class LabeledInstance:
         phi: rotation around z axis in degrees
         psi: rotation around y axis in degrees
         """
-        print(f"axis before: {self.axis['direction']}")
         combined_R = R.from_euler(order, [phi,theta, psi], degrees=True)
         new_vector = combined_R.apply(self.axis["direction"])
-        print(f"new vector: {new_vector}")
-        self.transform_reorient(neworientation=new_vector)
-        print(f"axis after: {self.axis['direction']}")
+        self.transform_reorient_axis(neworientation=new_vector, reset_orientation=reset_orientation)
     
+    def reorient_axis_by_plane(self, xy=0, yz=0, xz=0, reset_orientation=False, **kwargs):
+        """
+        Relative rotations from the current particle axis. 
+        Since we use euler rotations to find the new vector,
+        an xy-plane rotation does not equal a rotation aroun the axis when it points to the z direction
 
-    def reset_orientation(self):
-        self.transform_reorient(neworientation=self.axis_reset["direction"])
+        """
+        if yz != 0:
+            self.reorient_axis_euler(theta=yz, reset_orientation=reset_orientation)
+        elif xz != 0:
+            self.reorient_axis_euler(psi=xz, reset_orientation=reset_orientation)
+        elif xy != 0:
+            self.reorient_axis_euler(phi=xz, reset_orientation=reset_orientation)
+
+
+    def reset_axis_orientation(self):
+        self.transform_reorient_axis(neworientation=self.axis_reset["direction"])
         
 
-    def transform_reorient(self, neworientation: np.array):
+    def transform_reorient_axis(self, neworientation: np.array, reset_orientation=False):
         """
         Reorient the instance to a new orientation.
 
@@ -684,42 +695,40 @@ class LabeledInstance:
         neworientation : numpy.ndarray
             New orientation vector.
         """
-        if np.linalg.norm(neworientation) == 0:
-            print(
-                f"Norm for vector {neworientation} is 0. No reorientation done"
-            )
+        if reset_orientation:
+            self.reset_orientation()
         else:
-            thet = np.arccos(
-                np.dot(self.axis["direction"], neworientation)
-                / (
-                    np.linalg.norm(self.axis["direction"])
-                    * np.linalg.norm(neworientation)
-                )
-            )
-            # print(
-            #    f"theta: {thet}, "
-            #    f"new {neworientation}, "
-            #    f"current: {self.axis['direction']}"
-            # )
-            if np.absolute(thet) == 1:
+            if np.linalg.norm(neworientation) == 0:
                 print(
-                    f"input vector {neworientation} "
-                    f'has same direction as {self.axis["direction"]}. '
-                    f"No reorientation done"
+                    f"Norm for vector {neworientation} is 0. No reorientation done"
                 )
             else:
-                nori = copy.copy(neworientation)
-                # this function should take the new orientation and match the
-                for trgt in self.labelnames:
-                    if self.get_emitter_by_target(trgt) is not None:
-                        reoriented = rotate_pts_by_vector(
-                            self.get_emitter_by_target(trgt),
-                            self.axis["direction"],
-                            nori,
-                            self.get_ref_point(),
-                        )
-                        self.emitters[trgt] = reoriented
-                        self.axis["direction"] = nori
+                thet = np.arccos(
+                    np.dot(self.axis["direction"], neworientation)
+                    / (
+                        np.linalg.norm(self.axis["direction"])
+                        * np.linalg.norm(neworientation)
+                    )
+                )
+                if np.absolute(thet) == 1:
+                    print(
+                        f"input vector {neworientation} "
+                        f'has same direction as {self.axis["direction"]}. '
+                        f"No reorientation done"
+                    )
+                else:
+                    nori = copy.copy(neworientation)
+                    # this function should take the new orientation and match the
+                    for trgt in self.labelnames:
+                        if self.get_emitter_by_target(trgt) is not None:
+                            reoriented = rotate_pts_by_vector(
+                                self.get_emitter_by_target(trgt),
+                                self.axis["direction"],
+                                nori,
+                                self.get_ref_point(),
+                            )
+                            self.emitters[trgt] = reoriented
+                            self.axis["direction"] = nori
 
     def transform_rotate_around_axis(self, degree: float = 0.0):
         theta_radians = degree * (math.pi / 180)
