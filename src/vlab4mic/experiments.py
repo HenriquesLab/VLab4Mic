@@ -1271,8 +1271,9 @@ def generate_virtual_sample(
     number_of_particles: int = None,
     particle_positions: list[np.array] = None,
     random_orientations=False,
-    orientations_theta = None,
-    orientations_phi = None,
+    xy_orientations = None,
+    xz_orientations = None,
+    yz_orientations = None,
     random_placing=False,
     random_rotations=False,
     rotation_angles = None,
@@ -1415,8 +1416,9 @@ def generate_virtual_sample(
     if random_rotations:
         vsample_configuration["random_rotations"] = random_rotations
     vsample_configuration["rotation_angles"] = rotation_angles
-    vsample_configuration["orientations_theta"] = orientations_theta
-    vsample_configuration["orientations_phi"] = orientations_phi
+    vsample_configuration["xy_orientations"] = xy_orientations
+    vsample_configuration["xz_orientations"] = xz_orientations
+    vsample_configuration["yz_orientations"] = yz_orientations
     myexperiment.virtualsample_params = vsample_configuration
     myexperiment.build(use_locals=True)
 
