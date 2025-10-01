@@ -768,27 +768,27 @@ def ui_select_sample_parameters(experiment):
     )
     sample_gui.add_text(
         tag="rotation_angles",
-        description = "Rotation angles: ",
+        description = "Rotation angles (deg): ",
         value="",
     )
     sample_gui.add_text(
         tag="xy_orientations",
-        description = "XY angles: ",
+        description = "XY angles (deg): ",
         value="",
     )
     sample_gui.add_text(
         tag="xz_orientations",
-        description = "XZ angles: ",
+        description = "XZ angles (deg): ",
         value="",
     )
     sample_gui.add_text(
         tag="yz_orientations",
-        description = "YZ angles: ",
+        description = "YZ angles (deg): ",
         value="",
     )
     sample_gui.add_text(
         tag="axial_offset",
-        description = "Z offset: ",
+        description = "Z offset (nm): ",
         value="",
     )
     sample_gui.add_checkbox(
