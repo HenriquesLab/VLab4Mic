@@ -1075,6 +1075,7 @@ class ExperimentParametrisation:
         xy_orientations = None,
         xz_orientations = None,
         yz_orientations = None,
+        axial_offset=None,
         **kwargs,
     ):
         """
@@ -1142,7 +1143,8 @@ class ExperimentParametrisation:
             self.virtualsample_params["xz_orientations"] = xz_orientations
         if yz_orientations is not None:
             self.virtualsample_params["yz_orientations"] = yz_orientations
-
+        if axial_offset is not None:
+            self.virtualsample_params["axial_offset"] = axial_offset
 
     def use_image_for_positioning(
         self,
