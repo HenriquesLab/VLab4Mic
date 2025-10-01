@@ -719,6 +719,9 @@ class Imager:
                     beadstack_noise = self.add_detector_noise(modality, beadstack_noiseless)
                 else:
                     beadstack_noise = None
+            else:
+                timeseries_noise = copy.deepcopy(timeseries_noiseless)
+                beadstack_noise = copy.deepcopy(beadstack_noiseless)
             if save:
                 # gt_positions = self.generate_ground_truth_positions(groundtruth_emitters)
                 timeseries_noiseless = self._crop_negative(timeseries_noiseless)
