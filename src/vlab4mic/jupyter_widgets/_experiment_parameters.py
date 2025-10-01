@@ -786,6 +786,11 @@ def ui_select_sample_parameters(experiment):
         description = "YZ angles: ",
         value="",
     )
+    sample_gui.add_text(
+        tag="axial_offset",
+        description = "Z offset: ",
+        value="",
+    )
     sample_gui.add_checkbox(
         "random",
         value=True,
@@ -876,6 +881,8 @@ def ui_select_sample_parameters(experiment):
         xy_orientations = None
         xz_orientations = None
         yz_orientations = None
+        axial_offset = None
+        minimal_distance = None
         if random_rotations and sample_gui["rotation_angles"].value != "":
             # parse string
             rotation_angles_value = sample_gui["rotation_angles"].value
@@ -896,29 +903,27 @@ def ui_select_sample_parameters(experiment):
             value_3 = sample_gui["yz_orientations"].value
             strings_3 = value_3.split(",")
             yz_orientations = [int(i) for i in strings_3]
+        if random_orientations and sample_gui["axial_offset"].value != "":
+            # parse string
+            value_4 = sample_gui["axial_offset"].value
+            strings_4 = value_4.split(",")
+            axial_offset = [int(i) for i in strings_4]
+        
         if sample_gui["use_min_from_particle"].value:
-            experiment.set_virtualsample_params(
-                number_of_particles=sample_gui["number_of_particles"].value,
-                random_orientations=random_orientations,
-                random_rotations=random_rotations,
-                rotation_angles=rotation_angles,
-                xy_orientations=xy_orientations,
-                xz_orientations=xz_orientations,
-                yz_orientations=yz_orientations,
-
-            )
+            minimal_distance = None
         else:
-            min_distance = sample_gui["minimal_distance_nm"].value
-            experiment.set_virtualsample_params(
-                number_of_particles=sample_gui["number_of_particles"].value,
-                random_orientations=random_orientations,
-                minimal_distance=min_distance,
-                random_rotations=random_rotations,
-                rotation_angles=rotation_angles,
-                xy_orientations=xy_orientations,
-                xz_orientations=xz_orientations,
-                yz_orientations=yz_orientations
-            )
+            minimal_distance = sample_gui["minimal_distance_nm"].value
+        experiment.set_virtualsample_params(
+            number_of_particles=sample_gui["number_of_particles"].value,
+            random_orientations=random_orientations,
+            minimal_distance=minimal_distance,
+            random_rotations=random_rotations,
+            rotation_angles=rotation_angles,
+            xy_orientations=xy_orientations,
+            xz_orientations=xz_orientations,
+            yz_orientations=yz_orientations,
+            axial_offset=axial_offset
+        )
         update_message()
 
     def select_virtual_sample_parameters(b):
@@ -980,6 +985,9 @@ def ui_select_sample_parameters(experiment):
         ]
         widgets_visibility["yz_orientations"] = not widgets_visibility[
             "yz_orientations"
+        ]
+        widgets_visibility["axial_offset"] = not widgets_visibility[
+            "axial_offset"
         ]
 
         widgets_visibility["fileupload_header"] = (
