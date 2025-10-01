@@ -40,7 +40,9 @@ class Field:
         self.molecules_params["orientations_planewise"] = None
         self.molecules_params["rotations"] = None
         self.molecules_params["minimal_distance"] = None
-
+        self.xy_orientations = None
+        self.xz_orientations = None
+        self.yz_orientations = None
         self.emitters_per_fluorophore = {}  # this can be exported
 
         #
