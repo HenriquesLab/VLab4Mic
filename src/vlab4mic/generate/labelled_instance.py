@@ -696,7 +696,7 @@ class LabeledInstance:
             New orientation vector.
         """
         if reset_orientation:
-            self.reset_orientation()
+            self.reset_axis_orientation()
         else:
             if np.linalg.norm(neworientation) == 0:
                 print(
