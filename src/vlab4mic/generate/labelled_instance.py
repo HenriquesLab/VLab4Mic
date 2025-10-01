@@ -145,6 +145,7 @@ class LabeledInstance:
         self.axis = copy.copy(axis)
         self._set_source_info(info)
         self.status["source"] = True
+        self.axis_reset = copy.copy(axis)
 
     def _get_source_target_normals(self, target_name):
         if self.source["targets"][target_name]["normals"] is None:
@@ -670,6 +671,9 @@ class LabeledInstance:
         print(f"axis after: {self.axis['direction']}")
     
 
+    def reset_orientation(self):
+        self.transform_reorient(neworientation=self.axis_reset["direction"])
+        
 
     def transform_reorient(self, neworientation: np.array):
         """
