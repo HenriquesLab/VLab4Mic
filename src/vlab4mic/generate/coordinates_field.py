@@ -37,6 +37,7 @@ class Field:
         ).reshape((1, 3))
         self.molecules_params["absolute_positions"] = None
         self.molecules_params["orientations"] = None
+        self.molecules_params["orientations_planewise"] = None
         self.molecules_params["rotations"] = None
         self.molecules_params["minimal_distance"] = None
 
@@ -176,6 +177,13 @@ class Field:
         self.random_rotations = random_rotations
         if "rotation_angles" in kwargs.keys():
             self.rotation_angles = kwargs["rotation_angles"]
+        if "xy_orientations" in kwargs.keys():
+            self.xy_orientations = kwargs["xy_orientations"]
+        if "xz_orientations" in kwargs.keys():
+            self.xz_orientations = kwargs["xz_orientations"]
+        if "yz_orientations" in kwargs.keys():
+            self.yz_orientations = kwargs["yz_orientations"]
+
 
     def calculate_absolute_reference(self):
         """
@@ -322,9 +330,34 @@ class Field:
         # give new orientation
         norientations = self.get_molecule_param("nMolecules")
         orientations = []
-        for i in range(norientations):
-            orientations.append(np.array(sampl.sample_spherical_normalised(1, ndim=3)))
-        self.set_molecule_param("orientations", orientations)
+        unconstrained = True
+        rng = np.random.default_rng()
+        xy_orientation_changes = np.zeros((norientations,))
+        if self.xy_orientations is not None:
+            xy_orientation_changes =  rng.choice(self.xy_orientations, norientations, replace=True)
+            unconstrained = False
+        if self.xz_orientations is not None:
+            xz_orientation_changes =  rng.choice(self.xz_orientations, norientations, replace=True)
+            unconstrained = False
+        else:
+            xz_orientation_changes = np.zeros((norientations,))
+        if self.yz_orientations is not None:
+            yz_orientation_changes =  rng.choice(self.yz_orientations, norientations, replace=True)
+            unconstrained = False
+        else:
+            yz_orientation_changes = np.zeros((norientations,))
+        if unconstrained:
+            print("generating unconstrained randomised axis")
+            # unconstrained randomisation
+            for i in range(norientations):
+                orientations.append(np.array(sampl.sample_spherical_normalised(1, ndim=3)))
+            self.set_molecule_param("orientations", orientations)
+        else:
+            orientations_planewise = []
+            for xy_xz_yz in zip(xy_orientation_changes, xz_orientation_changes, yz_orientation_changes):
+                orientations_planewise.append(xy_xz_yz)
+            self.set_molecule_param("orientations_planewise", orientations_planewise)
+            self.set_molecule_param("orientations", None)
 
     def initialise_random_rotations(self, rotation_angles: list = None):
         """
@@ -560,6 +593,10 @@ class Field:
                 self.molecules, self.get_molecule_param("orientations")
             ):
                 mol.transform_reorient_axis(ori)
+        elif self.get_molecule_param("orientations_planewise") is not None:
+            for mol, xy_xz_yz in zip(self.molecules, self.get_molecule_param("orientations_planewise")):
+                mol.reorient_axis_by_plane(reset_orientation=True)
+                mol.reorient_axis_by_plane(*xy_xz_yz, sequential=True)
         else:
             pass
             # print("molecule orientations has not been set. No reorientation done.")
