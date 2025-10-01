@@ -771,6 +771,21 @@ def ui_select_sample_parameters(experiment):
         description = "Rotation angles: ",
         value="",
     )
+    sample_gui.add_text(
+        tag="xy_orientations",
+        description = "XY angles: ",
+        value="",
+    )
+    sample_gui.add_text(
+        tag="xz_orientations",
+        description = "XZ angles: ",
+        value="",
+    )
+    sample_gui.add_text(
+        tag="yz_orientations",
+        description = "YZ angles: ",
+        value="",
+    )
     sample_gui.add_checkbox(
         "random",
         value=True,
@@ -856,27 +871,53 @@ def ui_select_sample_parameters(experiment):
 
     def update_parameters(b):
         random_rotations = sample_gui["random_rotations"].value
+        random_orientations = sample_gui["random_orientations"].value
         rotation_angles = None
+        xy_orientations = None
+        xz_orientations = None
+        yz_orientations = None
         if random_rotations and sample_gui["rotation_angles"].value != "":
             # parse string
             rotation_angles_value = sample_gui["rotation_angles"].value
             rotation_angles_strings = rotation_angles_value.split(",")
             rotation_angles = [int(i) for i in rotation_angles_strings]
+        if random_orientations and sample_gui["xy_orientations"].value != "":
+            # parse string
+            value_1 = sample_gui["xy_orientations"].value
+            strings_1 = value_1.split(",")
+            xy_orientations = [int(i) for i in strings_1]
+        if random_orientations and sample_gui["xz_orientations"].value != "":
+            # parse string
+            value_2 = sample_gui["xz_orientations"].value
+            strings_2 = value_2.split(",")
+            xz_orientations = [int(i) for i in strings_2]
+        if random_orientations and sample_gui["yz_orientations"].value != "":
+            # parse string
+            value_3 = sample_gui["yz_orientations"].value
+            strings_3 = value_3.split(",")
+            yz_orientations = [int(i) for i in strings_3]
         if sample_gui["use_min_from_particle"].value:
             experiment.set_virtualsample_params(
                 number_of_particles=sample_gui["number_of_particles"].value,
-                random_orientations=sample_gui["random_orientations"].value,
+                random_orientations=random_orientations,
                 random_rotations=random_rotations,
-                rotation_angles=rotation_angles
+                rotation_angles=rotation_angles,
+                xy_orientations=xy_orientations,
+                xz_orientations=xz_orientations,
+                yz_orientations=yz_orientations,
+
             )
         else:
             min_distance = sample_gui["minimal_distance_nm"].value
             experiment.set_virtualsample_params(
                 number_of_particles=sample_gui["number_of_particles"].value,
-                random_orientations=sample_gui["random_orientations"].value,
+                random_orientations=random_orientations,
                 minimal_distance=min_distance,
                 random_rotations=random_rotations,
-                rotation_angles=rotation_angles
+                rotation_angles=rotation_angles,
+                xy_orientations=xy_orientations,
+                xz_orientations=xz_orientations,
+                yz_orientations=yz_orientations
             )
         update_message()
 
@@ -931,9 +972,16 @@ def ui_select_sample_parameters(experiment):
         widgets_visibility["rotation_angles"] = not widgets_visibility[
             "rotation_angles"
         ]
-        #widgets_visibility["select_sample_parameters"] = (
-        #    not widgets_visibility["select_sample_parameters"]
-        #)
+        widgets_visibility["xy_orientations"] = not widgets_visibility[
+            "xy_orientations"
+        ]
+        widgets_visibility["xz_orientations"] = not widgets_visibility[
+            "xz_orientations"
+        ]
+        widgets_visibility["yz_orientations"] = not widgets_visibility[
+            "yz_orientations"
+        ]
+
         widgets_visibility["fileupload_header"] = (
             not widgets_visibility["fileupload_header"]
         )
