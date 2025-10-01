@@ -559,7 +559,7 @@ class Field:
             for mol, ori in zip(
                 self.molecules, self.get_molecule_param("orientations")
             ):
-                mol.transform_reorient(ori)
+                mol.transform_reorient_axis(ori)
         else:
             pass
             # print("molecule orientations has not been set. No reorientation done.")
