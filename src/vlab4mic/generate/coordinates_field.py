@@ -43,6 +43,7 @@ class Field:
         self.xy_orientations = None
         self.xz_orientations = None
         self.yz_orientations = None
+        self.axial_offset = None
         self.emitters_per_fluorophore = {}  # this can be exported
 
         #
@@ -185,6 +186,8 @@ class Field:
             self.xz_orientations = kwargs["xz_orientations"]
         if "yz_orientations" in kwargs.keys():
             self.yz_orientations = kwargs["yz_orientations"]
+        if "axial_offset" in kwargs.keys():
+            self.axial_offset = kwargs["axial_offset"]
 
 
     def calculate_absolute_reference(self):
@@ -325,6 +328,14 @@ class Field:
             self.molecules_params["relative_positions"] = rand
             self._gen_abs_from_rel_positions()
 
+    def randomise_axial_position(self):
+        rng = np.random.default_rng()
+        nmolecules = self.get_molecule_param("nMolecules")
+        axial_offsets = rng.choice(self.axial_offset, nmolecules, replace=True)
+        for i, zpos in enumerate(axial_offsets):
+            self.molecules_params["absolute_positions"][i][2] = zpos + self.z_offset
+
+
     def generate_random_orientations(self):
         """
         Generate random orientations for all molecules in the field.
@@ -455,6 +466,8 @@ class Field:
         for pos in self.molecules_params["relative_positions"]:
             abs_pos.append(self._calculate_absolute_position(pos))
         self.set_molecule_param("absolute_positions", np.array(abs_pos))
+        if self.axial_offset is not None:
+            self.randomise_axial_position()
 
     # methods for fluorophores
     def _load_fluorophore_params(self, **fluodictionary):

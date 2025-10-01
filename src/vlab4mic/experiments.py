@@ -1276,6 +1276,7 @@ def generate_virtual_sample(
     xy_orientations = None,
     xz_orientations = None,
     yz_orientations = None,
+    axial_offset = None,
     random_placing=False,
     random_rotations=False,
     rotation_angles = None,
@@ -1421,6 +1422,7 @@ def generate_virtual_sample(
     vsample_configuration["xy_orientations"] = xy_orientations
     vsample_configuration["xz_orientations"] = xz_orientations
     vsample_configuration["yz_orientations"] = yz_orientations
+    vsample_configuration["axial_offset"] = axial_offset
     myexperiment.virtualsample_params = vsample_configuration
     myexperiment.build(use_locals=True)
 
