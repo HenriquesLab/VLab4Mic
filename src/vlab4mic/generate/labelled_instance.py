@@ -931,8 +931,9 @@ class LabeledInstance:
         numpy.ndarray or None
             Emitter coordinates or None if not found.
         """
-        if self.emitters[targetname] is not None:
-            if len(self.emitters[targetname]) == 0:
+        if self.emitters[targetname] is None:
+            return None
+        elif len(self.emitters[targetname]) == 0:
                 return None
         else:
             return self.emitters[targetname]
