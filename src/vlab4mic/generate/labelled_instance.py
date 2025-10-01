@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import yaml
 import math
 from scipy.spatial.distance import pdist
-
+from scipy.spatial.transform import Rotation as R
 from ..utils.transform.points_transforms import (
     rotate_pts_by_vector,
     transform_displace_set,
@@ -652,6 +652,24 @@ class LabeledInstance:
             Reference point coordinates.
         """
         return self.params["ref_point"]
+
+    def transform_reorient_xyz(self,phi=0, theta=0, psi=0, order = "zyx", **kwargs):
+        """
+        Rotations are extrinsic.
+
+        
+        theta: rotation around x axis in degrees
+        phi: rotation around z axis in degrees
+        psi: rotation around y axis in degrees
+        """
+        print(f"axis before: {self.axis['direction']}")
+        combined_R = R.from_euler(order, [phi,theta, psi], degrees=True)
+        new_vector = combined_R.apply(self.axis["direction"])
+        print(f"new vector: {new_vector}")
+        self.transform_reorient(neworientation=new_vector)
+        print(f"axis after: {self.axis['direction']}")
+    
+
 
     def transform_reorient(self, neworientation: np.array):
         """
