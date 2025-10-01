@@ -667,19 +667,24 @@ class LabeledInstance:
         new_vector = combined_R.apply(self.axis["direction"])
         self.transform_reorient_axis(neworientation=new_vector, reset_orientation=reset_orientation)
     
-    def reorient_axis_by_plane(self, xy=0, yz=0, xz=0, reset_orientation=False, **kwargs):
+    def reorient_axis_by_plane(self, xy=0, yz=0, xz=0, reset_orientation=False, sequential=False, **kwargs):
         """
         Relative rotations from the current particle axis. 
         Since we use euler rotations to find the new vector,
         an xy-plane rotation does not equal a rotation aroun the axis when it points to the z direction
 
         """
-        if yz != 0:
+        if sequential:
             self.reorient_axis_euler(theta=yz, reset_orientation=reset_orientation)
-        elif xz != 0:
             self.reorient_axis_euler(psi=xz, reset_orientation=reset_orientation)
-        elif xy != 0:
-            self.reorient_axis_euler(phi=xz, reset_orientation=reset_orientation)
+            self.reorient_axis_euler(phi=xy, reset_orientation=reset_orientation)
+        else: 
+            if yz != 0:
+                self.reorient_axis_euler(theta=yz, reset_orientation=reset_orientation)
+            elif xz != 0:
+                self.reorient_axis_euler(psi=xz, reset_orientation=reset_orientation)
+            elif xy != 0:
+                self.reorient_axis_euler(phi=xy, reset_orientation=reset_orientation)
 
 
     def reset_axis_orientation(self):
