@@ -725,6 +725,7 @@ def ui_select_sample_parameters(experiment):
                 "number_of_particles",
                 "random_orientations",
                 "minimal_distance",
+                "random_rotations",
             ]:
                 value = experiment.virtualsample_params[param]
                 text += f"{param}: {value}<br>"
@@ -742,7 +743,9 @@ def ui_select_sample_parameters(experiment):
     sample_gui.add_checkbox(
         "random_orientations", description="Randomise orientations", value=True
     )
-
+    sample_gui.add_checkbox(
+        "random_rotations", description="Randomise rotations in plane", value=True
+    )
     sample_gui.add_button(
         "advanced_parameters",
         description="Toggle advanced parameters",
@@ -762,6 +765,58 @@ def ui_select_sample_parameters(experiment):
         vmax=1000,
         step=1,
         style={"description_width": "initial"},
+    )
+    sample_gui.add_HTML(
+        tag="rotations_header",
+        value="<b>Specify values as a comma-separated list (e.g. 20,24,45)</b>",
+    )
+    sample_gui.add_text(
+        tag="rotation_angles",
+        description = "Rotation angles (deg): ",
+        value="",
+    )
+    sample_gui.add_text(
+        tag="xy_orientations",
+        description = "XY angles (deg): ",
+        value="",
+    )
+    sample_gui.add_text(
+        tag="xz_orientations",
+        description = "XZ angles (deg): ",
+        value="",
+    )
+    sample_gui.add_text(
+        tag="yz_orientations",
+        description = "YZ angles (deg): ",
+        value="",
+    )
+    sample_gui.add_text(
+        tag="axial_offset",
+        description = "Z offset (nm): ",
+        value="",
+    )
+    sample_gui.add_checkbox(
+        "random",
+        value=True,
+        description="Randomise positions (enforced when there is more than one particle)",
+        style={"description_width": "initial"},
+    )
+    sample_gui.add_button(
+        "update_sample_parameters",
+        description="Update sample parameters",
+        icon=update_icon,
+        style={"button_color": update_colour},
+    )
+    sample_gui.add_button(
+        "select_sample_parameters",
+        description="Select parameters and build virtual sample",
+        disabled=False,
+        icon=select_icon,
+        style={"button_color": select_colour},
+    )
+    sample_gui.add_HTML(
+        tag="fileupload_header",
+        value="<b>Select from file</b>",
     )
     sample_gui.add_file_upload(
         "File",
@@ -812,25 +867,6 @@ def ui_select_sample_parameters(experiment):
         value="Local Maxima",
         style={"description_width": "initial"},
     )
-    sample_gui.add_checkbox(
-        "random",
-        value=True,
-        description="Randomise positions (enforced when there is more than one particle)",
-        style={"description_width": "initial"},
-    )
-    sample_gui.add_button(
-        "update_sample_parameters",
-        description="Update sample parameters",
-        icon=update_icon,
-        style={"button_color": update_colour},
-    )
-    sample_gui.add_button(
-        "select_sample_parameters",
-        description="Select parameters and build virtual sample",
-        disabled=False,
-        icon=select_icon,
-        style={"button_color": select_colour},
-    )
     sample_gui.add_button(
         "upload_and_set",
         description="Load image and select parameters",
@@ -843,18 +879,55 @@ def ui_select_sample_parameters(experiment):
     )
 
     def update_parameters(b):
+        random_rotations = sample_gui["random_rotations"].value
+        random_orientations = sample_gui["random_orientations"].value
+        rotation_angles = None
+        xy_orientations = None
+        xz_orientations = None
+        yz_orientations = None
+        axial_offset = None
+        minimal_distance = None
+        if random_rotations and sample_gui["rotation_angles"].value != "":
+            # parse string
+            rotation_angles_value = sample_gui["rotation_angles"].value
+            rotation_angles_strings = rotation_angles_value.split(",")
+            rotation_angles = [int(i) for i in rotation_angles_strings]
+        if random_orientations and sample_gui["xy_orientations"].value != "":
+            # parse string
+            value_1 = sample_gui["xy_orientations"].value
+            strings_1 = value_1.split(",")
+            xy_orientations = [int(i) for i in strings_1]
+        if random_orientations and sample_gui["xz_orientations"].value != "":
+            # parse string
+            value_2 = sample_gui["xz_orientations"].value
+            strings_2 = value_2.split(",")
+            xz_orientations = [int(i) for i in strings_2]
+        if random_orientations and sample_gui["yz_orientations"].value != "":
+            # parse string
+            value_3 = sample_gui["yz_orientations"].value
+            strings_3 = value_3.split(",")
+            yz_orientations = [int(i) for i in strings_3]
+        if random_orientations and sample_gui["axial_offset"].value != "":
+            # parse string
+            value_4 = sample_gui["axial_offset"].value
+            strings_4 = value_4.split(",")
+            axial_offset = [int(i) for i in strings_4]
+        
         if sample_gui["use_min_from_particle"].value:
-            experiment.set_virtualsample_params(
-                number_of_particles=sample_gui["number_of_particles"].value,
-                random_orientations=sample_gui["random_orientations"].value,
-            )
+            minimal_distance = None
         else:
-            min_distance = sample_gui["minimal_distance_nm"].value
-            experiment.set_virtualsample_params(
-                number_of_particles=sample_gui["number_of_particles"].value,
-                random_orientations=sample_gui["random_orientations"].value,
-                minimal_distance=min_distance,
-            )
+            minimal_distance = sample_gui["minimal_distance_nm"].value
+        experiment.set_virtualsample_params(
+            number_of_particles=sample_gui["number_of_particles"].value,
+            random_orientations=random_orientations,
+            minimal_distance=minimal_distance,
+            random_rotations=random_rotations,
+            rotation_angles=rotation_angles,
+            xy_orientations=xy_orientations,
+            xz_orientations=xz_orientations,
+            yz_orientations=yz_orientations,
+            axial_offset=axial_offset
+        )
         update_message()
 
     def select_virtual_sample_parameters(b):
@@ -865,37 +938,38 @@ def ui_select_sample_parameters(experiment):
             update_message()
 
     def upload_and_set(b):
-        filepath = sample_gui["File"].selected
-        img = tif.imread(filepath)
-        pixelsize = sample_gui["pixel_size"].value
-        min_distance = None
-        if sample_gui["detection_method"].value == "Local Maxima":
-            mode = "localmaxima"
-        elif sample_gui["detection_method"].value == "Mask":
-            mode = "mask"
-        else:
-            raise ValueError("Unknown detection method selected.")
-        if sample_gui["use_min_from_particle"].value:
-            min_distance = experiment.virtualsample_params["minimal_distance"]
-        else:
-            min_distance = sample_gui["minimal_distance_nm"].value
-        sigma = sample_gui["blur_sigma"].value
-        background = sample_gui["background_intensity"].value
-        threshold = sample_gui["intensity_threshold"].value
+        if sample_gui["File"].selected:
+            filepath = sample_gui["File"].selected
+            img = tif.imread(filepath)
+            pixelsize = sample_gui["pixel_size"].value
+            min_distance = None
+            if sample_gui["detection_method"].value == "Local Maxima":
+                mode = "localmaxima"
+            elif sample_gui["detection_method"].value == "Mask":
+                mode = "mask"
+            else:
+                raise ValueError("Unknown detection method selected.")
+            if sample_gui["use_min_from_particle"].value:
+                min_distance = experiment.virtualsample_params["minimal_distance"]
+            else:
+                min_distance = sample_gui["minimal_distance_nm"].value
+            sigma = sample_gui["blur_sigma"].value
+            background = sample_gui["background_intensity"].value
+            threshold = sample_gui["intensity_threshold"].value
 
-        npositions = sample_gui["number_of_particles"].value
-        experiment.use_image_for_positioning(
-            img=img,
-            mode=mode,
-            sigma=sigma,
-            background=background,
-            threshold=threshold,
-            pixelsize=pixelsize,
-            min_distance=min_distance,
-            npositions=npositions,
-        )
-        sample_gui.save_settings()
-        update_message()
+            npositions = sample_gui["number_of_particles"].value
+            experiment.use_image_for_positioning(
+                img=img,
+                mode=mode,
+                sigma=sigma,
+                background=background,
+                threshold=threshold,
+                pixelsize=pixelsize,
+                min_distance=min_distance,
+                npositions=npositions,
+            )
+            sample_gui.save_settings()
+            update_message()
 
     def toggle_advanced_parameters(b):
         widgets_visibility["minimal_distance_nm"] = not widgets_visibility[
@@ -904,8 +978,27 @@ def ui_select_sample_parameters(experiment):
         widgets_visibility["use_min_from_particle"] = not widgets_visibility[
             "use_min_from_particle"
         ]
-        widgets_visibility["select_sample_parameters"] = (
-            not widgets_visibility["select_sample_parameters"]
+        widgets_visibility["rotations_header"] = not widgets_visibility[
+            "rotations_header"
+        ]
+        widgets_visibility["rotation_angles"] = not widgets_visibility[
+            "rotation_angles"
+        ]
+        widgets_visibility["xy_orientations"] = not widgets_visibility[
+            "xy_orientations"
+        ]
+        widgets_visibility["xz_orientations"] = not widgets_visibility[
+            "xz_orientations"
+        ]
+        widgets_visibility["yz_orientations"] = not widgets_visibility[
+            "yz_orientations"
+        ]
+        widgets_visibility["axial_offset"] = not widgets_visibility[
+            "axial_offset"
+        ]
+
+        widgets_visibility["fileupload_header"] = (
+            not widgets_visibility["fileupload_header"]
         )
         widgets_visibility["upload_and_set"] = not widgets_visibility[
             "upload_and_set"
@@ -934,7 +1027,7 @@ def ui_select_sample_parameters(experiment):
     sample_gui["advanced_parameters"].on_click(toggle_advanced_parameters)
     sample_gui["upload_and_set"].on_click(upload_and_set)
     sample_gui["update_sample_parameters"].on_click(update_parameters)
-    widgets_visibility["select_sample_parameters"] = False
+    #widgets_visibility["select_sample_parameters"] = False
     update_parameters(True)
     select_virtual_sample_parameters(
         True

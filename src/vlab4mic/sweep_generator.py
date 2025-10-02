@@ -14,7 +14,7 @@ import copy
 import tifffile as tiff
 from pandas.api.types import is_numeric_dtype
 
-output_dir = Path.home() / "vlab4mic_outputs"
+#output_dir = Path.home() / "vlab4mic_outputs"
 
 
 class sweep_generator:
@@ -39,7 +39,7 @@ class sweep_generator:
     reference_probe = "NHS_ester"
     reference_probe_parameters = {"labelling_efficiency": 1.0}
     ####  outputs
-    ouput_directory = output_dir
+    output_directory = None
     reference_virtual_sample = None
     reference_virtual_sample_params = None
     reference_image = None
@@ -58,7 +58,7 @@ class sweep_generator:
     analysis["dataframes"] = None
     analysis["plots"] = {}
     # saving
-    output_directory: str = None
+    #output_directory: str = None
 
     def __init__(self):
         # parameter dictionary
@@ -84,6 +84,9 @@ class sweep_generator:
         self.plot_parameters["heatmaps"]["category"] = "modality_name"
         self.plot_parameters["heatmaps"]["param1"] = None
         self.plot_parameters["heatmaps"]["param2"] = None
+        self.plot_parameters["heatmaps"]["annotations"] = False
+        self.plot_parameters["heatmaps"]["linewidth"] = 2
+        self.plot_parameters["heatmaps"]["palette"] = None
         self.parameters_with_set_values = []
         self.plot_parameters["lineplots"] = {}
         self.plot_parameters["lineplots"]["x_param"] = None
@@ -113,6 +116,77 @@ class sweep_generator:
         None
         """
         self.sweep_repetitions = repeats
+
+    def select_structures(self, structures: list = None, **kwargs):
+        """
+        Select structures to use in the sweep.
+
+        Parameters
+        ----------
+        structures : list of str, optional
+            List of 4-letter PDB/CIF IDs or paths to structure files. If None, uses all available structures.
+        **kwargs
+            Additional keyword arguments.
+
+        Returns
+        -------
+        None
+        """
+        if structures is not None and type(structures) == list:
+            self.structures = structures
+            self.use_experiment_structure = False
+
+    def select_probe_templates(self, probe_templates: list = None, **kwargs):
+        """
+        Select probe templates to use in the sweep.
+
+        Parameters
+        ----------
+        probe_templates : list of str, optional
+            List of probe configuration filenames. If None, uses all available probes.
+        **kwargs
+            Additional keyword arguments.
+
+        Returns
+        -------
+        None
+        """
+        if probe_templates is not None and type(probe_templates) == list:
+            self.probes = probe_templates
+
+    def select_modalities(self, modalities: list = None, **kwargs):
+        """
+        Select imaging modalities to use in the sweep.
+
+        Parameters
+        ----------
+        modalities : list of str, optional
+            List of modality names. If None, uses all available modalities.
+        **kwargs
+            Additional keyword arguments.
+
+        Returns
+        -------
+        None
+        """
+        if modalities is not None and type(modalities) == list:
+            self.modalities = modalities
+
+    def set_output_directory(self, output_directory: str = None):
+        """
+        Set the output directory for saving results.
+
+        Parameters
+        ----------
+        output_directory : str, optional
+            Path to the desired output directory. If None, uses the default output directory.
+
+        Returns
+        -------
+        None
+        """
+        if output_directory is not None:
+            self.output_directory = output_directory
 
     # generators
     def generate_virtual_samples(self):
@@ -339,7 +413,8 @@ class sweep_generator:
             parameter_id is None
             or parameter_id not in self.acquisition_outputs_parameters.keys()
         ):
-            parameter_id = list(self.acquisition_outputs_parameters.keys())[0]
+            # parameter_id = list(self.acquisition_outputs_parameters.keys())[0]
+            return None
         if (
             len(self.acquisition_outputs[parameter_id][replica_number].shape)
             == 3
@@ -437,6 +512,152 @@ class sweep_generator:
             self.parameters_with_set_values.append(param_name)
         else:
             print(f"{param_group} is not a valid parameter group")
+
+    def set_sweep_parameters(
+            self,
+            # probe
+            probe_target_type = None,
+            probe_target_value = None,
+            probe_target_option= None,
+            probe_model = None,
+            probe_fluorophore = None,
+            probe_paratope = None,
+            probe_conjugation_target_info=None,
+            probe_seconday_epitope=None,
+            peptide_motif: dict = None,
+            probe_distance_to_epitope= None,
+            probe_steric_hindrance= None,
+            probe_conjugation_efficiency = None,
+            probe_wobble_theta = None,
+            labelling_efficiency = None,
+            # defects
+            defect=None,
+            defect_small_cluster=None,
+            defect_large_cluster=None,
+            # vsample
+            sample_dimensions = None,
+            particle_positions = None,
+            particle_orientations = None,
+            rotation_angles = None,
+            minimal_distance = None,
+            # modality params
+            pixelsize_nm = None,
+            lateral_resolution_nm = None,
+            axial_resolution_nm = None,
+            psf_voxel_nm = None,
+            depth_of_field_nm = None,
+            # imaging 
+            exp_time=None,
+            **kwargs
+    ):
+        if probe_distance_to_epitope is not None:
+            self.set_parameter_values(
+                "probe", "probe_distance_to_epitope", values=probe_distance_to_epitope
+            )
+        if probe_steric_hindrance is not None:
+            self.set_parameter_values(
+                "probe", "probe_steric_hindrance", values=probe_steric_hindrance
+            )
+        if probe_conjugation_efficiency is not None:
+            self.set_parameter_values(
+                "probe", "probe_conjugation_efficiency", values=probe_conjugation_efficiency
+            )
+        if probe_wobble_theta is not None:
+            self.set_parameter_values(
+                "probe", "probe_wobble_theta", values=probe_wobble_theta
+            )
+        if labelling_efficiency is not None:
+            self.set_parameter_values(
+                "probe", "labelling_efficiency", values=labelling_efficiency
+            )
+        if probe_target_type is not None:
+            self.set_parameter_values(
+                "probe", "probe_target_type", values=probe_target_type
+            )
+        if probe_target_value is not None:
+            self.set_parameter_values(
+                "probe", "probe_target_value", values=probe_target_value
+            )
+        if probe_target_option is not None:
+            self.set_parameter_values(
+                "probe", "probe_target_option", values=probe_target_option
+            )
+        if probe_model is not None:
+            self.set_parameter_values(
+                "probe", "probe_model", values=probe_model
+            )
+        if probe_fluorophore is not None:
+            self.set_parameter_values(
+                "probe", "probe_fluorophore", values=probe_fluorophore
+            )
+        if probe_paratope is not None:
+            self.set_parameter_values(
+                "probe", "probe_paratope", values=probe_paratope
+            )
+        if probe_conjugation_target_info is not None:
+            self.set_parameter_values(
+                "probe", "probe_conjugation_target_info", values=probe_conjugation_target_info
+            )
+        if probe_seconday_epitope is not None:
+            self.set_parameter_values(
+                "probe", "probe_secondary_epitope", values=probe_seconday_epitope
+            )
+
+        if defect is not None:
+            self.set_parameter_values(
+                "particle_defect", "defect", values=defect
+            )
+        if defect_small_cluster is not None:
+            self.set_parameter_values(
+                "particle_defect", "defect_small_cluster", values=defect_small_cluster
+            )
+        if defect_large_cluster is not None:
+            self.set_parameter_values(
+                "particle_defect", "defect_large_cluster", values=defect_large_cluster
+            )
+        if sample_dimensions is not None:
+            self.set_parameter_values(
+                "virtual_sample", "sample_dimensions", values=sample_dimensions
+            )
+        if particle_positions is not None:
+            self.set_parameter_values(
+                "virtual_sample", "particle_positions", values=particle_positions
+            )
+        if particle_orientations is not None:
+            self.set_parameter_values(
+                "virtual_sample", "particle_orientations", values=particle_orientations
+            )
+        if rotation_angles is not None:
+            self.set_parameter_values(
+                "virtual_sample", "rotation_angles", values=rotation_angles
+            )
+        if exp_time is not None:
+            self.set_parameter_values(
+                "acquisition", "exp_time", values=exp_time
+            )
+        if pixelsize_nm is not None:
+            self.set_parameter_values(
+                "modality", "pixelsize_nm", values=pixelsize_nm
+            )
+        if lateral_resolution_nm is not None:
+            self.set_parameter_values(
+                "modality", "lateral_resolution_nm", values=lateral_resolution_nm
+            )
+        if axial_resolution_nm is not None:
+            self.set_parameter_values(
+                "modality", "axial_resolution_nm", values=axial_resolution_nm
+            )
+        if psf_voxel_nm is not None:
+            self.set_parameter_values(
+                "modality", "psf_voxel_nm", values=psf_voxel_nm
+            )
+        if depth_of_field_nm is not None:
+            self.set_parameter_values(
+                "modality", "depth_of_field_nm", values=depth_of_field_nm
+            )
+        if peptide_motif is not None:
+            pass
+        
 
     def clear_sweep_parameters(self):
         """
@@ -720,6 +941,8 @@ class sweep_generator:
         return_figure=False,
         decimals="%.4f",
         filter_dictionary=None,
+        annotations=False,
+        palette=None,
         **kwargs,
     ):
         """
@@ -754,7 +977,11 @@ class sweep_generator:
         if param1 is None:
             param1 = self.parameters_with_set_values[0]
         if param2 is None:
-            param2 = "probe_n"
+            param_names_set = self.parameters_with_set_values
+            if len(param_names_set) >= 2:
+                param2=self.parameters_with_set_values[1]
+            else:
+                param2 = "probe_n"
         analysis_resut_df = self.get_analysis_output(keyname="dataframes")
         df = copy.deepcopy(self.analysis["dataframes"])
         if is_numeric_dtype(df[param1]):
@@ -776,14 +1003,17 @@ class sweep_generator:
         )
         conditions = list(df_categories.keys())
         nconditions = len(conditions)
-        my_palette = sns.diverging_palette(20, 200, s=80, l=50, as_cmap=True)
+        if palette is None:
+            cmap_palette = sns.diverging_palette(20, 200, s=80, l=50, as_cmap=True)
+        else: 
+            cmap_palette = palette
         plot = _plots.sns_heatmap_pivots(
             df_categories,
             titles,
-            annotations=True,
+            annotations=annotations,
             return_figure=return_figure,
             metric_name=metric_name,
-            conditions_cmaps=[my_palette]*nconditions,
+            conditions_cmaps=[cmap_palette]*nconditions,
             decimals=decimals,
             **kwargs
         )
@@ -882,7 +1112,7 @@ class sweep_generator:
             Base name for the output files. If None, defaults to "vLab4mic_results_".
             The current date (YYYYMMDD) will be appended to the name.
         output_directory : str, optional
-            Directory where the output files will be saved. If None, uses the instance's `ouput_directory` attribute.
+            Directory where the output files will be saved. If None, uses the instance's `output_directory` attribute.
         analysis_type : list of str, optional
             Types of analysis outputs to save. Can include "dataframes" and/or "plots".
             If None, both "dataframes" and "plots" are saved.
@@ -905,7 +1135,7 @@ class sweep_generator:
             output_name = "vLab4mic_results_"
         output_name = output_name + dt_string
         if output_directory is None:
-            output_directory = self.ouput_directory
+            output_directory = self.output_directory
         for keyname in analysis_type:
             if keyname == "dataframes":
                 df = self.get_analysis_output(keyname)
@@ -937,7 +1167,7 @@ class sweep_generator:
             Base name for the output image files. Defaults to "vLab4mic_images_".
         output_directory : str, optional
             Directory where images will be saved. If not provided, uses a default path
-            based on `self.ouput_directory` under a "simulated_images" subdirectory. The directory is created if it does not exist.
+            based on `self.output_directory` under a "simulated_images" subdirectory. The directory is created if it does not exist.
 
         Returns
         -------
@@ -953,7 +1183,7 @@ class sweep_generator:
             output_name = "vLab4mic_images_"
         if output_directory is None:
             output_directory = os.path.join(
-                self.ouput_directory, "simulated_images", ""
+                self.output_directory, "simulated_images", ""
             )
             if not os.path.exists(output_directory):
                 os.makedirs(output_directory)
@@ -990,3 +1220,64 @@ class sweep_generator:
             # save reference image
             name_ref = output_directory + "reference.tiff"
             tiff.imwrite(name_ref, self.reference_image)
+
+
+def run_parameter_sweep(
+        structures: list[str] = None,
+        probe_templates: list[str] = None,
+        modalities: list[str] = None,
+        output_directory: str = None,
+        output_name: str = None,
+        save_analysis_results: bool = True,
+        analysis_plots: bool = True,
+        save_sweep_images: bool = True,
+        sweep_repetitions: int = 3,
+        return_generator: bool = False,
+        number_of_particles: int = 1,
+        particle_positions: int = None,
+        reference_structure = None,
+        reference_probe = None,
+        reference_parameters: dict = None,
+        clear_experiment=True,
+        run_analysis=True,
+        **kwargs
+):
+    sweep_gen = sweep_generator()
+    if clear_experiment:
+        sweep_gen.experiment.clear_experiment()
+    sweep_gen.select_structures(structures=structures)
+    sweep_gen.select_probe_templates(probe_templates=probe_templates)
+    sweep_gen.select_modalities(modalities=modalities)
+    sweep_gen.set_output_directory(output_directory=output_directory)
+    sweep_gen.set_number_of_repetitions(sweep_repetitions)
+    # number of particles accross sweep
+    if particle_positions is not None:
+        # set those positions
+        sweep_gen.experiment.set_virtualsample_params(
+            particle_positions=particle_positions
+            )
+    else:
+        sweep_gen.experiment.set_virtualsample_params(
+            number_of_particles=number_of_particles
+            )
+
+    sweep_gen.set_sweep_parameters(**kwargs)
+    if reference_parameters is None:
+        reference_parameters = dict()
+    sweep_gen.set_reference_parameters(
+        reference_structure=reference_structure,
+        reference_probe=reference_probe,
+        **reference_parameters)
+    if run_analysis:
+        sweep_gen.run_analysis(
+            save=save_analysis_results, 
+            plots=analysis_plots,
+            output_name=output_name
+            )
+        if save_sweep_images:
+            sweep_gen.save_images(
+                output_name=output_name, 
+                output_directory=output_directory
+            )
+    if return_generator:
+        return sweep_gen

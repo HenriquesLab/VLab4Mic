@@ -37,9 +37,13 @@ class Field:
         ).reshape((1, 3))
         self.molecules_params["absolute_positions"] = None
         self.molecules_params["orientations"] = None
+        self.molecules_params["orientations_planewise"] = None
         self.molecules_params["rotations"] = None
         self.molecules_params["minimal_distance"] = None
-
+        self.xy_orientations = None
+        self.xz_orientations = None
+        self.yz_orientations = None
+        self.axial_offset = None
         self.emitters_per_fluorophore = {}  # this can be exported
 
         #
@@ -176,6 +180,15 @@ class Field:
         self.random_rotations = random_rotations
         if "rotation_angles" in kwargs.keys():
             self.rotation_angles = kwargs["rotation_angles"]
+        if "xy_orientations" in kwargs.keys():
+            self.xy_orientations = kwargs["xy_orientations"]
+        if "xz_orientations" in kwargs.keys():
+            self.xz_orientations = kwargs["xz_orientations"]
+        if "yz_orientations" in kwargs.keys():
+            self.yz_orientations = kwargs["yz_orientations"]
+        if "axial_offset" in kwargs.keys():
+            self.axial_offset = kwargs["axial_offset"]
+
 
     def calculate_absolute_reference(self):
         """
@@ -315,6 +328,14 @@ class Field:
             self.molecules_params["relative_positions"] = rand
             self._gen_abs_from_rel_positions()
 
+    def randomise_axial_position(self):
+        rng = np.random.default_rng()
+        nmolecules = self.get_molecule_param("nMolecules")
+        axial_offsets = rng.choice(self.axial_offset, nmolecules, replace=True)
+        for i, zpos in enumerate(axial_offsets):
+            self.molecules_params["absolute_positions"][i][2] = zpos + self.z_offset
+
+
     def generate_random_orientations(self):
         """
         Generate random orientations for all molecules in the field.
@@ -322,9 +343,34 @@ class Field:
         # give new orientation
         norientations = self.get_molecule_param("nMolecules")
         orientations = []
-        for i in range(norientations):
-            orientations.append(np.array(sampl.sample_spherical_normalised(1, ndim=3)))
-        self.set_molecule_param("orientations", orientations)
+        unconstrained = True
+        rng = np.random.default_rng()
+        xy_orientation_changes = np.zeros((norientations,))
+        if self.xy_orientations is not None:
+            xy_orientation_changes =  rng.choice(self.xy_orientations, norientations, replace=True)
+            unconstrained = False
+        if self.xz_orientations is not None:
+            xz_orientation_changes =  rng.choice(self.xz_orientations, norientations, replace=True)
+            unconstrained = False
+        else:
+            xz_orientation_changes = np.zeros((norientations,))
+        if self.yz_orientations is not None:
+            yz_orientation_changes =  rng.choice(self.yz_orientations, norientations, replace=True)
+            unconstrained = False
+        else:
+            yz_orientation_changes = np.zeros((norientations,))
+        if unconstrained:
+            print("generating unconstrained randomised axis")
+            # unconstrained randomisation
+            for i in range(norientations):
+                orientations.append(np.array(sampl.sample_spherical_normalised(1, ndim=3)))
+            self.set_molecule_param("orientations", orientations)
+        else:
+            orientations_planewise = []
+            for xy_xz_yz in zip(xy_orientation_changes, xz_orientation_changes, yz_orientation_changes):
+                orientations_planewise.append(xy_xz_yz)
+            self.set_molecule_param("orientations_planewise", orientations_planewise)
+            self.set_molecule_param("orientations", None)
 
     def initialise_random_rotations(self, rotation_angles: list = None):
         """
@@ -420,6 +466,8 @@ class Field:
         for pos in self.molecules_params["relative_positions"]:
             abs_pos.append(self._calculate_absolute_position(pos))
         self.set_molecule_param("absolute_positions", np.array(abs_pos))
+        if self.axial_offset is not None:
+            self.randomise_axial_position()
 
     # methods for fluorophores
     def _load_fluorophore_params(self, **fluodictionary):
@@ -467,6 +515,9 @@ class Field:
         self.molecules_default_orientation = particle_copy.get_axis()
         if self.molecules_params["minimal_distance"] is None:
             self._set_molecule_minimal_distance(dist=particle_copy.radial_hindance)
+        elif particle_copy.radial_hindance > self.molecules_params["minimal_distance"]:
+            self._set_molecule_minimal_distance(dist=particle_copy.radial_hindance)
+        #self._set_molecule_minimal_distance(dist=min_distance)
         if self.random_placing:
             self.generate_random_positions()
         self._gen_abs_from_rel_positions()
@@ -556,7 +607,11 @@ class Field:
             for mol, ori in zip(
                 self.molecules, self.get_molecule_param("orientations")
             ):
-                mol.transform_reorient(ori)
+                mol.transform_reorient_axis(ori)
+        elif self.get_molecule_param("orientations_planewise") is not None:
+            for mol, xy_xz_yz in zip(self.molecules, self.get_molecule_param("orientations_planewise")):
+                mol.reorient_axis_by_plane(reset_orientation=True)
+                mol.reorient_axis_by_plane(*xy_xz_yz, sequential=True)
         else:
             pass
             # print("molecule orientations has not been set. No reorientation done.")
@@ -768,9 +823,9 @@ class Field:
         if axesoff:
             ax.set_axis_off()
         else:
-            ax.set_xlabel("X (Å)")
-            ax.set_ylabel("Y (Å)")
-            ax.set_zlabel("Z (Å)")
+            ax.set_xlabel("X (nm)")
+            ax.set_ylabel("Y (nm)")
+            ax.set_zlabel("Z (nm)")
         if axis_object is not None:
             return ax
         else:

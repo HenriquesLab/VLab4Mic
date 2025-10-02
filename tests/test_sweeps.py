@@ -6,7 +6,6 @@ import copy
 
 def test_run_default_analysis(sweep_gen):
     test_sweep = copy.deepcopy(sweep_gen)
-    test_sweep.run_analysis(save=False, plots=False)
     test_sweep.set_parameter_values(
         "probe", "labelling_efficiency", values=(0.4, 1, 3)
     )

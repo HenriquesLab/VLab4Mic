@@ -1070,6 +1070,12 @@ class ExperimentParametrisation:
         random_placing: bool = None,
         minimal_distance: float = None,
         update_mode: bool = True,
+        random_rotations=False,
+        rotation_angles=None,
+        xy_orientations = None,
+        xz_orientations = None,
+        yz_orientations = None,
+        axial_offset=None,
         **kwargs,
     ):
         """
@@ -1128,7 +1134,17 @@ class ExperimentParametrisation:
             self.virtualsample_params["minimal_distance"] = (
                 particle_minimal_distance
             )
-
+        self.virtualsample_params["random_rotations"] = random_rotations
+        if rotation_angles is not None:
+            self.virtualsample_params["rotation_angles"] = rotation_angles
+        if xy_orientations is not None:
+            self.virtualsample_params["xy_orientations"] = xy_orientations
+        if xz_orientations is not None:
+            self.virtualsample_params["xz_orientations"] = xz_orientations
+        if yz_orientations is not None:
+            self.virtualsample_params["yz_orientations"] = yz_orientations
+        if axial_offset is not None:
+            self.virtualsample_params["axial_offset"] = axial_offset
 
     def use_image_for_positioning(
         self,
@@ -1259,6 +1275,10 @@ def generate_virtual_sample(
     number_of_particles: int = None,
     particle_positions: list[np.array] = None,
     random_orientations=False,
+    xy_orientations = None,
+    xz_orientations = None,
+    yz_orientations = None,
+    axial_offset = None,
     random_placing=False,
     random_rotations=False,
     rotation_angles = None,
@@ -1401,6 +1421,10 @@ def generate_virtual_sample(
     if random_rotations:
         vsample_configuration["random_rotations"] = random_rotations
     vsample_configuration["rotation_angles"] = rotation_angles
+    vsample_configuration["xy_orientations"] = xy_orientations
+    vsample_configuration["xz_orientations"] = xz_orientations
+    vsample_configuration["yz_orientations"] = yz_orientations
+    vsample_configuration["axial_offset"] = axial_offset
     myexperiment.virtualsample_params = vsample_configuration
     myexperiment.build(use_locals=True)
 
