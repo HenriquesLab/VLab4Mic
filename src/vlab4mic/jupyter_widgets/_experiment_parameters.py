@@ -766,6 +766,10 @@ def ui_select_sample_parameters(experiment):
         step=1,
         style={"description_width": "initial"},
     )
+    sample_gui.add_HTML(
+        tag="rotations_header",
+        value="<b>Specify values as a comma-separated list (e.g. 20,24,45)</b>",
+    )
     sample_gui.add_text(
         tag="rotation_angles",
         description = "Rotation angles (deg): ",
@@ -973,6 +977,9 @@ def ui_select_sample_parameters(experiment):
         ]
         widgets_visibility["use_min_from_particle"] = not widgets_visibility[
             "use_min_from_particle"
+        ]
+        widgets_visibility["rotations_header"] = not widgets_visibility[
+            "rotations_header"
         ]
         widgets_visibility["rotation_angles"] = not widgets_visibility[
             "rotation_angles"
