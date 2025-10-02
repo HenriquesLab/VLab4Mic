@@ -78,6 +78,7 @@ class sweep_generator:
         self.analysis_parameters["zoom_in"] = 0
         self.analysis_parameters["metrics_list"] = [
             "ssim",
+            "pearson"
         ]
         self.plot_parameters = {}
         self.plot_parameters["heatmaps"] = {}
