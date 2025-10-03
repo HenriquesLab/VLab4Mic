@@ -1285,6 +1285,9 @@ def generate_virtual_sample(
     rotation_angles = None,
     clear_probes=False,
     clear_experiment=False,
+    # secondary
+    primary_probe=None,
+    secondary_probe=None,
     **kwargs,
 ):
     """
@@ -1353,46 +1356,51 @@ def generate_virtual_sample(
     if clear_experiment:
         myexperiment.clear_experiment()
     # load default configuration for probe
-    if not clear_probes:
-        print(probe_template)
-        probe_configuration_file = os.path.join(
-            myexperiment.configuration_path, "probes", probe_template + ".yaml"
-        )
-        probe_configuration = load_yaml(probe_configuration_file)
-        probe_configuration["probe_template"] = probe_template
-        if probe_name is None:
-            probe_name = probe_template
-        else:
-            probe_configuration["label_name"] = probe_name
-        if probe_target_type and probe_target_value:
-            print(probe_target_type, probe_target_value)
-            probe_configuration["probe_target_type"] = probe_target_type
-            probe_configuration["probe_target_value"] = probe_target_value
-        if probe_distance_to_epitope is not None:
-            probe_configuration["distance_to_epitope"] = (
-                probe_distance_to_epitope
+    if (primary_probe is not None) and (secondary_probe is not None):
+        print("Adding primary and secondary probes")
+        myexperiment.add_probe(as_primary=True, **primary_probe)
+        myexperiment.add_probe(as_primary=False, **secondary_probe)
+    else:
+        if not clear_probes:
+            print(probe_template)
+            probe_configuration_file = os.path.join(
+                myexperiment.configuration_path, "probes", probe_template + ".yaml"
             )
-        if probe_fluorophore is not None:
-            probe_configuration["fluorophore_id"] = probe_fluorophore
-        if labelling_efficiency is not None:
-            probe_configuration["labelling_efficiency"] = labelling_efficiency
-        if probe_model is not None:
-            probe_configuration["model_ID"] = probe_model
-        if probe_paratope is not None:
-            probe_configuration["paratope"] = probe_paratope
-        if probe_conjugation_target_info is not None:
-            probe_configuration["conjugation_target_info"] = (
-                probe_conjugation_target_info
-            )
-        if probe_conjugation_efficiency is not None:
-            probe_configuration["conjugation_efficiency"] = (
-                probe_conjugation_efficiency
-            )
-        if probe_seconday_epitope is not None:
-            probe_configuration["epitope_target_info"] = probe_seconday_epitope
-        if probe_wobble_theta is not None:
-            probe_configuration["probe_wobble_theta"] = probe_wobble_theta
-        myexperiment.add_probe(**probe_configuration)
+            probe_configuration = load_yaml(probe_configuration_file)
+            probe_configuration["probe_template"] = probe_template
+            if probe_name is None:
+                probe_name = probe_template
+            else:
+                probe_configuration["label_name"] = probe_name
+            if probe_target_type and probe_target_value:
+                print(probe_target_type, probe_target_value)
+                probe_configuration["probe_target_type"] = probe_target_type
+                probe_configuration["probe_target_value"] = probe_target_value
+            if probe_distance_to_epitope is not None:
+                probe_configuration["distance_to_epitope"] = (
+                    probe_distance_to_epitope
+                )
+            if probe_fluorophore is not None:
+                probe_configuration["fluorophore_id"] = probe_fluorophore
+            if labelling_efficiency is not None:
+                probe_configuration["labelling_efficiency"] = labelling_efficiency
+            if probe_model is not None:
+                probe_configuration["model_ID"] = probe_model
+            if probe_paratope is not None:
+                probe_configuration["paratope"] = probe_paratope
+            if probe_conjugation_target_info is not None:
+                probe_configuration["conjugation_target_info"] = (
+                    probe_conjugation_target_info
+                )
+            if probe_conjugation_efficiency is not None:
+                probe_configuration["conjugation_efficiency"] = (
+                    probe_conjugation_efficiency
+                )
+            if probe_seconday_epitope is not None:
+                probe_configuration["epitope_target_info"] = probe_seconday_epitope
+            if probe_wobble_theta is not None:
+                probe_configuration["probe_wobble_theta"] = probe_wobble_theta
+            myexperiment.add_probe(**probe_configuration)
     # load default configuration for virtual sample
     virtual_sample_template = os.path.join(
         myexperiment.configuration_path,
