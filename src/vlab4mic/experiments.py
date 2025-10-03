@@ -1254,6 +1254,7 @@ class ExperimentParametrisation:
 
 def generate_virtual_sample(
     structure: str = "1XI5",
+    structure_is_path = False,
     probe_template: str = "NHS_ester",
     probe_name: str = None,
     probe_target_type: str = None,
@@ -1293,6 +1294,8 @@ def generate_virtual_sample(
     ----------
     structure : str, optional
         4-letter ID of PDB/CIF model. Default is "1XI5".
+    structure_is_path: logical
+        Use structure value as absolute path for the PDB/CIF file.
     probe_name : str, optional
         Name ID of probe configuration file (filename).
     probe_target_type : str, optional
@@ -1398,9 +1401,16 @@ def generate_virtual_sample(
     )
     vsample_configuration = load_yaml(virtual_sample_template)
     myexperiment.configuration_path
-    myexperiment.structure_id = structure
-    # myexperiment.structure_label = probe_name
-    # myexperiment.probe_parameters[probe_name] = probe_configuration
+    if structure_is_path:
+        myexperiment.select_structure(
+            structure_id=structure.split(".")[0], 
+            structure_path=structure
+        )
+    else:
+        myexperiment.select_structure(
+            structure_id=structure, 
+            structure_path=None
+        )
 
     if defect and defect_large_cluster and defect_small_cluster:
         myexperiment.defect_eps["eps1"] = defect_small_cluster
