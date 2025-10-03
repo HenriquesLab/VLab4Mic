@@ -1274,6 +1274,73 @@ def run_parameter_sweep(
     exp_time = None,
     # Add more as needed for your sweep
 ):
+    """
+    Run a parameter sweep for virtual microscopy simulations and analysis.
+
+    This function automates the process of generating virtual samples, simulating
+    acquisitions, and performing analysis across a range of user-specified parameters.
+    It supports batch processing of multiple structures, probes, modalities, and
+    imaging/acquisition settings, and can optionally save results and images.
+
+    Parameters
+    ----------
+    structures : list of str, optional
+        List of structure IDs or file paths to use in the sweep.
+    probe_templates : list of str, optional
+        List of probe configuration filenames to use in the sweep.
+    modalities : list of str, optional
+        List of imaging modality names to use in the sweep.
+    output_directory : str, optional
+        Directory to save outputs. If None, uses default.
+    output_name : str, optional
+        Base name for output files.
+    save_analysis_results : bool, optional
+        Whether to save analysis results. Default is True.
+    analysis_plots : bool, optional
+        Whether to generate and save analysis plots. Default is True.
+    save_sweep_images : bool, optional
+        Whether to save simulated images. Default is True.
+    sweep_repetitions : int, optional
+        Number of repetitions per parameter combination. Default is 3.
+    return_generator : bool, optional
+        If True, return the sweep_generator instance. Default is False.
+    number_of_particles : int, optional
+        Number of particles per virtual sample. Default is 1.
+    particle_positions : int or list, optional
+        Explicit particle positions to use. If None, positions are generated.
+    reference_structure : str, optional
+        Structure ID or path for the reference sample.
+    reference_probe : str, optional
+        Probe configuration for the reference sample.
+    reference_parameters : dict, optional
+        Additional parameters for the reference sample.
+    clear_experiment : bool, optional
+        Whether to clear the experiment before running. Default is True.
+    run_analysis : bool, optional
+        Whether to run analysis after simulation. Default is True.
+    probe_target_type, probe_target_value, probe_target_option, probe_model,
+    probe_fluorophore, probe_paratope, probe_conjugation_target_info,
+    probe_seconday_epitope, peptide_motif, probe_distance_to_epitope,
+    probe_steric_hindrance, probe_conjugation_efficiency, probe_wobble_theta,
+    labelling_efficiency, defect, defect_small_cluster, defect_large_cluster,
+    sample_dimensions, particle_orientations, rotation_angles, minimal_distance,
+    pixelsize_nm, lateral_resolution_nm, axial_resolution_nm, psf_voxel_nm,
+    depth_of_field_nm, exp_time : various, optional
+        Sweep, virtual sample, probe, defect, acquisition, and modality parameters.
+        See documentation for details.
+
+    Returns
+    -------
+    sweep_generator or None
+        If return_generator is True, returns the sweep_generator instance.
+        Otherwise, returns None.
+
+    Notes
+    -----
+    - This function is the main entry point for running parameter sweeps in vLab4Mic.
+    - All major simulation and analysis steps are automated.
+    - For advanced usage, see the sweep_generator class and related documentation.
+    """
     sweep_gen = sweep_generator()
     if clear_experiment:
         sweep_gen.experiment.clear_experiment()
