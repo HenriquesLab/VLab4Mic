@@ -1318,16 +1318,37 @@ def run_parameter_sweep(
         Whether to clear the experiment before running. Default is True.
     run_analysis : bool, optional
         Whether to run analysis after simulation. Default is True.
-    probe_target_type, probe_target_value, probe_target_option, probe_model,
-    probe_fluorophore, probe_paratope, probe_conjugation_target_info,
-    probe_seconday_epitope, peptide_motif, probe_distance_to_epitope,
-    probe_steric_hindrance, probe_conjugation_efficiency, probe_wobble_theta,
-    labelling_efficiency, defect, defect_small_cluster, defect_large_cluster,
-    sample_dimensions, particle_orientations, rotation_angles, minimal_distance,
-    pixelsize_nm, lateral_resolution_nm, axial_resolution_nm, psf_voxel_nm,
-    depth_of_field_nm, exp_time : various, optional
-        Sweep, virtual sample, probe, defect, acquisition, and modality parameters.
-        See documentation for details.
+    For the following parameters, pass a list of the values to sweep over,
+    alternatively, pass a tuple of (min, max, nsteps) to generate linearly spaced values.
+    For a single value, pass a list with one element.
+    If a parameter is None, it will not be swept and will use default values
+        - probe_target_type
+        - probe_target_value
+        - probe_target_option
+        - probe_model
+        - probe_fluorophore
+        - probe_paratope
+        - probe_conjugation_target_info
+        - probe_seconday_epitope
+        - peptide_motif
+        - probe_distance_to_epitope
+        - probe_steric_hindrance
+        - probe_conjugation_efficiency
+        - probe_wobble_theta
+        - labelling_efficiency
+        - defect
+        - defect_small_cluster
+        - defect_large_cluster
+        - sample_dimensions
+        - particle_orientations
+        - rotation_angles
+        - minimal_distance
+        - pixelsize_nm
+        - lateral_resolution_nm
+        - axial_resolution_nm
+        - psf_voxel_nm
+        - depth_of_field_nm
+        - exp_time
 
     Returns
     -------
