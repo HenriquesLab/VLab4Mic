@@ -36,28 +36,26 @@ image_outputs3, image_outputs_noiseless3, experiment3 = image_vsample(
     clear_experiment=True
 )
 ############ Clathrin coated pit, primary and secodnary labelling
-image_outputs4, image_outputs_noiseless4, experiment4 = image_vsample(
-    structure = "1XI5",
-    multimodal=modalities,
-    clear_experiment=True,
-    run_simulation=False
-)
-experiment4.remove_probes()
-experiment4.add_probe(
+
+primary = dict(
     probe_template = "Antibody",
     probe_name="Primary-clathrin",
     probe_target_type = "Sequence",
     probe_target_value = "EQATETQ",
-    as_primary=True,
-    )
-experiment4.add_probe(
+)
+secondary = dict(
     probe_template = "Antibody",
     probe_name="Secondary-clathrin",
     probe_target_type = "Primary",
     probe_target_value = "Primary-clathrin"
-    )
-experiment4.build(modules=["particle", "coordinate_field", "imager"])
-image_outputs4, image_outputs_noiseless4 = experiment4.run_simulation()
+)
+image_outputs4, image_outputs_noiseless4, experiment4 = image_vsample(
+    structure = "1XI5",
+    primary_probe = primary,
+    secondary_probe = secondary,
+    clear_experiment=True,
+    run_simulation=True
+)
 
 
 ############ save images as figures
