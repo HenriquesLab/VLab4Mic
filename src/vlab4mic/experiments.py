@@ -1545,8 +1545,8 @@ def image_vsample(
         List of modality names. If provided, overrides the `modality` parameter and adds all listed modalities.
     run_simulation : bool, optional
         If True, generates image simulation for each modality set. Default is True.
-
-    # Parameters for virtual sample generation (see `generate_virtual_sample` for details):
+    ----------
+    Parameters for virtual sample generation (see `generate_virtual_sample` for details):
     structure : str, optional
         4-letter ID of PDB/CIF model. Default is "1XI5".
     structure_is_path : bool, optional
