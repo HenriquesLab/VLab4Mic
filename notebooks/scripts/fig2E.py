@@ -53,6 +53,7 @@ image_outputs4, image_outputs_noiseless4, experiment4 = image_vsample(
     structure = "1XI5",
     primary_probe = primary,
     secondary_probe = secondary,
+    multimodal=modalities,
     clear_experiment=True,
     run_simulation=True
 )
