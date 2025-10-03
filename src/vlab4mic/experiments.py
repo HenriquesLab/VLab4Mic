@@ -1490,10 +1490,43 @@ def build_virtual_microscope(
 
 def image_vsample(
     vsample=None,
-    modality="STED",
+    modality: str = "STED",
     multimodal: list[str] = None,
-    run_simulation=True,
-    **kwargs,
+    run_simulation: bool = True,
+    structure: str = "1XI5",
+    structure_is_path: bool = False,
+    probe_template: str = "NHS_ester",
+    probe_name: str = None,
+    probe_target_type: str = None,
+    probe_target_value: str = None,
+    probe_distance_to_epitope: float = None,
+    probe_model: list = None,
+    probe_fluorophore: str = "AF647",
+    probe_paratope: str = None,
+    probe_conjugation_target_info = None,
+    probe_conjugation_efficiency: float = None,
+    probe_seconday_epitope = None,
+    probe_wobble_theta = None,
+    labelling_efficiency: float = 1.0,
+    defect_small_cluster: float = None,
+    defect_large_cluster: float = None,
+    defect: float = None,
+    virtual_sample_template: str = "square1x1um_randomised",
+    sample_dimensions: list = None,
+    number_of_particles: int = None,
+    particle_positions: list = None,
+    random_orientations = False,
+    xy_orientations = None,
+    xz_orientations = None,
+    yz_orientations = None,
+    axial_offset = None,
+    random_placing = False,
+    random_rotations = False,
+    rotation_angles = None,
+    clear_probes = False,
+    clear_experiment = False,
+    primary_probe = None,
+    secondary_probe = None,
 ):
     """
     Generate imaging simulations of the specified virtual sample and imaging modalities.
@@ -1522,12 +1555,47 @@ def image_vsample(
         - ExperimentParametrisation: The experiment object as described above.
     """
     if vsample is None:
-        vsample, sample_experiment = generate_virtual_sample(**kwargs)
+        vsample, sample_experiment = generate_virtual_sample(
+            structure=structure,
+            structure_is_path=structure_is_path,
+            probe_template=probe_template,
+            probe_name=probe_name,
+            probe_target_type=probe_target_type,
+            probe_target_value=probe_target_value,
+            probe_distance_to_epitope=probe_distance_to_epitope,
+            probe_model=probe_model,
+            probe_fluorophore=probe_fluorophore,
+            probe_paratope=probe_paratope,
+            probe_conjugation_target_info=probe_conjugation_target_info,
+            probe_conjugation_efficiency=probe_conjugation_efficiency,
+            probe_seconday_epitope=probe_seconday_epitope,
+            probe_wobble_theta=probe_wobble_theta,
+            labelling_efficiency=labelling_efficiency,
+            defect_small_cluster=defect_small_cluster,
+            defect_large_cluster=defect_large_cluster,
+            defect=defect,
+            virtual_sample_template=virtual_sample_template,
+            sample_dimensions=sample_dimensions,
+            number_of_particles=number_of_particles,
+            particle_positions=particle_positions,
+            random_orientations=random_orientations,
+            xy_orientations=xy_orientations,
+            xz_orientations=xz_orientations,
+            yz_orientations=yz_orientations,
+            axial_offset=axial_offset,
+            random_placing=random_placing,
+            random_rotations=random_rotations,
+            rotation_angles=rotation_angles,
+            clear_probes=clear_probes,
+            clear_experiment=clear_experiment,
+            primary_probe=primary_probe,
+            secondary_probe=secondary_probe,
+        )
         if multimodal is not None:
             for mod in multimodal:
-                sample_experiment.add_modality(mod, **kwargs)
+                sample_experiment.add_modality(mod)
         else:
-            sample_experiment.add_modality(modality, **kwargs)
+            sample_experiment.add_modality(modality)
         sample_experiment.build(
             modules=[
                 "imager",
@@ -1537,11 +1605,11 @@ def image_vsample(
         # need to create an experiment for it
         if multimodal is not None:
             vmicroscope, sample_experiment = build_virtual_microscope(
-                multimodal=multimodal, use_local_field=True, **kwargs
+                multimodal=multimodal, use_local_field=True
             )
         else:
             vmicroscope, sample_experiment = build_virtual_microscope(
-                modality=modality, use_local_field=True, **kwargs
+                modality=modality, use_local_field=True
             )
         sample_experiment.imager.import_field(**vsample)
     imaging_output = dict()
