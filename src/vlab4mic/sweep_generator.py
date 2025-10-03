@@ -1160,7 +1160,7 @@ class sweep_generator:
 
     def save_images(self, output_name=None, output_directory=None, floats_as=float):
         """
-        Saves simulated images and an optional reference image to disk in TIFF format.
+        Save simulated acquisition images and the reference image to disk in TIFF format.
 
         Parameters
         ----------
@@ -1169,16 +1169,19 @@ class sweep_generator:
         output_directory : str, optional
             Directory where images will be saved. If not provided, uses a default path
             based on `self.output_directory` under a "simulated_images" subdirectory. The directory is created if it does not exist.
+        floats_as : callable, optional
+            Function to convert numpy float64 values in parameter dictionaries to another type (e.g., float). Defaults to float.
 
         Returns
         -------
         None
 
-        Behavior
-        --------
+        Notes
+        -----
         - Iterates over all parameter combinations in `self.acquisition_outputs`.
         - For each combination, concatenates all replicate images and saves the result as a TIFF file named after the parameter combination ID.
         - If `self.reference_image` is present, saves it as "reference.tiff" in the output directory.
+        - Saves acquisition parameters as a YAML file in the output directory.
         """
         if output_name is None:
             output_name = "vLab4mic_images_"
