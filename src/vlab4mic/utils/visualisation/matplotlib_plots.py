@@ -68,33 +68,36 @@ def slider_normalised(stack, dimension, dim_position=None, cbar=True):
 
 
 def add_ax_scatter(plotobj, trgt_dictionary, fraction=1):
-    if fraction == 1:
-        plotobj.scatter(
-            trgt_dictionary["coordinates"][:, 0],
-            trgt_dictionary["coordinates"][:, 1],
-            trgt_dictionary["coordinates"][:, 2],
-            c=trgt_dictionary["plotcolour"],
-            label=trgt_dictionary["label_name"],
-            s=trgt_dictionary["plotsize"],
-            alpha=trgt_dictionary["plotalpha"],
-            marker=trgt_dictionary["plotmarker"],
-            depthshade=True,
-        )
+    if trgt_dictionary["coordinates"].shape[0] == 0:
+        print(f"No emitters to show.")
     else:
-        n = ((trgt_dictionary["coordinates"]).shape)[0]
-        print(f"Showing {n*fraction} atoms for {trgt_dictionary['label_name']}")
-        ids = np.random.choice(np.arange(0, n), int(n * fraction), replace=False)
-        subset = trgt_dictionary["coordinates"][ids, :]
-        plotobj.scatter(
-            subset[:, 0],
-            subset[:, 1],
-            subset[:, 2],
-            c=trgt_dictionary["plotcolour"],
-            label=trgt_dictionary["label_name"],
-            s=trgt_dictionary["plotsize"],
-            alpha=trgt_dictionary["plotalpha"],
-            marker=trgt_dictionary["plotmarker"],
-        )
+        if fraction == 1:
+            plotobj.scatter(
+                trgt_dictionary["coordinates"][:, 0],
+                trgt_dictionary["coordinates"][:, 1],
+                trgt_dictionary["coordinates"][:, 2],
+                c=trgt_dictionary["plotcolour"],
+                label=trgt_dictionary["label_name"],
+                s=trgt_dictionary["plotsize"],
+                alpha=trgt_dictionary["plotalpha"],
+                marker=trgt_dictionary["plotmarker"],
+                depthshade=True,
+            )
+        else:
+            n = ((trgt_dictionary["coordinates"]).shape)[0]
+            print(f"Showing {n*fraction} atoms for {trgt_dictionary['label_name']}")
+            ids = np.random.choice(np.arange(0, n), int(n * fraction), replace=False)
+            subset = trgt_dictionary["coordinates"][ids, :]
+            plotobj.scatter(
+                subset[:, 0],
+                subset[:, 1],
+                subset[:, 2],
+                c=trgt_dictionary["plotcolour"],
+                label=trgt_dictionary["label_name"],
+                s=trgt_dictionary["plotsize"],
+                alpha=trgt_dictionary["plotalpha"],
+                marker=trgt_dictionary["plotmarker"],
+            )
 
 
 def draw1nomral_segment(points_normal, figure, lenght=100, colors=["g", "y"]):

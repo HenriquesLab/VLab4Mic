@@ -1217,12 +1217,15 @@ class LabeledInstance:
                     lab_plotparams["plotmarker"] = emitter_plotmarker
                 if emitter_plotcolour is not None:
                     lab_plotparams["plotcolour"] = emitter_plotcolour
-                add_ax_scatter(
-                    axis_object,
-                    format_coordinates(self.emitters[labs], **lab_plotparams),
-                )
-                zlims[0] = np.min(self.emitters[labs])
-                zlims[1] = np.max(self.emitters[labs])
+                if self.emitters[labs].shape[0] == 0:
+                    print(f'No emitters for label {labs}')
+                else:
+                    add_ax_scatter(
+                        axis_object,
+                        format_coordinates(self.emitters[labs], **lab_plotparams),
+                    )
+                    zlims[0] = np.min(self.emitters[labs])
+                    zlims[1] = np.max(self.emitters[labs])
                 if with_sources:
                     if source_plotsize is not None:
                         source_plotsize = source_plotsize
