@@ -1490,44 +1490,175 @@ def build_virtual_microscope(
 
 def image_vsample(
     vsample=None,
-    modality="STED",
+    modality: str = "STED",
     multimodal: list[str] = None,
-    run_simulation=True,
-    **kwargs,
+    run_simulation: bool = True,
+    structure: str = "1XI5",
+    structure_is_path: bool = False,
+    probe_template: str = "NHS_ester",
+    probe_name: str = None,
+    probe_target_type: str = None,
+    probe_target_value: str = None,
+    probe_distance_to_epitope: float = None,
+    probe_model: list = None,
+    probe_fluorophore: str = "AF647",
+    probe_paratope: str = None,
+    probe_conjugation_target_info = None,
+    probe_conjugation_efficiency: float = None,
+    probe_seconday_epitope = None,
+    probe_wobble_theta = None,
+    labelling_efficiency: float = 1.0,
+    defect_small_cluster: float = None,
+    defect_large_cluster: float = None,
+    defect: float = None,
+    virtual_sample_template: str = "square1x1um_randomised",
+    sample_dimensions: list = None,
+    number_of_particles: int = None,
+    particle_positions: list = None,
+    random_orientations = False,
+    xy_orientations: list[int] = None,
+    xz_orientations: list[int] = None,
+    yz_orientations: list[int] = None,
+    axial_offset: list[int] = None,
+    random_placing = False,
+    random_rotations = False,
+    rotation_angles = None,
+    clear_probes = False,
+    clear_experiment = False,
+    primary_probe = None,
+    secondary_probe = None,
 ):
     """
     Generate imaging simulations of the specified virtual sample and imaging modalities.
 
-    If a virtual sample is provided, a virtual microscope is created around it. In this case, the resulting experiment object will only contain the imager and the virtual sample loaded into it.
-
-    If a virtual sample is not provided, a default sample will be created along with any keyword provided that specifies structure, probes, or virtual sample parameters. In this case, the resulting experiment will also contain initialised modules for structure, probes, particle, and coordinates field (generator of the virtual sample).
+    This function can either:
+    1. Take an existing virtual sample (as a dictionary) and wrap it in a new experiment, adding the specified imaging modalities.
+    2. Or, generate a new virtual sample and experiment from scratch using the provided parameters (matching those of `generate_virtual_sample`).
 
     Parameters
     ----------
     vsample : dict, optional
-        Dictionary specifying sample parameters. Corresponds to Experiment attribute "exported_coordinated_field".
+        Dictionary specifying sample parameters. Corresponds to Experiment attribute "exported_coordinate_field". If None, a new sample is generated.
     modality : str, optional
-        Modality name. Default is "STED".
+        Modality name to use for imaging. Default is "STED".
     multimodal : list of str, optional
-        List of modality names. Overrides the `modality` parameter if provided.
+        List of modality names. If provided, overrides the `modality` parameter and adds all listed modalities.
     run_simulation : bool, optional
         If True, generates image simulation for each modality set. Default is True.
-    **kwargs
-        Additional arguments passed to `add_modality`.
+    ----------
+    Parameters for virtual sample generation (see `generate_virtual_sample` for details):
+    structure : str, optional
+        4-letter ID of PDB/CIF model. Default is "1XI5".
+    structure_is_path : bool, optional
+        Use structure value as absolute path for the PDB/CIF file.
+    probe_template : str, optional
+        Name of probe configuration file (filename). Default is "NHS_ester".
+    probe_name : str, optional
+        Name for the probe configuration.
+    probe_target_type : str, optional
+        Options: "Sequence", "Atom_residue", or "Primary".
+    probe_target_value : str or dict, optional
+        For target type "Sequence" or "Primary", a string. For "Atom_residue", a dictionary with keys "Atom" and "Residue".
+    probe_distance_to_epitope : float, optional
+        Minimal distance set from epitope and probe paratope.
+    probe_model : list, optional
+        4-letter ID(s) of PDB/CIF model(s).
+    probe_fluorophore : str, optional
+        Fluorophore name (e.g., "AF647"). Default is "AF647".
+    probe_paratope : str, optional
+        Sequence of the paratope site for when probe includes a model.
+    probe_conjugation_target_info : any, optional
+        Information about the probe conjugation target.
+    probe_conjugation_efficiency : float, optional
+        Efficiency of conjugation of emitters.
+    probe_seconday_epitope : str, optional
+        Sequence within probe model to be used as epitope for a secondary.
+    probe_wobble_theta : any, optional
+        Enable probe wobbling.
+    labelling_efficiency : float, optional
+        Labelling efficiency of probe. Default is 1.0.
+    defect_small_cluster : float, optional
+        In Å, distance used to group epitopes into multimers.
+    defect_large_cluster : float, optional
+        In Å, distance within multimers to consider neighbors.
+    defect : float, optional
+        Fraction of defect to model.
+    virtual_sample_template : str, optional
+        Name of the configuration file for template. Default is "square1x1um_randomised".
+    sample_dimensions : list, optional
+        In nanometers, define the X, Y, and Z sizes of the field.
+    number_of_particles : int, optional
+        Number of independent copies of a particle to create and distribute.
+    particle_positions : list, optional
+        Relative positions of particles in the field.
+    random_orientations : bool, optional
+        If True, each particle will be randomly assigned a new orientation. Default is False.
+    xy_orientations, xz_orientations, yz_orientations : any, optional
+        Orientation parameters for the sample.
+    axial_offset : any, optional
+        Axial offset for the sample.
+    random_placing : bool, optional
+        Define if position in field is random or the center of field. Default is False.
+    random_rotations : bool, optional
+        If True, apply random rotations to particles. Default is False.
+    rotation_angles : any, optional
+        Rotation angles for the sample.
+    clear_probes : bool, optional
+        If True, default probe parameters will be cleared. Default is False.
+    clear_experiment : bool, optional
+        If True, clear the experiment before generating a new sample. Default is False.
+    primary_probe, secondary_probe : any, optional
+        Dictionaries for primary and secondary probe configuration.
 
     Returns
     -------
     tuple
-        - dict: Image simulations.
-        - ExperimentParametrisation: The experiment object as described above.
+        - dict: Image simulations (per modality).
+        - dict: Noiseless image simulations (per modality).
+        - ExperimentParametrisation: The experiment object containing all modules and configuration.
     """
     if vsample is None:
-        vsample, sample_experiment = generate_virtual_sample(**kwargs)
+        vsample, sample_experiment = generate_virtual_sample(
+            structure=structure,
+            structure_is_path=structure_is_path,
+            probe_template=probe_template,
+            probe_name=probe_name,
+            probe_target_type=probe_target_type,
+            probe_target_value=probe_target_value,
+            probe_distance_to_epitope=probe_distance_to_epitope,
+            probe_model=probe_model,
+            probe_fluorophore=probe_fluorophore,
+            probe_paratope=probe_paratope,
+            probe_conjugation_target_info=probe_conjugation_target_info,
+            probe_conjugation_efficiency=probe_conjugation_efficiency,
+            probe_seconday_epitope=probe_seconday_epitope,
+            probe_wobble_theta=probe_wobble_theta,
+            labelling_efficiency=labelling_efficiency,
+            defect_small_cluster=defect_small_cluster,
+            defect_large_cluster=defect_large_cluster,
+            defect=defect,
+            virtual_sample_template=virtual_sample_template,
+            sample_dimensions=sample_dimensions,
+            number_of_particles=number_of_particles,
+            particle_positions=particle_positions,
+            random_orientations=random_orientations,
+            xy_orientations=xy_orientations,
+            xz_orientations=xz_orientations,
+            yz_orientations=yz_orientations,
+            axial_offset=axial_offset,
+            random_placing=random_placing,
+            random_rotations=random_rotations,
+            rotation_angles=rotation_angles,
+            clear_probes=clear_probes,
+            clear_experiment=clear_experiment,
+            primary_probe=primary_probe,
+            secondary_probe=secondary_probe,
+        )
         if multimodal is not None:
             for mod in multimodal:
-                sample_experiment.add_modality(mod, **kwargs)
+                sample_experiment.add_modality(mod)
         else:
-            sample_experiment.add_modality(modality, **kwargs)
+            sample_experiment.add_modality(modality)
         sample_experiment.build(
             modules=[
                 "imager",
@@ -1537,11 +1668,11 @@ def image_vsample(
         # need to create an experiment for it
         if multimodal is not None:
             vmicroscope, sample_experiment = build_virtual_microscope(
-                multimodal=multimodal, use_local_field=True, **kwargs
+                multimodal=multimodal, use_local_field=True
             )
         else:
             vmicroscope, sample_experiment = build_virtual_microscope(
-                modality=modality, use_local_field=True, **kwargs
+                modality=modality, use_local_field=True
             )
         sample_experiment.imager.import_field(**vsample)
     imaging_output = dict()

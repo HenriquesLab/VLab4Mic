@@ -1160,7 +1160,7 @@ class sweep_generator:
 
     def save_images(self, output_name=None, output_directory=None, floats_as=float):
         """
-        Saves simulated images and an optional reference image to disk in TIFF format.
+        Save simulated acquisition images and the reference image to disk in TIFF format.
 
         Parameters
         ----------
@@ -1169,16 +1169,19 @@ class sweep_generator:
         output_directory : str, optional
             Directory where images will be saved. If not provided, uses a default path
             based on `self.output_directory` under a "simulated_images" subdirectory. The directory is created if it does not exist.
+        floats_as : callable, optional
+            Function to convert numpy float64 values in parameter dictionaries to another type (e.g., float). Defaults to float.
 
         Returns
         -------
         None
 
-        Behavior
-        --------
+        Notes
+        -----
         - Iterates over all parameter combinations in `self.acquisition_outputs`.
         - For each combination, concatenates all replicate images and saves the result as a TIFF file named after the parameter combination ID.
         - If `self.reference_image` is present, saves it as "reference.tiff" in the output directory.
+        - Saves acquisition parameters as a YAML file in the output directory.
         """
         if output_name is None:
             output_name = "vLab4mic_images_"
@@ -1224,25 +1227,141 @@ class sweep_generator:
 
 
 def run_parameter_sweep(
-        structures: list[str] = None,
-        probe_templates: list[str] = None,
-        modalities: list[str] = None,
-        output_directory: str = None,
-        output_name: str = None,
-        save_analysis_results: bool = True,
-        analysis_plots: bool = True,
-        save_sweep_images: bool = True,
-        sweep_repetitions: int = 3,
-        return_generator: bool = False,
-        number_of_particles: int = 1,
-        particle_positions: int = None,
-        reference_structure = None,
-        reference_probe = None,
-        reference_parameters: dict = None,
-        clear_experiment=True,
-        run_analysis=True,
-        **kwargs
+    structures: list[str] = None,
+    probe_templates: list[str] = None,
+    modalities: list[str] = None,
+    output_directory: str = None,
+    output_name: str = None,
+    save_analysis_results: bool = True,
+    analysis_plots: bool = True,
+    save_sweep_images: bool = True,
+    sweep_repetitions: int = 3,
+    return_generator: bool = False,
+    number_of_particles: int = 1,
+    particle_positions: int = None,
+    reference_structure = None,
+    reference_probe = None,
+    reference_parameters: dict = None,
+    clear_experiment=True,
+    run_analysis=True,
+    # Sweep/virtual sample/probe/defect/acquisition/modality parameters
+    probe_target_type = None,
+    probe_target_value = None,
+    probe_target_option = None,
+    probe_model = None,
+    probe_fluorophore = None,
+    probe_paratope = None,
+    probe_conjugation_target_info = None,
+    probe_seconday_epitope = None,
+    peptide_motif: dict = None,
+    probe_distance_to_epitope = None,
+    probe_steric_hindrance = None,
+    probe_conjugation_efficiency = None,
+    probe_wobble_theta = None,
+    labelling_efficiency = None,
+    defect = None,
+    defect_small_cluster = None,
+    defect_large_cluster = None,
+    sample_dimensions = None,
+    particle_orientations = None,
+    rotation_angles = None,
+    minimal_distance = None,
+    pixelsize_nm = None,
+    lateral_resolution_nm = None,
+    axial_resolution_nm = None,
+    psf_voxel_nm = None,
+    depth_of_field_nm = None,
+    exp_time = None,
+    # Add more as needed for your sweep
 ):
+    """
+    Run a parameter sweep for virtual microscopy simulations and analysis.
+
+    This function automates the process of generating virtual samples, simulating
+    acquisitions, and performing analysis across a range of user-specified parameters.
+    It supports batch processing of multiple structures, probes, modalities, and
+    imaging/acquisition settings, and can optionally save results and images.
+
+    Parameters
+    ----------
+    structures : list of str, optional
+        List of structure IDs or file paths to use in the sweep.
+    probe_templates : list of str, optional
+        List of probe configuration filenames to use in the sweep.
+    modalities : list of str, optional
+        List of imaging modality names to use in the sweep.
+    output_directory : str, optional
+        Directory to save outputs. If None, uses default.
+    output_name : str, optional
+        Base name for output files.
+    save_analysis_results : bool, optional
+        Whether to save analysis results. Default is True.
+    analysis_plots : bool, optional
+        Whether to generate and save analysis plots. Default is True.
+    save_sweep_images : bool, optional
+        Whether to save simulated images. Default is True.
+    sweep_repetitions : int, optional
+        Number of repetitions per parameter combination. Default is 3.
+    return_generator : bool, optional
+        If True, return the sweep_generator instance. Default is False.
+    number_of_particles : int, optional
+        Number of particles per virtual sample. Default is 1.
+    particle_positions : int or list, optional
+        Explicit particle positions to use. If None, positions are generated.
+    reference_structure : str, optional
+        Structure ID or path for the reference sample.
+    reference_probe : str, optional
+        Probe configuration for the reference sample.
+    reference_parameters : dict, optional
+        Additional parameters for the reference sample.
+    clear_experiment : bool, optional
+        Whether to clear the experiment before running. Default is True.
+    run_analysis : bool, optional
+        Whether to run analysis after simulation. Default is True.
+    For the following parameters, pass a list of the values to sweep over,
+    alternatively, pass a tuple of (min, max, nsteps) to generate linearly spaced values.
+    For a single value, pass a list with one element.
+    If a parameter is None, it will not be swept and will use default values
+        - probe_target_type
+        - probe_target_value
+        - probe_target_option
+        - probe_model
+        - probe_fluorophore
+        - probe_paratope
+        - probe_conjugation_target_info
+        - probe_seconday_epitope
+        - peptide_motif
+        - probe_distance_to_epitope
+        - probe_steric_hindrance
+        - probe_conjugation_efficiency
+        - probe_wobble_theta
+        - labelling_efficiency
+        - defect
+        - defect_small_cluster
+        - defect_large_cluster
+        - sample_dimensions
+        - particle_orientations
+        - rotation_angles
+        - minimal_distance
+        - pixelsize_nm
+        - lateral_resolution_nm
+        - axial_resolution_nm
+        - psf_voxel_nm
+        - depth_of_field_nm
+        - exp_time
+
+    Returns
+    -------
+    sweep_generator or None
+        If return_generator is True, returns the sweep_generator instance.
+        Otherwise, returns None.
+
+    Notes
+    -----
+    - This function is the main entry point for running parameter sweeps in vLab4Mic.
+    - All major simulation and analysis steps are automated.
+    - For advanced usage, see the sweep_generator class and related documentation.
+    """
     sweep_gen = sweep_generator()
     if clear_experiment:
         sweep_gen.experiment.clear_experiment()
@@ -1262,7 +1381,36 @@ def run_parameter_sweep(
             number_of_particles=number_of_particles
             )
 
-    sweep_gen.set_sweep_parameters(**kwargs)
+    sweep_gen.set_sweep_parameters(
+        probe_target_type=probe_target_type,
+        probe_target_value=probe_target_value,
+        probe_target_option=probe_target_option,
+        probe_model=probe_model,
+        probe_fluorophore=probe_fluorophore,
+        probe_paratope=probe_paratope,
+        probe_conjugation_target_info=probe_conjugation_target_info,
+        probe_seconday_epitope=probe_seconday_epitope,
+        peptide_motif=peptide_motif,
+        probe_distance_to_epitope=probe_distance_to_epitope,
+        probe_steric_hindrance=probe_steric_hindrance,
+        probe_conjugation_efficiency=probe_conjugation_efficiency,
+        probe_wobble_theta=probe_wobble_theta,
+        labelling_efficiency=labelling_efficiency,
+        defect=defect,
+        defect_small_cluster=defect_small_cluster,
+        defect_large_cluster=defect_large_cluster,
+        sample_dimensions=sample_dimensions,
+        particle_positions=particle_positions,
+        particle_orientations=particle_orientations,
+        rotation_angles=rotation_angles,
+        minimal_distance=minimal_distance,
+        pixelsize_nm=pixelsize_nm,
+        lateral_resolution_nm=lateral_resolution_nm,
+        axial_resolution_nm=axial_resolution_nm,
+        psf_voxel_nm=psf_voxel_nm,
+        depth_of_field_nm=depth_of_field_nm,
+        exp_time=exp_time,
+    )
     if reference_parameters is None:
         reference_parameters = dict()
     sweep_gen.set_reference_parameters(

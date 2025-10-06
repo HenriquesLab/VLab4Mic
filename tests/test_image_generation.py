@@ -32,8 +32,7 @@ def test_image_from_field(configuration_directory, gt_structural_model_field):
     imgs, imgs_noiseless, experiment_test = experiments.image_vsample(
         vsample=gt_structural_model_field,
         run_simulation=False,
-        modalities=selected_mods,
-        configuration_path=configuration_path,
+        multimodal=selected_mods,
     )
     assert experiment_test.imager.get_absoulte_reference_point().shape == (
         1,
