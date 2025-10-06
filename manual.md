@@ -115,3 +115,38 @@ The full list of parameters and their in-depth usage can be found [here](https:/
 
 ## 3.2 Run a parameter sweep analysis
 
+vLab4Mic allows you to test parameter combinations to use for sample and image simulations. <br>
+The main method to run a parameter sweep is "run_parameter_sweep" and can be used as in the following example:
+
+
+```python
+from vlab4mic import sweep_generator
+
+sweep_gen = sweep_generator.run_parameter_sweep(
+    structures=["7R5K",],
+    probe_templates=["NPC_Nup96_Cterminal_direct",],
+    sweep_repetitions=20,
+    # parameters for sweep
+    labelling_efficiency=(0,1,5),
+    defect=(0,1,5),
+    defect_small_cluster=[300,],
+    defect_large_cluster=[600,],
+    exp_time=[0.001, 0.01,],
+    # output and analysis
+    output_name="vlab_script",
+    return_generator=True,
+    save_sweep_images=True,
+    save_analysis_results=True,
+    run_analysis=True
+    )
+```
+
+From "run_parameter_sweep" it is possible to parameterise the while parameter sweep.
+
+
+### **<ins>Setting up parameter values</ins>**
+
+
+With this method, you can specify which parameters to include and the values to iterate. For instance, you can set to use 10 equally distributed values for Labelling Efficiencies between 0 and 1; or you can set them explicitly: 0.4, 0.8 and 1.0, for instance. Each parameter has a default value.
+
+When running a parameter sweep, all possible parameter combinations will be used. For instance, setting 10 values for Labelling Efficiencies and 10 values for particle defects will generate 100 combinations. 
