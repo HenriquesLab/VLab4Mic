@@ -80,8 +80,37 @@ help(image_vsample)
 
 # 3. VLab4Mic Methods
 
+vLab4Mic main functionallity can be accessed with 2 main methods
+
 
 ## 3.1 Image virtual sample
+
+vLab4Mic allows you to create a virtual sample ready to be imaged. <br>
+A virtual sample is a model of fluorophores in space, defined by
+a structure, its labelling with one or more probes and the disposition of one or more 
+of these labelled structures in the virtual sample space.
+
+A virtual sample then contains:
+1. An atomic structure model
+2. One or more probes that targets the structure and
+3. Specifications about dimensions and particle placing for the virtual sample. 
+
+
+### **<ins>Structure parameters:</ins>** 
+- **Structure**: The 4 Letter code that identifies the atomic structure, for instance, "7R5K"
+
+### **<ins>Probes and probe parameters:</ins>**
+- **Probe template**: Name for a template probe such as “Antibody”, “NHS ester”, etc. This parameter defines the model to be used as probe. Other optional parameters control specific behaviour of the probe
+- **Labelling efficiency**: Efficiency of probe to targeting an epitope in the structure
+- ... 
+
+### **<ins>Particle field parameters:</ins>**
+- **Number of particles**: Number of labelled particles to be distributed in the sample volume.
+- **Sample dimensions**: Dimensions of the volume for the virtual sample
+- ... 
+
+The full list of parameters and their in-depth usage can be found [here](https://github.com/jdmartinez24/vlabwikis/wiki/Parameter-tables).
+
 
 
 ## 3.2 Run a parameter sweep analysis
