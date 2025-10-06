@@ -28,21 +28,21 @@ pip install git+https://github.com/HenriquesLab/SupraMolecularSimulator.git
 ```
 
 
-# 2. How to Use VLab4Mic
+# 2. How to use VLab4Mic
 
-VLab4Mic is a Python library that can be used directly through our workflows and analysis modules or with interactive jupyter notebooks.
+VLab4Mic can be used as a Python library or through codeless jupyter notebooks.
 For detailed usage examples, see our [example scripts](https://github.com/HenriquesLab/SupraMolecularSimulator/tree/main/examples).
 
-## 2.1 Interactive Jupyter Notebooks
+## 2.1 Codeless jupyter notebooks
 
 | Category | Description | Notebook | Colab Link |
 | --- | --- | --- | --- |
 | **Main Interface** | Create virtual samples and simulate image acquisition with multiple imaging modalities | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_main.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_main.ipynb) |
 | **Parameter Sweeps** | Generate and analyze simulations over parameter ranges for optimization | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) |
 
-## Getting Started with Notebooks
+## Use codeless notebooks on a local installation
 
-### Step 1: Activate Your Environment
+### Step 1: Activate your environment
 Following the installation instructions above, activate your Python environment:
 ```bash
 conda activate MYENV  # Replace MYENV with your environment name
@@ -60,10 +60,10 @@ Download the notebooks from our [repository](https://github.com/HenriquesLab/Sup
 ### Step 4: Start Experimenting!
 Follow the interactive widgets and instructions in each notebook. For questions, refer to our [documentation](https://github.com/HenriquesLab/SupraMolecularSimulator/wiki) or [create an issue](https://github.com/HenriquesLab/SupraMolecularSimulator/issues).
 
-## 2.2 Using VLab4Mic as python library
+## 2.2 Using VLab4Mic as Python library
+Following the installation instructions above, activate your Python environment.
 
-A full documentation of the code can be found [here] <br>
-vLab4Mic main functionality can be accessed with our high-level methods. For instance, the method "image_vsample" creates a virtual sample model and generates multimodal imaging acquisitions as shown in this example:
+Access VLab4Mic main methods such as image_vsample as follows:
 
 ```python
 from supramolsim.experiments import image_vsample
@@ -80,12 +80,15 @@ help(image_vsample)
 
 # 3. VLab4Mic Methods
 
-vLab4Mic main functionallity can be accessed with 2 main methods
+vLab4Mic main functionallity can be accessed with 2 main methods.
+- Image virtual sample
+- Run parameter sweep
 
 
 ## 3.1 Image virtual sample
 
-vLab4Mic allows you to create a virtual sample ready to be imaged. <br>
+vLab4Mic allows you to create a virtual sample and generate imaging simulations of it on one or many modalities. <br>
+
 A virtual sample is a model of fluorophores in space, defined by
 a structure, its labelling with one or more probes and the disposition of one or more 
 of these labelled structures in the virtual sample space.
@@ -141,12 +144,13 @@ sweep_gen = sweep_generator.run_parameter_sweep(
     )
 ```
 
-From "run_parameter_sweep" it is possible to parameterise the while parameter sweep.
+From "run_parameter_sweep" it is possible to parameterise the while parameter sweep. All parameters available for this method can be found in the Parameter sweep section.
 
 
 ### **<ins>Setting up parameter values</ins>**
 
 
-With this method, you can specify which parameters to include and the values to iterate. For instance, you can set to use 10 equally distributed values for Labelling Efficiencies between 0 and 1; or you can set them explicitly: 0.4, 0.8 and 1.0, for instance. Each parameter has a default value.
+In order to specify the parameters to include and the values to iterate in two ways. 
+For instance, you can set to use 10 equally distributed values for Labelling Efficiencies between 0 and 1; or you can set them explicitly: 0.4, 0.8 and 1.0, for instance. Each parameter has a default value.
 
 When running a parameter sweep, all possible parameter combinations will be used. For instance, setting 10 values for Labelling Efficiencies and 10 values for particle defects will generate 100 combinations. 
