@@ -30,7 +30,7 @@ pip install git+https://github.com/HenriquesLab/SupraMolecularSimulator.git
 
 # 2. How to Use VLab4Mic
 
-VLab4Mic is a Python library that can be used directly through our workflows and analysis modules.
+VLab4Mic is a Python library that can be used directly through our workflows and analysis modules or with interactive jupyter notebooks.
 For detailed usage examples, see our [example scripts](https://github.com/HenriquesLab/SupraMolecularSimulator/tree/main/examples).
 
 ## 2.1 Interactive Jupyter Notebooks
@@ -77,3 +77,12 @@ Get a description of the available parameters of each method by using the built-
 ```python
 help(image_vsample)
 ```
+
+# 3. VLab4Mic Methods
+
+
+## 3.1 Image virtual sample
+
+
+## 3.2 Run a parameter sweep analysis
+
