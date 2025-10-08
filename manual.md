@@ -181,18 +181,17 @@ sweep_gen = run_parameter_sweep(
 This example will generate and save a default parameter sweep. The "sweep_gen" object contains all parameters used to set and run the sweep. 
 
 ## Specify values for each parameter 
-Similar to "image_vsample" method, you can parameterise the sweep by specifying the values to sweep over on each parameter. This can be done directly passing a list of the values, or a tuple of (min, max, nsteps) to generate linearly spaced values.
+Similar to "image_vsample" method, you can parameterise the sweep by specifying the values or ranges to use on each parameter. To do so, pass a list of the values or a tuple with (min, max, nsteps) to generate linearly spaced values.
 
 For instance, you can set to use 10 equally distributed values for Labelling Efficiencies between 0 and 1; or you can set them explicitly: 0.4, 0.8 and 1.0. Each parameter has a default value.
 
-**Note: when running a parameter sweep, all possible parameter combinations will be used. For instance, setting 10 values for Labelling Efficiencies and 10 values for particle defects will generate 100 combinations.**
 
 ```python
 from vlab4mic.sweep_generator import run_parameter_sweep
 
 sweep_gen = run_parameter_sweep(
     structures=["7R5K",],
-    probe_templates=["NPC_Nup96_Cterminal_direct",],
+    probe_templates=["NPC_Nup96_Cterminal_direct",],  # Probe template
     sweep_repetitions=20,
     # parameters for sweep
     labelling_efficiency=(0,1,5),  # 5 linearly spaced values between 0 and 1
@@ -208,6 +207,7 @@ sweep_gen = run_parameter_sweep(
     run_analysis=True
     )
 ```
+**Note: when running a parameter sweep, all possible parameter combinations will be used. For instance, setting 10 values for Labelling Efficiencies and 10 values for particle defects will generate 100 combinations.**
 
 ## Available parameters for sweeping
 
