@@ -112,6 +112,43 @@ image_outputs, image_noiseless_outputs, experiment = image_vsample()
 ```
 This example will first create a default virtual sample and return imaging simulations of this sample with and without noise. Besides the imaging simulations,  "image_vsample" method returns an experiment object containing all the modules used to generate the simulations.
 
+## Parameterise your virtual sample and imaging
+
+VLab4Mic method "image_vsample" allows you to specify each step of the virtual sample such as:
+-   Structure of interest
+-   Type of probe (e.g. Antibody, Linker, GFP,...)
+-   Target site on the structure (Epitope sequence, or residues)
+-   Labelling efficiency of probe
+-   Distance of probe to epitope
+-   Number of labelled particles
+-   Sample dimensions
+-   ...
+
+Find a complete and detailed list of parameters in the documentation of the method, or refer to the [table of parameters]()
+
+```python
+from supramolsim.experiments import image_vsample
+# parameters
+structure = "7R5K" # PDB ID code for a Nuclear Pore complex
+probe_template = "Antibody" # example probe template name
+modalities = ["Widefield", "Confocal", "AiryScan", "STED", "SMLM"]
+
+# Paramterise and run simulation
+images, noiseless, experiment = image_vsample(
+    structure=structure,
+    probe_template=probe_template,
+    number_of_particles = 10,
+    random_rotations=True,
+    rotation_angles=None,
+    multimodal=modalities,
+    run_simulation=True
+    clear_experiment=True,
+)
+```
+
+
+## Parameters table:
+
 
 ### **<ins>Structure parameters:</ins>** 
 - **Structure**: The 4 Letter code that identifies the atomic structure, for instance, "7R5K"
