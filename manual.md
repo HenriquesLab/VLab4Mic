@@ -167,20 +167,8 @@ for i, mod in enumerate(modalities):
 vLab4Mic allows you to test parameter combinations to use for sample and image simulations. <br>
 The main method to run a parameter sweep is "run_parameter_sweep" and can be used as in the following example:
 
-
 ```python
-from vlab4mic import sweep_generator
-
-sweep_gen = sweep_generator.run_parameter_sweep(
-    structures=["7R5K",],
-    probe_templates=["NPC_Nup96_Cterminal_direct",],
-    sweep_repetitions=20,
-    # parameters for sweep
-    labelling_efficiency=(0,1,5),
-    defect=(0,1,5),
-    defect_small_cluster=[300,],
-    defect_large_cluster=[600,],
-    exp_time=[0.001, 0.01,],
+sweep_gen = run_parameter_sweep(
     # output and analysis
     output_name="vlab_script",
     return_generator=True,
@@ -190,16 +178,70 @@ sweep_gen = sweep_generator.run_parameter_sweep(
     )
 ```
 
-From "run_parameter_sweep" it is possible to parameterise the while parameter sweep. All parameters available for this method can be found in the Parameter sweep section.
+This example will generate and save a default parameter sweep. The "sweep_gen" object contains all parameters used to set and run the sweep. 
+
+## Specify values for each parameter 
+Similar to "image_vsample" method, you can parameterise the sweep by specifying the values to sweep over on each parameter. This can be done directly passing a list of the values, or a tuple of (min, max, nsteps) to generate linearly spaced values.
+
+For instance, you can set to use 10 equally distributed values for Labelling Efficiencies between 0 and 1; or you can set them explicitly: 0.4, 0.8 and 1.0. Each parameter has a default value.
+
+**Note: when running a parameter sweep, all possible parameter combinations will be used. For instance, setting 10 values for Labelling Efficiencies and 10 values for particle defects will generate 100 combinations.**
+
+```python
+from vlab4mic.sweep_generator import run_parameter_sweep
+
+sweep_gen = run_parameter_sweep(
+    structures=["7R5K",],
+    probe_templates=["NPC_Nup96_Cterminal_direct",],
+    sweep_repetitions=20,
+    # parameters for sweep
+    labelling_efficiency=(0,1,5),  # 5 linearly spaced values between 0 and 1
+    defect=(0,1,5), # 5 linearly spaced values between 0 and 1
+    defect_small_cluster=[300,],    # 1 single value 
+    defect_large_cluster=[600,],    # 1 single value 
+    exp_time=[0.001, 0.01,],    # 2 values
+    # output and analysis
+    output_name="vlab_script",
+    return_generator=True,
+    save_sweep_images=True,
+    save_analysis_results=True,
+    run_analysis=True
+    )
+```
+
+## Available parameters for sweeping
+
+Each parameter in the following list is available for sweep (one or more values passed).
+Note: If a parameter is None, it will not be swept and will use default values.
+- probe_target_type
+- probe_target_value
+- probe_target_option
+- probe_model
+- probe_fluorophore
+- probe_paratope
+- probe_conjugation_target_info
+- probe_seconday_epitope
+- peptide_motif
+- probe_distance_to_epitope
+- probe_steric_hindrance
+- probe_conjugation_efficiency
+- probe_wobble_theta
+- labelling_efficiency
+- defect
+- defect_small_cluster
+- defect_large_cluster
+- sample_dimensions
+- particle_orientations
+- rotation_angles
+- minimal_distance
+- pixelsize_nm
+- lateral_resolution_nm
+- axial_resolution_nm
+- psf_voxel_nm
+- depth_of_field_nm
+- exp_time
 
 
-### **<ins>Setting up parameter values</ins>**
-
-
-In order to specify the parameters to include and the values to iterate in two ways. 
-For instance, you can set to use 10 equally distributed values for Labelling Efficiencies between 0 and 1; or you can set them explicitly: 0.4, 0.8 and 1.0, for instance. Each parameter has a default value.
-
-When running a parameter sweep, all possible parameter combinations will be used. For instance, setting 10 values for Labelling Efficiencies and 10 values for particle defects will generate 100 combinations. 
 
 
 # 4. Parameter tables
