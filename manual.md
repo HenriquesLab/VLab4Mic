@@ -106,7 +106,7 @@ VLab4Mic allows you to create a virtual sample and generate imaging simulations 
 
 
 ```python
-from supramolsim.experiments import image_vsample
+from vlab4mic.experiments import image_vsample
 
 image_outputs, image_noiseless_outputs, experiment = image_vsample()
 
