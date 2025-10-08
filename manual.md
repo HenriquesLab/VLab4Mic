@@ -104,13 +104,16 @@ vLab4Mic main functionallity can be accessed with 2 main methods.
 
 VLab4Mic allows you to create a virtual sample and generate imaging simulations of it on one or many modalities. <br> To do so, use "image_vsample" method as follows:
 
+
 ```python
 from supramolsim.experiments import image_vsample
 
 image_outputs, image_noiseless_outputs, experiment = image_vsample()
 
 ```
-This example will first create a default virtual sample and return imaging simulations of this sample with and without noise. Besides the imaging simulations,  "image_vsample" method returns an experiment object containing all the modules used to generate the simulations.
+
+The former example will first create a default virtual sample and return imaging simulations of this sample with and without noise. Besides the imaging simulations,  "image_vsample" method returns an experiment object containing all the modules used to generate the simulations.
+
 
 ## Parameterise your virtual sample and imaging
 
@@ -129,25 +132,38 @@ The following code example shows how to use some of these parameters.
 ```python
 from vlab4mic.experiments import image_vsample
 
-structure = "7R5K" # PDB ID code for a Nuclear Pore complex
-probe_template = "Antibody" # example probe template name
-modalities = ["Widefield", "Confocal", "AiryScan", "STED", "SMLM"]
-
 # Paramterise and run simulation
 images, noiseless, experiment = image_vsample(
-    structure=structure,
-    probe_template=probe_template,
-    probe_target_type="Sequence",
-    probe_target_value="ELAVGSL",
+    structure="7R5K", # PDB ID code for a Nuclear Pore complex
+    probe_template="Antibody", # Probe template for an antibody
+    probe_target_type="Sequence",  
+    probe_target_value="ELAVGSL",  # epitope sequence
     number_of_particles = 10,
     random_rotations=True,
     rotation_angles=None,
-    multimodal=modalities,
+    multimodal=["Widefield", "Confocal", "AiryScan", "STED", "SMLM"],
     run_simulation=True,
     clear_experiment=True,
 )
 ```
 Find a complete and detailed list of parameters in the documentation of the method, or refer to the table of parameters section.
+
+We also provide probe templates tailored for specific structures, such as the following example:
+
+```python
+from vlab4mic.experiments import image_vsample
+
+# Paramterise and run simulation
+images, noiseless, experiment = image_vsample(
+    structure="7R5K", # PDB ID code for a Nuclear Pore complex
+    probe_templates=["NPC_Nup96_Cterminal_direct",], # Pre-set probe for 7R5K
+    run_simulation=True,
+    clear_experiment=True,
+)
+```
+
+A table of these and other templates can be found in the Templates tables.
+
 
 Imaging simulations output is a dictionary where each key is the imaging modality. To display the results you can use the following example code:
 
@@ -191,7 +207,7 @@ from vlab4mic.sweep_generator import run_parameter_sweep
 
 sweep_gen = run_parameter_sweep(
     structures=["7R5K",],
-    probe_templates=["NPC_Nup96_Cterminal_direct",],  # Probe template
+    probe_templates=["NPC_Nup96_Cterminal_direct",],  # Probe template tailored to 7R5K
     sweep_repetitions=20,
     # parameters for sweep
     labelling_efficiency=(0,1,5),  # 5 linearly spaced values between 0 and 1
@@ -303,3 +319,6 @@ Note: If a parameter is None, it will not be swept and will use default values.
 # Analysis parameters
 | Parameter name | Description | Notes |
 | --- | --- | --- |
+
+
+# 5. Templates table
