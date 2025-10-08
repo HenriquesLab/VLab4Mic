@@ -35,12 +35,21 @@ For detailed usage examples, see our [example scripts](https://github.com/Henriq
 
 ## 2.1 Codeless jupyter notebooks
 
+VLab4Mic codeless notebooks allows you to use its methods without the need to code or modify scripts. 
+
+## Where to find and use VLab4Mic codeless notebooks
+
+You can use a notebook on a local installation or on Google Colab. 
+For using VLab4Mic in colab, click on the "Open in Colab" and follow the instructions on the Notebook.
+
 | Category | Description | Notebook | Colab Link |
 | --- | --- | --- | --- |
 | **Main Interface** | Create virtual samples and simulate image acquisition with multiple imaging modalities | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_main.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_main.ipynb) |
 | **Parameter Sweeps** | Generate and analyze simulations over parameter ranges for optimization | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) |
 
 ## Use codeless notebooks on a local installation
+
+To use a notebook locally, you need to install VLab4Mic as detailed in the Installation section.
 
 ### Step 1: Activate your environment
 Following the installation instructions above, activate your Python environment:
@@ -55,13 +64,19 @@ jupyter lab
 This will open Jupyter Lab in your web browser.
 
 ### Step 3: Download and Open Notebooks
-Download the notebooks from our [repository](https://github.com/HenriquesLab/SupraMolecularSimulator/tree/main/notebooks) and open them in Jupyter Lab.
+Download the notebooks from our [repository here](https://github.com/HenriquesLab/SupraMolecularSimulator/tree/main/notebooks), or refer to the table above.
+Once downloaded, use the Jupyter Lab interphase to find the notebook and open it.
 
 ### Step 4: Start Experimenting!
 Follow the interactive widgets and instructions in each notebook. For questions, refer to our [documentation](https://github.com/HenriquesLab/SupraMolecularSimulator/wiki) or [create an issue](https://github.com/HenriquesLab/SupraMolecularSimulator/issues).
 
 ## 2.2 Using VLab4Mic as Python library
+
+When using VLab4Mic as a python library, you can paramtererise your experiment or parameter sweep through its high level functions. These functions are covered in dettail in the Methods section.
+
+
 Following the installation instructions above, activate your Python environment.
+
 
 Access VLab4Mic main methods such as image_vsample as follows:
 
@@ -81,22 +96,21 @@ help(image_vsample)
 # 3. VLab4Mic Methods
 
 vLab4Mic main functionallity can be accessed with 2 main methods.
-- Image virtual sample
-- Run parameter sweep
+- Create and simulate imaging of a virtual sample
+- Set up and run parameter sweep
 
 
-## 3.1 Image virtual sample
+## 3.1 Create and image a virtual sample
 
-vLab4Mic allows you to create a virtual sample and generate imaging simulations of it on one or many modalities. <br>
+VLab4Mic allows you to create a virtual sample and generate imaging simulations of it on one or many modalities. <br> To do so, use "image_vsample" method as follows:
 
-A virtual sample is a model of fluorophores in space, defined by
-a structure, its labelling with one or more probes and the disposition of one or more 
-of these labelled structures in the virtual sample space.
+```python
+from supramolsim.experiments import image_vsample
 
-A virtual sample then contains:
-1. An atomic structure model
-2. One or more probes that targets the structure and
-3. Specifications about dimensions and particle placing for the virtual sample. 
+image_outputs, image_noiseless_outputs, experiment = image_vsample()
+
+```
+This example will first create a default virtual sample and return imaging simulations of this sample with and without noise. Besides the imaging simulations,  "image_vsample" method returns an experiment object containing all the modules used to generate the simulations.
 
 
 ### **<ins>Structure parameters:</ins>** 
