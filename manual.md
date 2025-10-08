@@ -81,7 +81,7 @@ Following the installation instructions above, activate your Python environment.
 Access VLab4Mic main methods such as image_vsample as follows:
 
 ```python
-from supramolsim.experiments import image_vsample
+from vlab4mic.experiments import image_vsample
 
 image_outputs, image_noiseless_outputs, experiment = image_vsample()
 
@@ -124,11 +124,11 @@ VLab4Mic method "image_vsample" allows you to specify each step of the virtual s
 -   Sample dimensions
 -   ...
 
-Find a complete and detailed list of parameters in the documentation of the method, or refer to the [table of parameters]()
+The following code example shows how to use some of these parameters.
 
 ```python
-from supramolsim.experiments import image_vsample
-# parameters
+from vlab4mic.experiments import image_vsample
+
 structure = "7R5K" # PDB ID code for a Nuclear Pore complex
 probe_template = "Antibody" # example probe template name
 modalities = ["Widefield", "Confocal", "AiryScan", "STED", "SMLM"]
@@ -141,10 +141,11 @@ images, noiseless, experiment = image_vsample(
     random_rotations=True,
     rotation_angles=None,
     multimodal=modalities,
-    run_simulation=True
+    run_simulation=True,
     clear_experiment=True,
 )
 ```
+Find a complete and detailed list of parameters in the documentation of the method, or refer to the [table of parameters]()
 
 
 ## Parameters table:
