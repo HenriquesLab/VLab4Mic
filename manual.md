@@ -312,15 +312,15 @@ Note: If a parameter is None, it will not be swept and will use default values.
 | Parameter name | Description | 
 | --- | --- | 
 | **pixelsize** | Pixelsize of image |   
-| **lateral_resolution_nm** |  |   
-| **axial_resolution_nm** |  |   
-| **psf_voxel_nm** |  |   
+| **lateral_resolution_nm** | lateral resolution |   
+| **axial_resolution_nm** | axial resolution nm |   
+| **psf_voxel_nm** | Voxel size use to render the PSF. Defualts to 10 nm. Smaller voxel size will increase computation time |   
 | **depth_of_field_nm** | |  
 
 # Acquisition parameters
 | Parameter name | Description | 
 | --- | --- | 
-| **exp_time** | Exposure time | 
+| **exp_time** | Exposure time in seconds | 
 | **noise** | Whether to use noise at detection or not | 
 | **nframes** | Number of frames | 
 
