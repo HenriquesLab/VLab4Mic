@@ -268,57 +268,57 @@ Note: If a parameter is None, it will not be swept and will use default values.
 | **structure** | 4-letter ID for a structural model from PDB database|  |  
 
 # Probe parameters
-| Parameter name | Description | Example | Notes |
-| --- | --- | --- | --- |
-|**probe_template**| Name of a pre-set probe | `probe_template = "NHS_ester"` | |
-|**probe_name**| Alternative name for this probe | `probe_name = "NHS_ester"` | |
-|**labelling_efficiency**| Probability of probe to bind a given epitope |  `labelling_efficiency=0.1` ||
+| Parameter name | Description |
+| --- | --- | 
+|**probe_template**| Name of a pre-set probe |
+|**probe_name**| Alternative name for this probe |  
+|**labelling_efficiency**| Probability of probe to bind a given epitope | 
 |**probe_target_type** | Type of target |   |"Sequence", "Residue" or "Primary"|
-|**probe_target_value**  | Specific value depending on the target type |    ||
-|**probe_distance_to_epitope** | Fix distance offset between epitope and probe anchor site |    ||
-|**probe_model** | 4-letter code for an atomic model on which to base this probe |   ||
-|**probe_fluorophore** | Fluorophore name for emitters |    ||
-|**probe_paratope** | If probe_model is defined, the paratope defines the anchor point of the probe |    ||
-|**probe_conjugation_target_info** | If probe_model is defined, this dictionary specifies the sites to use as probe emitters  |    ||
-|**probe_conjugation_efficiency** |      ||
-|**probe_seconday_epitope** | If probe is secondary, this aminoacid sequence defines the epitope on the primary antibody model|    ||
-|**probe_wobbling** | Flag to specify is proble wobbling is allowed |    | Boolean |
+|**probe_target_value**  | Specific value depending on the target type |  
+|**probe_distance_to_epitope** | Fix distance offset between epitope and probe anchor site |    
+|**probe_model** | 4-letter code for an atomic model on which to base this probe |   
+|**probe_fluorophore** | Fluorophore name for emitters |    
+|**probe_paratope** | If probe_model is defined, the paratope defines the anchor point of the probe |    
+|**probe_conjugation_target_info** | If probe_model is defined, this dictionary specifies the sites to use as probe emitters  |    
+|**probe_conjugation_efficiency** |      
+|**probe_seconday_epitope** | If probe is secondary, this aminoacid sequence defines the epitope on the primary antibody model|    
+|**probe_wobbling** | Flag to specify is proble wobbling is allowed |
 
 
 # Defects parameters
-| Parameter name | Description | Notes |
-| --- | --- | --- |
-| **defect** | Average fraction of the particle rendered inaccessible to probes |  |  
-| **defect_small_cluster** | Maximum distance between epitopes for first groupping | In angstroms |  
-| **defect_large_cluster** | Minimum distance between epitopes for second groupping | In angstroms |  
+| Parameter name | Description |
+| --- | --- | 
+| **defect** | Average fraction of the particle rendered inaccessible to probes |  
+| **defect_small_cluster** | Maximum distance between epitopes for first groupping |
+| **defect_large_cluster** | Minimum distance between epitopes for second groupping |   
 
 
 
 # Virtual sample parameters
-| Parameter name | Description | Notes |
-| --- | --- | --- |
-|**virtual_sample_template** |  |  |  
-|**sample_dimensions** |  |  |  
-|**number_of_particles** | Number of particles to place in the sample space |  |  
-|**particle_positions** | List of relative positions per particle | |  
-|**random_orientations** |  | Boolean |  
-|**random_placing** |  | Boolean |  
+| Parameter name | Description |
+| --- | --- | 
+|**virtual_sample_template** |  |  
+|**sample_dimensions** |  |  
+|**number_of_particles** | Number of particles to place in the sample space |    
+|**particle_positions** | List of relative positions per particle |   
+|**random_orientations** |  |
+|**random_placing** |  |  
 
 
 # Modalities parameters
-| Parameter name | Description | Notes |
-| --- | --- | --- |
-| **pixelsize** | Pixelsize of image | In nanometers |  
+| Parameter name | Description | 
+| --- | --- | 
+| **pixelsize** | Pixelsize of image |   
 
 # Acquisition parameters
-| Parameter name | Description | Notes |
-| --- | --- | --- |
-| **exp_time** | Exposure time | In seconds |  
+| Parameter name | Description | 
+| --- | --- | 
+| **exp_time** | Exposure time | 
 
 
 # Analysis parameters
-| Parameter name | Description | Notes |
-| --- | --- | --- |
+| Parameter name | Description |
+| --- | --- | 
 
 
 # 5. Templates table
