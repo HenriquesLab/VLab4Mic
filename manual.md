@@ -203,7 +203,7 @@ sweep_gen = run_parameter_sweep(
     # output and analysis
     output_name="vlab_script",
     return_generator=True,
-    save_sweep_images=True,
+    save_sweep_images=True,  # By default, the saving directory is set to the home path of the user
     save_analysis_results=True,
     run_analysis=True
     )
