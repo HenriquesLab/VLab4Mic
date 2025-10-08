@@ -249,14 +249,13 @@ Note: If a parameter is None, it will not be swept and will use default values.
 # Structure parameters
 | Parameter name | Description | Notes |
 | --- | --- | --- |
-| **defect** | Average fraction of the particle rendered inaccessible to probes |  |  
-| **defect_small_cluster** | Maximum distance between epitopes for first groupping | In angstroms |  
-| **defect_large_cluster** | Minimum distance between epitopes for second groupping | In angstroms |  
+| **structure** | 4-letter ID for a structural model from PDB database|  |  
 
 # Probe parameters
 | Parameter name | Description | Example | Notes |
 | --- | --- | --- | --- |
-|**probe_name**| Name of a pre-set probe | `probe_name = "NHS_ester"` | |
+|**probe_template**| Name of a pre-set probe | `probe_template = "NHS_ester"` | |
+|**probe_name**| Alternative name for this probe | `probe_name = "NHS_ester"` | |
 |**labelling_efficiency**| Probability of probe to bind a given epitope |  `labelling_efficiency=0.1` ||
 |**probe_target_type** | Type of target |   |"Sequence", "Residue" or "Primary"|
 |**probe_target_value**  | Specific value depending on the target type |    ||
@@ -268,6 +267,15 @@ Note: If a parameter is None, it will not be swept and will use default values.
 |**probe_conjugation_efficiency** |      ||
 |**probe_seconday_epitope** | If probe is secondary, this aminoacid sequence defines the epitope on the primary antibody model|    ||
 |**probe_wobbling** | Flag to specify is proble wobbling is allowed |    | Boolean |
+
+
+# Defects parameters
+| Parameter name | Description | Notes |
+| --- | --- | --- |
+| **defect** | Average fraction of the particle rendered inaccessible to probes |  |  
+| **defect_small_cluster** | Maximum distance between epitopes for first groupping | In angstroms |  
+| **defect_large_cluster** | Minimum distance between epitopes for second groupping | In angstroms |  
+
 
 
 # Virtual sample parameters
