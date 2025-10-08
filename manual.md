@@ -72,7 +72,7 @@ Follow the interactive widgets and instructions in each notebook. For questions,
 
 ## 2.2 Using VLab4Mic as Python library
 
-When using VLab4Mic as a python library, you can paramtererise your experiment or parameter sweep through its high level functions. These functions are covered in dettail in the Methods section.
+When using VLab4Mic as a python library, you can paramtererise your experiment or parameter sweep through its high level functions. These functions are covered in detail in the Methods section.
 
 
 Following the installation instructions above, activate your Python environment.
@@ -133,6 +133,8 @@ The following code example shows how to use some of these parameters.
 from vlab4mic.experiments import image_vsample
 
 # Paramterise and run simulation
+modalities = ["Widefield", "Confocal", "AiryScan", "STED", "SMLM"]
+
 images, noiseless, experiment = image_vsample(
     structure="7R5K", # PDB ID code for a Nuclear Pore complex
     probe_template="Antibody", # Probe template for an antibody
@@ -141,7 +143,7 @@ images, noiseless, experiment = image_vsample(
     number_of_particles = 10,
     random_rotations=True,
     rotation_angles=None,
-    multimodal=["Widefield", "Confocal", "AiryScan", "STED", "SMLM"],
+    multimodal=modalities,
     run_simulation=True,
     clear_experiment=True,
 )
@@ -184,6 +186,8 @@ vLab4Mic allows you to test parameter combinations to use for sample and image s
 The main method to run a parameter sweep is "run_parameter_sweep" and can be used as in the following example:
 
 ```python
+from vlab4mic.sweep_generator import run_parameter_sweep
+
 sweep_gen = run_parameter_sweep(
     # output and analysis
     output_name="vlab_script",
@@ -271,16 +275,15 @@ Note: If a parameter is None, it will not be swept and will use default values.
 | Parameter name | Description |
 | --- | --- | 
 |**probe_template**| Name of a pre-set probe |
-|**probe_name**| Alternative name for this probe |  
+|**probe_name**| Optional. Alternative name to identify this probe |  
 |**labelling_efficiency**| Probability of probe to bind a given epitope | 
-|**probe_target_type** | Type of target |   |"Sequence", "Residue" or "Primary"|
+|**probe_target_type** | Type of target: "Sequence", "Residue" or "Primary"|
 |**probe_target_value**  | Specific value depending on the target type |  
 |**probe_distance_to_epitope** | Fix distance offset between epitope and probe anchor site |    
 |**probe_model** | 4-letter code for an atomic model on which to base this probe |   
 |**probe_fluorophore** | Fluorophore name for emitters |    
 |**probe_paratope** | If probe_model is defined, the paratope defines the anchor point of the probe |    
 |**probe_conjugation_target_info** | If probe_model is defined, this dictionary specifies the sites to use as probe emitters  |    
-|**probe_conjugation_efficiency** |      
 |**probe_seconday_epitope** | If probe is secondary, this aminoacid sequence defines the epitope on the primary antibody model|    
 |**probe_wobbling** | Flag to specify is proble wobbling is allowed |
 
@@ -297,8 +300,8 @@ Note: If a parameter is None, it will not be swept and will use default values.
 # Virtual sample parameters
 | Parameter name | Description |
 | --- | --- | 
-|**virtual_sample_template** |  |  
-|**sample_dimensions** |  |  
+|**virtual_sample_template** | |  
+|**sample_dimensions** | List of XYZ dimensions for the virtual sample  |  
 |**number_of_particles** | Number of particles to place in the sample space |    
 |**particle_positions** | List of relative positions per particle |   
 |**random_orientations** |  |
@@ -309,16 +312,18 @@ Note: If a parameter is None, it will not be swept and will use default values.
 | Parameter name | Description | 
 | --- | --- | 
 | **pixelsize** | Pixelsize of image |   
+| **lateral_resolution_nm** |  |   
+| **axial_resolution_nm** |  |   
+| **psf_voxel_nm** |  |   
+| **depth_of_field_nm** | |  
 
 # Acquisition parameters
 | Parameter name | Description | 
 | --- | --- | 
 | **exp_time** | Exposure time | 
+| **noise** | Whether to use noise at detection or not | 
+| **nframes** | Number of frames | 
 
-
-# Analysis parameters
-| Parameter name | Description |
-| --- | --- | 
 
 
 
