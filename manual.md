@@ -144,6 +144,7 @@ images, noiseless, experiment = image_vsample(
     random_rotations=True,
     rotation_angles=None,
     multimodal=modalities,
+    STED={"exp_time":0.01},  # modality-specific parameters
     run_simulation=True,
     clear_experiment=True,
 )
