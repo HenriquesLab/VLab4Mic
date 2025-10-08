@@ -147,27 +147,19 @@ images, noiseless, experiment = image_vsample(
     clear_experiment=True,
 )
 ```
-Find a complete and detailed list of parameters in the documentation of the method, or refer to the [table of parameters]()
+Find a complete and detailed list of parameters in the documentation of the method, or refer to the table of parameters section.
 
+Imaging simulations output is a dictionary where each key is the imaging modality. To display the results you can use the following example code:
 
-## Parameters table:
-
-
-### **<ins>Structure parameters:</ins>** 
-- **Structure**: The 4 Letter code that identifies the atomic structure, for instance, "7R5K"
-
-### **<ins>Probes and probe parameters:</ins>**
-- **Probe template**: Name for a template probe such as “Antibody”, “NHS ester”, etc. This parameter defines the model to be used as probe. Other optional parameters control specific behaviour of the probe
-- **Labelling efficiency**: Efficiency of probe to targeting an epitope in the structure
-- ... 
-
-### **<ins>Particle field parameters:</ins>**
-- **Number of particles**: Number of labelled particles to be distributed in the sample volume.
-- **Sample dimensions**: Dimensions of the volume for the virtual sample
-- ... 
-
-The full list of parameters and their in-depth usage can be found [here](https://github.com/jdmartinez24/vlabwikis/wiki/Parameter-tables).
-
+```python
+import matplotlib.pyplot as plt
+nmods = len(modalities)
+fig, axs = plt.subplots(1, nmods)
+nframe = 0
+for i, mod in enumerate(modalities):
+    axs[i].imshow(images[mod][nframe], cmap="magma")
+    axs[i].set_title(mod)
+```
 
 
 ## 3.2 Run a parameter sweep analysis
@@ -208,3 +200,56 @@ In order to specify the parameters to include and the values to iterate in two w
 For instance, you can set to use 10 equally distributed values for Labelling Efficiencies between 0 and 1; or you can set them explicitly: 0.4, 0.8 and 1.0, for instance. Each parameter has a default value.
 
 When running a parameter sweep, all possible parameter combinations will be used. For instance, setting 10 values for Labelling Efficiencies and 10 values for particle defects will generate 100 combinations. 
+
+
+# 4. Parameter tables
+
+# Structure parameters
+| Parameter name | Description | Notes |
+| --- | --- | --- |
+| **defect** | Average fraction of the particle rendered inaccessible to probes |  |  
+| **defect_small_cluster** | Maximum distance between epitopes for first groupping | In angstroms |  
+| **defect_large_cluster** | Minimum distance between epitopes for second groupping | In angstroms |  
+
+# Probe parameters
+| Parameter name | Description | Example | Notes |
+| --- | --- | --- | --- |
+|**probe_name**| Name of a pre-set probe | `probe_name = "NHS_ester"` | |
+|**labelling_efficiency**| Probability of probe to bind a given epitope |  `labelling_efficiency=0.1` ||
+|**probe_target_type** | Type of target |   |"Sequence", "Residue" or "Primary"|
+|**probe_target_value**  | Specific value depending on the target type |    ||
+|**probe_distance_to_epitope** | Fix distance offset between epitope and probe anchor site |    ||
+|**probe_model** | 4-letter code for an atomic model on which to base this probe |   ||
+|**probe_fluorophore** | Fluorophore name for emitters |    ||
+|**probe_paratope** | If probe_model is defined, the paratope defines the anchor point of the probe |    ||
+|**probe_conjugation_target_info** | If probe_model is defined, this dictionary specifies the sites to use as probe emitters  |    ||
+|**probe_conjugation_efficiency** |      ||
+|**probe_seconday_epitope** | If probe is secondary, this aminoacid sequence defines the epitope on the primary antibody model|    ||
+|**probe_wobbling** | Flag to specify is proble wobbling is allowed |    | Boolean |
+
+
+# Virtual sample parameters
+| Parameter name | Description | Notes |
+| --- | --- | --- |
+|**virtual_sample_template** |  |  |  
+|**sample_dimensions** |  |  |  
+|**number_of_particles** | Number of particles to place in the sample space |  |  
+|**particle_positions** | List of relative positions per particle | |  
+|**random_orientations** |  | Boolean |  
+|**random_placing** |  | Boolean |  
+
+
+# Modalities parameters
+| Parameter name | Description | Notes |
+| --- | --- | --- |
+| **pixelsize** | Pixelsize of image | In nanometers |  
+
+# Acquisition parameters
+| Parameter name | Description | Notes |
+| --- | --- | --- |
+| **exp_time** | Exposure time | In seconds |  
+
+
+# Analysis parameters
+| Parameter name | Description | Notes |
+| --- | --- | --- |
