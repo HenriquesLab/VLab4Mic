@@ -321,4 +321,67 @@ Note: If a parameter is None, it will not be swept and will use default values.
 | --- | --- | 
 
 
-# 5. Templates table
+
+# 5. Templates
+
+
+# Structures
+
+
+Any atomic structure in PDB/CIF format can be use in vLab4Mic, nonetheless, this table list example structures readlily available for codeless notebooks and for which example probes exist.
+
+| Structure id | Description | Database | Format used |
+| --- | --- | --- | --- |
+| 1XI5 | Clathrin D6 coat with auxilin J-domain | RCSB | CIF format |
+| 7R5K | Human nuclear pore complex (constricted) | RCSB | CIF format |
+| 3J3Y | Atomic-level structure of the entire HIV-1 capsid (186 hexamers + 12 pentamers) | RCSB | CIF format |
+| 8GMO | Bacteriophage T4 capsid shell  | RCSB | CIF format |
+
+# Probes
+
+
+Each probe is a configuration file whose parameterisation models a particular type of labelling. For instance, NHS_ester models a direct label that targets lysine residues on any atomic model. In the case of indirect probes, they include an atomic model for the probe itself, as is the case for GFP or an Antibody.
+
+## Structure-independent probes
+
+Structure-independent probes are model probes whose target epitope is not pre-defined or is a residue.
+
+| Probe name | Description | Targets | Probe Model | Notes |
+| --- | --- | --- | --- | --- |
+| **NHS_ester** | Direct label for Lysine resiudes | Residues: LYS | NA | The location of each lysine is used as position for emitters |
+| **Linker** | Indirect label modelled as a rigid spacer that binds to the epitope | NA | NA | Requires specification of target type and values|
+| **Antibody** | Indirect label based on the crystallographc structure of IGG antibody against HIV-1 isolates | NA | 1HZH | Requires specification of target type and values|
+| **GFP** | Indirect label based on the crystallographc structure of  GFP | NA | 6YLQ | Requires specification of target type and values|
+
+## Structure-specific probes
+
+This probes are special cases of structure-independent probe models which aim to target a specific structure.
+
+
+| Probe name | Description | Targets | Probe Model | Notes |
+| --- | --- | --- | --- | --- |
+| **CCP_heavy_chain_Cterminal** | Direct probe for C terminal site of Heavy Chain of Clathin Coated Pit | Sequence: EQATETQ | NA | Based on model 1XI5 |
+| **NPC_Nup96_Cterminal_direct** | Direct probe C terminal site of Nup96 in Nuclear Pore Complex | Sequence: ELAVGSL | NA | Based on model 7R5K |
+| **HIV_capsid_p24_direct** | Direct probe for HIV-1 Capsid monomer (p24) | Sequence: SPRTLNA | NA | Based on model 3J3Y |
+| **anti-p24_primary_antibody_HIV** | Antibody for HIV-1 Capsid monomer (p24) | Sequence: SPRTLNA | 1HZH | Based on model 3J3Y |
+
+
+
+
+
+
+# Virtual sample
+
+| Virtual sample name | Description | Notes |
+| --- | --- | --- |
+| square1x1um_randomised | Virtual sample of square dimensions and a single particle placed in the center |  |
+
+# Modalities
+
+| Modality name | Description | PSF shape X,Y,Z (nm) | Image pixelsize (nm) | Notes |
+| --- | --- | --- | --- | --- |
+| **Widefield** | Widefield microscope | 94,94,331 | 100 | |
+| **Confocal** | Confocal microscope | 94,94,331 | 70 | |
+| **STED** | STED microscope | 20,20,20 | 15 | |
+| **SMLM** | SMLM image model | 8,8,8 | 5 | Emulates effective image |
+| **Referece** | Idealised microscope | 5,5,5 | 5 | |
