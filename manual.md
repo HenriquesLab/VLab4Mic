@@ -95,7 +95,7 @@ help(image_vsample)
 
 # 3. VLab4Mic Methods
 
-vLab4Mic main functionallity can be accessed with 2 main methods.
+VLab4Mic main functionality can be accessed with 2 main methods.
 - Create and simulate imaging of a virtual sample
 - Set up and run parameter sweep
 
@@ -357,11 +357,15 @@ Structure-independent probes are model probes whose target epitope is not pre-de
 | **NHS_ester** | Direct label for Lysine resiudes | Residues: LYS | NA | The location of each lysine is used as position for emitters |
 | **Linker** | Indirect label modelled as a rigid spacer that binds to the epitope | NA | NA | Requires specification of target type and values|
 | **Antibody** | Indirect label based on the crystallographc structure of IGG antibody against HIV-1 isolates | NA | 1HZH | Requires specification of target type and values|
+| **Nanobody** | Indirect label based on the crystallographc structure of a synthetic nanobody | NA | 7MFV | Requires specification of target type and values|
 | **GFP** | Indirect label based on the crystallographc structure of  GFP | NA | 6YLQ | Requires specification of target type and values|
+| **GFP_w_nanobody** | Indirect label based on the crystallographc structure of a nanobody in complex with eGFP | NA | 6XZF | Requires specification of target type and values|
+| **mMaple** | Indirect label based on the crystallographc structure of the fluorescent protein mTFP1 | NA | 2HQK | Requires specification of target type and values|
+| **SNAP-tag** | Indirect label based on the crystallographc structure of SNAP-tag with labelled with a fluorophore | NA | 6Y8P | Requires specification of target type and values|
 
 ## Structure-specific probes
 
-This probes are special cases of structure-independent probe models which aim to target a specific structure.
+These probes are special cases of structure-independent probe models which aim to target a specific structure.
 
 
 | Probe name | Description | Targets | Probe Model | Notes |
