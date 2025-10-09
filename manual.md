@@ -302,11 +302,17 @@ Note: If a parameter is None, it will not be swept and will use default values.
 | Parameter name | Description |
 | --- | --- | 
 |**virtual_sample_template** | |  
-|**sample_dimensions** | List of XYZ dimensions for the virtual sample  |  
-|**number_of_particles** | Number of particles to place in the sample space |    
-|**particle_positions** | List of relative positions per particle |   
-|**random_orientations** |  |
-|**random_placing** |  |  
+| **sample_dimensions** |In nanometers, define the X, Y, and Z sizes of the field. | 
+| **number_of_particles** | Number of independent copies of a particle to create and distribute.| 
+| **particle_positions** | List of relative positions of particles in the field.| 
+| **random_orientations** | If True, each particle will be randomly assigned a new orientation. Default is False. | 
+| **xy_orientations**| List of orientation directions on the xy plane to choose from | 
+| **xz_orientations**| List of orientation directions on the xz plane to choose from | 
+| **yz_orientations**| List of orientation directions on the yz plane to choose from | 
+| **axial_offset**| List of Z positions to choose from as offsets from the focus plane   | 
+| **random_placing**|  Define if position in field is random or the center of field. Default is False.| 
+| **random_rotations**| If True, apply random rotations to particles. Default is False.| 
+| **rotation_angles**| List of rotation angles to choose from | 
 
 
 # Modalities parameters
@@ -376,15 +382,11 @@ These probes are special cases of structure-independent probe models which aim t
 | **anti-p24_primary_antibody_HIV** | Antibody for HIV-1 Capsid monomer (p24) | Sequence: SPRTLNA | 1HZH | Based on model 3J3Y |
 
 
-
-
-
-
 # Virtual sample
 
 | Virtual sample name | Description | Notes |
 | --- | --- | --- |
-| square1x1um_randomised | Virtual sample of square dimensions and a single particle placed in the center |  |
+| **square1x1um_randomised** | Virtual sample of square dimensions and a single particle placed in the center |  |
 
 # Modalities
 
