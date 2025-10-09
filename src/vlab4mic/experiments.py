@@ -249,6 +249,7 @@ class ExperimentParametrisation:
         psf_voxel_nm: int = None,
         depth_of_field_nm: int = None,
         remove=False,
+        **kwargs,
     ):
         """
         Update or remove an imaging modality's parameters.
@@ -1527,6 +1528,7 @@ def image_vsample(
     clear_experiment = False,
     primary_probe = None,
     secondary_probe = None,
+    **kwargs,
 ):
     """
     Generate imaging simulations of the specified virtual sample and imaging modalities.
@@ -1664,6 +1666,14 @@ def image_vsample(
                 "imager",
             ]
         )
+        for modality_name in sample_experiment.imaging_modalities.keys():
+            if modality_name in kwargs.keys():
+                sample_experiment.update_modality(
+                    modality_name, **kwargs[modality_name]
+                )
+                sample_experiment.set_modality_acq(
+                    modality_name, **kwargs[modality_name]
+                )
     else:
         # need to create an experiment for it
         if multimodal is not None:
@@ -1674,6 +1684,14 @@ def image_vsample(
             vmicroscope, sample_experiment = build_virtual_microscope(
                 modality=modality, use_local_field=True
             )
+        for modality_name in sample_experiment.imaging_modalities.keys():
+            if modality_name in kwargs.keys():
+                sample_experiment.update_modality(
+                    modality_name, **kwargs[modality_name]
+                )
+                sample_experiment.set_modality_acq(
+                    modality_name, **kwargs[modality_name]
+                )
         sample_experiment.imager.import_field(**vsample)
     imaging_output = dict()
     imaging_output_noiseless = dict()
