@@ -21,10 +21,10 @@ conda activate MYENV
 
 ## Step 2: Install VLab4Mic
 
-Currently, VLab4Mic is available through GitHub (PyPI release coming soon!):
+Currently, VLab4Mic is available through Test PyPI (PyPI release coming soon!):
 
 ```bash
-pip install git+https://github.com/HenriquesLab/SupraMolecularSimulator.git
+pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple vlab4mic
 ```
 
 
