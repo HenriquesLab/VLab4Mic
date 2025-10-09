@@ -763,8 +763,7 @@ class Imager:
                 high_y = np.ceil(y +  modality_psf_width_px)
                 if high_x > max_y:
                     high_x = max_y
-                print(low_x, high_x, low_y, high_y)
-                mask_with_psf[low_x:high_x, low_y:high_y] = 1
+                mask_with_psf[int(low_x):int(high_x), int(low_y):int(high_y)] = 1
             return mask_with_psf
         else:
             return np.zeros(shape=vsample_binay_positions[0].shape)
