@@ -3,6 +3,7 @@ import yaml
 import os
 from Bio.PDB import PDBParser, MMCIFParser, PPBuilder, CaPPBuilder
 from Bio.PDB.MMCIF2Dict import MMCIF2Dict
+import Bio.PDB.alphafold_db as af
 import matplotlib.pyplot as plt
 import random
 
@@ -50,6 +51,7 @@ class MolecularStructureParser:
         self.plotting_params = dict()
         self.scale = 1e-10  # in meters
         self.axis = dict(pivot=None, direction=None)
+        self.af_model_list = None
 
     def _clear_labels(self):
         """
@@ -85,6 +87,13 @@ class MolecularStructureParser:
         elif self.format == "CIF":
             parser = MMCIFParser()
             self.struct = parser.get_structure(self.identifier, self.source_file)
+        elif self.format == "AF":
+            models = af.get_structural_models_for(qualifier=self.id)
+            model_list = []
+            for model in models:
+                model_list.append(model)
+            self.af_model_list = model_list
+            self.struct = model_list[0]
         else:
             print(f"{self.format} is not a valid format. Valid options are PDB or CIF.")
         if self.chain_builder == "PPBuilder":
