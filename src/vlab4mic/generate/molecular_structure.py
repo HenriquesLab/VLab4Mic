@@ -1028,7 +1028,7 @@ class MolecularReplicates(MolecularStructureParser):
 
 
 def build_structure_cif(
-    cif_file: str, struct_title: str = "", cif_id: str = "", format_type="CIF"
+    cif_file: str = None, struct_title: str = "", cif_id: str = "", format_type="CIF"
 ):
     """
     Load and parse a PDB/CIF file and build a structure object.
