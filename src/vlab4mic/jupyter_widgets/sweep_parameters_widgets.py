@@ -164,7 +164,9 @@ def select_structure(sweep_gen):
                 ez_sweep_structure["structures"].value
             ],
         ]
-        ez_sweep_structure["structures"].disabled = True
+        ez_sweep_structure["Select"].disabled = True
+        ez_sweep_structure["select_from_database"].disabled = True
+        ez_sweep_structure["select_structure_from_file"].disabled = True
     
     def select_structure_from_file(b):
         selected_file = ez_sweep_structure["File"].selected
@@ -187,6 +189,27 @@ def select_structure(sweep_gen):
         else:
             ez_sweep_structure["message"].value = "No file selected."
 
+    def select_structure_from_database(b):
+        structure_id = ez_sweep_structure["structure_id"].value
+        database = ez_sweep_structure["database"].value
+        if structure_id:
+            sweep_gen.structures = [structure_id,]
+            sweep_gen.structure_path = None
+            sweep_gen.experiment.select_structure(
+                structure_id=structure_id, 
+                structure_path=None,
+                database=database,
+                build=True
+            )
+            sweep_gen.use_experiment_structure = True
+            ez_sweep_structure["message"].value = (
+                f"Structure {sweep_gen.structures[0]} selected from {database} database."
+            )
+            ez_sweep_structure["Select"].disabled = True
+            ez_sweep_structure["select_from_database"].disabled = True
+            ez_sweep_structure["select_structure_from_file"].disabled = True
+
+    
     def toggle_advanced_parameters(b):
         widgets_visibility["advanced_param_header"] = not widgets_visibility[
             "advanced_param_header"
@@ -195,6 +218,16 @@ def select_structure(sweep_gen):
         widgets_visibility["select_structure_from_file"] = not widgets_visibility[
             "select_structure_from_file"
         ]
+        widgets_visibility["database"] = not widgets_visibility["database"]
+        widgets_visibility["structure_id"] = not widgets_visibility["structure_id"]
+        widgets_visibility["select_from_database"] = not widgets_visibility[
+            "select_from_database"
+        ]
+        widgets_visibility["divisor1"] = not widgets_visibility["divisor1"]
+        widgets_visibility["divisor2"] = not widgets_visibility["divisor2"]
+        widgets_visibility["section1"] = not widgets_visibility["section1"]
+        widgets_visibility["section2"] = not widgets_visibility["section2"]
+
         update_widgets_visibility(ez_sweep_structure, widgets_visibility)
 
     ez_sweep_structure.add_button(
@@ -203,6 +236,12 @@ def select_structure(sweep_gen):
         icon=toggle_icon,
     )
     # advanced parameters
+    ez_sweep_structure.elements["divisor1"] = widgets.Label("")
+    ez_sweep_structure.add_HTML(
+        "section1",
+        "<b>Select a structure from file</b>",
+        style=dict(font_size="15px"),
+    )
     ez_sweep_structure.add_HTML(
         "advanced_param_header",
         "<b>Upload a PDB/CIF file</b>",
@@ -220,10 +259,33 @@ def select_structure(sweep_gen):
         icon=select_icon,
         style={"button_color": select_colour},
     )
+    ez_sweep_structure.elements["divisor2"] = widgets.Label("")
+    ez_sweep_structure.add_HTML(
+        "section2",
+        "<b>Or select a structure from the database</b>",
+        style=dict(font_size="15px"),
+    )
+    ez_sweep_structure.add_dropdown(
+        "database",
+        description="Database:",
+        options=["RCSB", "AlphaFold"]
+    )
+    ez_sweep_structure.add_text(
+        tag="structure_id",
+        value="",
+        description="Structure id",
+    )
+    ez_sweep_structure.add_button(
+        "select_from_database",
+        description="Select structure from database",
+        icon=select_icon,
+        style={"button_color": select_colour},
+    )
     widgets_visibility = {}
     _unstyle_widgets(ez_sweep_structure, widgets_visibility)
     ez_sweep_structure["toggle_advanced_parameters"].on_click(toggle_advanced_parameters)
     ez_sweep_structure["select_structure_from_file"].on_click(select_structure_from_file)
+    ez_sweep_structure["select_from_database"].on_click(select_structure_from_database)
 
     ez_sweep_structure["Select"].on_click(select)
     toggle_advanced_parameters(True)
