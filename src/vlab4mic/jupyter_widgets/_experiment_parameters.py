@@ -107,6 +107,20 @@ def ui_select_structure(experiment):
         gui["select_structure"].icon = select_icon
         for wgt_name in gui.elements.keys():
             gui[wgt_name].disabled = False
+    
+    def select_structure_from_database(b):
+        gui["label_1"].value = "Current structure selected: Loading..."
+        gui["select_structure"].icon = loding_icon
+        for wgt_name in gui.elements.keys():
+            gui[wgt_name].disabled = True
+        experiment.select_structure(
+            structure_id=gui["structure_id"].value, 
+            database=gui["database"].value
+        )
+        update_structure_list()
+        gui["select_structure"].icon = select_icon
+        for wgt_name in gui.elements.keys():
+            gui[wgt_name].disabled = False
 
 
     def update_structure_list():
@@ -127,6 +141,10 @@ def ui_select_structure(experiment):
         widgets_visibility["select_structure_from_file"] = not widgets_visibility[
             "select_structure_from_file"
         ]
+        widgets_visibility["database"] = not widgets_visibility["database"]
+        widgets_visibility["structure_id"] = not widgets_visibility["structure_id"]
+        widgets_visibility["select_from_database"] = not widgets_visibility["select_from_database"]
+
         update_widgets_visibility(gui, widgets_visibility)
     
     current_structure_text = None
@@ -168,17 +186,34 @@ def ui_select_structure(experiment):
         description="Select structure from file",
         icon=select_icon,
         style={"button_color": select_colour},
-    )        
+    )
+    gui.add_dropdown(
+        "database",
+        description="Database:",
+        options=["RCSB", "AF"]
+    )
+    gui.add_text(
+        tag="structure_id",
+        value="",
+        description="Structure id",
+    )
+    gui.add_button(
+        "select_from_database",
+        description="Select structure from database",
+        icon=select_icon,
+        style={"button_color": select_colour},
+    )
     gui.add_callback(
         "select_structure",
         select_structure,
         gui.elements,
-        description="Select structure",
+        description="Select example structure",
         icon=select_icon,
         style={"button_color": select_colour},
     )
     gui["toggle_advanced_parameters"].on_click(toggle_advanced_parameters)
     gui["select_structure_from_file"].on_click(select_structure_from_file)
+    gui["select_from_database"].on_click(select_structure_from_database)
     widgets_visibility = {}
     _unstyle_widgets(gui, widgets_visibility)
     toggle_advanced_parameters(True)
