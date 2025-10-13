@@ -162,7 +162,7 @@ class ExperimentParametrisation:
         self.create_example_experiment()
         self.modality_noise_images = dict()
 
-    def select_structure(self, structure_id="1XI5", build=True, structure_path:str = None):
+    def select_structure(self, structure_id="1XI5", build=True, structure_path:str = None, format_type = "CIF", database = "RCSB"):
         """
         Select a molecular structure by its identifier and optionally build the structure module.
 
@@ -177,6 +177,8 @@ class ExperimentParametrisation:
         -------
         None
         """
+        self.database = database
+        self.format_type = format_type
         if structure_path is not None:
             self.structure_path = structure_path
             self.structure_id = structure_id
@@ -425,6 +427,7 @@ class ExperimentParametrisation:
         None
         """
         if self.structure_id and self.structure_path:
+            # structure file read from local
             struct, struct_param = load_structure(
                 self.structure_id, self.configuration_path, self.structure_path
             )
@@ -432,7 +435,7 @@ class ExperimentParametrisation:
             self.objects_created["structure"] = True
         elif self.structure_id:
             struct, struct_param = load_structure(
-                self.structure_id, self.configuration_path
+                self.structure_id, self.configuration_path, database=self.database
             )
             self.structure = struct
             self.objects_created["structure"] = True
@@ -783,13 +786,13 @@ class ExperimentParametrisation:
         print("Virtual sample cleared")
 
     def create_example_experiment(self):
-        with io.capture_output() as captured:
-            self.select_structure("1XI5", build=False)
-            self.add_probe()
-            self.set_virtualsample_params()
-            for modality_name in self.example_modalities:
-                self.add_modality(modality_name)
-            self.build()
+        #with io.capture_output() as captured:
+        self.select_structure("1XI5", build=False)
+        self.add_probe()
+        self.set_virtualsample_params()
+        for modality_name in self.example_modalities:
+            self.add_modality(modality_name)
+        self.build()
         print("Experiment created with default parameters")
 
     def clear_experiment(self):
@@ -1255,6 +1258,8 @@ class ExperimentParametrisation:
 
 def generate_virtual_sample(
     structure: str = "1XI5",
+    structure_database: str = None,
+    structure_format: str = "CIF",
     structure_is_path = False,
     probe_template: str = "NHS_ester",
     probe_name: str = None,

@@ -22,7 +22,7 @@ from .utils.transform.datatype import truncate
 from .utils.data_format.structural_format import label_builder_format
 from pathlib import Path
 
-def load_structure(structure_id: str = None, config_dir=None, structure_path=None):
+def load_structure(structure_id: str = None, config_dir=None, structure_path=None, database="RCSB"):
     """
     Initialise a BioPython object for the PDB/CIF ID and retrieve available information about specific labelling.
 
@@ -56,25 +56,40 @@ def load_structure(structure_id: str = None, config_dir=None, structure_path=Non
             return structure, structure_params
         else:
             print("Loading structure.")
-            structure_dir = os.path.join(config_dir, "structures")
-            config_file = structure_id + ".yaml"
-            structure_configuration = os.path.join(structure_dir, config_file)
-            structure_configuration_check = Path(structure_configuration)
-            if structure_configuration_check.exists():
-                structure_params = load_yaml(structure_configuration)
+            if database == "AF":
+                format_type = "CIF"
+                title = None
+                cif_file = None
+                structure_params = dict(
+                    model = {
+                        "ID": structure_id, 
+                        "format": "CIF", 
+                        "title": "", 
+                        "database": database},
+                )
             else:
-                template = os.path.join(structure_dir, "_template_.yaml")
-                structure_params = load_yaml(template)
-            # get CIF path
-            cif_file = verify_structure(structure_id, structure_dir)
-            # build structure
-            title = ""
-            if "title" in structure_params["model"]:
-                title = structure_params["model"]["title"]
+                format_type = "CIF"
+                structure_dir = os.path.join(config_dir, "structures")
+                config_file = structure_id + ".yaml"
+                structure_configuration = os.path.join(structure_dir, config_file)
+                structure_configuration_check = Path(structure_configuration)
+                if structure_configuration_check.exists():
+                    structure_params = load_yaml(structure_configuration)
+                else:
+                    template = os.path.join(structure_dir, "_template_.yaml")
+                    structure_params = load_yaml(template)
+                # get CIF path
+                cif_file = verify_structure(structure_id, structure_dir)
+                # build structure
+                title = ""
+                if "title" in structure_params["model"]:
+                    title = structure_params["model"]["title"]
             structure = build_structure_cif(
                 cif_file=cif_file,
                 struct_title=title,
                 cif_id=structure_id,
+                format_type=format_type,
+                database=database
             )
             print("Structure Loaded!")
             if "labels" not in structure_params.keys():
