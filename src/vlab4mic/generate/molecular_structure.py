@@ -64,7 +64,7 @@ class MolecularStructureParser:
         self.plotting_params = dict()
         self.plotting_params["assemblyatoms"] = temp_
 
-    def initialise_parsers(self, dictionary: dict):
+    def initialise_parsers(self, file = None, ID = "1XI5", title = "", format_type = "CIF", database = "RCSB", **kwargs):
         """
         Create molecular structure of the PDB/CIF based on its format and associated parameters.
 
@@ -74,20 +74,19 @@ class MolecularStructureParser:
             Dictionary containing file path, ID, format, and optionally title.
         """
         print("Parsing structure. This might take a few seconds...")
-        self.source_file = dictionary["file"]
-        self.id = dictionary["ID"]
-        self.format = dictionary["format"]
-        try:
-            self.identifier = dictionary["title"]
-        except:
-            self.identifier = ""
-        if self.format == "PDB":
-            parser = PDBParser()
-            self.struct = parser.get_structure(self.identifier, self.source_file)
-        elif self.format == "CIF":
-            parser = MMCIFParser()
-            self.struct = parser.get_structure(self.identifier, self.source_file)
-        elif self.format == "AF":
+        self.source_file = file
+        self.id = ID
+        self.format = format_type
+        self.database = database
+        self.identifier = title
+        if database == "RCSB":
+            if self.format == "PDB":
+                parser = PDBParser()
+                self.struct = parser.get_structure(self.identifier, self.source_file)
+            elif self.format == "CIF":
+                parser = MMCIFParser()
+                self.struct = parser.get_structure(self.identifier, self.source_file)
+        elif database == "AF":
             models = af.get_structural_models_for(qualifier=self.id)
             model_list = []
             for model in models:
@@ -263,7 +262,7 @@ class MolecularStructureParser:
         """
         Parse the rotation/translation operations needed to construct a molecular assembly from an asymmetric unit.
         """
-        if self.format == "AF":
+        if self.database == "AF":
             self.assymetric_defined = False
         else:
             if self.CIFdictionary is None:  # check if already created
@@ -967,7 +966,7 @@ class MolecularStructureParser:
 
 
 class MolecularReplicates(MolecularStructureParser):
-    def __init__(self, pdbxinfo):
+    def __init__(self, **kwargs):
         """
         Initialize a MolecularReplicates object from structure information.
 
@@ -977,7 +976,7 @@ class MolecularReplicates(MolecularStructureParser):
             Dictionary with structure file, title, format, and ID.
         """
         MolecularStructureParser.__init__(self)
-        self.initialise_parsers(pdbxinfo)
+        self.initialise_parsers(**kwargs)
         self.replicates = 1
         self.label_names = []
         self.plotcolours = {}
@@ -1028,7 +1027,7 @@ class MolecularReplicates(MolecularStructureParser):
 
 
 def build_structure_cif(
-    cif_file: str = None, struct_title: str = "", cif_id: str = "", format_type="CIF"
+    cif_file: str = None, struct_title: str = "", cif_id: str = "", format_type="CIF", database = "RCSB"
 ):
     """
     Load and parse a PDB/CIF file and build a structure object.
@@ -1049,12 +1048,12 @@ def build_structure_cif(
     MolecularReplicates
         Structure object with parsed atoms and information.
     """
-    structure_dictionary = {
-        "file": cif_file,
-        "title": struct_title,
-        "format": format_type,
-        "ID": cif_id,
-    }
-    Molecularstructure = MolecularReplicates(structure_dictionary)
+    Molecularstructure = MolecularReplicates(
+        file = cif_file,
+        ID = cif_id, 
+        title = struct_title,
+        format_type = format_type,
+        database = database,
+    )
     Molecularstructure.build_structure()
     return Molecularstructure
