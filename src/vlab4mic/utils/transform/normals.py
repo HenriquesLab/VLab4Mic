@@ -3,16 +3,19 @@ from .points_transforms import rotate_point
 
 
 def normals_by_scaling(epitope_locs, scale=0.95):
-    scaled_epitopes_locs = coordinates_scaling(epitope_locs, scale)
-    # calculate the normals of the epitopes
-    # note that this approach will work for convex shapes
-    # this assumes as well the scaled version is smaller
-    normals = np.zeros((len(epitope_locs), 3))
-    for i in range(len(epitope_locs)):
-        normals[i, :] = epitope_locs[i] - scaled_epitopes_locs[i]
-    # then the points from which the normals are traced are the epitopes themselves
-    # normals_ft_epitopes = [normals, epitope_locs]
-    return normals
+    if epitope_locs.shape[0] > 1:
+        scaled_epitopes_locs = coordinates_scaling(epitope_locs, scale)
+        # calculate the normals of the epitopes
+        # note that this approach will work for convex shapes
+        # this assumes as well the scaled version is smaller
+        normals = np.zeros((len(epitope_locs), 3))
+        for i in range(len(epitope_locs)):
+            normals[i, :] = epitope_locs[i] - scaled_epitopes_locs[i]
+        # then the points from which the normals are traced are the epitopes themselves
+        # normals_ft_epitopes = [normals, epitope_locs]
+        return normals
+    else:
+        return None
     # return normals_ft_epitopes
 
 
