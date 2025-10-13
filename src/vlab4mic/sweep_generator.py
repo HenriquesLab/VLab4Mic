@@ -373,8 +373,7 @@ class sweep_generator:
         if override:
             self.reference_image = ref_image
             self.reference_image_parameters = reference_parameters
-            self.reference_image_mask = ref_image_mask
-            
+            self.reference_image_mask = np.ones(shape=ref_image[0].shape)
 
     # previews
     def preview_image_output_by_ID(
