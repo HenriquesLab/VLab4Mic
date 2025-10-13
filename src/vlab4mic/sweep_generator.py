@@ -365,6 +365,7 @@ class sweep_generator:
         ref_image = tiff.imread(ref_image_path)
         if ref_image_mask_path is not None:
             ref_image_mask = tiff.imread(ref_image_mask_path)
+            ref_image_mask[ref_image_mask>0] = 1
         else:
             ref_image_mask = np.ones(shape=ref_image[0].shape)
         if override:
