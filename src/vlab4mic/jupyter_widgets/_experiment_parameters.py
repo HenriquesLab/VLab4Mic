@@ -111,11 +111,15 @@ def ui_select_structure(experiment):
     def select_structure_from_database(b):
         gui["label_1"].value = "Current structure selected: Loading..."
         gui["select_structure"].icon = loding_icon
+        if gui["database"].value == "AlphaFold":
+            database = "AF"
+        else:
+            database = "RCSB"
         for wgt_name in gui.elements.keys():
             gui[wgt_name].disabled = True
         experiment.select_structure(
             structure_id=gui["structure_id"].value, 
-            database=gui["database"].value
+            database=database
         )
         update_structure_list()
         gui["select_structure"].icon = select_icon
@@ -144,7 +148,11 @@ def ui_select_structure(experiment):
         widgets_visibility["database"] = not widgets_visibility["database"]
         widgets_visibility["structure_id"] = not widgets_visibility["structure_id"]
         widgets_visibility["select_from_database"] = not widgets_visibility["select_from_database"]
-
+        widgets_visibility["divisor1"] = not widgets_visibility["divisor1"]
+        widgets_visibility["divisor2"] = not widgets_visibility["divisor2"]
+        widgets_visibility["divisor3"] = not widgets_visibility["divisor3"]
+        widgets_visibility["section1"] = not widgets_visibility["section1"]
+        widgets_visibility["section2"] = not widgets_visibility["section2"]
         update_widgets_visibility(gui, widgets_visibility)
     
     current_structure_text = None
@@ -158,7 +166,7 @@ def ui_select_structure(experiment):
                  style=dict(font_weight="bold", font_size="20px"))
     gui.add_dropdown(
         "structures",
-        description="Select Structure:",
+        description="Example Structure:",
         options=experiment.structures_info_list.keys(),
     )
     gui.add_label(
@@ -170,6 +178,12 @@ def ui_select_structure(experiment):
         icon=toggle_icon,
     )
     # advanced parameters
+    gui.elements["divisor1"] = widgets.Label("")
+    gui.add_HTML(
+        "section1",
+        "Option 1: Select from a local file",
+        style=dict(font_weight="bold", font_size="16px"),
+    )
     gui.add_HTML(
         "advanced_param_header",
         "<b>Upload a PDB/CIF file</b>",
@@ -187,10 +201,16 @@ def ui_select_structure(experiment):
         icon=select_icon,
         style={"button_color": select_colour},
     )
+    gui.elements["divisor2"] = widgets.Label("")
+    gui.add_HTML(
+        "section2",
+        "Option 2: Select from a database",
+        style=dict(font_weight="bold", font_size="16px"),
+    )
     gui.add_dropdown(
         "database",
         description="Database:",
-        options=["RCSB", "AF"]
+        options=["RCSB", "AlphaFold"]
     )
     gui.add_text(
         tag="structure_id",
@@ -203,6 +223,7 @@ def ui_select_structure(experiment):
         icon=select_icon,
         style={"button_color": select_colour},
     )
+    gui.elements["divisor3"] = widgets.Label("")
     gui.add_callback(
         "select_structure",
         select_structure,
@@ -216,6 +237,15 @@ def ui_select_structure(experiment):
     gui["select_from_database"].on_click(select_structure_from_database)
     widgets_visibility = {}
     _unstyle_widgets(gui, widgets_visibility)
+    gui["divisor1"].layout = widgets.Layout(
+        border="1px solid black", height="0px", width="50%"
+    )
+    gui["divisor2"].layout = widgets.Layout(
+        border="1px solid black", height="0px", width="50%"
+    )
+    gui["divisor3"].layout = widgets.Layout(
+        border="1px solid black", height="0px", width="50%"
+    )
     toggle_advanced_parameters(True)
     return gui
 
