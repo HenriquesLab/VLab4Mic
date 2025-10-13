@@ -462,11 +462,21 @@ def set_reference(sweep_gen):
         value="<b>Upload image for reference</b>",
         style={"font_size": "15px"},
     )
+    reference.add_HTML(
+        tag="File_message",
+        value="Choose reference image",
+        style={"font_size": "15px"},
+    )
     reference.add_file_upload(
         "File",
         description="Select from file",
         accept=["*.tif", "*.tiff"],
         save_settings=False,
+    )
+    reference.add_HTML(
+        tag="File_message_mask",
+        value="(Optional) Choose reference image mask:",
+        style={"font_size": "15px"},
     )
     reference.add_file_upload(
         "File_mask",
@@ -503,6 +513,12 @@ def set_reference(sweep_gen):
         ]
         ref_widgets_visibility["File_mask"] = not ref_widgets_visibility[
             "File_mask"
+        ]
+        ref_widgets_visibility["File_message"] = not ref_widgets_visibility[
+            "File_message"
+        ]
+        ref_widgets_visibility["File_message_mask"] = not ref_widgets_visibility[
+            "File_message_mask"
         ]
         
         update_widgets_visibility(reference, ref_widgets_visibility)
