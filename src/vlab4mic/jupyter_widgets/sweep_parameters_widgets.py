@@ -556,7 +556,6 @@ def set_reference(sweep_gen):
     # visibility and layout
     ref_widgets_visibility = {}
     _unstyle_widgets(reference, ref_widgets_visibility)
-
     reference["set"].on_click(gen_ref)
     reference["preview"].on_click(show_reference)
     reference["advanced_parameters"].on_click(toggle_advanced_parameters)
