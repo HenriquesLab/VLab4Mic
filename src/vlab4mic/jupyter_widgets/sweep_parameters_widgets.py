@@ -468,6 +468,12 @@ def set_reference(sweep_gen):
         accept=["*.tif", "*.tiff"],
         save_settings=False,
     )
+    reference.add_file_upload(
+        "File_mask",
+        description="(Optional) Select mask from file",
+        accept=["*.tif", "*.tiff"],
+        save_settings=False,
+    )
     reference.add_bounded_float_text(
         "pixel_size",
         description="Pixel size (nm)",
@@ -495,12 +501,21 @@ def set_reference(sweep_gen):
         ref_widgets_visibility["pixel_size"] = not ref_widgets_visibility[
             "pixel_size"
         ]
+        ref_widgets_visibility["File_mask"] = not ref_widgets_visibility[
+            "File_mask"
+        ]
+        
         update_widgets_visibility(reference, ref_widgets_visibility)
 
     def upload_and_set(b):
+        if reference["File_mask"].selected:
+            ref_image_mask_path = reference["File_mask"].selected
+        else:
+            ref_image_mask_path = None
         sweep_gen.load_reference_image(
             ref_image_path=reference["File"].selected,
             ref_pixelsize=reference["pixel_size"].value,
+            ref_image_mask_path=ref_image_mask_path
         )
         reference["feedback"].value = "Reference image uploaded and set."
         reference["preview"].disabled = False
@@ -526,7 +541,6 @@ def set_reference(sweep_gen):
     # visibility and layout
     ref_widgets_visibility = {}
     _unstyle_widgets(reference, ref_widgets_visibility)
-
     reference["set"].on_click(gen_ref)
     reference["preview"].on_click(show_reference)
     reference["advanced_parameters"].on_click(toggle_advanced_parameters)
