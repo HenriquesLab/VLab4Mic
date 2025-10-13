@@ -88,6 +88,14 @@ class MolecularStructureParser:
                 self.struct = parser.get_structure(self.identifier, self.source_file)
         elif database == "AF":
             models = af.get_structural_models_for(qualifier=self.id)
+            files_in_cwd = os.listdir()
+            files_in_cwd.sort(reverse=True)
+            for file in files_in_cwd:
+                if ".cif" in file and ID in file:
+                    self.source_file = file
+                    self.CIFdictionary = MMCIF2Dict(self.source_file)
+                    self._gen_protein_names()
+                continue
             model_list = []
             for model in models:
                 model_list.append(model)
@@ -180,7 +188,8 @@ class MolecularStructureParser:
         list of str
             List of protein names.
         """
-        return list(self.protein_names.keys())
+        if self.protein_names is not None:
+            return list(self.protein_names.keys())
 
     def _random_substring(string, size=5):
         """
