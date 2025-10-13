@@ -371,7 +371,6 @@ class sweep_generator:
 
     def load_reference_image(
         self, ref_image_path=None, ref_pixelsize=None, ref_image_mask_path = None, override=True
-        self, ref_image_path=None, ref_pixelsize=None, ref_image_mask_path = None, override=True
     ):
         """
         Load a reference image from a specified path.
