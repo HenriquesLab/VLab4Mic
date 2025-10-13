@@ -1258,7 +1258,7 @@ class ExperimentParametrisation:
 
 def generate_virtual_sample(
     structure: str = "1XI5",
-    structure_database: str = None,
+    structure_database: str = "RCSB",
     structure_format: str = "CIF",
     structure_is_path = False,
     probe_template: str = "NHS_ester",
@@ -1423,7 +1423,9 @@ def generate_virtual_sample(
     else:
         myexperiment.select_structure(
             structure_id=structure, 
-            structure_path=None
+            structure_path=None,
+            database=structure_database,
+            format_type=structure_format
         )
 
     if defect and defect_large_cluster and defect_small_cluster:
@@ -1500,6 +1502,8 @@ def image_vsample(
     multimodal: list[str] = None,
     run_simulation: bool = True,
     structure: str = "1XI5",
+    structure_database: str = "RCSB",
+    structure_format: str = "CIF",
     structure_is_path: bool = False,
     probe_template: str = "NHS_ester",
     probe_name: str = None,
@@ -1627,6 +1631,8 @@ def image_vsample(
     if vsample is None:
         vsample, sample_experiment = generate_virtual_sample(
             structure=structure,
+            structure_database=structure_database,
+            structure_format=structure_format,
             structure_is_path=structure_is_path,
             probe_template=probe_template,
             probe_name=probe_name,
