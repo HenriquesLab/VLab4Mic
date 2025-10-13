@@ -467,6 +467,11 @@ def set_reference(sweep_gen):
         value="Choose reference image",
         style={"font_size": "15px"},
     )
+    reference.add_HTML(
+        tag="File_message",
+        value="Choose reference image",
+        style={"font_size": "15px"},
+    )
     reference.add_file_upload(
         "File",
         description="Select from file",
