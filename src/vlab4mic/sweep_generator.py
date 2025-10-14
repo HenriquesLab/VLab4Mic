@@ -364,10 +364,11 @@ class sweep_generator:
         reference_parameters["ref_pixelsize"] = ref_pixelsize
         ref_image = tiff.imread(ref_image_path)
         if ref_image_mask_path is not None:
-            ref_image_mask = tiff.imread(ref_image_mask_path)
-            ref_image_mask[ref_image_mask>0] = 1
+            image_mask = tiff.imread(ref_image_mask_path)
+            ref_image_mask = image_mask > 0
         else:
-            ref_image_mask = np.ones(shape=ref_image[0].shape)
+            image_mask = np.ones(shape=ref_image[0].shape)
+            ref_image_mask = image_mask > 0
         if override:
             self.reference_image = ref_image
             self.reference_image_parameters = reference_parameters
