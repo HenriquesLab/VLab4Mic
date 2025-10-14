@@ -218,15 +218,15 @@ def select_structure(sweep_gen):
         widgets_visibility["select_structure_from_file"] = not widgets_visibility[
             "select_structure_from_file"
         ]
-        widgets_visibility["database"] = not widgets_visibility["database"]
-        widgets_visibility["structure_id"] = not widgets_visibility["structure_id"]
-        widgets_visibility["select_from_database"] = not widgets_visibility[
-            "select_from_database"
-        ]
+        #widgets_visibility["database"] = not widgets_visibility["database"]
+        #widgets_visibility["structure_id"] = not widgets_visibility["structure_id"]
+        #widgets_visibility["select_from_database"] = not widgets_visibility[
+        #    "select_from_database"
+        #]
         widgets_visibility["divisor1"] = not widgets_visibility["divisor1"]
-        widgets_visibility["divisor2"] = not widgets_visibility["divisor2"]
+        #widgets_visibility["divisor2"] = not widgets_visibility["divisor2"]
         widgets_visibility["section1"] = not widgets_visibility["section1"]
-        widgets_visibility["section2"] = not widgets_visibility["section2"]
+        #widgets_visibility["section2"] = not widgets_visibility["section2"]
 
         update_widgets_visibility(ez_sweep_structure, widgets_visibility)
 
@@ -259,33 +259,33 @@ def select_structure(sweep_gen):
         icon=select_icon,
         style={"button_color": select_colour},
     )
-    ez_sweep_structure.elements["divisor2"] = widgets.Label("")
-    ez_sweep_structure.add_HTML(
-        "section2",
-        "<b>Or select a structure from the database</b>",
-        style=dict(font_size="15px"),
-    )
-    ez_sweep_structure.add_dropdown(
-        "database",
-        description="Database:",
-        options=["RCSB", "AlphaFold"]
-    )
-    ez_sweep_structure.add_text(
-        tag="structure_id",
-        value="",
-        description="Structure id",
-    )
-    ez_sweep_structure.add_button(
-        "select_from_database",
-        description="Select structure from database",
-        icon=select_icon,
-        style={"button_color": select_colour},
-    )
+    #ez_sweep_structure.elements["divisor2"] = widgets.Label("")
+    #ez_sweep_structure.add_HTML(
+    #    "section2",
+    #    "<b>Or select a structure from the database</b>",
+    #    style=dict(font_size="15px"),
+    #)
+    #ez_sweep_structure.add_dropdown(
+    #    "database",
+    #    description="Database:",
+    #    options=["RCSB", "AlphaFold"]
+    #)
+    #ez_sweep_structure.add_text(
+    #    tag="structure_id",
+    #    value="",
+    #    description="Structure id",
+    #)
+    #ez_sweep_structure.add_button(
+    #    "select_from_database",
+    #    description="Select structure from database",
+    #    icon=select_icon,
+    #    style={"button_color": select_colour},
+    #)
     widgets_visibility = {}
     _unstyle_widgets(ez_sweep_structure, widgets_visibility)
     ez_sweep_structure["toggle_advanced_parameters"].on_click(toggle_advanced_parameters)
     ez_sweep_structure["select_structure_from_file"].on_click(select_structure_from_file)
-    ez_sweep_structure["select_from_database"].on_click(select_structure_from_database)
+    #ez_sweep_structure["select_from_database"].on_click(select_structure_from_database)
 
     ez_sweep_structure["Select"].on_click(select)
     toggle_advanced_parameters(True)
