@@ -462,10 +462,26 @@ def set_reference(sweep_gen):
         value="<b>Upload image for reference</b>",
         style={"font_size": "15px"},
     )
+    reference.add_HTML(
+        tag="File_message",
+        value="Choose reference image",
+        style={"font_size": "15px"},
+    )
     reference.add_file_upload(
         "File",
         description="Select from file",
-        accept="*.tif",
+        accept=["*.tif", "*.tiff"],
+        save_settings=False,
+    )
+    reference.add_HTML(
+        tag="File_message_mask",
+        value="(Optional) Choose reference image mask:",
+        style={"font_size": "15px"},
+    )
+    reference.add_file_upload(
+        "File_mask",
+        description="(Optional) Select mask from file",
+        accept=["*.tif", "*.tiff"],
         save_settings=False,
     )
     reference.add_bounded_float_text(
@@ -495,12 +511,26 @@ def set_reference(sweep_gen):
         ref_widgets_visibility["pixel_size"] = not ref_widgets_visibility[
             "pixel_size"
         ]
+        ref_widgets_visibility["File_mask"] = not ref_widgets_visibility[
+            "File_mask"
+        ]
+        ref_widgets_visibility["File_message"] = not ref_widgets_visibility[
+            "File_message"
+        ]
+        ref_widgets_visibility["File_message_mask"] = not ref_widgets_visibility[
+            "File_message_mask"
+        ]
         update_widgets_visibility(reference, ref_widgets_visibility)
 
     def upload_and_set(b):
+        if reference["File_mask"].selected:
+            ref_image_mask_path = reference["File_mask"].selected
+        else:
+            ref_image_mask_path = None
         sweep_gen.load_reference_image(
             ref_image_path=reference["File"].selected,
             ref_pixelsize=reference["pixel_size"].value,
+            ref_image_mask_path=ref_image_mask_path
         )
         reference["feedback"].value = "Reference image uploaded and set."
         reference["preview"].disabled = False
