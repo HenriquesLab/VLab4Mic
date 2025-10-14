@@ -137,9 +137,11 @@ class sweep_generator:
         if structures is not None and type(structures) == list:
             self.structures = structures
             self.use_experiment_structure = False
-            for key, value in kwargs.items():
-                if key in structures:
-                    self.structures_parameters[key] = value
+            for structure_name in structures:
+                if structure_name in kwargs.keys():
+                    self.structures_parameters[structure_name] = kwargs[structure_name]
+                else:
+                    self.structures_parameters[structure_name] = None
 
     def select_probe_templates(self, probe_templates: list = None, **kwargs):
         """
@@ -226,6 +228,7 @@ class sweep_generator:
             ) = sweep.sweep_vasmples(
                 experiment=self.experiment,
                 structures=self.structures,
+                structures_parameters=self.structures_parameters,
                 probes=self.probes,
                 probe_parameters=self.probe_parameters,
                 particle_defects=self.defect_parameters,
@@ -324,6 +327,7 @@ class sweep_generator:
         self.reference_virtual_sample, self.reference_virtual_sample_params = (
             sweep.generate_global_reference_sample(
                 structure=self.reference_structure,
+                structure_parameters=self.structures_parameters,
                 probe=self.reference_probe,
                 probe_parameters=self.reference_probe_parameters,
                 structure_is_path=structure_is_path,
