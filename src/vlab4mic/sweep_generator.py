@@ -313,6 +313,7 @@ class sweep_generator:
         if use_experiment_vsample:
             reference_sample_params = copy.copy(self.experiment.virtualsample_params)
         self.set_reference_parameters(
+            reference_structure=self.reference_structure,
             reference_probe=reference_probe,
             **reference_sample_params
             )
