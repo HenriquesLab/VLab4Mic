@@ -96,6 +96,7 @@ class sweep_generator:
         self.plot_parameters["lineplots"]["estimator"] = "mean"
         self.plot_parameters["lineplots"]["errorbar"] = "ci"
         self.structures_info_list = self.experiment.structures_info_list
+        self.structures_parameters = dict()
         # Use the directly loaded parameter_settings instead of experiment.param_settings
         # to ensure all parameter groups (including particle_defect) are available
         self.param_settings = self.parameter_settings
@@ -136,6 +137,9 @@ class sweep_generator:
         if structures is not None and type(structures) == list:
             self.structures = structures
             self.use_experiment_structure = False
+            for key, value in kwargs.items():
+                if key in structures:
+                    self.structures_parameters[key] = value
 
     def select_probe_templates(self, probe_templates: list = None, **kwargs):
         """
