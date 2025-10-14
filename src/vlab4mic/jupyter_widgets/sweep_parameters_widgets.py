@@ -465,7 +465,7 @@ def set_reference(sweep_gen):
     reference.add_file_upload(
         "File",
         description="Select from file",
-        accept="*.tif",
+        accept=["*.tif", "*.tiff"],
         save_settings=False,
     )
     reference.add_bounded_float_text(
