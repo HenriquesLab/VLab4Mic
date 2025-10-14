@@ -266,6 +266,7 @@ class sweep_generator:
     def set_reference_parameters(
         self,
         reference_structure: str = None,
+        reference_structure_parameters = None,
         reference_probe: str = None,
         reference_probe_parameters: dict = None,
         **kwargs,
@@ -290,8 +291,10 @@ class sweep_generator:
         """
         if reference_structure is None:
             self.reference_structure = self.structures[0]
+            self.reference_structure_parameters =  self.structures_parameters[reference_structure]
         else:
             self.reference_structure = reference_structure
+            self.reference_structure_parameters = reference_structure_parameters
         if reference_probe is not None:
             self.reference_probe = reference_probe
         if reference_probe_parameters is not None:
