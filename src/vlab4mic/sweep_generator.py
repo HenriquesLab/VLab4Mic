@@ -142,6 +142,11 @@ class sweep_generator:
                     self.structures_parameters[structure_name] = kwargs[structure_name]
                 else:
                     self.structures_parameters[structure_name] = None
+            self.set_reference_parameters(
+                reference_structure=self.structures[0],
+                reference_structure_parameters=self.structures_parameters[self.structures[0]],
+                
+            )
 
     def select_probe_templates(self, probe_templates: list = None, **kwargs):
         """
