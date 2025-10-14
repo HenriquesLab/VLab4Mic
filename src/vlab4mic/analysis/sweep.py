@@ -14,6 +14,7 @@ from IPython.utils import io
 def sweep_vasmples(
     experiment: ExperimentParametrisation = None,
     structures=None,
+    structures_parameters=None,
     probes=None,
     probe_parameters=None,
     particle_defects=None,
@@ -103,8 +104,19 @@ def sweep_vasmples(
         if use_experiment_structure:
             experiment.build(modules=["structure",])
         else:
-            experiment.structure_id = struct
-            experiment._build_structure()
+            if structures_parameters is not None and structures_parameters[struct] is not None:
+                experiment.select_structure(
+                    structure_id=struct,
+                    build=True,
+                    **structures_parameters[struct]
+                )
+            else:
+                experiment.select_structure(
+                    structure_id=struct,
+                    build=True,
+                )
+            #experiment.structure_id = struct
+            #experiment._build_structure()
         # for rep in range(repetitions):
         probe_n = 0
         for probe in probes:
@@ -355,6 +367,7 @@ def sweep_modalities_updatemod(
 def generate_global_reference_sample(
     experiment: ExperimentParametrisation = None,
     structure=None,
+    structure_parameters=None,
     probe=None,
     probe_parameters=None,
     virtual_sample=None,
@@ -404,11 +417,23 @@ def generate_global_reference_sample(
         probe_parameters["fluorophore_id"] = default_reference_fluorophore
     if structure_is_path:
         experiment.select_structure(
-            structure_path=structure, structure_id="global_reference"
+            structure_path=structure, structure_id="global_reference",
+            build=True
         )
     else:
-        experiment.structure_id = structure
-        experiment._build_structure()
+        if structure_parameters is not None and structure_parameters[structure] is not None:
+            experiment.select_structure(
+                structure_id=structure,
+                build=True,
+                **structure_parameters[structure]
+            )
+        else:
+            experiment.select_structure(
+                structure_id=structure,
+                build=True,
+            )
+        #experiment.structure_id = structure
+        #experiment._build_structure()
     experiment.add_probe(probe_template=probe, **probe_parameters, **kwargs)
     # experiment.structure_label = probe
     # experiment.probe_parameters[probe] = probe_parameters
