@@ -724,11 +724,11 @@ class Imager:
                 beadstack_noise = copy.deepcopy(beadstack_noiseless)
             if save:
                 # gt_positions = self.generate_ground_truth_positions(groundtruth_emitters)
-                timeseries_noiseless = self._crop_negative(timeseries_noiseless)
-                beadstack = self._crop_negative(beadstack)
+                timeseries_noise = self._crop_negative(timeseries_noise)
+                beadstack_noise = self._crop_negative(beadstack_noise)
                 writing_notes_fluo = writing_notes_fluo + "_withNoise_"
 
-                self._save_timeseries_with_beads(timeseries_noiseless, beadstack, writing_notes_fluo)
+                self._save_timeseries_with_beads(timeseries_noise, beadstack_noise, writing_notes_fluo)
             return timeseries_noise, beadstack_noise, timeseries_noiseless, beadstack_noiseless
         else:
             images_noiseless = None

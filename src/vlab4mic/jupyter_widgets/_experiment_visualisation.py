@@ -675,7 +675,7 @@ def ui_set_acq_params(experiment):
                 acq_params = "Default"
             else:
                 keys_subset = {key: acq_params[key] for key in keys_to_use}
-                acq_params["exp_time"] = round(keys_subset["exp_time"], 3)
+                #acq_params["exp_time"] = round(keys_subset["exp_time"], 3)
             mods_text += (
                 modality_name + ": " + "&emsp;" + str(keys_subset) + "<br>"
             )
