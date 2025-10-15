@@ -51,6 +51,12 @@ Currently, VLab4Mic is available through Test PyPI (PyPI release coming soon!):
 pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple vlab4mic
 ```
 
+You can install vlab4mic with the necesary libraries to support our Jupyter notebooks:
+
+```bash
+pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple "vlab4mic[jupyter]"
+```
+
 ---
 
 # 2. How to use VLab4Mic
