@@ -7,7 +7,7 @@ name = "vlab4mic"
 version = "0.0.3"
 description = "VLab4Mic: A virtual laboratory for microscopy simulation and validation"
 authors = [
-    { name = "Damián Martinez", email = "jdmartinez@igc.gulbenkian.pt" },
+    { name = "Damián Martinez", email = "jdmartinezigc@gmail.com" },
     { name = "Bruno Saraiva", email = "bruno.msaraiva2@gmail.com" },
     { name = "Ricardo Henriques", email = "ricardo@henriqueslab.org" }
 ]
