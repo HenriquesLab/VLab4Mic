@@ -587,7 +587,9 @@ def analyse_sweep(sweep_gen):
         analysis_widget["feedback"].value = (
             "Running analysis sweep. This might take some minutes..."
         )
+        analysis_widget["preview"].disabled = True
         analysis_widget["analyse"].disabled = True
+        update_sliders(from_sweep=False, disable_all=True)
         plots = analysis_widget["plots"].value
         param_names_set = sweep_gen.parameters_with_set_values
         if len(param_names_set) >= 2:
@@ -621,42 +623,47 @@ def analyse_sweep(sweep_gen):
         analysis_widget["saving_directory"].disabled = False
         analysis_widget["save"].disabled = False
         analysis_widget["output_name"].disabled = False
-        update_sliders(True)
+        analysis_widget["analyse"].disabled = False
+        update_sliders()
         #
-    def update_sliders(b):
+    def update_sliders(from_sweep=True, disable_all=True):
+        if from_sweep:
+            flag = True
+        elif disable_all:
+            flag = False
+        else:
+            flag = True
         n_probes = len(sweep_gen.probes)
         n_modalities = len(sweep_gen.modalities)
-        if n_modalities > 1:
+        if n_modalities > 1 and flag:
             analysis_widget["modality_template"].max = n_modalities - 1
             analysis_widget["modality_template"].disabled = False
         else:
             analysis_widget["modality_template"].disabled = True
-        if n_probes > 1:
+        if n_probes > 1 and flag:
             analysis_widget["probe_template"].max = n_probes - 1
             analysis_widget["probe_template"].disabled = False
         else:
             analysis_widget["probe_template"].disabled = True
-        if sweep_gen.probe_parameters is None:
-            analysis_widget["probe_parameters"].disabled = True
-        else:
+        if sweep_gen.probe_parameters is not None and flag:
             n_probe_parameters = len(sweep_gen.probe_parameters.keys())
             analysis_widget["probe_parameters"].max = n_probe_parameters - 1
             analysis_widget["probe_parameters"].disabled = False
-        if sweep_gen.defect_parameters is None:
-            analysis_widget["defect_parameters"].disabled = True
         else:
+            analysis_widget["probe_parameters"].disabled = True
+        if sweep_gen.defect_parameters is not None and flag:
             n_defect_parameters = len(sweep_gen.defect_parameters.keys())
             analysis_widget["defect_parameters"].max = n_defect_parameters - 1
             analysis_widget["defect_parameters"].disabled = False
-        if sweep_gen.vsample_parameters is None:
-            analysis_widget["vsample_parameters"].disabled = True
         else:
+            analysis_widget["defect_parameters"].disabled = True
+        if sweep_gen.vsample_parameters is not None and flag:
             n_vsample_parameters = len(sweep_gen.vsample_parameters.keys())
             analysis_widget["vsample_parameters"].max = n_vsample_parameters - 1
             analysis_widget["vsample_parameters"].disabled = False
-        if sweep_gen.acquisition_parameters is None:
-            analysis_widget["acquisition_parameters"].disabled = True
         else:
+            analysis_widget["vsample_parameters"].disabled = True
+        if sweep_gen.acquisition_parameters is not None and flag:
             n_acquisition_parameters = len(
                 sweep_gen.acquisition_parameters.keys()
             )
@@ -664,8 +671,10 @@ def analyse_sweep(sweep_gen):
                 n_acquisition_parameters - 1
             )
             analysis_widget["acquisition_parameters"].disabled = False
+        else:
+            analysis_widget["acquisition_parameters"].disabled = True
         n_replicas = sweep_gen.sweep_repetitions
-        if n_replicas >= 2:
+        if n_replicas >= 2 and flag:
             analysis_widget["replica_number"].max = n_replicas - 1
             analysis_widget["replica_number"].disabled = False
         else:
@@ -784,8 +793,12 @@ def analyse_sweep(sweep_gen):
         update_plot(widgets_visibility["preview_results"])
 
     # preview widgets
+    if sweep_gen.acquisition_outputs is None:
+        preview_disabled = True
+    else:
+        preview_disabled = False
     analysis_widget.add_button(
-        "preview", description="Preview results", disabled=True, icon=view_icon
+        "preview", description="Preview results", disabled=preview_disabled, icon=view_icon
     )
     analysis_widget.add_int_slider(
         "modality_template",
@@ -875,7 +888,7 @@ def analyse_sweep(sweep_gen):
     widgets_visibility["acquisition_parameters"] = False
     widgets_visibility["replica_number"] = False
     update_widgets_visibility(analysis_widget, widgets_visibility)
-    update_sliders(True)
+    update_sliders()
     analysis_widget["analyse"].on_click(analyse_sweep_action)
     analysis_widget["preview"].on_click(toggle_preview)
     analysis_widget["save"].on_click(save_results)
