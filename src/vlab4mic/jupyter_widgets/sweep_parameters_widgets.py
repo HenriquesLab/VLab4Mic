@@ -754,18 +754,22 @@ def analyse_sweep(sweep_gen):
         plt.close()
         analysis_widget["preview_results"].clear_output()
         with analysis_widget["preview_results"]:
-            print(f"Structure: {parameters[0]}")
-            print(f"Modality: {parameters[5]}")
-            print(f"Probe: {parameters[1]}")
-            print(f"Probe Parameters: {parameters[2]}")
-            print(f"Defect Parameters: {parameters[3]}")
-            print(f"Virtual Sample Parameters: {parameters[4]}")
-            print(f"Acquisition Parameters: {parameters[6]}")
             display(figure)
+        text = "Structure: " + str(parameters[0]) + "<br>"
+        text += "Modality: " + str(parameters[5])+ "<br>"
+        text += "Probe: " + str(parameters[1])+ "<br>"
+        text += "Probe Parameters: " + str(parameters[2])+ "<br>"
+        text += "Defect Parameters: " + str(parameters[3])+ "<br>"
+        text += "Virtual Sample Parameters: " + str(parameters[4])+ "<br>"
+        text += "Acquisition Parameters: " + str(parameters[6])+ "<br>"
+        analysis_widget["params_preview"].value = text
 
     def toggle_preview(b):
         widgets_visibility["preview_results"] = not widgets_visibility[
             "preview_results"
+        ]
+        widgets_visibility["params_preview"] = not widgets_visibility[
+            "params_preview"
         ]
         widgets_visibility["modality_template"] = not widgets_visibility[
             "modality_template"
@@ -870,6 +874,7 @@ def analyse_sweep(sweep_gen):
     analysis_widget.add_output(
         "preview_results", description="Preview results"
     )
+    analysis_widget.add_HTML(tag="params_preview", value="")
     # save
     analysis_widget.add_checkbox(
         "save_images", description="Save images", value=False
@@ -880,6 +885,7 @@ def analyse_sweep(sweep_gen):
     widgets_visibility = {}
     _unstyle_widgets(analysis_widget, widgets_visibility)
     widgets_visibility["preview_results"] = False
+    widgets_visibility["params_preview"] = False
     widgets_visibility["modality_template"] = False
     widgets_visibility["probe_template"] = False
     widgets_visibility["probe_parameters"] = False
