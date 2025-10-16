@@ -621,42 +621,56 @@ def analyse_sweep(sweep_gen):
         analysis_widget["saving_directory"].disabled = False
         analysis_widget["save"].disabled = False
         analysis_widget["output_name"].disabled = False
+        update_sliders(True)
         #
+    def update_sliders(b):
         n_probes = len(sweep_gen.probes)
         n_modalities = len(sweep_gen.modalities)
+        if n_modalities > 1:
+            analysis_widget["modality_template"].max = n_modalities - 1
+            analysis_widget["modality_template"].disabled = False
+        else:
+            analysis_widget["modality_template"].disabled = True
+        if n_probes > 1:
+            analysis_widget["probe_template"].max = n_probes - 1
+            analysis_widget["probe_template"].disabled = False
+        else:
+            analysis_widget["probe_template"].disabled = True
         if sweep_gen.probe_parameters is None:
-            n_probe_parameters = 1
             analysis_widget["probe_parameters"].disabled = True
         else:
             n_probe_parameters = len(sweep_gen.probe_parameters.keys())
+            analysis_widget["probe_parameters"].max = n_probe_parameters - 1
+            analysis_widget["probe_parameters"].disabled = False
         if sweep_gen.defect_parameters is None:
-            n_defect_parameters = 1
             analysis_widget["defect_parameters"].disabled = True
         else:
             n_defect_parameters = len(sweep_gen.defect_parameters.keys())
+            analysis_widget["defect_parameters"].max = n_defect_parameters - 1
+            analysis_widget["defect_parameters"].disabled = False
         if sweep_gen.vsample_parameters is None:
-            n_vsample_parameters = 1
             analysis_widget["vsample_parameters"].disabled = True
         else:
             n_vsample_parameters = len(sweep_gen.vsample_parameters.keys())
+            analysis_widget["vsample_parameters"].max = n_vsample_parameters - 1
+            analysis_widget["vsample_parameters"].disabled = False
         if sweep_gen.acquisition_parameters is None:
-            n_acquisition_parameters = 1
             analysis_widget["acquisition_parameters"].disabled = True
         else:
             n_acquisition_parameters = len(
                 sweep_gen.acquisition_parameters.keys()
             )
+            analysis_widget["acquisition_parameters"].max = (
+                n_acquisition_parameters - 1
+            )
+            analysis_widget["acquisition_parameters"].disabled = False
         n_replicas = sweep_gen.sweep_repetitions
-        analysis_widget["modality_template"].max = n_modalities - 1
-        analysis_widget["probe_template"].max = n_probes - 1
-        analysis_widget["probe_parameters"].max = n_probe_parameters - 1
-        analysis_widget["defect_parameters"].max = n_defect_parameters - 1
-        analysis_widget["vsample_parameters"].max = n_vsample_parameters - 1
-        analysis_widget["acquisition_parameters"].max = (
-            n_acquisition_parameters - 1
-        )
-        analysis_widget["replica_number"].max = n_replicas - 1
-
+        if n_replicas >= 2:
+            analysis_widget["replica_number"].max = n_replicas - 1
+            analysis_widget["replica_number"].disabled = False
+        else:
+            analysis_widget["replica_number"].disabled = True
+        
     def save_results(b):
         output_directory = analysis_widget["saving_directory"].selected_path
         output_name = analysis_widget["output_name"].value
@@ -777,7 +791,7 @@ def analyse_sweep(sweep_gen):
         "modality_template",
         description="Modality",
         min=0,
-        max=0,
+        max=1,
         value=0,
         continuous_update=False,
     )
@@ -785,7 +799,7 @@ def analyse_sweep(sweep_gen):
         "probe_template",
         description="Probe",
         min=0,
-        max=0,
+        max=1,
         value=0,
         continuous_update=False,
     )
@@ -793,7 +807,7 @@ def analyse_sweep(sweep_gen):
         "probe_parameters",
         description="Probe parameter",
         min=0,
-        max=0,
+        max=1,
         value=0,
         continuous_update=False,
     )
@@ -801,7 +815,7 @@ def analyse_sweep(sweep_gen):
         "defect_parameters",
         description="Defect parameter",
         min=0,
-        max=0,
+        max=1,
         value=0,
         continuous_update=False,
     )
@@ -809,7 +823,7 @@ def analyse_sweep(sweep_gen):
         "vsample_parameters",
         description="Vsample parameters",
         min=0,
-        max=0,
+        max=1,
         value=0,
         continuous_update=False,
     )
@@ -817,7 +831,7 @@ def analyse_sweep(sweep_gen):
         "acquisition_parameters",
         description="acquisition parameters",
         min=0,
-        max=0,
+        max=1,
         value=0,
         continuous_update=False,
     )
@@ -825,7 +839,7 @@ def analyse_sweep(sweep_gen):
         "replica_number",
         description="Replica number",
         min=0,
-        max=0,
+        max=1,
         value=0,
         continuous_update=False,
     )
@@ -861,6 +875,7 @@ def analyse_sweep(sweep_gen):
     widgets_visibility["acquisition_parameters"] = False
     widgets_visibility["replica_number"] = False
     update_widgets_visibility(analysis_widget, widgets_visibility)
+    update_sliders(True)
     analysis_widget["analyse"].on_click(analyse_sweep_action)
     analysis_widget["preview"].on_click(toggle_preview)
     analysis_widget["save"].on_click(save_results)
