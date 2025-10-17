@@ -167,6 +167,9 @@ def select_structure(sweep_gen):
         ez_sweep_structure["Select"].disabled = True
         ez_sweep_structure["select_from_database"].disabled = True
         ez_sweep_structure["select_structure_from_file"].disabled = True
+        ez_sweep_structure["Select"].disabled = True
+        ez_sweep_structure["select_from_database"].disabled = True
+        ez_sweep_structure["select_structure_from_file"].disabled = True
     
     def select_structure_from_file(b):
         selected_file = ez_sweep_structure["File"].selected

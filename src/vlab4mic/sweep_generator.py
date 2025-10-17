@@ -97,6 +97,7 @@ class sweep_generator:
         self.plot_parameters["lineplots"]["errorbar"] = "ci"
         self.structures_info_list = self.experiment.structures_info_list
         self.structures_parameters = dict()
+        self.structures_parameters = dict()
         # Use the directly loaded parameter_settings instead of experiment.param_settings
         # to ensure all parameter groups (including particle_defect) are available
         self.param_settings = self.parameter_settings
@@ -371,7 +372,6 @@ class sweep_generator:
 
     def load_reference_image(
         self, ref_image_path=None, ref_pixelsize=None, ref_image_mask_path = None, override=True
-        self, ref_image_path=None, ref_pixelsize=None, ref_image_mask_path = None, override=True
     ):
         """
         Load a reference image from a specified path.
@@ -390,6 +390,7 @@ class sweep_generator:
         if override:
             self.reference_image = ref_image
             self.reference_image_parameters = reference_parameters
+            self.reference_image_mask = ref_image_mask
             self.reference_image_mask = ref_image_mask
     # previews
     def preview_image_output_by_ID(
