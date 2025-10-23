@@ -271,7 +271,9 @@ class MolecularStructureParser:
         """
         Parse the rotation/translation operations needed to construct a molecular assembly from an asymmetric unit.
         """
-        if self.database == "AF":
+        if self.CIFdictionary is None:  # check if already created
+            self.generate_MMCIF_dictionary()
+        if "AlphaFoldDB" in self.CIFdictionary["_database_2.database_id"]:
             self.assymetric_defined = False
         else:
             if self.CIFdictionary is None:  # check if already created
