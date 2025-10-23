@@ -167,6 +167,9 @@ def select_structure(sweep_gen):
         ez_sweep_structure["Select"].disabled = True
         ez_sweep_structure["select_from_database"].disabled = True
         ez_sweep_structure["select_structure_from_file"].disabled = True
+        ez_sweep_structure["Select"].disabled = True
+        ez_sweep_structure["select_from_database"].disabled = True
+        ez_sweep_structure["select_structure_from_file"].disabled = True
     
     def select_structure_from_file(b):
         selected_file = ez_sweep_structure["File"].selected
@@ -218,16 +221,6 @@ def select_structure(sweep_gen):
         widgets_visibility["select_structure_from_file"] = not widgets_visibility[
             "select_structure_from_file"
         ]
-        #widgets_visibility["database"] = not widgets_visibility["database"]
-        #widgets_visibility["structure_id"] = not widgets_visibility["structure_id"]
-        #widgets_visibility["select_from_database"] = not widgets_visibility[
-        #    "select_from_database"
-        #]
-        widgets_visibility["divisor1"] = not widgets_visibility["divisor1"]
-        #widgets_visibility["divisor2"] = not widgets_visibility["divisor2"]
-        widgets_visibility["section1"] = not widgets_visibility["section1"]
-        #widgets_visibility["section2"] = not widgets_visibility["section2"]
-
         #widgets_visibility["database"] = not widgets_visibility["database"]
         #widgets_visibility["structure_id"] = not widgets_visibility["structure_id"]
         #widgets_visibility["select_from_database"] = not widgets_visibility[
