@@ -1,3 +1,5 @@
+<img src="src/logo/logo.png" align="right" width="200" style="margin-left: 20px;"/>
+
 # VLab4Mic: A virtual laboratory for Microscopy
 
 VLab4Mic is a library for validation of experimental design from choosing a macromolecule to study, to its imaging through several imaging modalities.

@@ -7,14 +7,21 @@ build/
 data/
 *.egg-info/
 src/supramolsim/configuration/*/*template*
+.folder2md_logs/
+.claude/
 
 # Files
 .DS_Store
 .coverage
 __pycache__
 poetry.lock
+uv.lock
 output.txt
 dist
 *.gz
 *.cif
 *_ignore_*
+.gitignore
+CLAUDE.md
+.folder2md_ignore
+output.md
