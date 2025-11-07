@@ -40,6 +40,8 @@ To use a notebook locally, you need to install VLab4Mic. Here's summary of the s
 - Open Jupyter Lab in your local enviornment
 - Locate and run your local copy of the notebook
 
+Follow the nexts steps to set up VLab4Mic and use jupyter notebooks locally.
+
 ### Step 1️⃣: Create and activate a New Environment
 
 VLab4Mic is compatible with **Python 3.9, 3.10, 3.11, and 3.12** on macOS, Windows, and Linux.
@@ -124,20 +126,106 @@ For questions, refer to our [documentation](https://github.com/HenriquesLab/Supr
 When using VLab4Mic as a Python library, you can parameterize your experiment or parameter sweep through its high-level functions.  
 These functions are covered in detail in the Methods section.
 
-Activate your Python environment as above.
+To use VLab4Mic locally, you need to install VLab4Mic. 
 
+### Step 1️⃣: Create and activate a New Environment
+
+VLab4Mic is compatible with **Python 3.9, 3.10, 3.11, and 3.12** on macOS, Windows, and Linux.
+
+> 💡 **We strongly recommend** creating a new virtual environment to use VLab4Mic.  
+> You can use either Conda ([Miniconda installation](https://docs.conda.io/en/latest/miniconda.html)) or Python's built-in `venv` module.
+
+
+You can use either Conda or Python's built-in `venv` module to create a new environment. Click in the arrows to expand the instructions for using either conda or venv.
+
+
+#### Create the virtual environment
+<details> 
+<summary> 🐍 Using Conda </summary> 
+
+Run the following command (replace `myenv` with your desired environment name):
+
+```bash
+conda create --name myenv python=3.11
+```
+
+Then activate it:
+```bash
+conda activate myenv
+```
+</details>
+
+<details>
+<summary> 🐍 Using venv (built-in Python module) </summary> 
+
+Run the following commands (replace `myenv` with your desired environment name):
+
+```bash
+python -m venv myenv
+```
+
+Activate the environment:
+
+- On macOS/Linux:
+    ```bash
+    source myenv/bin/activate
+    ```
+- On Windows:
+    ```bash
+    myenv\Scripts\activate
+    ```
+</details>
+
+> Make sure your environment is active before continuing to the next step.
+
+
+### Step 2️⃣: Install VLab4Mic
+
+Currently, VLab4Mic is available through Test PyPI (PyPI release coming soon!):
+
+Run the following command to install vlab4mic with the necesary libraries to support our Jupyter notebooks:
 
 ```bash
 pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple vlab4mic
 ```
 
+Alternatively, run the next command to include necesary dependencies to support jupyter notbeooks
 
-Access VLab4Mic main methods such as `image_vsample` as follows:
+```bash
+pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple "vlab4mic[jupyter]"
+```
+
+### Step 3️⃣: Start using VLab4Mic!
+
+
+### 🖥️ Option 1: Run python scripts from the command line
+
+You can run python scripts from the command line in your virtual envornment.
+Here we exemplify the case of a script called "vlab_script.py" located in our current directory.
+
+```python 
+python -m vlab_script.py
+```
+
+### Python Script Example
+
+The contents of the script can be tailored for your needs. Here's a quick example of a script.
 
 ```python
+# contents of vlab_script.py
 from vlab4mic.experiments import image_vsample
 
 image_outputs, image_noiseless_outputs, experiment = image_vsample()
+```
+
+### 🖥️ Option 2: Use VLab4Mic with a python interpreter
+Start a python interpreter by runing "python" from the command line with your virtual environment.
+
+Start using VLab4Mic through the interpreter, for instance:
+
+```python
+>>> from vlab4mic.experiments import image_vsample
+>>> image_outputs, image_noiseless_outputs, experiment = image_vsample()
 ```
 
 Get a description of the available parameters of each method by using Python's built-in `help()`:
@@ -145,7 +233,6 @@ Get a description of the available parameters of each method by using Python's b
 ```python
 help(image_vsample)
 ```
-
 
 
 # VLab4Mic Methods
