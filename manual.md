@@ -1,8 +1,8 @@
 # VLab4Mic: A Virtual Laboratory for Microscopy
 
-## What to expect from this manual
+## What to expect from this manual <a name="whattoexpect"></a>
 
-This manual covers minimal steps required for run imaging simulations and parameteres sweeps with VLab4Mic.
+This manual covers minimal steps required for running imaging simulations and parameteres sweeps with VLab4Mic, either by codeless notebooks or using it as a python package.
 
 ### Usage Options
 
@@ -11,7 +11,10 @@ VLab4Mic can be used in three ways, depending on your coding experience:
 - **Jupyter Notebooks with code** - Moderate coding (recommended for intermediate users)
 - **Python scripts** - Full coding control (recommended for advanced users)
 
-# VLab4Mic with Jupyter Notebooks with GUI
+
+
+
+# VLab4Mic with Jupyter Notebooks with GUI <a name="codeless"></a>
 
 VLab4Mic codeless notebooks allow you to use its methods **without writing code**.
 You can use the notebooks from the following table in Google Colab or in a local installation (your own computer, for instance).
@@ -121,7 +124,7 @@ Follow the interactive widgets and instructions in each notebook.
 For questions, refer to our [documentation](https://github.com/HenriquesLab/SupraMolecularSimulator/wiki) or [create an issue](https://github.com/HenriquesLab/SupraMolecularSimulator/issues).
 
 
-# VLab4Mic as Python Library (scripts)
+# VLab4Mic as Python Library (scripts) 
 
 When using VLab4Mic as a Python library, you can parameterize your experiment or parameter sweep through its high-level functions.  
 These functions are covered in detail in the Methods section.
@@ -201,15 +204,15 @@ pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://
 ### 🖥️ Option 1: Run python scripts from the command line
 
 You can run python scripts from the command line in your virtual envornment.
-Here we exemplify the case of a script called "vlab_script.py" located in our current directory.
+Here, we exemplify the case of running a script named "vlab_script.py" located in the current directory.
 
 ```python 
 python -m vlab_script.py
 ```
 
-### Python Script Example
 
-The contents of the script can be tailored for your needs. Here's a quick example of a script.
+
+The contents of the script can be tailored for your needs. Here's a quick example of what the contents of a script
 
 ```python
 # contents of vlab_script.py
@@ -218,7 +221,7 @@ from vlab4mic.experiments import image_vsample
 image_outputs, image_noiseless_outputs, experiment = image_vsample()
 ```
 
-### 🖥️ Option 2: Use VLab4Mic with a python interpreter
+### 🖥️ Option 2: Use VLab4Mic in an interactive python interpreter
 Start a python interpreter by runing "python" from the command line with your virtual environment.
 
 Start using VLab4Mic through the interpreter, for instance:
@@ -235,13 +238,13 @@ help(image_vsample)
 ```
 
 
-# VLab4Mic Methods
+# VLab4Mic Methods <a name="codemuch"></a>
 
 VLab4Mic main functionality can be accessed with two main methods:
 - 🧬 **Create and simulate imaging of a virtual sample**
 - 🔬 **Set up and run parameter sweep**
 
-## 3.1 🧬 Create and image a virtual sample
+## 🧬 Create and image a virtual sample
 
 VLab4Mic allows you to create a virtual sample and generate imaging simulations of it on one or many modalities.
 
@@ -319,7 +322,7 @@ for i, mod in enumerate(modalities):
 
 ---
 
-## 3.2 🔬 Run a parameter sweep analysis
+## 🔬 Run a parameter sweep analysis
 
 VLab4Mic allows you to test parameter combinations for sample and image simulations.
 
@@ -340,7 +343,7 @@ sweep_gen = run_parameter_sweep(
 
 This generates and saves a default parameter sweep. The `sweep_gen` object contains all parameters used to set and run the sweep.
 
-### 🎚️ Specify values for each parameter
+###  Specify values for each parameter
 
 You can parameterize the sweep by specifying the values or ranges to use for each parameter.  
 Pass a list of values or a tuple with (min, max, nsteps) to generate linearly spaced values.
@@ -405,9 +408,9 @@ If a parameter is `None`, it will not be swept and will use default values.
 - depth_of_field_nm
 - exp_time
 
----
 
-# 4. 📋 Parameter tables
+
+# 📋 Parameter tables
 
 ## 🏗️ Structure parameters
 
