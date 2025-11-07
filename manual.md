@@ -6,12 +6,9 @@ This manual covers minimal steps required for running imaging simulations and pa
 
 ### Usage Options
 
-VLab4Mic can be used in three ways, depending on your coding experience:
+VLab4Mic can be used in two ways, depending on your coding experience:
 - **Jupyter Notebooks with GUI** - No coding required (recommended for beginners)
-- **Jupyter Notebooks with code** - Moderate coding (recommended for intermediate users)
 - **Python scripts** - Full coding control (recommended for advanced users)
-
-
 
 
 # VLab4Mic with Jupyter Notebooks with GUI <a name="codeless"></a>
@@ -226,7 +223,7 @@ Start a python interpreter by runing "python" from the command line with your vi
 
 Start using VLab4Mic through the interpreter, for instance:
 
-```python
+```bash
 >>> from vlab4mic.experiments import image_vsample
 >>> image_outputs, image_noiseless_outputs, experiment = image_vsample()
 ```
