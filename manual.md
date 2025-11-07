@@ -1,17 +1,59 @@
-# VLab4Mic: A virtual laboratory for Microscopy
+# VLab4Mic: A Virtual Laboratory for Microscopy
 
-# 1. Installation
+## What to expect from this manual
+
+This manual covers minimal steps required for run imaging simulations and parameteres sweeps with VLab4Mic.
+
+### Usage Options
+
+VLab4Mic can be used in three ways, depending on your coding experience:
+- **Jupyter Notebooks with GUI** - No coding required (recommended for beginners)
+- **Jupyter Notebooks with code** - Moderate coding (recommended for intermediate users)
+- **Python scripts** - Full coding control (recommended for advanced users)
+
+# VLab4Mic with Jupyter Notebooks with GUI
+
+VLab4Mic codeless notebooks allow you to use its methods **without writing code**.
+You can use the notebooks from the following table in Google Colab or in a local installation (your own computer, for instance).
+
+## Table of available Notebooks 
+
+| Category | Description | Notebook | Colab Link |
+| --- | --- | --- | --- |
+| **Main Interface** | Create virtual samples and simulate image acquisition with multiple imaging modalities | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/vLab4Mic_main.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/vLab4Mic_main.ipynb) |
+| **Parameter Sweeps** | Generate and analyze simulations over parameter ranges for optimization | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) |
+
+## Option 1: 📚 Use Jupyter Notebooks in Google Colab
+Google Colab is a service that provides computing resources to run Jupyter Notebooks without prior set up.
+
+To use VLab4Mic in Colab, click on the "Open in Colab" badge. This will open a new tab in your browser with the selected notebook. 
+
+Follow the instructions in the notebook.
+
+
+## Option 2: 📚 Use Jupyter Notebooks in a local installation
+
+To use a notebook locally, you need to install VLab4Mic. Here's summary of the steps to follow:
+
+- Install VLab4Mic in your local enviornment
+- Download the python notebook
+- Open Jupyter Lab in your local enviornment
+- Locate and run your local copy of the notebook
+
+### Step 1️⃣: Create and activate a New Environment
 
 VLab4Mic is compatible with **Python 3.9, 3.10, 3.11, and 3.12** on macOS, Windows, and Linux.
 
 > 💡 **We strongly recommend** creating a new virtual environment to use VLab4Mic.  
 > You can use either Conda ([Miniconda installation](https://docs.conda.io/en/latest/miniconda.html)) or Python's built-in `venv` module.
 
-## 🛠️ Step 1: Create a New Environment
 
-You can use either Conda or Python's built-in `venv` module to create a new environment.
+You can use either Conda or Python's built-in `venv` module to create a new environment. Click in the arrows to expand the instructions for using either conda or venv.
 
-### 🐍 Using Conda
+
+#### Create the virtual environment
+<details> 
+<summary> 🐍 Using Conda </summary> 
 
 Run the following command (replace `myenv` with your desired environment name):
 
@@ -23,8 +65,10 @@ Then activate it:
 ```bash
 conda activate myenv
 ```
+</details>
 
-### 🐍 Using venv (built-in Python module)
+<details>
+<summary> 🐍 Using venv (built-in Python module) </summary> 
 
 Run the following commands (replace `myenv` with your desired environment name):
 
@@ -42,77 +86,51 @@ Activate the environment:
     ```bash
     myenv\Scripts\activate
     ```
+</details>
 
-## 📦 Step 2: Install VLab4Mic
+> Make sure your environment is active before continuing to the next step.
+
+
+### Step 2️⃣: Install VLab4Mic
 
 Currently, VLab4Mic is available through Test PyPI (PyPI release coming soon!):
-
-```bash
-pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple vlab4mic
-```
-
-You can install vlab4mic with the necesary libraries to support our Jupyter notebooks:
+Run the following command to install vlab4mic with the necesary libraries to support our Jupyter notebooks:
 
 ```bash
 pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple "vlab4mic[jupyter]"
 ```
 
----
 
-# 2. How to use VLab4Mic
-
-VLab4Mic can be used as a Python library or through codeless Jupyter notebooks.  
-For detailed usage examples, see our [example scripts](https://github.com/HenriquesLab/SupraMolecularSimulator/tree/main/examples).
-
-## 2.1 🚀 Codeless Jupyter Notebooks
-
-VLab4Mic codeless notebooks allow you to use its methods **without writing code**.
-
-### 📚 Where to find and use VLab4Mic codeless notebooks
-
-You can use a notebook on a local installation or on Google Colab.  
-To use VLab4Mic in Colab, click on the "Open in Colab" badge and follow the instructions in the notebook.
-
-| Category | Description | Notebook | Colab Link |
-| --- | --- | --- | --- |
-| **Main Interface** | Create virtual samples and simulate image acquisition with multiple imaging modalities | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/vLab4Mic_main.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/vLab4Mic_main.ipynb) |
-| **Parameter Sweeps** | Generate and analyze simulations over parameter ranges for optimization | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) |
-
-### 🖥️ Use codeless notebooks on a local installation
-
-To use a notebook locally, you need to install VLab4Mic as detailed above.
-
-#### 1️⃣ Activate your environment
-
-```bash
-conda activate myenv  # Replace myenv with your environment name
-```
-
-#### 2️⃣ Launch Jupyter Lab
+### Step 3️⃣: Launch Jupyter Lab
 
 ```bash
 jupyter lab
 ```
 This will open Jupyter Lab in your web browser.
 
-#### 3️⃣ Download and Open Notebooks
+### Step 4️⃣ Download and Open Notebooks
 
 Download the notebooks from our [repository here](https://github.com/HenriquesLab/SupraMolecularSimulator/tree/main/notebooks), or refer to the table above.  
 Once downloaded, use the Jupyter Lab interface to find and open the notebook.
 
-#### 4️⃣ Start Experimenting!
+### Step 5️⃣: Start Experimenting!
 
 Follow the interactive widgets and instructions in each notebook.  
 For questions, refer to our [documentation](https://github.com/HenriquesLab/SupraMolecularSimulator/wiki) or [create an issue](https://github.com/HenriquesLab/SupraMolecularSimulator/issues).
 
----
 
-## 2.2 🐍 Using VLab4Mic as a Python Library
+# VLab4Mic as Python Library (scripts)
 
 When using VLab4Mic as a Python library, you can parameterize your experiment or parameter sweep through its high-level functions.  
 These functions are covered in detail in the Methods section.
 
 Activate your Python environment as above.
+
+
+```bash
+pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple vlab4mic
+```
+
 
 Access VLab4Mic main methods such as `image_vsample` as follows:
 
@@ -128,9 +146,9 @@ Get a description of the available parameters of each method by using Python's b
 help(image_vsample)
 ```
 
----
 
-# 3. VLab4Mic Methods
+
+# VLab4Mic Methods
 
 VLab4Mic main functionality can be accessed with two main methods:
 - 🧬 **Create and simulate imaging of a virtual sample**
