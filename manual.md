@@ -192,7 +192,7 @@ Run the following command to install vlab4mic with the necesary libraries to sup
 pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple vlab4mic
 ```
 
-Alternatively, run the next command to include necesary dependencies to support jupyter notbeooks
+Alternatively, run the next command to include necesary dependencies to support jupyter notebooks
 
 ```bash
 pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple "vlab4mic[jupyter]"
@@ -212,7 +212,7 @@ python -m vlab_script.py
 
 
 
-The contents of the script can be tailored for your needs. Here's a quick example of what the contents of a script
+The contents of the script can be tailored for your needs. Here's a quick example of such a script:
 
 ```python
 # contents of vlab_script.py
