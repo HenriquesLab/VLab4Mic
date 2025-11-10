@@ -34,8 +34,15 @@ To use VLab4Mic in Colab, click on the "Open in Colab" badge. This will open a n
 
 When the notebooks opens, follow the instructions in the notebook to get started!
 
+### Troubleshooting:
 
-> NOTE: Opening the notebook through the badge will be available when the repository becomes public. In the meantime, you can still use Google Colab by downloading the Jupyter Notebook and uploading it to your Google Colab. 
+If the Colab Link does not work, you can still use the codeless notebooks from your personal Google Colab. To do so
+- Click on the "jupyter" badge
+- Download the notebook file by clicking on "Download raw file"
+- Log in to Google Colab with your own Google account
+- Upload a copy of the notebook from File > Upload Notebook 
+
+The notebook should open once it finish uploading.
 
 ## Option 2: 📚 Use Jupyter Notebooks in a local installation
 
