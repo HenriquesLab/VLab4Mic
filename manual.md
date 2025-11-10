@@ -316,7 +316,7 @@ images, noiseless, experiment = image_vsample(
 
 A table of these and other templates can be found in the Templates section.
 
-To display the results:
+Run the following example to display the results of an imaging simulation:
 
 ```python
 import matplotlib.pyplot as plt
@@ -328,13 +328,12 @@ for i, mod in enumerate(modalities):
     axs[i].set_title(mod)
 ```
 
----
 
 ## 🔬 Run a parameter sweep analysis
 
 VLab4Mic allows you to test parameter combinations for sample and image simulations.
 
-The main method to run a parameter sweep is `run_parameter_sweep`:
+The main method to run a parameter sweep is `run_parameter_sweep`. This is an example of its usage with default parameters:
 
 ```python
 from vlab4mic.sweep_generator import run_parameter_sweep
@@ -351,10 +350,12 @@ sweep_gen = run_parameter_sweep(
 
 This generates and saves a default parameter sweep. The `sweep_gen` object contains all parameters used to set and run the sweep.
 
-###  Specify values for each parameter
+##  Specify values for each parameter
 
 You can parameterize the sweep by specifying the values or ranges to use for each parameter.  
-Pass a list of values or a tuple with (min, max, nsteps) to generate linearly spaced values.
+You can parameterise by passing the values:
+- as a list,
+- as a tuple with the format (min, max, nsteps) to generate linearly spaced values.
 
 Example:
 
