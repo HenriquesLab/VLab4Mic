@@ -36,8 +36,8 @@ When the notebooks opens, follow the instructions in the notebook to get started
 
 ### Troubleshooting:
 
-If the Colab Link does not work, you can still use the codeless notebooks from your personal Google Colab. To do so
-- Click on the "jupyter" badge
+If the Colab Link does not work, you can still use the codeless notebooks from your personal Google Colab by following these steps:
+- Click on the "jupyter" badge of the notebook you want to use
 - Download the notebook file by clicking on "Download raw file"
 - Log in to Google Colab with your own Google account
 - Upload a copy of the notebook from File > Upload Notebook 
