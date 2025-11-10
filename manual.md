@@ -219,6 +219,9 @@ pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://
 ### 🖥️ Option 1: Run python scripts from the command line
 
 You can run python scripts from the command line in your virtual envornment.
+
+For detailed usage examples, see our [example scripts](https://github.com/HenriquesLab/SupraMolecularSimulator/tree/main/examples).
+
 Here, we exemplify the case of running a script named "vlab_script.py" located in the current directory.
 
 ```python 
