@@ -109,6 +109,12 @@ experiment_widgets.run_experiment_widget(my_experiment).show()
 
 ## Interactive Jupyter Notebooks
 
+VLab4Mic codeless notebooks allow you to use its methods **without writing code**.
+The following table lists our notebooks tailored to use VLab4Mic in Google Colab or in a local installation (your own computer, for instance).
+
+Refer to the [manual](https://github.com/HenriquesLab/VLab4Mic/blob/main/manual.md) for detailed instructions to use our codeless Jupyter notebooks on Google Colab or in a local installation.
+
+
 | Category | Description | Notebook | Colab Link |
 | --- | --- | --- | --- |
 | **Main Interface** | Create virtual samples and simulate image acquisition with multiple imaging modalities | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_main.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_main.ipynb) |
