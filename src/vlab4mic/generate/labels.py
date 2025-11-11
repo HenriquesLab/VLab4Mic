@@ -122,7 +122,7 @@ class Label:
     def set_target_sequence(self, sequence: str):
         self.params["target_sequence"] = sequence
 
-    def set_emitters(self, emitters):  # TODO: test
+    def set_emitters(self, emitters):
         if (np.shape(emitters))[0] < 1:
             print("input need at least 1 points")
         else:
@@ -148,7 +148,7 @@ class Label:
 
     def export_as_file(
         self, filename="customlabel.yaml", write_dir=""
-    ):  # TODO: consider using get_notNone_params method
+    ):
         writing_dir = write_dir + filename
         print(f"Writing file in: {writing_dir}")
         # define parameters to write
@@ -180,7 +180,7 @@ class Label:
         axesoff=True,
         show_axis=True,
         return_plot=False,
-    ):  # TODO: test
+    ):
         if self.params["emitters_coords"] is None:
             print(
                 f"Label type is {self.params['label_type']} and does not contain "
