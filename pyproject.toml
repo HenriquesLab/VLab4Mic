@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vlab4mic"
-version = "0.0.5"
+version = "0.0.6"
 description = "VLab4Mic: A virtual laboratory for microscopy simulation and validation"
 authors = [
     { name = "Damián Martinez", email = "jdmartinezigc@gmail.com" },
