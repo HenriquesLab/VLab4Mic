@@ -23,7 +23,7 @@ from ..utils.data_format.visualisation import (
 from ..utils.data_format.structural_format import builder_format  # verified
 
 from ..utils.transform.normals import normals_by_scaling  # verified
-from ..utils.sample import sample_array
+from ..utils.sample import arrays
 
 class MolecularStructureParser:
     def __init__(self):
@@ -838,7 +838,7 @@ class MolecularStructureParser:
                     )
         if with_assembly_atoms:
             print(f"Showing {assembly_fraction*100}% of the total atoms")
-            atoms_subset = sample_array(
+            atoms_subset = arrays.sample_array(
                 self.assembly_atoms, assembly_fraction
             )
             if atoms_size is not None:
@@ -903,7 +903,7 @@ class MolecularStructureParser:
         print(f"Showing {assembly_fraction*100}% of the total atoms")
         fig = plt.figure()
         ax = fig.add_subplot(111, projection="3d")
-        atoms_subset = sample_array(
+        atoms_subset = arrays.sample_array(
             self.assembly_atoms, assembly_fraction
         )
         add_ax_scatter(
