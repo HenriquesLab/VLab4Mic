@@ -24,8 +24,8 @@ The following table lists our notebooks tailored to use VLab4Mic in Google Colab
 
 | Category | Description | Notebook | Colab Link |
 | --- | --- | --- | --- |
-| **Main Interface** | Create virtual samples and simulate image acquisition with multiple imaging modalities | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/vLab4Mic_main.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/vLab4Mic_main.ipynb) |
-| **Parameter Sweeps** | Generate and analyze simulations over parameter ranges for optimization | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) |
+| **Main Interface** | Create virtual samples and simulate image acquisition with multiple imaging modalities | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/VLab4Mic/blob/main/notebooks/vLab4Mic_main.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/VLab4Mic/blob/main/notebooks/vLab4Mic_main.ipynb) |
+| **Parameter Sweeps** | Generate and analyze simulations over parameter ranges for optimization | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/VLab4Mic/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/VLab4Mic/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) |
 
 ## Option 1: 📚 Use Jupyter Notebooks in Google Colab
 Google Colab is an online service that provides computing resources to run Jupyter Notebooks without prior set up. This means that you don't need to install VLab4Mic in your computer, nor create virtual environments for it.  
@@ -126,13 +126,13 @@ This will open Jupyter Lab in your web browser.
 
 ### Step 4️⃣ Download and Open Notebooks
 
-Download the notebooks from our [repository here](https://github.com/HenriquesLab/SupraMolecularSimulator/tree/main/notebooks), or refer to the table above.  
+Download the notebooks from our [repository here](https://github.com/HenriquesLab/VLab4Mic/tree/main/notebooks), or refer to the table above.  
 Once downloaded, use the Jupyter Lab interface to find and open the notebook.
 
 ### Step 5️⃣: Start Experimenting!
 
 Follow the instructions in each notebook.  
-For questions, refer to our [documentation](https://github.com/HenriquesLab/SupraMolecularSimulator/wiki) or [create an issue](https://github.com/HenriquesLab/SupraMolecularSimulator/issues).
+For questions, refer to our [documentation](https://github.com/HenriquesLab/VLab4Mic/wiki) or [create an issue](https://github.com/HenriquesLab/VLab4Mic/issues).
 
 
 # VLab4Mic as Python Library (scripts) 
@@ -220,7 +220,7 @@ pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://
 
 You can run python scripts from the command line in your virtual envornment.
 
-For detailed usage examples, see our [example scripts](https://github.com/HenriquesLab/SupraMolecularSimulator/tree/main/examples).
+For detailed usage examples, see our [example scripts](https://github.com/HenriquesLab/VLab4Mic/tree/main/examples).
 
 Here, we exemplify the case of running a script named "vlab_script.py" located in the current directory.
 

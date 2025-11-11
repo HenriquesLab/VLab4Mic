@@ -64,8 +64,8 @@ Refer to the [manual](https://github.com/HenriquesLab/VLab4Mic/blob/main/manual.
 
 | Category | Description | Notebook | Colab Link |
 | --- | --- | --- | --- |
-| **Main Interface** | Create virtual samples and simulate image acquisition with multiple imaging modalities | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_main.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_main.ipynb) |
-| **Parameter Sweeps** | Generate and analyze simulations over parameter ranges for optimization | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) |
+| **Main Interface** | Create virtual samples and simulate image acquisition with multiple imaging modalities | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/VLab4Mic/blob/main/notebooks/VLab4Mic_main.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/VLab4Mic/blob/main/notebooks/VLab4Mic_main.ipynb) |
+| **Parameter Sweeps** | Generate and analyze simulations over parameter ranges for optimization | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/VLab4Mic/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/VLab4Mic/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) |
 
 ## Python Script Example
 VLab4Mic is a python library that can be used from its high-level functions.
@@ -100,7 +100,7 @@ for i, mod in enumerate(modalities):
     axs[i].set_title(mod)
 plt.show()
 ```
-For detailed usage examples, see our [example scripts](https://github.com/HenriquesLab/SupraMolecularSimulator/tree/main/examples).
+For detailed usage examples, see our [example scripts](https://github.com/HenriquesLab/VLab4Mic/tree/main/examples).
 
 ## Jupyter Notebook Usage
 
@@ -135,7 +135,7 @@ experiment_widgets.run_experiment_widget(my_experiment).show()
 
 # Documentation & Tutorials
 
-VLab4Mic is designed as a collection of independent modules magaged and parameterised into an experiment. Comprehensive documentation and tutorials are available on our [Wiki Tutorial page](https://github.com/HenriquesLab/SupraMolecularSimulator/wiki).
+VLab4Mic is designed as a collection of independent modules magaged and parameterised into an experiment. Comprehensive documentation and tutorials are available on our [Wiki Tutorial page](https://github.com/HenriquesLab/VLab4Mic/wiki).
 
 
 ## Pre-configured Examples
@@ -166,19 +166,19 @@ Refer to the [manual](https://github.com/HenriquesLab/VLab4Mic/blob/main/manual.
 
 # Contributing
 
-Contributions are very welcome! Please read our [Contribution Guidelines](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/CONTRIBUTING.md) to learn how to get involved.
+Contributions are very welcome! Please read our [Contribution Guidelines](https://github.com/HenriquesLab/VLab4Mic/blob/main/CONTRIBUTING.md) to learn how to get involved.
 
 # License
 
-Distributed under the terms of the [MIT license](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/LICENSE.txt), VLab4Mic is free and open source software.
+Distributed under the terms of the [MIT license](https://github.com/HenriquesLab/VLab4Mic/blob/main/LICENSE.txt), VLab4Mic is free and open source software.
 
 # Issues & Support
 
-Should you encounter any problems, please don't hesitate to [let us know](https://github.com/HenriquesLab/SupraMolecularSimulator/issues). When reporting issues, please include:
+Should you encounter any problems, please don't hesitate to [let us know](https://github.com/HenriquesLab/VLab4Mic/issues). When reporting issues, please include:
 - A detailed description of the problem
 - Steps to reproduce the issue
 - Your operating system and Python version
 - Any error messages or screenshots
 
-For general questions, please use our [Discussions](https://github.com/HenriquesLab/SupraMolecularSimulator/discussions) section.
+For general questions, please use our [Discussions](https://github.com/HenriquesLab/VLab4Mic/discussions) section.
 
