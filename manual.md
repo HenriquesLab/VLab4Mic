@@ -1,6 +1,6 @@
 # VLab4Mic: A Virtual Laboratory for Microscopy
 
-## What to expect from this manual <a name="whattoexpect"></a>
+## What to expect from this manual
 
 This manual covers minimal steps required for running imaging simulations and parameteres sweeps with VLab4Mic, either by using our codeless notebooks or using it as a python package.
 
@@ -14,7 +14,7 @@ VLab4Mic main usage can be done in three ways, depending on your coding experien
 This tutorial will cover **Jupyter Notebooks with GUI** and **Python Scripts**.
 
 
-# VLab4Mic with Jupyter Notebooks with GUI <a name="codeless"></a>
+# VLab4Mic with Jupyter Notebooks with GUI
 
 VLab4Mic codeless notebooks allow you to use its methods **without writing code**.
 The following table lists our notebooks tailored to use VLab4Mic in Google Colab or in a local installation (your own computer, for instance).
@@ -255,7 +255,7 @@ Get a description of the available parameters of each method by using Python's b
 help(image_vsample)
 ```
 
-# VLab4Mic Methods <a name="codemuch"></a>
+# VLab4Mic Methods 
 This section of the tutorial describes VLab4Mic high-level functions to:
 - 🧬 **Create and simulate imaging of a virtual sample**
 - 🔬 **Set up and run parameter sweep**
