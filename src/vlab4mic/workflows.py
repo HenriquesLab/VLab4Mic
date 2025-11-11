@@ -244,9 +244,8 @@ def particle_from_structure(
                     probe_epitope["coordinates"] is not None
                     and label_params["as_linker"]
                 ):
+                    # as_linker is True when this probe has a secondary linker
                     print("Generating linker from epitope site")
-                    # TODO: this decision needs to take into account if there is a 
-                    # secondary label for this specific probe
                     label_object.set_emitters(probe_epitope["coordinates"])
                 else:
                     print(probe_epitope["coordinates"], label_params["as_linker"])
