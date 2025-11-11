@@ -40,20 +40,36 @@ Run the following command to install vlab4mic with the necesary libraries to sup
 pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple "vlab4mic[jupyter]"
 ```
 
-# How to Use VLab4Mic
+# How to use VLab4Mic
 
-VLab4Mic can be used in three ways, depending on your coding experience:
+VLab4Mic main usage includes:
+- 🧬 **Creating and simulating imaging of a virtual sample**
+- 🔬 **Setting up and running parameter sweep**
+
+Each of these functionalities can be accessed through high-level functions that, depending on your coding experience, can be used as:
+
 1. **Jupyter Notebooks with GUI** - No coding required (recommended for beginners)
 2. **Jupyter Notebooks with code** - Moderate coding (recommended for intermediate users)
 3. **Python scripts** - Full coding control (recommended for advanced users)
 
-Refer to the [manual](https://github.com/HenriquesLab/VLab4Mic/blob/main/manual.md) for detailed instructions to use.
+Refer to the [manual](https://github.com/HenriquesLab/VLab4Mic/blob/main/manual.md) for detailed instructions and examples on how to use VLab4Mic.
 
+## Jupyter Notebooks with GUI
+
+We provide codeless Jupyter Notebooks that allow you to use VLab4Mic **without writing code**.
+The following table lists our current notebooks to use VLab4Mic in Google Colab or in a local installation (your own computer, for instance).
+
+Refer to the [manual](https://github.com/HenriquesLab/VLab4Mic/blob/main/manual.md) for extended instructions.
+
+
+| Category | Description | Notebook | Colab Link |
+| --- | --- | --- | --- |
+| **Main Interface** | Create virtual samples and simulate image acquisition with multiple imaging modalities | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_main.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_main.ipynb) |
+| **Parameter Sweeps** | Generate and analyze simulations over parameter ranges for optimization | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) |
 
 ## Python Script Example
-VLab4Mic is a Python library that can be used directly through our workflows and analysis modules.
-For detailed usage examples, see our [example scripts](https://github.com/HenriquesLab/SupraMolecularSimulator/tree/main/examples).
-Here's a simple example to get you started with VLab4Mic:
+VLab4Mic is a python library that can be used from its high-level functions.
+Here's an example on how to create virtual sample and simulate its imaging acquisition:
 
 ```python
 from vlab4mic.experiments import image_vsample
@@ -84,46 +100,42 @@ for i, mod in enumerate(modalities):
     axs[i].set_title(mod)
 plt.show()
 ```
+For detailed usage examples, see our [example scripts](https://github.com/HenriquesLab/SupraMolecularSimulator/tree/main/examples).
 
 ## Jupyter Notebook Usage
 
-It is also possible to use Jupyter Notebooks for running custom code such as the example above in scripts. For GUI-based usage without coding in a Jupyter Lab, run the following code boxes in separate code cells:
+It is also possible to use VLab4Mic in Jupyter Notebooks to use as python library:
 
 ```python
-# Initialisaiton cell
-from vlab4mic.jupyter_widgets import experiment_widgets
+# Import vlab4mic
 from vlab4mic import experiments
 
 ## Initialize experiment
 my_experiment = experiments.ExperimentParametrisation()
 ```
-VLab4Mic provides custom jupyter widgets to interact with the experiment object.
+
+VLab4Mic provides jupyter widgets to interact with the experiment object.
+For GUI-based usage without coding in a Jupyter Lab, run the following code boxes in separate cells:
+
 ```python
+# Import vlab4mic
+from vlab4mic.jupyter_widgets import experiment_widgets
+from vlab4mic import experiments
+
+## Initialize experiment
+my_experiment = experiments.ExperimentParametrisation()
 # Display interactive widgets for specific modules, for instance to select structure
 experiment_widgets.select_structure_widget(my_experiment).show()
 ```
+
 ```python
 # Run experiment
 experiment_widgets.run_experiment_widget(my_experiment).show()
 ```
 
-## Interactive Jupyter Notebooks
-
-VLab4Mic codeless notebooks allow you to use its methods **without writing code**.
-The following table lists our notebooks tailored to use VLab4Mic in Google Colab or in a local installation (your own computer, for instance).
-
-Refer to the [manual](https://github.com/HenriquesLab/VLab4Mic/blob/main/manual.md) for detailed instructions to use our codeless Jupyter notebooks on Google Colab or in a local installation.
-
-
-| Category | Description | Notebook | Colab Link |
-| --- | --- | --- | --- |
-| **Main Interface** | Create virtual samples and simulate image acquisition with multiple imaging modalities | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_main.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_main.ipynb) |
-| **Parameter Sweeps** | Generate and analyze simulations over parameter ranges for optimization | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/SupraMolecularSimulator/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) |
-
-
 # Documentation & Tutorials
 
-VLab4Mic is designed as a collection of independent modules that work together through our workflows. Comprehensive documentation and tutorials are available on our [Wiki Tutorial page](https://github.com/HenriquesLab/SupraMolecularSimulator/wiki).
+VLab4Mic is designed as a collection of independent modules magaged and parameterised into an experiment. Comprehensive documentation and tutorials are available on our [Wiki Tutorial page](https://github.com/HenriquesLab/SupraMolecularSimulator/wiki).
 
 
 ## Pre-configured Examples
