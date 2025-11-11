@@ -7,7 +7,7 @@ We also reserve the right to not accept contributions that add no meaningful cha
 
 ### 🐛 **1. Report Bugs**
 
-Report bugs at <https://github.com/HenriquesLab/SupraMolecularSimulator/issues>.
+Report bugs at <https://github.com/HenriquesLab/VLab4Mic/issues>.
 
 If you are reporting a bug, please include:
 
@@ -22,7 +22,7 @@ and "help wanted" is open to whoever wants to implement it.
 
 ### 🗣️ **3. Submit Feedback**
 
-The best way to send feedback is to file an issue at <https://github.com/HenriquesLab/SupraMolecularSimulator/issues>.
+The best way to send feedback is to file an issue at <https://github.com/HenriquesLab/VLab4Mic/issues>.
 
 If you are proposing a feature:
 
@@ -36,7 +36,7 @@ Ready to contribute? Here's how to set up **VLab4Mic** for local development.
 1. Fork the **VLab4Mic** repo on GitHub.
 2. Clone your fork locally::
 
-   `$ git clone git@github.com:your_name_here/SupraMolecularSimulator.git`
+   `$ git clone git@github.com:your_name_here/VLab4Mic.git`
 
 3. Follow the installation instructions in the readme to install a VLab4Mic environment.
 
@@ -72,7 +72,7 @@ Before you submit a pull request, check that it meets these guidelines:
 
 ## **Authorship Expectations**
 
-The default way to recognise contributions is via the [contributors](https://github.com/HenriquesLab/SupraMolecularSimulator/graphs/contributors) section of the repository. The attribution of authorship to future publications derived from the SupraMolecularSimulator project are not given "automatically" to contributors and follow the guidelines:
+The default way to recognise contributions is via the [contributors](https://github.com/HenriquesLab/VLab4Mic/graphs/contributors) section of the repository. The attribution of authorship to future publications derived from the VLab4Mic project are not given "automatically" to contributors and follow the guidelines:
 
 - Authorship roles and expectations are discussed early on in the project and ultimately decided by the senior project lead (Ricardo Henriques). This is often an ongoing conversation throughout the project, as roles and contributions may change over time.
 - All authors are expected to contribute significantly to the project. This includes conception, design, development of functionality, data acquisition, analysis and interpretation, and drafting and revising the manuscripts. These contributions are done with prior discussion and agreement of the senior project lead and core development team.
