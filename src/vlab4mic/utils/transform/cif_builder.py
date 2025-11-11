@@ -77,7 +77,8 @@ def summarize_epitope_atoms(atoms_per_epitope, method="average", residue_pos=0):
 
 def array_coords_subset(
     array, percentage
-):  # TODO: use sample array function from utils
+):  # Note: this method is deprecated and will be removed in future versions. 
+    # Instead, use "sample_array" method found at vlab4mic.utils.sample.sample_array
     # show a percentage of all the atoms contained in the full assembly of a CIF
     # this assumes the shape of array is N x 3, where N is the total number of atoms
     if percentage < 1:
