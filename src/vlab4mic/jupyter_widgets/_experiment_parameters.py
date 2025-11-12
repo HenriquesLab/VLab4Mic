@@ -76,7 +76,7 @@ def ui_select_structure(experiment):
     gui = EZInput("Select_structure")
 
     def select_structure(elements):
-        elements["label_1"].value = "Current structure selected: Loading..."
+        elements["label_1"].value = "Loading..."
         elements["select_structure"].icon = loding_icon
         # elements["select_structure"].disabled = True
         for wgt in elements.keys():
@@ -91,9 +91,10 @@ def ui_select_structure(experiment):
         elements["select_structure"].icon = select_icon
         for wgt in elements.keys():
             elements[wgt].disabled = False
+        elements["label_1"].value = "Structure loaded successfully."
 
     def select_structure_from_file(b):
-        gui["label_1"].value = "Current structure selected: Loading..."
+        gui["label_1"].value = "Loading..."
         gui["select_structure"].icon = loding_icon
         for wgt_name in gui.elements.keys():
             gui[wgt_name].disabled = True
@@ -107,6 +108,7 @@ def ui_select_structure(experiment):
         gui["select_structure"].icon = select_icon
         for wgt_name in gui.elements.keys():
             gui[wgt_name].disabled = False
+        gui["label_1"].value = "Structure loaded successfully."
 
 
     def update_structure_list():
