@@ -109,7 +109,7 @@ class sweep_generator:
 
         Parameters
         ----------
-        repeats : int, optional
+        :param repeats: int, optional
             Number of times to repeat each parameter combination. Defaults to 3.
 
         Returns
@@ -124,10 +124,9 @@ class sweep_generator:
 
         Parameters
         ----------
-        structures : list of str, optional
+        :param structures: list of str, optional
             List of 4-letter PDB/CIF IDs or paths to structure files. If None, uses all available structures.
-        **kwargs
-            Additional keyword arguments.
+        :param **kwargs: Additional keyword arguments.
 
         Returns
         -------
@@ -143,10 +142,9 @@ class sweep_generator:
 
         Parameters
         ----------
-        probe_templates : list of str, optional
+        :param probe_templates: list of str, optional
             List of probe configuration filenames. If None, uses all available probes.
-        **kwargs
-            Additional keyword arguments.
+        :param **kwargs: Additional keyword arguments.
 
         Returns
         -------
@@ -161,10 +159,9 @@ class sweep_generator:
 
         Parameters
         ----------
-        modalities : list of str, optional
+        :param modalities: list of str, optional
             List of modality names. If None, uses all available modalities.
-        **kwargs
-            Additional keyword arguments.
+        :param **kwargs: Additional keyword arguments.
 
         Returns
         -------
@@ -179,7 +176,7 @@ class sweep_generator:
 
         Parameters
         ----------
-        output_directory : str, optional
+        :param output_directory: str, optional
             Path to the desired output directory. If None, uses the default output directory.
 
         Returns
@@ -268,14 +265,13 @@ class sweep_generator:
 
         Parameters
         ----------
-        reference_structure : str, optional
+        :param reference_structure: str, optional
             4-letter ID of PDB/CIF model.
-        reference_probe : str, optional
+        :param reference_probe: str, optional
             Name ID of probe configuration file (filename).
-        reference_probe_parameters : dict, optional
+        :param reference_probe_parameters: dict, optional
             Probe parameters to use.
-        **kwargs
-            Additional keyword arguments.
+        :param **kwargs: Additional keyword arguments.
 
         Returns
         -------
@@ -333,7 +329,7 @@ class sweep_generator:
 
         Parameters
         ----------
-        override : bool, optional
+        :param override: bool, optional
             If True, regenerate the reference image even if it exists. Defaults to False.
 
         Returns
@@ -396,7 +392,7 @@ class sweep_generator:
 
         Parameters
         ----------
-        return_image : bool, optional
+        :param return_image: bool, optional
             If True, return the image array instead of displaying it. Defaults to False.
 
         Returns
@@ -449,7 +445,7 @@ class sweep_generator:
 
         Parameters
         ----------
-        return_image : bool, optional
+        :param return_image: bool, optional
             If True, return the image array instead of displaying it. Defaults to False.
 
         Returns
@@ -470,11 +466,11 @@ class sweep_generator:
 
         Parameters
         ----------
-        param_group : str
+        :param param_group: str
             Group of parameter, e.g., 'probe', 'virtual_sample'.
-        param_name : str
+        :param param_name: str
             Name of parameter to use for sweep.
-        values : None, tuple, or list, optional
+        :param values: None, tuple, or list, optional
             Parameter values to use. If tuple, interpreted as (start, stop, num) for linspace.
             If list, used directly. If None, defaults are generated.
 
@@ -724,12 +720,11 @@ class sweep_generator:
 
         Parameters
         ----------
-        metrics_list : list of str, optional
+        :param metrics_list: list of str, optional
             A list of metric names to be used in the analysis.
-        zoom_in : float, optional
+        :param zoom_in: float, optional
             A zoom factor to be applied during analysis.
-        **kwargs
-            Additional keyword arguments for future extensibility.
+        :param **kwargs: Additional keyword arguments for future extensibility.
 
         Returns
         -------
@@ -746,10 +741,9 @@ class sweep_generator:
 
         Parameters
         ----------
-        plot_type : str
+        :param plot_type: str
             The type of plot to configure.
-        **kwargs
-            Plot-specific keyword arguments.
+        :param **kwargs: Plot-specific keyword arguments.
 
         Returns
         -------
@@ -775,18 +769,17 @@ class sweep_generator:
 
         Parameters
         ----------
-        save : bool, optional
+        :param save: bool, optional
             Specify if output analysis will be saved in output_directory. Defaults to True.
-        output_name : str, optional
+        :param output_name: str, optional
             Name to identify analysis output files.
-        output_directory : str, optional
+        :param output_directory: str, optional
             Path for writing outputs.
-        plots : bool, optional
+        :param plots: bool, optional
             Generate heatmaps and lineplots from the results dataframe. Defaults to False.
-        save_images : bool, optional
+        :param save_images: bool, optional
             Whether to save images. Defaults to True.
-        **kwargs
-            Additional keyword arguments.
+        :param **kwargs: Additional keyword arguments.
 
         Returns
         -------
@@ -861,7 +854,7 @@ class sweep_generator:
 
         Parameters
         ----------
-        keyname : str, optional
+        :param keyname: str, optional
             The key corresponding to the desired analysis output. Defaults to "dataframes".
 
         Returns
@@ -890,15 +883,14 @@ class sweep_generator:
 
         Parameters
         ----------
-        plot_type : str, optional
+        :param plot_type: str, optional
             The type of plot to generate. Supported types are "heatmaps" and "lineplots".
             If not specified, defaults to "heatmaps".
-        metric_name : str, optional
+        :param metric_name: str, optional
             The name of the metric to plot. Required for generating the plot.
-        decimals : int, optional
+        :param decimals: int, optional
             Number of decimal places to format metric values. If not specified, defaults to 3.
-        **kwargs
-            Additional keyword arguments passed to the underlying plotting functions.
+        :param **kwargs: Additional keyword arguments passed to the underlying plotting functions.
 
         Notes
         -----
@@ -960,20 +952,19 @@ class sweep_generator:
 
         Parameters
         ----------
-        metric_name : str, optional
+        :param metric_name: str, optional
             Name of the metric to plot.
-        category : str, optional
+        :param category: str, optional
             Category for pivoting data (e.g., modality_name).
-        param1 : str, optional
+        :param param1: str, optional
             First parameter for the heatmap axes.
-        param2 : str, optional
+        :param param2: str, optional
             Second parameter for the heatmap axes.
-        return_figure : bool, optional
+        :param return_figure: bool, optional
             If True, return the matplotlib figure. Defaults to False.
-        decimals : str, optional
+        :param decimals: str, optional
             Format string for decimal places. Defaults to '%.4f'.
-        **kwargs
-            Additional keyword arguments.
+        :param **kwargs: Additional keyword arguments.
 
         Returns
         -------
@@ -1050,28 +1041,27 @@ class sweep_generator:
 
         Parameters
         ----------
-        data : pandas.DataFrame, optional
+        :param data: pandas.DataFrame, optional
             Data to plot. If None, uses self.analysis["dataframes"].
-        x_param : str, optional
+        :param x_param: str, optional
             Parameter for the x-axis.
-        metric_name : str, optional
+        :param metric_name: str, optional
             Metric to plot on the y-axis.
-        hue : str, optional
+        :param hue: str, optional
             Variable that defines subsets of the data, which will be drawn on separate lines.
-        style : str, optional
+        :param style: str, optional
             Variable that determines the line style.
-        markers : bool or list, optional
+        :param markers: bool or list, optional
             Markers for the lines.
-        estimator : str or callable, optional
+        :param estimator: str or callable, optional
             Method for aggregating data.
-        errorbar : str, optional
+        :param errorbar: str, optional
             Error bar type.
-        figsize : list, optional
+        :param figsize: list, optional
             Figure size.
-        decimals : str, optional
+        :param decimals: str, optional
             Format string for decimal places.
-        **kwargs
-            Additional keyword arguments.
+        :param **kwargs: Additional keyword arguments.
 
         Returns
         -------
@@ -1118,12 +1108,12 @@ class sweep_generator:
 
         Parameters
         ----------
-        output_name : str, optional
+        :param output_name: str, optional
             Base name for the output files. If None, defaults to "vLab4mic_results_".
             The current date (YYYYMMDD) will be appended to the name.
-        output_directory : str, optional
+        :param output_directory: str, optional
             Directory where the output files will be saved. If None, uses the instance's `output_directory` attribute.
-        analysis_type : list of str, optional
+        :param analysis_type: list of str, optional
             Types of analysis outputs to save. Can include "dataframes" and/or "plots".
             If None, both "dataframes" and "plots" are saved.
 
@@ -1173,12 +1163,12 @@ class sweep_generator:
 
         Parameters
         ----------
-        output_name : str, optional
+        :param output_name: str, optional
             Base name for the output image files. Defaults to "vLab4mic_images_".
-        output_directory : str, optional
+        :param output_directory: str, optional
             Directory where images will be saved. If not provided, uses a default path
             based on `self.output_directory` under a "simulated_images" subdirectory. The directory is created if it does not exist.
-        floats_as : callable, optional
+        :param floats_as: callable, optional
             Function to convert numpy float64 values in parameter dictionaries to another type (e.g., float). Defaults to float.
 
         Returns
@@ -1253,7 +1243,7 @@ def run_parameter_sweep(
     reference_parameters: dict = None,
     clear_experiment=True,
     run_analysis=True,
-    # Sweep/virtual sample/probe/defect/acquisition/modality parameters
+    # parameters to sweep
     probe_target_type = None,
     probe_target_value = None,
     probe_target_option = None,
@@ -1293,39 +1283,39 @@ def run_parameter_sweep(
 
     Parameters
     ----------
-    structures : list of str, optional
+    :param structures: list of str, optional
         List of structure IDs or file paths to use in the sweep.
-    probe_templates : list of str, optional
+    :param probe_templates: list of str, optional
         List of probe configuration filenames to use in the sweep.
-    modalities : list of str, optional
+    :param modalities: list of str, optional
         List of imaging modality names to use in the sweep.
-    output_directory : str, optional
+    :param output_directory: str, optional
         Directory to save outputs. If None, uses default.
-    output_name : str, optional
+    :param output_name: str, optional
         Base name for output files.
-    save_analysis_results : bool, optional
+    :param save_analysis_results: bool, optional
         Whether to save analysis results. Default is True.
-    analysis_plots : bool, optional
+    :param analysis_plots: bool, optional
         Whether to generate and save analysis plots. Default is True.
-    save_sweep_images : bool, optional
+    :param save_sweep_images: bool, optional
         Whether to save simulated images. Default is True.
-    sweep_repetitions : int, optional
+    :param sweep_repetitions: int, optional
         Number of repetitions per parameter combination. Default is 3.
-    return_generator : bool, optional
+    :param return_generator: bool, optional
         If True, return the sweep_generator instance. Default is False.
-    number_of_particles : int, optional
+    :param number_of_particles: int, optional
         Number of particles per virtual sample. Default is 1.
-    particle_positions : int or list, optional
+    :param particle_positions: int or list, optional
         Explicit particle positions to use. If None, positions are generated.
-    reference_structure : str, optional
+    :param reference_structure: str, optional
         Structure ID or path for the reference sample.
-    reference_probe : str, optional
+    :param reference_probe: str, optional
         Probe configuration for the reference sample.
-    reference_parameters : dict, optional
+    :param reference_parameters: dict, optional
         Additional parameters for the reference sample.
-    clear_experiment : bool, optional
+    :param clear_experiment: bool, optional
         Whether to clear the experiment before running. Default is True.
-    run_analysis : bool, optional
+    :param run_analysis: bool, optional
         Whether to run analysis after simulation. Default is True.
     For the following parameters, pass a list of the values to sweep over,
     alternatively, pass a tuple of (min, max, nsteps) to generate linearly spaced values.
