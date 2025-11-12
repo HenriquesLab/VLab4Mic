@@ -47,11 +47,12 @@ class ExperimentParametrisation:
     defect_eps: Dict[str, int] = field(default_factory=dict)
     sweep_pars: Dict[str, int] = field(default_factory=dict)
     objects_created: Dict[str, int] = field(default_factory=dict)
-    output_directory: str = str(output_path)
+    output_directory: str = None
     example_structures = ["3J3Y", "7R5K", "1XI5", "8GMO"]
     example_modalities = ["Widefield", "Confocal", "STED", "SMLM"]
 
     def __post_init__(self):
+        self.output_directory = str(output_path)
         pck_dir = os.path.dirname(os.path.abspath(vlab4mic.__file__))
         local_dir = os.path.join(pck_dir, "configs")
         self.configuration_path = local_dir
@@ -168,9 +169,9 @@ class ExperimentParametrisation:
 
         Parameters
         ----------
-        structure_id : str, optional
+        :param structure_id : str, optional
             The identifier of the structure to select. Default is "1XI5".
-        build : bool, optional
+        :param build : bool, optional
             If True, triggers the build process for the structure module. Default is True.
 
         Returns
@@ -211,11 +212,11 @@ class ExperimentParametrisation:
 
         Parameters
         ----------
-        modality_name : str
+        :param modality_name : str
             The name of the modality to add.
-        save : bool, optional
+        :param save : bool, optional
             If True, saves the modality output. Default is False.
-        **kwargs
+        :param **kwargs
             Arbitrary keyword arguments to override or set specific modality parameters.
 
         Returns
@@ -259,17 +260,17 @@ class ExperimentParametrisation:
 
         Parameters
         ----------
-        modality_name : str
+        :param modality_name : str
             The name of the imaging modality to update or remove.
-        pixelsize_nm : int, optional
+        :param pixelsize_nm : int, optional
             The new pixel size in nanometers. If provided, updates the detector pixel size.
-        lateral_resolution_nm : int, optional
+        :param lateral_resolution_nm : int, optional
             The new lateral resolution in nanometers. If provided, updates the lateral standard deviations of the PSF.
-        axial_resolution_nm : int, optional
+        :param axial_resolution_nm : int, optional
             The new axial resolution in nanometers. If provided, updates the axial standard deviation of the PSF.
-        psf_voxel_nm : int, optional
+        :param psf_voxel_nm : int, optional
             The new PSF voxel size in nanometers. If provided, updates the PSF voxel size for all axes.
-        remove : bool, optional
+        :param remove : bool, optional
             If True, removes the specified modality from the internal dictionaries. Default is False.
 
         Notes
@@ -346,19 +347,19 @@ class ExperimentParametrisation:
 
         Parameters
         ----------
-        modality_name : str
+        :param modality_name : str
             The name of the imaging modality to configure.
-        exp_time : float, optional
+        :param exp_time : float, optional
             Exposure time for the acquisition in seconds. Default is 0.001.
-        noise : bool, optional
+        :param noise : bool, optional
             Whether to include noise in the acquisition. Default is True.
-        save : bool, optional
+        :param save : bool, optional
             Whether to save the acquired data. Default is False.
-        nframes : int, optional
+        :param nframes : int, optional
             Number of frames to acquire. Default is 1.
-        channels : list of str, optional
+        :param channels : list of str, optional
             List of channel names to use. Default is ["ch0"].
-        **kwargs
+        :param **kwargs
             Additional keyword arguments for modality-specific parameters.
 
         Notes
@@ -398,9 +399,9 @@ class ExperimentParametrisation:
 
         Parameters
         ----------
-        module : str, optional
+        :param module : str, optional
             The module to reset. Default is "acquisitions".
-        **kwargs
+        :param **kwargs
             Additional keyword arguments passed to the reset function.
 
         Returns
@@ -417,7 +418,7 @@ class ExperimentParametrisation:
 
         Parameters
         ----------
-        keep : bool, optional
+        :param keep : bool, optional
             If True, store the structure in the experiment. Default is True.
 
         Returns
@@ -447,11 +448,11 @@ class ExperimentParametrisation:
 
         Parameters
         ----------
-        lab_eff : float, optional
+        :param lab_eff : float, optional
             Labelling efficiency. Default is 1.
-        keep : bool, optional
+        :param keep : bool, optional
             If True, keep the label. Default is False.
-        **kwargs
+        :param **kwargs
             Additional keyword arguments for label creation.
 
         Returns
@@ -490,11 +491,11 @@ class ExperimentParametrisation:
 
         Parameters
         ----------
-        lab_eff : float, optional
+        :param lab_eff : float, optional
             Labelling efficiency. Default is 1.0.
-        defect_build : float or None, optional
+        :param defect_build : float or None, optional
             Defect parameter to use. Default is None.
-        keep : bool, optional
+        :param keep : bool, optional
             If True, store the particle in the experiment. Default is False.
 
         Returns
@@ -540,13 +541,13 @@ class ExperimentParametrisation:
 
         Parameters
         ----------
-        use_self_particle : bool, optional
+        :param use_self_particle : bool, optional
             If True, use the current particle to build the field. Default is True.
-        keep : bool, optional
+        :param keep : bool, optional
             If True, store the field in the experiment. Default is False.
-        coordinate_field_path : str or None, optional
+        :param coordinate_field_path : str or None, optional
             Path to a coordinate field file. Default is None.
-        **kwargs
+        :param **kwargs
             Additional keyword arguments for field creation.
 
         Returns
@@ -587,9 +588,9 @@ class ExperimentParametrisation:
 
         Parameters
         ----------
-        use_local_field : bool, optional
+        :param use_local_field : bool, optional
             If True, use the local exported coordinate field. Default is False.
-        prints : bool, optional
+        :param prints : bool, optional
             If True, print status messages. Default is True.
 
         Returns
@@ -635,7 +636,7 @@ class ExperimentParametrisation:
 
         Parameters
         ----------
-        generator_name : str
+        :param generator_name : str
             The name of the generator whose status is to be retrieved.
 
         Returns
@@ -663,11 +664,11 @@ class ExperimentParametrisation:
 
         Parameters
         ----------
-        use_locals : bool, optional
+        :param use_locals : bool, optional
             Determines whether to use local variables or attributes when building objects. Default is True.
-        modules : list, optional
+        :param modules : list, optional
             List of module names to build. If "all" is included, builds all available modules: "structure", "particle", "coordinate_field", and "imager". Default is ["all"].
-        **kwargs
+        :param **kwargs
             Additional keyword arguments for building modules.
 
         Notes
@@ -705,13 +706,13 @@ class ExperimentParametrisation:
 
         Parameters
         ----------
-        write : bool, optional
+        :param write : bool, optional
             Whether to write the reference image to disk. Default is False.
-        keep : bool, optional
+        :param keep : bool, optional
             If True, store the reference in the experiment. Default is False.
-        ref_acq_pars : dict or None, optional
+        :param ref_acq_pars : dict or None, optional
             Acquisition parameters for the reference. Default is None.
-        modality_wise : bool, optional
+        :param modality_wise : bool, optional
             If True, calculate reference for each modality. Default is False.
 
         Returns
@@ -815,15 +816,15 @@ class ExperimentParametrisation:
 
         Parameters
         ----------
-        name : str, optional
+        :param name : str, optional
             Name of the experiment or simulation. Default is "vlab4mic_experiment".
-        acq_params : dict or None, optional
+        :param acq_params : dict or None, optional
             Acquisition parameters for the simulation. If None and modality is "All", uses self.selected_mods.
-        save : bool, optional
+        :param save : bool, optional
             Whether to save the simulation output to disk. Default is False.
-        modality : str, optional
+        :param modality : str, optional
             The imaging modality to simulate. If "All", simulates all available modalities. Default is "All".
-        **kwargs
+        :param **kwargs
             Additional keyword arguments passed to the imaging generator.
 
         Returns
@@ -915,37 +916,37 @@ class ExperimentParametrisation:
 
         Parameters
         ----------
-        probe_name : str, optional
+        :param probe_name : str, optional
             Name of the probe. Default is "NHS_ester".
-        probe_target_type : str, optional
+        :param probe_target_type : str, optional
             Type of the probe target (e.g., "Primary", "Secondary").
-        probe_target_value : str, optional
+        :param probe_target_value : str, optional
             Value or identifier of the probe target.
-        probe_target_option : str, optional
+        :param probe_target_option : str, optional
             Additional option for the probe target, used for secondary epitopes.
-        probe_distance_to_epitope : float, optional
+        :param probe_distance_to_epitope : float, optional
             Distance from the probe to the epitope.
-        probe_model : str, optional
+        :param probe_model : str, optional
             List of model identifiers for the probe.
-        probe_fluorophore : str, optional
+        :param probe_fluorophore : str, optional
             Identifier for the fluorophore. Default is "AF647".
-        probe_steric_hindrance : Any, optional
+        :param probe_steric_hindrance : Any, optional
             Steric hindrance value or configuration.
-        probe_paratope : str, optional
+        :param probe_paratope : str, optional
             Paratope identifier or information.
-        probe_conjugation_target_info : Any, optional
+        :param probe_conjugation_target_info : Any, optional
             Information about the conjugation target.
-        probe_conjugation_efficiency : float, optional
+        :param probe_conjugation_efficiency : float, optional
             Efficiency of the probe conjugation.
-        probe_seconday_epitope : Any, optional
+        :param probe_seconday_epitope : Any, optional
             Information about a secondary epitope target.
-        probe_wobbling : bool, optional
+        :param probe_wobbling : bool, optional
             Whether to enable probe wobbling. Default is False.
-        labelling_efficiency : float, optional
+        :param labelling_efficiency : float, optional
             Efficiency of probe labelling. Default is 1.0.
-        as_primary : bool, optional
+        :param as_primary : bool, optional
             Whether to treat the probe as a primary linker. Default is False.
-        **kwargs
+        :param **kwargs
             Additional keyword arguments for future extensions.
 
         Raises
@@ -1084,19 +1085,19 @@ class ExperimentParametrisation:
 
         Parameters
         ----------
-        virtualsample_template : str, optional
+        :param virtualsample_template : str, optional
             Name of the virtual sample template YAML file (without extension) to load. Default is "square1x1um_randomised".
-        sample_dimensions : list of int, optional
+        :param sample_dimensions : list of int, optional
             Dimensions of the sample to override the template value.
-        number_of_particles : int, optional
+        :param number_of_particles : int, optional
             Number of particles to override the template value.
-        particle_positions : list, optional
+        :param particle_positions : list, optional
             List of particle positions to override the template value.
-        random_orientations : bool, optional
+        :param random_orientations : bool, optional
             Whether to randomize particle orientations, overrides the template value.
-        random_placing : bool, optional
+        :param random_placing : bool, optional
             Whether to randomize particle placement, overrides the template value.
-        **kwargs
+        :param **kwargs
             Additional keyword arguments (currently unused).
 
         Returns
@@ -1168,21 +1169,21 @@ class ExperimentParametrisation:
 
         Parameters
         ----------
-        img : array-like
+        :param img : array-like
             The input image (as a NumPy array or compatible format) to be analyzed for feature detection.
-        mode : str, optional
+        :param mode : str, optional
             The feature detection mode to use (e.g., "localmaxima"). Default is "localmaxima".
-        sigma : float or None, optional
+        :param sigma : float or None, optional
             Standard deviation for Gaussian smoothing. If None, no smoothing is applied.
-        background : float or None, optional
+        :param background : float or None, optional
             Background intensity to subtract from the image. If None, no subtraction.
-        threshold : float or None, optional
+        :param threshold : float or None, optional
             Minimum intensity threshold for feature detection. If None, uses default.
-        pixelsize : float or None, optional
+        :param pixelsize : float or None, optional
             Pixel size of the input image. If None, uses default.
-        min_distance : float or None, optional
+        :param min_distance : float or None, optional
             Minimum distance between detected features. If None, uses default.
-        **kwargs
+        :param **kwargs
             Additional keyword arguments passed to the feature detection function.
 
         Returns
@@ -1231,9 +1232,9 @@ class ExperimentParametrisation:
         """
         Print the current settings of the experiment, including structure, particle, coordinate field, and imaging modalities.
 
-        Returns
-        -------
-        None
+    Returns
+    -------
+    None
         """
         string = "Current settings of the experiment:" + newline
         string += f"Structure ID: {self.structure_id}" + newline
@@ -1296,55 +1297,55 @@ def generate_virtual_sample(
 
     Parameters
     ----------
-    structure : str, optional
+    :param structure : str, optional
         4-letter ID of PDB/CIF model. Default is "1XI5".
-    structure_is_path: logical
+    :param structure_is_path : logical
         Use structure value as absolute path for the PDB/CIF file.
-    probe_name : str, optional
+    :param probe_name : str, optional
         Name ID of probe configuration file (filename).
-    probe_target_type : str, optional
+    :param probe_target_type : str, optional
         Options: "Sequence", "Atom_residue", or "Primary".
-    probe_target_value : str or dict, optional
+    :param probe_target_value : str or dict, optional
         For target type "Sequence" or "Primary", a string. For "Atom_residue", a dictionary with keys "Atom" and "Residue".
-    probe_distance_to_epitope : float, optional
+    :param probe_distance_to_epitope : float, optional
         Minimal distance set from epitope and probe paratope.
-    probe_model : list of str, optional
+    :param probe_model : list of str, optional
         4-letter ID(s) of PDB/CIF model(s).
-    probe_fluorophore : str, optional
+    :param probe_fluorophore : str, optional
         Fluorophore name (e.g., "AF647"). Default is "AF647".
-    probe_paratope : str, optional
+    :param probe_paratope : str, optional
         Sequence of the paratope site for when probe includes a model.
-    probe_conjugation_target_info : Any, optional
+    :param probe_conjugation_target_info : Any, optional
         Information about the probe conjugation target.
-    probe_conjugation_efficiency : float, optional
+    :param probe_conjugation_efficiency : float, optional
         Efficiency of conjugation of emitters.
-    probe_seconday_epitope : str, optional
+    :param probe_seconday_epitope : str, optional
         Sequence within probe model to be used as epitope for a secondary.
-    probe_wobbling : bool, optional
+    :param probe_wobbling : bool, optional
         Enable probe wobbling. Default is False.
-    labelling_efficiency : float, optional
+    :param labelling_efficiency : float, optional
         Labelling efficiency of probe. Default is 1.0.
-    defect_small_cluster : float, optional
+    :param defect_small_cluster : float, optional
         In Å, distance used to group epitopes into multimers.
-    defect_large_cluster : float, optional
+    :param defect_large_cluster : float, optional
         In Å, distance within multimers to consider neighbors.
-    defect : float, optional
+    :param defect : float, optional
         Fraction of defect to model.
-    virtual_sample_template : str, optional
+    :param virtual_sample_template : str, optional
         Name of the configuration file for template. Default is "square1x1um_randomised".
-    sample_dimensions : list of float, optional
+    :param sample_dimensions : list of float, optional
         In nanometers, define the X, Y, and Z sizes of the field.
-    number_of_particles : int, optional
+    :param number_of_particles : int, optional
         Number of independent copies of a particle to create and distribute.
-    particle_positions : list of np.array, optional
+    :param particle_positions : list of np.array, optional
         Relative positions of particles in the field.
-    random_orientations : bool, optional
+    :param random_orientations : bool, optional
         If True, each particle will be randomly assigned a new orientation. Default is False.
-    random_placing : bool, optional
+    :param random_placing : bool, optional
         Define if position in field is random or the center of field. Default is False.
-    clear_probes : bool, optional
+    :param clear_probes : bool, optional
         If True, default parameters will be cleared. Default is False.
-    **kwargs
+    :param **kwargs
         Additional keyword arguments.
 
     Returns
@@ -1459,13 +1460,13 @@ def build_virtual_microscope(
 
     Parameters
     ----------
-    modality : str, optional
+    :param modality : str, optional
         Modality name. Default is "STED".
-    multimodal : list of str, optional
+    :param multimodal : list of str, optional
         List of modality names. Overrides the `modality` parameter if provided.
-    experiment : ExperimentParametrisation, optional
+    :param experiment : ExperimentParametrisation, optional
         An Experiment object. If None, a new one is created.
-    **kwargs
+    :param **kwargs
         Additional arguments passed to `add_modality`.
 
     Returns
@@ -1539,77 +1540,78 @@ def image_vsample(
 
     Parameters
     ----------
-    vsample : dict, optional
+    :param vsample : dict, optional
         Dictionary specifying sample parameters. Corresponds to Experiment attribute "exported_coordinate_field". If None, a new sample is generated.
-    modality : str, optional
+    :param modality : str, optional
         Modality name to use for imaging. Default is "STED".
-    multimodal : list of str, optional
+    :param multimodal : list of str, optional
         List of modality names. If provided, overrides the `modality` parameter and adds all listed modalities.
-    run_simulation : bool, optional
+    :param run_simulation : bool, optional
         If True, generates image simulation for each modality set. Default is True.
-    ----------
-    Parameters for virtual sample generation (see `generate_virtual_sample` for details):
-    structure : str, optional
+    
+    ### Parameters for virtual sample generation (see `generate_virtual_sample` for details):
+    
+    :param structure : str, optional
         4-letter ID of PDB/CIF model. Default is "1XI5".
-    structure_is_path : bool, optional
+    :param structure_is_path : bool, optional
         Use structure value as absolute path for the PDB/CIF file.
-    probe_template : str, optional
+    :param probe_template : str, optional
         Name of probe configuration file (filename). Default is "NHS_ester".
-    probe_name : str, optional
+    :param probe_name : str, optional
         Name for the probe configuration.
-    probe_target_type : str, optional
+    :param probe_target_type : str, optional
         Options: "Sequence", "Atom_residue", or "Primary".
-    probe_target_value : str or dict, optional
+    :param probe_target_value : str or dict, optional
         For target type "Sequence" or "Primary", a string. For "Atom_residue", a dictionary with keys "Atom" and "Residue".
-    probe_distance_to_epitope : float, optional
+    :param probe_distance_to_epitope : float, optional
         Minimal distance set from epitope and probe paratope.
-    probe_model : list, optional
+    :param probe_model : list, optional
         4-letter ID(s) of PDB/CIF model(s).
-    probe_fluorophore : str, optional
+    :param probe_fluorophore : str, optional
         Fluorophore name (e.g., "AF647"). Default is "AF647".
-    probe_paratope : str, optional
+    :param probe_paratope : str, optional
         Sequence of the paratope site for when probe includes a model.
-    probe_conjugation_target_info : any, optional
+    :param probe_conjugation_target_info : any, optional
         Information about the probe conjugation target.
-    probe_conjugation_efficiency : float, optional
+    :param probe_conjugation_efficiency : float, optional
         Efficiency of conjugation of emitters.
-    probe_seconday_epitope : str, optional
+    :param probe_seconday_epitope : str, optional
         Sequence within probe model to be used as epitope for a secondary.
-    probe_wobble_theta : any, optional
+    :param probe_wobble_theta : any, optional
         Enable probe wobbling.
-    labelling_efficiency : float, optional
+    :param labelling_efficiency : float, optional
         Labelling efficiency of probe. Default is 1.0.
-    defect_small_cluster : float, optional
+    :param defect_small_cluster : float, optional
         In Å, distance used to group epitopes into multimers.
-    defect_large_cluster : float, optional
+    :param defect_large_cluster : float, optional
         In Å, distance within multimers to consider neighbors.
-    defect : float, optional
+    :param defect : float, optional
         Fraction of defect to model.
-    virtual_sample_template : str, optional
+    :param virtual_sample_template : str, optional
         Name of the configuration file for template. Default is "square1x1um_randomised".
-    sample_dimensions : list, optional
+    :param sample_dimensions : list, optional
         In nanometers, define the X, Y, and Z sizes of the field.
-    number_of_particles : int, optional
+    :param number_of_particles : int, optional
         Number of independent copies of a particle to create and distribute.
-    particle_positions : list, optional
+    :param particle_positions : list, optional
         Relative positions of particles in the field.
-    random_orientations : bool, optional
+    :param random_orientations : bool, optional
         If True, each particle will be randomly assigned a new orientation. Default is False.
-    xy_orientations, xz_orientations, yz_orientations : any, optional
+    :param xy_orientations, xz_orientations, yz_orientations : any, optional
         Orientation parameters for the sample.
-    axial_offset : any, optional
+    :param axial_offset : any, optional
         Axial offset for the sample.
-    random_placing : bool, optional
+    :param random_placing : bool, optional
         Define if position in field is random or the center of field. Default is False.
-    random_rotations : bool, optional
+    :param random_rotations : bool, optional
         If True, apply random rotations to particles. Default is False.
-    rotation_angles : any, optional
+    :param rotation_angles : any, optional
         Rotation angles for the sample.
-    clear_probes : bool, optional
+    :param clear_probes : bool, optional
         If True, default probe parameters will be cleared. Default is False.
-    clear_experiment : bool, optional
+    :param clear_experiment : bool, optional
         If True, clear the experiment before generating a new sample. Default is False.
-    primary_probe, secondary_probe : any, optional
+    :param primary_probe, secondary_probe : any, optional
         Dictionaries for primary and secondary probe configuration.
 
     Returns
