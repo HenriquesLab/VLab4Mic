@@ -47,11 +47,12 @@ class ExperimentParametrisation:
     defect_eps: Dict[str, int] = field(default_factory=dict)
     sweep_pars: Dict[str, int] = field(default_factory=dict)
     objects_created: Dict[str, int] = field(default_factory=dict)
-    output_directory: str = str(output_path)
+    output_directory: str = None
     example_structures = ["3J3Y", "7R5K", "1XI5", "8GMO"]
     example_modalities = ["Widefield", "Confocal", "STED", "SMLM"]
 
     def __post_init__(self):
+        self.output_directory = str(output_path)
         pck_dir = os.path.dirname(os.path.abspath(vlab4mic.__file__))
         local_dir = os.path.join(pck_dir, "configs")
         self.configuration_path = local_dir
