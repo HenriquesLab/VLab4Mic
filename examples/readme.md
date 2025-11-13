@@ -3,7 +3,7 @@
 To run the examples use this command:
 
 ```bash
-python script_name.py
+python path/to/script.py
 ```
 
 ## Table of available scripts 
