@@ -15,15 +15,10 @@ probe_target_type = "Sequence"
 probe_target_value = "ELAVGSL" # Sequence in the C-terminal of Nup96
 modalities = ["STED_Thev2016", ]
 
-# fetch experimental image from URL
-def read_image_from_url(url):
-    resp = requests.get(url)
-    return tif.imread(io.BytesIO(resp.content))
+# fetch experimental image from URL 
 STED_example = "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/S-BIAD0-99/S-BIAD8/Files/Library/Gallery%20Fig%201/STED/GFP_Gallery-STED_181026_1.tif"
-try:
-    img_tif = read_image_from_url(STED_example)
-except:
-    img_tif = read_image_from_url(STED_example)
+resp = requests.get(STED_example)
+img_tif = tif.imread(io.BytesIO(resp.content))
 
 # Get a crop of the experimental image to reduce the field of view
 experimental_img = np.array(img_tif, dtype=int)
