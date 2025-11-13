@@ -12,7 +12,7 @@ import matplotlib.font_manager as fm
 structure = "7R5K"
 probe_template = "GFP_w_nanobody"
 probe_target_type = "Sequence"
-probe_target_value = "ELAVGSL"
+probe_target_value = "ELAVGSL" # Sequence in the C-terminal of Nup96
 modalities = ["STED_Thev2016", ]
 
 # fetch experimental image from URL
