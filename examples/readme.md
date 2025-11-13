@@ -39,7 +39,15 @@ This script exemplify the usage of the high-level function "run_parameter_sweep"
 
 ## Real vs Simulation
 
-In this example, VLab4Mic creates a virtual sample where the position of the labelled particles are estimated from a real STED microscopy image.  The, we simulate the acquisition of this virtual sample with a model for STED microscopy. The script generates an image with a side to side comparison of the real image and the simulated image of the same modality.
+In this example, we show how you can use VLab4Mic to create an imaging simulation based on a real image.
+
+Here, we use an available image of nuclear pore complexes (NPC) imaged with STED microscopy.
+VLab4Mic first creates a virtual sample where the position of the labelled particles are estimated from a real STED microscopy image.
+Then, we simulate the acquisition of this virtual sample with a model for STED microscopy to simulate an image that resembles the real acquisition.
+
+The script generates an image with a side to side comparison of the real image and the simulated image of the same modality.
+
+> Note that you can use other models for the structure, probes and modalities.
 
 ## Custom structure
 
