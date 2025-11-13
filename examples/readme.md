@@ -12,7 +12,7 @@ python path/to/script.py
 | --- | --- | --- |
 | **Image virutal sample** | Create a virtual sample and simulate its imaging acquisition| [![script](https://img.shields.io/badge/script-grey)](https://github.com/HenriquesLab/VLab4Mic/blob/main/examples/image_virtual_sample.py)|
 | **Parameter sweep** | Set up and run a parameter sweep analysis | [![script](https://img.shields.io/badge/script-grey)](https://github.com/HenriquesLab/VLab4Mic/blob/main/examples/parameter_sweep.py)|
-| **Real vs Simulation** | Create a simulated image based on a real experiment image | [![script](https://img.shields.io/badge/script-grey)](https://github.com/HenriquesLab/VLab4Mic/blob/main/examples/real_vs_simulatione.py)|
+| **Real vs Simulation** | Create a simulated image based on a real experiment image | [![script](https://img.shields.io/badge/script-grey)](https://github.com/HenriquesLab/VLab4Mic/blob/main/examples/real_vs_simulation.py)|
 | **Custom structure** | Image a virutal sample based on a custom PDB/CIF file. | [![script](https://img.shields.io/badge/script-grey)](https://github.com/HenriquesLab/VLab4Mic/blob/main/examples/custom_structure.py)|
 
 ## Real vs Simulation
