@@ -225,7 +225,7 @@ For detailed usage examples, see our [example scripts](https://github.com/Henriq
 Here, we exemplify the case of running a script named "vlab_script.py" located in the current directory.
 
 ```python 
-python -m vlab_script.py
+python vlab_script.py
 ```
 
 
