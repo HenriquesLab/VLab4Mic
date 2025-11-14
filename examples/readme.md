@@ -37,6 +37,13 @@ This script exemplify the usage of the high-level function "run_parameter_sweep"
 - Analysis metrics
 - ...
 
+Example output heatmap from parameter sweep:
+
+<img src="script_outputs/vlab_example_sweep_pearson_heatmaps.png"/>
+
+Example images generated with parameter sweep:
+
+<img src="script_outputs/parameter_sweep_example.png" width="500" />
 
 ## Real vs Simulation
 
