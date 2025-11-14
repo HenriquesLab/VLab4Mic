@@ -47,6 +47,8 @@ Then, we simulate the acquisition of this virtual sample with a model for STED m
 
 The script generates an image with a side to side comparison of the real image and the simulated image of the same modality.
 
+<img src="script_outputs/vlab4mic_real_vs_sim.png"/>
+
 > Note that you can use other models for the structure, probes and modalities.
 
 ## Custom structure
