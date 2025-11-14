@@ -1,28 +1,69 @@
-<img src="src/logo/logo.png" align="right" width="200" style="margin-left: 20px;"/>
+# VLab4Mic: A Virtual Laboratory for Microscopy  
+*A friendly toolkit to help researchers simulate fluorescence microscopy images, no coding required.*
 
-# VLab4Mic: A Virtual Laboratory for Microscopy
+<img src="src/logo/logo.png" align="right" width="180" style="margin-left: 20px;"/>
 
-VLab4Mic is a library for validation of experimental design, from choosing a macromolecule to study, to its imaging through several imaging modalities.
+VLab4Mic lets you explore, test, and validate imaging experiments **before stepping into the microscope room**.  
+Whether you are new to Python or an experienced bioimage researcher, VLab4Mic provides a safe sandbox to:
 
-Current features include:
-- **Creation** of structural models from PDB/CIF data
-- **Direct and indirect labeling** of PDB/CIF structures with various probes
-- **Modeling of structural defects** and variations
-- **Image generation** for common microscopy modalities (widefield, confocal, STED, etc.)
-- **Parameter sweeps** for experimental design optimization
-- **Quantitative analysis** tools for validation
+- Build **virtual samples** from PDB/CIF structures  
+- Apply **direct or indirect fluorescent labeling**  
+- Introduce **defects**, crowding, and structural variation  
+- Simulate image acquisition across modalities  
+- Run **parameter sweeps** to explore experimental conditions  
+- Compare **noiseless vs. realistic** acquisitions  
+
+This README is written to be friendly for beginners while maintaining the technical depth experienced users expect.
 
 <img src="examples/Tutorial1.gif"/>
 
 
-# Installation
+# Who Is This Tool For?
 
-VLab4Mic is compatible with **Python 3.9, 3.10, 3.11, and 3.12** on macOS, Windows, and Linux.
+- **New microscopy users:** to gain intuitive understanding without coding  
+- **Researchers designing experiments:** testing probes, PSFs, exposure times  
+- **Microscopy experts:** benchmarking reconstruction methods or PSFs  
 
-**We strongly recommend** creating a new Conda environment to use VLab4Mic. To create a new Python environment using Conda, refer to the official [Miniconda documentation](https://docs.anaconda.com/miniconda/).
+---
 
-## Step 1: Create a New Environment
+# 🚀 Quick Start Options
 
+| Option | Skills Needed | Best For |
+|-------|----------------|----------|
+| **1. Google Colab** | None | Beginners, teaching, quick experiments |
+| **2. Local Jupyter Notebooks** | Basic installation | Smooth widget-based use |
+| **3. Python Scripts** | Comfortable with code | Full flexibility & automation |
+
+---
+
+# 🟢 Option 1 — Google Colab (No Installation Needed)
+
+The easiest way to start.
+
+✔ No installation  
+✔ No configuration  
+✔ Works in browser  
+✔ Always up to date  
+
+### 👉 Click to open the main notebook:
+| Category | Description | Notebook | Colab |
+|---------|-------------|----------|-------|
+| **Main Interface** | Create virtual samples & simulate imaging | [Notebook](https://github.com/HenriquesLab/VLab4Mic/blob/main/notebooks/VLab4Mic_main.ipynb) | [Open in Colab](https://githubtocolab.com/HenriquesLab/VLab4Mic/blob/main/notebooks/VLab4Mic_main.ipynb) |
+| **Parameter Sweeps** | Configure & run simulation sweeps | [Notebook](https://github.com/HenriquesLab/VLab4Mic/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) | [Open in Colab](https://githubtocolab.com/HenriquesLab/VLab4Mic/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) |
+
+### If the Colab link fails:
+1. Click the **Jupyter** badge (opens the raw notebook)  
+2. Download the `.ipynb` file  
+3. Open Google Colab → **File → Upload notebook**  
+
+---
+
+# 🔵 Option 2 — Local Installation (Beginner-Friendly)
+
+### 1️⃣ Create a virtual environment  
+You may use Conda or similar.
+
+#### Using Conda:
 Run the following command (replace `MYENV` with your desired environment name):
 
 ```bash
@@ -34,154 +75,94 @@ Then activate it:
 conda activate MYENV
 ```
 
-## Step 2: Install VLab4Mic
+---
 
-Currently, VLab4Mic is available through Test PyPI (PyPI release coming soon!):
-Run the following command to install vlab4mic with the necesary libraries to support our Jupyter notebooks:
-
+### 2️⃣ Install VLab4Mic
 ```bash
 pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple "vlab4mic[jupyter]"
 ```
 
-# How to use VLab4Mic
+---
 
-VLab4Mic main usage includes:
-- 🧬 **Creating and simulating imaging of a virtual sample**
-- 🔬 **Setting up and running parameter sweep**
+### 3️⃣ Launch Jupyter Lab
+```bash
+jupyter lab
+```
 
-Each of these functionalities can be accessed through high-level functions that, depending on your coding experience, can be used as:
+---
 
-1. **Jupyter Notebooks with GUI** - No coding required (recommended for beginners)
-2. **Jupyter Notebooks with code** - Moderate coding (recommended for intermediate users)
-3. **Python scripts** - Full coding control (recommended for advanced users)
+### 4️⃣ Download and open notebooks  
+From:  
+https://github.com/HenriquesLab/VLab4Mic/tree/main/notebooks
 
-Refer to the [manual](https://github.com/HenriquesLab/VLab4Mic/blob/main/manual.md) for detailed instructions and examples on how to use VLab4Mic.
+---
 
-## Jupyter Notebooks with GUI
+# 🔴 Option 3 — Use VLab4Mic as a Python Library (Advanced)
 
-We provide codeless Jupyter Notebooks that allow you to use VLab4Mic **without writing code**.
-The following table lists our current notebooks to use VLab4Mic in Google Colab or in a local installation (your own computer, for instance).
-
-Refer to the [manual](https://github.com/HenriquesLab/VLab4Mic/blob/main/manual.md) for extended instructions.
-
-
-| Category | Description | Notebook | Colab Link |
-| --- | --- | --- | --- |
-| **Main Interface** | Create virtual samples and simulate image acquisition with multiple imaging modalities | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/VLab4Mic/blob/main/notebooks/VLab4Mic_main.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/VLab4Mic/blob/main/notebooks/VLab4Mic_main.ipynb) |
-| **Parameter Sweeps** | Generate and analyze simulations over parameter ranges for optimization | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/VLab4Mic/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/VLab4Mic/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) |
-
-## Python Script Example
-VLab4Mic is a python library that can be used from its high-level functions.
-Here's an example on how to create virtual sample and simulate its imaging acquisition:
+Example script:
 
 ```python
 from vlab4mic.experiments import image_vsample
 import matplotlib.pyplot as plt
 
-modalities = ["Widefield", "Confocal", "STED", "SMLM"]
+modalities = ["Widefield", "Confocal", "STED"]
 
-## use a high-level function to parameterise an virtual sample and its image simulation
 images, noiseless, experiment = image_vsample(
-    structure="7R5K",  # PDB ID code for a Nuclear Pore complex
-    probe_template="Antibody",  # Probe template for an antibody
-    probe_target_type="Sequence",  # Epitope type
-    probe_target_value="ELAVGSL",  # Epitope sequence
-    number_of_particles=10, # Number of indpependent copies of a labelled structure in the sample
-    random_rotations=True, # Rotation in XY plane
-    rotation_angles=None,
-    multimodal=modalities, # Imaging modalities
-    STED={"exp_time": 0.01},  # modality-specific parameters
-    run_simulation=True, # Simulate image acquisition after creating virtual sample
-    clear_experiment=True, # Clear default values of the experiment
+    structure="7R5K",
+    probe_template="Antibody",
+    probe_target_type="Sequence",
+    probe_target_value="ELAVGSL",
+    multimodal=modalities,
+    number_of_particles=10,
+    run_simulation=True,
 )
-# visualize results
-nmods = len(modalities)
-fig, axs = plt.subplots(1, nmods)
-nframe = 0
+
+fig, axs = plt.subplots(1, len(modalities))
 for i, mod in enumerate(modalities):
-    axs[i].imshow(images[mod][nframe], cmap="magma")
+    axs[i].imshow(images[mod][0], cmap="magma")
     axs[i].set_title(mod)
 plt.show()
 ```
-For detailed usage examples, see our [example scripts](https://github.com/HenriquesLab/VLab4Mic/tree/main/examples).
 
-## Jupyter Notebook Usage
+For more examples see `/examples`.
 
-It is also possible to use VLab4Mic in Jupyter Notebooks to use as python library:
+---
 
-```python
-# Import vlab4mic
-from vlab4mic import experiments
+# Documentation & Manual
 
-## Initialize experiment
-my_experiment = experiments.ExperimentParametrisation()
-```
+- Full Manual: https://github.com/HenriquesLab/VLab4Mic/blob/main/manual.md  
+- Wiki Tutorials: https://github.com/HenriquesLab/VLab4Mic/wiki  
 
-VLab4Mic provides jupyter widgets to interact with the experiment object.
-For GUI-based usage without coding in a Jupyter Lab, run the following code boxes in separate cells:
+---
 
-```python
-# Import vlab4mic
-from vlab4mic.jupyter_widgets import experiment_widgets
-from vlab4mic import experiments
+# Core Features
 
-## Initialize experiment
-my_experiment = experiments.ExperimentParametrisation()
-# Display interactive widgets for specific modules, for instance to select structure
-experiment_widgets.select_structure_widget(my_experiment).show()
-```
+### ✔ Structural modelling  
+### ✔ Virtual sample creation  
+### ✔ Imaging simulations  
+### ✔ Parameter sweeps  
+### ✔ Widget-based GUI  
+### ✔ Flexible Python API  
 
-```python
-# Run experiment
-experiment_widgets.run_experiment_widget(my_experiment).show()
-```
+---
 
-# Documentation & Tutorials
+# Troubleshooting
 
-VLab4Mic is designed as a collection of independent modules magaged and parameterised into an experiment. Comprehensive documentation and tutorials are available on our [Wiki Tutorial page](https://github.com/HenriquesLab/VLab4Mic/wiki).
+**Jupyter won't open →** Environment not activated.  
+**ImportError →** Install VLab4Mic inside the active environment.  
+**Colab won't load →** Upload notebook manually.  
 
+If issues persist, open an issue!
 
-## Pre-configured Examples
-
-We provide ready-to-use models and configurations for:
-
-### Structures:
-- **Nuclear Pore Complex** - Multi-protein assemblies with 8-fold symmetry
-- **Clathrin Coated Pit** - Membrane trafficking structures
-- **Matured HIV-capsid core** - Viral capsid assemblies
-- **Bacteriophage T4 capsid shell** - Capsid shell of Bacteriophage T4
-
-### Labelling Probes:
-- **Primary/Secondary Antibodies** - Traditional immunofluorescence
-- **Nanobodies** - Single-domain antibodies for improved access
-- **Fluorescent Proteins** (GFP, mCherry, etc.) - Genetically encoded tags
-- **Chemical Linkers** - NHS-ester, click chemistry probes
-- **And many more** specialized labeling strategies
-
-### Imaging Modalities:
-- **Widefield Microscopy** - Basic fluorescence imaging
-- **Confocal Microscopy** - Optical sectioning capability
-- **AiryScan** - Enhanced resolution confocal
-- **STED** - Super-resolution nanoscopy
-- **Single Molecule Localization Microscopy** (SMLM) - Nanometer precision
-
-Refer to the [manual](https://github.com/HenriquesLab/VLab4Mic/blob/main/manual.md) for detailed tables of templates and parameters.
+---
 
 # Contributing
+Contributions welcome!  
+See: https://github.com/HenriquesLab/VLab4Mic/blob/main/CONTRIBUTING.md
 
-Contributions are very welcome! Please read our [Contribution Guidelines](https://github.com/HenriquesLab/VLab4Mic/blob/main/CONTRIBUTING.md) to learn how to get involved.
+# Support
+- Discussions: https://github.com/HenriquesLab/VLab4Mic/discussions  
+- Issues: https://github.com/HenriquesLab/VLab4Mic/issues  
 
-# License
 
-Distributed under the terms of the [MIT license](https://github.com/HenriquesLab/VLab4Mic/blob/main/LICENSE.txt), VLab4Mic is free and open source software.
-
-# Issues & Support
-
-Should you encounter any problems, please don't hesitate to [let us know](https://github.com/HenriquesLab/VLab4Mic/issues). When reporting issues, please include:
-- A detailed description of the problem
-- Steps to reproduce the issue
-- Your operating system and Python version
-- Any error messages or screenshots
-
-For general questions, please use our [Discussions](https://github.com/HenriquesLab/VLab4Mic/discussions) section.
 
