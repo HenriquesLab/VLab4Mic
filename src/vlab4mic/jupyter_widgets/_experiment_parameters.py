@@ -1068,7 +1068,7 @@ def ui_select_modality(experiment):
     def update_message():
         text = ""
         for mod_name, params in experiment.imaging_modalities.items():
-            text += f"{mod_name}<br>"
+            text += f" <b> - {mod_name} </b><br>"
         modality_gui["message"].value = text
 
     def add_modality(b):
