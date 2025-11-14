@@ -26,6 +26,7 @@ This script shows the basic usage of VLab4Mic method "image_vsample". With this 
 - Imaging modalities to use and their acquisitions parameters
 - and many more.
 
+<img src="script_outputs/image_virtual_sample.png"/>
 
 ## Parameter sweep
 
