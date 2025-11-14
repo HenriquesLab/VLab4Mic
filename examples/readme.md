@@ -26,9 +26,13 @@ This script shows the basic usage of VLab4Mic method "image_vsample". With this 
 - Imaging modalities to use and their acquisitions parameters
 - and many more.
 
+In this example we select a NPC model, labelled at the C-terminal of Nup96.
+
+Then we place 10 NPCs in a FOV for which we simulate their acquisition with different imaging modalities.
+
 Example output from this script:
 
-<img src="script_outputs/image_virtual_sample.png"/>
+<img src="script_outputs/image_virtual_sample.png" width="500"/>
 
 ## Parameter sweep
 
@@ -39,9 +43,17 @@ This script exemplify the usage of the high-level function "run_parameter_sweep"
 - Analysis metrics
 - ...
 
-Example output heatmap from parameter sweep:
+In this example we select a NPC model, labelled at the C-terminal of Nup96.
 
-<img src="script_outputs/vlab_example_sweep_pearson_heatmaps.png"/>
+Then we set up parameters for sweep:
+- Labelling efficiency: 3 values from 0 to 1
+- Incomplete labelling (or defects):  3 values from 0 to 1
+
+We then compare each image output against a reference, for example, by calculating its pearson correlation.
+
+Example output heatmap for the parameter sweep:
+
+<img src="script_outputs/vlab_example_sweep_pearson_heatmaps.png" width="500"/>
 
 Example images generated with parameter sweep:
 
@@ -59,7 +71,7 @@ The script generates an image with a side to side comparison of the real image a
 
 Example output from this script:
 
-<img src="script_outputs/vlab4mic_real_vs_sim.png"/>
+<img src="script_outputs/vlab4mic_real_vs_sim.png" width="1000"/>
 
 > Note that you can use other models for the structure, probes and modalities.
 
