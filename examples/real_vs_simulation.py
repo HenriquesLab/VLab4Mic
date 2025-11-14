@@ -17,6 +17,10 @@ modalities = ["STED_Thev2016", ]
 
 # fetch experimental image from URL 
 STED_example = "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/S-BIAD0-99/S-BIAD8/Files/Library/Gallery%20Fig%201/STED/GFP_Gallery-STED_181026_1.tif"
+print("Downloading experimental image from Thevathasan et al. 2019")
+print("#### If you find this image useful, please consider citing: ####")
+print("Jervis Vermal Thevathasan, Maurice Kahnwald, Konstanty Cieśliński, Philipp Hoess, Sudheer Kumar Peneti, Manuel Reitberger, Daniel Heid, Krishna Chaitanya Kasuba, Sarah Janice Hoerner, Yiming Li, Yu-Le Wu, Markus Mund, Ulf Matti, Pedro Matos Pereira, Ricardo Henriques, Bianca Nijmeijer, Moritz Kueblbeck, Vilma Jimenez Sabinina, Jan Ellenberg & Jonas Ries (2019). Nuclear pores as versatile reference standards for quantitative superresolution microscopy . BioStudies, S-BIAD8. Retrieved from https://www.ebi.ac.uk/biostudies/BioImages/studies/S-BIAD8")
+print("########")
 resp = requests.get(STED_example)
 img_tif = tif.imread(io.BytesIO(resp.content))
 
@@ -65,9 +69,9 @@ plt.rcParams['figure.figsize'] = [20, 10]
 
 fig, axs = plt.subplots(1, 2)
 axs[0].imshow(experimental_img_processed, cmap="grey")
-axs[0].set_title("Experimental image")
+axs[0].set_title("Modified from Thevathasan et al. 2019. Nature Methods.")
 axs[1].imshow(images["STED_Thev2016"][0], cmap="grey")
-axs[1].set_title("Simulated image")
+axs[1].set_title("VLab4Mic simulated image")
 
 fontprops = fm.FontProperties(size=20)
 scalebar = AnchoredSizeBar(axs[1].transData,
