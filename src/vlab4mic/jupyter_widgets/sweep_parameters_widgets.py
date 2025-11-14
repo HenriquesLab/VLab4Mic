@@ -199,8 +199,7 @@ def select_structure(sweep_gen):
 
     ez_sweep_structure.add_button(
         "toggle_advanced_parameters",
-        description="Toggle advanced parameters",
-        icon=toggle_icon,
+        description="Load structure from file",
     )
     # advanced parameters
     ez_sweep_structure.add_HTML(

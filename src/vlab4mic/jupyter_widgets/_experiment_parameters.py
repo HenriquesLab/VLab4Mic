@@ -150,8 +150,7 @@ def ui_select_structure(experiment):
     )
     gui.add_button(
         "toggle_advanced_parameters",
-        description="Toggle advanced parameters",
-        icon=toggle_icon,
+        description="Load structure from file",
     )
     # advanced parameters
     gui.add_HTML(
