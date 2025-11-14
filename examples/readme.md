@@ -26,6 +26,8 @@ This script shows the basic usage of VLab4Mic method "image_vsample". With this 
 - Imaging modalities to use and their acquisitions parameters
 - and many more.
 
+Example output from this script:
+
 <img src="script_outputs/image_virtual_sample.png"/>
 
 ## Parameter sweep
@@ -54,6 +56,8 @@ VLab4Mic first creates a virtual sample where the position of the labelled parti
 Then, we simulate the acquisition of this virtual sample with a model for STED microscopy to simulate an image that resembles the real acquisition.
 
 The script generates an image with a side to side comparison of the real image and the simulated image of the same modality.
+
+Example output from this script:
 
 <img src="script_outputs/vlab4mic_real_vs_sim.png"/>
 
