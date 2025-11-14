@@ -23,4 +23,6 @@ nframe = 0
 for i, mod in enumerate(modalities):
     axs[i].imshow(images[mod][nframe], cmap="magma")
     axs[i].set_title(mod)
+    axs[i].set_xticks([])
+    axs[i].set_yticks([])
 plt.show()
