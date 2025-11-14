@@ -1412,14 +1412,18 @@ def generate_virtual_sample(
     vsample_configuration = load_yaml(virtual_sample_template)
     myexperiment.configuration_path
     if structure_is_path:
+        print(f"Selecting structure from path: {structure}")
         myexperiment.select_structure(
             structure_id=structure.split(".")[0], 
-            structure_path=structure
+            structure_path=structure,
+            build=False
         )
     else:
+        print("Selecting structure from ID:", structure)
         myexperiment.select_structure(
             structure_id=structure, 
-            structure_path=None
+            structure_path=None,
+            build=False
         )
 
     if defect and defect_large_cluster and defect_small_cluster:
