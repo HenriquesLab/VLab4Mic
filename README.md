@@ -12,6 +12,9 @@ Current features include:
 - **Parameter sweeps** for experimental design optimization
 - **Quantitative analysis** tools for validation
 
+<img src="examples/Tutorial1.gif"/>
+
+
 # Installation
 
 VLab4Mic is compatible with **Python 3.9, 3.10, 3.11, and 3.12** on macOS, Windows, and Linux.
