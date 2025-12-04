@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import mpl_toolkits.axes_grid1 as axes_grid1
-from ipywidgets import interact, widgets
 import numpy as np
 import copy
 from scipy.ndimage import rotate

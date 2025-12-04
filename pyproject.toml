@@ -33,7 +33,6 @@ dependencies = [
     "tqdm>=4.66.4",
     "scikit-image>=0.23.2",
     "requests>=2.32.3",
-    "ipykernel>=6.29.5",
     "scikit-learn>=1.5.0",
     "pandas>=2.2.3",
     "seaborn>=0.13.2",
@@ -45,7 +44,6 @@ dependencies = [
 all = ["vlab4mic[dev,test,jupyter]"]
 dev = [
     "pre-commit>=3.7.0",
-    "ipykernel>=6.29.4",
     "ruff>=0.4.3",
     "gptrepo>=1.0.3",
     "pdoc>=12.3.1",
@@ -59,8 +57,7 @@ test = [
     "mypy>=1.10.0"
 ]
 jupyter = [
-    "jupyterlab>=4.3.4",
-    "ipywidgets>=8.1.5"
+    "ipykernel>=6.29.5",
 ]
 
 [tool.setuptools]
