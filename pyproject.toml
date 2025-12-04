@@ -27,7 +27,6 @@ dependencies = [
     "biopython>=1.83",
     "plotly>=5.22.0",
     "trimesh>=4.4.0",
-    "ipympl>=0.9.4",
     "pyyaml>=6.0.1",
     "tifffile>=2024.5.22",
     "tqdm>=4.66.4",
@@ -36,12 +35,11 @@ dependencies = [
     "scikit-learn>=1.5.0",
     "pandas>=2.2.3",
     "seaborn>=0.13.2",
-    "ezinput>=0.0.6",
     "opencv-python>=4.11"
 ]
 
 [project.optional-dependencies]
-all = ["vlab4mic[dev,test,jupyter]"]
+all = ["vlab4mic[dev,test]"]
 dev = [
     "pre-commit>=3.7.0",
     "ruff>=0.4.3",
@@ -56,9 +54,6 @@ test = [
     "nbmake>=1.5.3",
     "mypy>=1.10.0"
 ]
-jupyter = [
-    "ipykernel>=6.29.5",
-]
 
 [tool.setuptools]
 package-dir = { "" = "src" }
@@ -72,7 +67,6 @@ where = ["src"]
 [tool.coverage.run]
 source = ["src/vlab4mic"]
 omit = [
-    "*/vlab4mic/jupyter_widgets/*",
     "*__init__.py",
     "*__*.py"
 ]
