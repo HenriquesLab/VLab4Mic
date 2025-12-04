@@ -1533,6 +1533,7 @@ def image_vsample(
     clear_experiment = False,
     primary_probe = None,
     secondary_probe = None,
+    save: bool = False,
     **kwargs,
 ):
     """
@@ -1702,5 +1703,5 @@ def image_vsample(
     imaging_output = dict()
     imaging_output_noiseless = dict()
     if run_simulation:
-        imaging_output, imaging_output_noiseless = sample_experiment.run_simulation()
+        imaging_output, imaging_output_noiseless = sample_experiment.run_simulation(save=save)
     return imaging_output, imaging_output_noiseless, sample_experiment
