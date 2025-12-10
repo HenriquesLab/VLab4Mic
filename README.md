@@ -77,9 +77,9 @@ conda activate MYENV
 
 ---
 
-### 2️⃣ Install VLab4Mic
+### 2️⃣ Install VLab4Mic and its associated library to use the codeless jupyter notebooks
 ```bash
-pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple "vlab4mic[jupyter]"
+pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple vlab4mic vlab4micjupyter
 ```
 
 ---
