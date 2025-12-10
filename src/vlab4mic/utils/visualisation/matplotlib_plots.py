@@ -1,70 +1,8 @@
 import matplotlib.pyplot as plt
 import mpl_toolkits.axes_grid1 as axes_grid1
-from ipywidgets import interact, widgets
 import numpy as np
 import copy
 from scipy.ndimage import rotate
-
-def slider_normalised(stack, dimension, dim_position=None, cbar=True):
-    def frame_slider_norm(frame, cbar):
-        """
-        stack is assumed to be of the shape MxNxZ, where Z is the axial direction
-        """
-        stack_max = np.max(stack)
-        fig = plt.figure()
-        if cbar:
-            cbar_mode = "each"
-        else:
-            cbar_mode = None
-        grid = axes_grid1.AxesGrid(
-            fig,
-            111,
-            nrows_ncols=(1, 1),
-            axes_pad=0.5,
-            cbar_location="right",
-            cbar_mode=cbar_mode,
-            cbar_size="15%",
-            cbar_pad="5%",
-        )
-        if dimension == 0:
-            im0 = grid[0].imshow(
-                stack[frame - 1, :, :],
-                cmap="gray",
-                interpolation="none",
-                vmin=0,
-                vmax=stack_max,
-            )
-        elif dimension == 1:
-            im0 = grid[0].imshow(
-                stack[:, frame - 1, :],
-                cmap="gray",
-                interpolation="none",
-                vmin=0,
-                vmax=stack_max,
-            )
-        elif dimension == 2:
-            im0 = grid[0].imshow(
-                stack[:, :, frame - 1],
-                cmap="gray",
-                interpolation="none",
-                vmin=0,
-                vmax=stack_max,
-            )
-        if cbar: 
-            grid.cbar_axes[0].colorbar(im0)
-
-    interact(
-        frame_slider_norm,
-        frame=widgets.IntSlider(
-            min=1, 
-            max=stack.shape[dimension], 
-            step=1, 
-            value=int(stack.shape[dimension]/2), 
-            continuous_update=False,
-            description="Slice",
-        ),
-        cbar=cbar
-    )
 
 
 def add_ax_scatter(plotobj, trgt_dictionary, fraction=1):
