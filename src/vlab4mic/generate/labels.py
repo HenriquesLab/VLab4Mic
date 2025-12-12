@@ -228,7 +228,6 @@ class Label:
 
 def construct_label(
     label_config_dictionary: None,
-    fluorophore_id: str = "AF647",
     lab_eff: float = None,
     target_info=None,
     **kwargs,
@@ -297,6 +296,10 @@ def construct_label(
         except:
             label_params["position"] = None
     ######## Building the labelling entity: anribody, linker, direct...
+    if "fluorophore_id" not in label_params.keys():
+        fluorophore_id = "AF647"
+    else:
+        fluorophore_id = label_params["fluorophore_id"]
     label_params["fluorophore"] = fluorophore_id
     if lab_eff is not None:
         label_params["labelling_efficiency"] = lab_eff
