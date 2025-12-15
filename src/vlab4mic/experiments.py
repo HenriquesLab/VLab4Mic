@@ -921,6 +921,7 @@ class ExperimentParametrisation:
         labelling_efficiency: float = 1.0,
         as_primary=False,
         peptide_motif: dict = None,
+        fluorophore_parameters = None,
         **kwargs,
     ):
         """
@@ -1025,8 +1026,8 @@ class ExperimentParametrisation:
             )
         if probe_fluorophore is not None:
             probe_configuration["fluorophore_id"] = probe_fluorophore
-        if "fluorophore_parameters" in kwargs.keys():
-            self.add_fluorophore_parameters(fluorophoe_id=probe_fluorophore, **kwargs["fluorophore_parameters"])
+        if fluorophore_parameters is not None:
+                self.add_fluorophore_parameters(fluorophoe_id=probe_fluorophore, **fluorophore_parameters)
         if labelling_efficiency is not None:
             probe_configuration["labelling_efficiency"] = labelling_efficiency
         if probe_model is not None:
