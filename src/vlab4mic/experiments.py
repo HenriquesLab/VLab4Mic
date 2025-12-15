@@ -143,7 +143,10 @@ class ExperimentParametrisation:
                 fluorophore_id = os.path.splitext(file)[0]
                 self.fluorophore_parameters[fluorophore_id] = load_yaml(
                     os.path.join(fluorophores_dir, file)
-                ) 
+                )
+        self.fluorophore_parameters_template = load_yaml(
+            os.path.join(fluorophores_dir, "_template_.yaml")
+        )
         probes_dir = os.path.join(self.configuration_path, "probes")
         modalities_dir = os.path.join(self.configuration_path, "modalities")
         for file in os.listdir(structure_dir):

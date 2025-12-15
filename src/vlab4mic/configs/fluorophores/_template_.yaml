@@ -1,5 +1,10 @@
 name:
 emission:
-    type:
-    photons_second:
+    type: constant
+    photons_second: 10000
 blinking_rates:
+    initial_state: 1
+    kbleach: 0.0
+    koff: 0.99
+    kon: 0.01
+    photons_per_blink: 3000
