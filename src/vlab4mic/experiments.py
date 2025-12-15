@@ -134,6 +134,16 @@ class ExperimentParametrisation:
         fluorophores_dir = os.path.join(
             self.configuration_path, "fluorophores"
         )
+        self.fluorophore_parameters = dict()
+        for file in os.listdir(fluorophores_dir):
+            if (
+                os.path.splitext(file)[-1] == ".yaml"
+                and "_template" not in file
+            ):
+                fluorophore_id = os.path.splitext(file)[0]
+                self.fluorophore_parameters[fluorophore_id] = load_yaml(
+                    os.path.join(fluorophores_dir, file)
+                ) 
         probes_dir = os.path.join(self.configuration_path, "probes")
         modalities_dir = os.path.join(self.configuration_path, "modalities")
         for file in os.listdir(structure_dir):
@@ -608,6 +618,7 @@ class ExperimentParametrisation:
                     modalities_id_list=mods_list,
                     mod_params=self.imaging_modalities,
                     config_dir=self.configuration_path,
+                    fluorophore_parameters=self.fluorophore_parameters,
                 )
             else:
                 if prints:
@@ -618,6 +629,7 @@ class ExperimentParametrisation:
                     modalities_id_list=mods_list,
                     mod_params=self.imaging_modalities,
                     config_dir=self.configuration_path,
+                    fluorophore_parameters=self.fluorophore_parameters
                 )
             self.objects_created["imager"] = True
         else:
@@ -745,6 +757,7 @@ class ExperimentParametrisation:
             reference_imager, ref_modality_parameters = create_imaging_system(
                 modalities_id_list=["Reference"],
                 config_dir=self.configuration_path,
+                fluorophore_parameters=self.fluorophore_parameters
             )
             reference_imager.import_field(**tmp_exported_field)
             # make a copy
@@ -1009,6 +1022,8 @@ class ExperimentParametrisation:
             )
         if probe_fluorophore is not None:
             probe_configuration["fluorophore_id"] = probe_fluorophore
+        if "fluorophore_parameters" in kwargs.keys():
+            self.add_fluorophore_parameters(fluorophoe_id=probe_fluorophore, **kwargs["fluorophore_parameters"])
         if labelling_efficiency is not None:
             probe_configuration["labelling_efficiency"] = labelling_efficiency
         if probe_model is not None:
@@ -1061,6 +1076,29 @@ class ExperimentParametrisation:
             self.structure_label = None
         else:
             self.structure_label = list(self.probe_parameters.keys())
+
+    def add_fluorophore_parameters(self,
+                                fluorophoe_id: str = None,
+                                emission_type: str = None,
+                                photon_yield: int = 0,
+                                blinking_rates: dict = None,
+                                **kwargs):
+        if fluorophoe_id not in self.fluorophore_parameters.keys():
+            self.fluorophore_parameters[fluorophoe_id] = dict()
+            self.fluorophore_parameters[fluorophoe_id]["emission"] = dict()
+            self.fluorophore_parameters[fluorophoe_id]["emission"]["type"] = "constant"
+            self.fluorophore_parameters[fluorophoe_id]["blinking_rates"] = dict()
+            self.fluorophore_parameters[fluorophoe_id]["blinking_rates"]["kon"] = 0.99
+            self.fluorophore_parameters[fluorophoe_id]["blinking_rates"]["koff"] = 0.01
+            self.fluorophore_parameters[fluorophoe_id]["blinking_rates"]["kbleach"] = 0.0
+            self.fluorophore_parameters[fluorophoe_id]["blinking_rates"]["initial_state"] = 1
+            self.fluorophore_parameters[fluorophoe_id]["blinking_rates"]["photons_per_blink"] = 1000
+        if emission_type is not None:
+            self.fluorophore_parameters[fluorophoe_id]["emission"]["type"] = emission_type
+        if photon_yield is not None:
+            self.fluorophore_parameters[fluorophoe_id]["emission"]["photon_yield"] = photon_yield
+        if blinking_rates is not None:
+            self.fluorophore_parameters[fluorophoe_id]["blinking_rates"] = blinking_rates
 
     def set_virtualsample_params(
         self,
