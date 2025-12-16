@@ -1083,9 +1083,8 @@ class ExperimentParametrisation:
 
     def add_fluorophore_parameters(self,
                                 fluorophoe_id: str = None,
-                                emission_type: str = None,
-                                photon_yield: int = 0,
-                                blinking_rates: dict = None,
+                                emission = None,
+                                blinking_rates = None,
                                 **kwargs):
         if fluorophoe_id not in self.fluorophore_parameters.keys():
             self.fluorophore_parameters[fluorophoe_id] = dict()
@@ -1097,10 +1096,8 @@ class ExperimentParametrisation:
             self.fluorophore_parameters[fluorophoe_id]["blinking_rates"]["kbleach"] = 0.0
             self.fluorophore_parameters[fluorophoe_id]["blinking_rates"]["initial_state"] = 1
             self.fluorophore_parameters[fluorophoe_id]["blinking_rates"]["photons_per_blink"] = 1000
-        if emission_type is not None:
-            self.fluorophore_parameters[fluorophoe_id]["emission"]["type"] = emission_type
-        if photon_yield is not None:
-            self.fluorophore_parameters[fluorophoe_id]["emission"]["photon_yield"] = photon_yield
+        if emission is not None:
+            self.fluorophore_parameters[fluorophoe_id]["emission"] = copy.deepcopy(emission)
         if blinking_rates is not None:
             self.fluorophore_parameters[fluorophoe_id]["blinking_rates"] = blinking_rates
 

@@ -1,7 +1,7 @@
 name:
 emission:
     type: constant
-    photons_second: 10000
+    photon_yield: 10000
 blinking_rates:
     initial_state: 1
     kbleach: 0.0
