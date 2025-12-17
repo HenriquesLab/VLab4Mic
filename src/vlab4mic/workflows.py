@@ -440,11 +440,9 @@ def generate_multi_imaging_modalities(
             if savingdir is not None:
                 savingdir = savingdir + os.sep
                 image_generator.set_writing_directory(savingdir)
-            for chan in acq_params["channels"]:
-                print(f"imaging channel: {chan}")
                 timeseries, calibration_beads, timeseries_noiseless, calibration_beads_noiseless = image_generator.generate_imaging(
-                    modality=mod, channel=chan, **acq_params
+                    modality=mod, **acq_params
                 )
-            outputs[mod] = timeseries
-            outputs_noiseless[mod] = timeseries_noiseless
+                outputs[mod] = timeseries
+                outputs_noiseless[mod] = timeseries_noiseless
     return outputs, outputs_noiseless
