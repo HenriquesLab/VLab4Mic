@@ -634,6 +634,13 @@ class ExperimentParametrisation:
                     config_dir=self.configuration_path,
                     fluorophore_parameters=self.fluorophore_parameters
                 )
+            # update the base acquisition parameters to consider all channels
+            imager_channels = []
+            anymod = list(self.imager.modalities.keys())[0]
+            for chann in self.imager.modalities[anymod]["filters"].keys():
+                imager_channels.append(chann)
+            nchannels = len(imager_channels)
+            self.reset_to_defaults(module="acquisitions", channels=imager_channels)
             self.objects_created["imager"] = True
         else:
             self.imager = None
