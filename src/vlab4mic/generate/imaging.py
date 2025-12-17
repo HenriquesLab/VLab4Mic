@@ -744,6 +744,7 @@ class Imager:
                     beads_per_channel_noiseless[ch] = beadstack_noiseless
                     #return timeseries_noise, beadstack_noise, timeseries_noiseless, beadstack_noiseless
                 else:
+                    ch = convolution_type
                     images_noiseless = None
                     beadstack_noiseless = None
                     output_per_channel[ch] = images
@@ -753,11 +754,11 @@ class Imager:
                     #return images, beads, images_noiseless, beadstack_noiseless
         return (output_per_channel, beads_per_channel, output_per_channel_noiseless, beads_per_channel_noiseless)
 
-    def generate_modality_mask(self, modality=None):
+    def generate_modality_mask(self, modality=None, channel = "ch0"):
         _1, _2, vsample_binay_positions, _3 = self.generate_imaging(
             modality=modality, 
             masks="mask")
-        particle_positions = np.argwhere(vsample_binay_positions[0] > 0)
+        particle_positions = np.argwhere(vsample_binay_positions[channel][0] > 0)
         if particle_positions.shape[0] > 0:
             psf_lateral_resolution = self.modalities[modality]["psf"]["std_devs"][0]
             pixelsize_detection = self.modalities[modality]["detector"]["pixelsize"] * 1000
@@ -765,8 +766,8 @@ class Imager:
             particle_and_width = (psf_lateral_resolution + particle_size) * 10
             modality_psf_width_px = int(np.ceil(particle_and_width/pixelsize_detection))
             print(f"width: {modality_psf_width_px}, p_size: {particle_and_width}, psf_lateral_resolution: {psf_lateral_resolution}, {pixelsize_detection}")
-            mask_with_psf = np.zeros(shape=vsample_binay_positions[0].shape)
-            max_x, max_y = vsample_binay_positions[0].shape
+            mask_with_psf = np.zeros(shape=vsample_binay_positions[channel][0].shape)
+            max_x, max_y = vsample_binay_positions[channel][0].shape
             for i in range(particle_positions.shape[0]):
                 x, y = particle_positions[i]
                 low_x = np.floor(x - modality_psf_width_px)
@@ -784,7 +785,7 @@ class Imager:
                 mask_with_psf[int(low_x):int(high_x), int(low_y):int(high_y)] = 1
             return mask_with_psf
         else:
-            return np.zeros(shape=vsample_binay_positions[0].shape)
+            return np.zeros(shape=vsample_binay_positions[channel][0].shape)
 
     def write_ground_truth_positions(
         self, emitters, header=None, notes="", no_emitters=False
