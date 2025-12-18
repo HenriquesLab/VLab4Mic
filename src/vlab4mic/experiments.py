@@ -1336,6 +1336,7 @@ def generate_virtual_sample(
     # secondary
     primary_probe=None,
     secondary_probe=None,
+    probe_list=None,
     **kwargs,
 ):
     """
@@ -1408,6 +1409,10 @@ def generate_virtual_sample(
         print("Adding primary and secondary probes")
         myexperiment.add_probe(as_primary=True, **primary_probe)
         myexperiment.add_probe(as_primary=False, **secondary_probe)
+    if probe_list is not None:
+        for probe in probe_list:
+            print(f"Adding probe: {probe['probe_name']}")
+            myexperiment.add_probe(**probe)
     else:
         if not clear_probes:
             print(probe_template)
@@ -1579,6 +1584,7 @@ def image_vsample(
     clear_experiment = False,
     primary_probe = None,
     secondary_probe = None,
+    probe_list = None,
     save: bool = False,
     **kwargs,
 ):
@@ -1708,6 +1714,7 @@ def image_vsample(
             clear_experiment=clear_experiment,
             primary_probe=primary_probe,
             secondary_probe=secondary_probe,
+            probe_list=probe_list
         )
         if multimodal is not None:
             for mod in multimodal:
