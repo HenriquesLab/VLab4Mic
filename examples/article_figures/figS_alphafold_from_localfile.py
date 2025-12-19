@@ -33,6 +33,11 @@ images , noiseless_,  experiment = experiments.image_vsample(
     run_simulation=True
 )
 
+# expand sample for better visualization
+experiment.coordinate_field.expand_isotropically(factor=10.0)
+experiment.build(modules=["imager",])
+images , noiseless =  experiment.run_simulation()
+
 # Plotting figure with 3 panels
 # panel 1
 fig = plt.figure(figsize=[10,10])
@@ -50,8 +55,8 @@ ax.set_ylabel('Angstroms')
 ax.set_xticklabels([])
 # panel 2
 ax = fig.add_subplot(132, projection="3d")
-experiment.coordinate_field.show_field(axis_object=ax, view_init=[90,0,0])
-ax.set_title('Virtual Sample')
+experiment.coordinate_field.show_field(axis_object=ax, view_init=[90,0,0], emitters_plotsize=4)
+ax.set_title('Virtual Sample \n (expanded 10x)')
 ax.set_yticklabels([])
 ax.set_zticklabels([])
 ax.set_zlabel(None)
