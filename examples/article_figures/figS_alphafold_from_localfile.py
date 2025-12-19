@@ -17,6 +17,12 @@ np.random.seed(44)
 # 5. Run the python script with the new structure path.
 
 structure = "PATH/TO/YOUR/LOCAL/MODEL/AF-P00520-F1-model_v6.cif"
+try:
+    filename_name = structure.split(sep=os.sep)[-1]
+    structure_name = filename_name.split(sep=".")[0]
+except:
+    structure_name = "Alphafold Model"
+
 modalities = ["STED", "SMLM",]
 # Run simulation
 images , noiseless_,  experiment = experiments.image_vsample(
@@ -39,7 +45,7 @@ experiment.structure.show_target_labels(
     show_axis=False,
     axesoff=False
 )
-ax.set_title('Target sites on structure')
+ax.set_title('Target sites on structure \n' + f' ({structure_name})')
 ax.set_ylabel('Angstroms')
 ax.set_xticklabels([])
 # panel 2
