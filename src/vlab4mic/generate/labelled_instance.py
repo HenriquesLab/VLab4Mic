@@ -83,7 +83,10 @@ class LabeledInstance:
         hindrance = 0
         for tgt in self.source["targets"].keys():
             epitopes = self._get_source_coords_normals(tgt)["coordinates"]
-            max_dist = np.max(pdist(epitopes))
+            ref_and_epitopes = np.vstack(
+                [self.get_ref_point().reshape(1, 3), epitopes]
+            )
+            max_dist = np.max(pdist(ref_and_epitopes))
             if max_dist > hindrance:
                 hindrance = max_dist
         self.radial_hindance = hindrance
@@ -136,10 +139,9 @@ class LabeledInstance:
             reference_point *= scaling_factor
             axis["pivot"] *= scaling_factor
             axis["direction"] *= scaling_factor
-
+        self._set_ref_point(reference_point)
         self._set_source_targets(dict(targets))  # making an explicit copy
         # self._set_source_reference(reference_point)
-        self._set_ref_point(reference_point)
         self._set_source_scale(scale)
         # self._set_source_axis(axis)
         self.axis = copy.copy(axis)
