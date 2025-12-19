@@ -70,7 +70,7 @@ plt.rcParams['figure.figsize'] = [20, 10]
 fig, axs = plt.subplots(1, 2)
 axs[0].imshow(experimental_img_processed, cmap="grey")
 axs[0].set_title("Modified from Thevathasan et al. 2019. Nature Methods.")
-axs[1].imshow(images["STED_Thev2016"][0], cmap="grey")
+axs[1].imshow(images["STED_Thev2016"]["ch0"][0], cmap="grey")
 axs[1].set_title("VLab4Mic simulated image")
 
 fontprops = fm.FontProperties(size=20)

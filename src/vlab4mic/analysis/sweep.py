@@ -305,14 +305,21 @@ def sweep_modalities_updatemod(
                             acq_pars,
                         ) in modality_acq_prams.items():
                             if acq_pars:
+                                # expects to have 'channels' key with one channel at least
                                 experiment.set_modality_acq(
                                     modality_name=modality_name, **acq_pars
                                 )
+                                channel = acq_pars["channels"]
+                            else:
+                                channel = "ch0"
+                                experiment.set_modality_acq(
+                                    modality_name=modality_name, channels = [channel,]
+                                )
+                                acq_pars = {"channels": [channel,]}
                             # iteration_name = combination
                             modality_timeseries, modality_timeseries_noiseless = experiment.run_simulation(
                                 name="", save=False, modality=modality_name
                             )
-
                             mod_comb = (
                                 vsmpl_id
                                 + "_"
@@ -340,7 +347,7 @@ def sweep_modalities_updatemod(
                             if mod_comb not in mod_outputs_masks.keys():
                                 mod_outputs_masks[mod_comb] = []
                             mod_outputs[mod_comb].append(
-                                modality_timeseries[modality_name]
+                                modality_timeseries[modality_name][channel]
                             )
                             #mask = modality_timeseries[modality_name][0] > mod_threshold
                             mask = vsample_mask_per_mod > 0
@@ -491,7 +498,7 @@ def generate_global_reference_modality(
     #if mod_threshold is None:
     #    mod_threshold = 1
     reference_output_mask = experiment.imager.generate_modality_mask(modality="Reference")
-    return reference_output[modality], reference_parameters, reference_output_mask
+    return reference_output[modality]["ch0"], reference_parameters, reference_output_mask
 
 
 def analyse_image_sweep(

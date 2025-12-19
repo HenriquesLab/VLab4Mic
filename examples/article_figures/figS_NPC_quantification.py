@@ -76,8 +76,8 @@ minRadius_round = np.ceil(min_radius_px).astype('int64')
 maxRadius_round = np.ceil(MAX_radius_px).astype('int64')
 minDist = minRadius_round
 
-if images["STED_Thev2016"][0].min() < 0:
-    images["STED_Thev2016"][0] += -images["STED_Thev2016"][0].min()
+if images["STED_Thev2016"]["ch0"][0].min() < 0:
+    images["STED_Thev2016"]["ch0"][0] += -images["STED_Thev2016"]["ch0"][0].min()
 
 #### Simulated Data
 HCparams = dict(dp=1, minDist=maxRadius_round, 
@@ -100,7 +100,7 @@ plt.rcParams['figure.figsize'] = [15, 5]
 fig, axs = plt.subplots(1, 3)
 axs[0].imshow(experimental_img_processed, cmap="grey")
 axs[0].set_title("Modified from Thevathasan et al. 2019. Nature Methods.")
-axs[1].imshow(images["STED_Thev2016"][0], cmap="grey")
+axs[1].imshow(images["STED_Thev2016"]["ch0"][0], cmap="grey")
 axs[1].set_title("VLab4Mic simulated image")
 
 df = pd.DataFrame({

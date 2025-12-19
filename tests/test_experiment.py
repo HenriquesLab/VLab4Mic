@@ -9,8 +9,11 @@ def test_gen_virtual_sample():
     assert len(vsample["reference_point"]) == 3
 
 
-def test_image_sample():
+def test_image_output_shape():
     images,images_noiseless, experiment = experiments.image_vsample()
+    for modality in images.keys():
+        assert type(images[modality]) is dict
+        assert len(images[modality]["ch0"].shape) == 3
 
 
 def test_build_virtual_microscope():
@@ -40,14 +43,14 @@ def test_image_sample_structures(structure):
         labelling_efficiency=0.01,
     )
     modalityname = list(images.keys())[0]
-    assert len(images[modalityname].shape) == 3
+    assert len(images[modalityname]["ch0"].shape) == 3
 
 
 def test_multimodal_imaging():
     modalities = ["Widefield", "Confocal", "SMLM", "STED"]
     images,images_noiseless, experiment = experiments.image_vsample(multimodal=modalities)
     modalityname = list(images.keys())[0]
-    assert len(images[modalityname].shape) == 3
+    assert len(images[modalityname]["ch0"].shape) == 3
     assert len(list(images.keys())) == len(modalities)
 
 
@@ -58,7 +61,7 @@ def test_download_structure():
         structure=structure9I0K, multimodal=modalities
     )
     modalityname = list(images.keys())[0]
-    assert len(images[modalityname].shape) == 3
+    assert len(images[modalityname]["ch0"].shape) == 3
     assert len(list(images.keys())) == len(modalities)
 
 

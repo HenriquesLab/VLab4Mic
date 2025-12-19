@@ -310,7 +310,7 @@ def field_from_particle(
 
 
 def create_imaging_system(
-    exported_field=None, modalities_id_list: list = None, config_dir=None, mod_params=dict(), **kwargs
+    exported_field=None, modalities_id_list: list = None, config_dir=None, mod_params=dict(), fluorophore_parameters=None, **kwargs
 ):
     """
     Create an imaging system object.
@@ -349,10 +349,13 @@ def create_imaging_system(
             image_generator.import_field(**exported_field)
         fluo_emission = dict()
         for fluo in exported_field["field_emitters"].keys():
-            fluo_dir = os.path.join(config_dir, "fluorophores", fluo)
-            fluopath = fluo_dir + ".yaml"
+            #fluo_dir = os.path.join(config_dir, "fluorophores", fluo)
+            #fluopath = fluo_dir + ".yaml"
             # image_generator.set_fluorophores_from_file(fluopath)
-            fluo_params = load_yaml(fluopath)
+            #try:
+            #    fluo_params = load_yaml(fluopath)
+            #except:
+            fluo_params = fluorophore_parameters[fluo]
             image_generator.set_fluorophores_params(
                 identifier=fluo,
                 photon_yield=fluo_params["emission"]["photon_yield"],
@@ -437,11 +440,9 @@ def generate_multi_imaging_modalities(
             if savingdir is not None:
                 savingdir = savingdir + os.sep
                 image_generator.set_writing_directory(savingdir)
-            for chan in acq_params["channels"]:
-                print(f"imaging channel: {chan}")
                 timeseries, calibration_beads, timeseries_noiseless, calibration_beads_noiseless = image_generator.generate_imaging(
-                    modality=mod, channel=chan, **acq_params
+                    modality=mod, **acq_params
                 )
-            outputs[mod] = timeseries
-            outputs_noiseless[mod] = timeseries_noiseless
+                outputs[mod] = timeseries
+                outputs_noiseless[mod] = timeseries_noiseless
     return outputs, outputs_noiseless

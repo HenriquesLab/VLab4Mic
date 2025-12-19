@@ -134,6 +134,19 @@ class ExperimentParametrisation:
         fluorophores_dir = os.path.join(
             self.configuration_path, "fluorophores"
         )
+        self.fluorophore_parameters = dict()
+        for file in os.listdir(fluorophores_dir):
+            if (
+                os.path.splitext(file)[-1] == ".yaml"
+                and "_template" not in file
+            ):
+                fluorophore_id = os.path.splitext(file)[0]
+                self.fluorophore_parameters[fluorophore_id] = load_yaml(
+                    os.path.join(fluorophores_dir, file)
+                )
+        self.fluorophore_parameters_template = load_yaml(
+            os.path.join(fluorophores_dir, "_template_.yaml")
+        )
         probes_dir = os.path.join(self.configuration_path, "probes")
         modalities_dir = os.path.join(self.configuration_path, "modalities")
         for file in os.listdir(structure_dir):
@@ -608,6 +621,7 @@ class ExperimentParametrisation:
                     modalities_id_list=mods_list,
                     mod_params=self.imaging_modalities,
                     config_dir=self.configuration_path,
+                    fluorophore_parameters=self.fluorophore_parameters,
                 )
             else:
                 if prints:
@@ -618,7 +632,15 @@ class ExperimentParametrisation:
                     modalities_id_list=mods_list,
                     mod_params=self.imaging_modalities,
                     config_dir=self.configuration_path,
+                    fluorophore_parameters=self.fluorophore_parameters
                 )
+            # update the base acquisition parameters to consider all channels
+            imager_channels = []
+            anymod = list(self.imager.modalities.keys())[0]
+            for chann in self.imager.modalities[anymod]["filters"].keys():
+                imager_channels.append(chann)
+            nchannels = len(imager_channels)
+            self.reset_to_defaults(module="acquisitions", channels=imager_channels)
             self.objects_created["imager"] = True
         else:
             self.imager = None
@@ -745,6 +767,7 @@ class ExperimentParametrisation:
             reference_imager, ref_modality_parameters = create_imaging_system(
                 modalities_id_list=["Reference"],
                 config_dir=self.configuration_path,
+                fluorophore_parameters=self.fluorophore_parameters
             )
             reference_imager.import_field(**tmp_exported_field)
             # make a copy
@@ -905,6 +928,7 @@ class ExperimentParametrisation:
         labelling_efficiency: float = 1.0,
         as_primary=False,
         peptide_motif: dict = None,
+        fluorophore_parameters = None,
         **kwargs,
     ):
         """
@@ -1009,6 +1033,8 @@ class ExperimentParametrisation:
             )
         if probe_fluorophore is not None:
             probe_configuration["fluorophore_id"] = probe_fluorophore
+        if fluorophore_parameters is not None:
+                self.add_fluorophore_parameters(fluorophoe_id=probe_fluorophore, **fluorophore_parameters)
         if labelling_efficiency is not None:
             probe_configuration["labelling_efficiency"] = labelling_efficiency
         if probe_model is not None:
@@ -1061,6 +1087,26 @@ class ExperimentParametrisation:
             self.structure_label = None
         else:
             self.structure_label = list(self.probe_parameters.keys())
+
+    def add_fluorophore_parameters(self,
+                                fluorophoe_id: str = None,
+                                emission = None,
+                                blinking_rates = None,
+                                **kwargs):
+        if fluorophoe_id not in self.fluorophore_parameters.keys():
+            self.fluorophore_parameters[fluorophoe_id] = dict()
+            self.fluorophore_parameters[fluorophoe_id]["emission"] = dict()
+            self.fluorophore_parameters[fluorophoe_id]["emission"]["type"] = "constant"
+            self.fluorophore_parameters[fluorophoe_id]["blinking_rates"] = dict()
+            self.fluorophore_parameters[fluorophoe_id]["blinking_rates"]["kon"] = 0.99
+            self.fluorophore_parameters[fluorophoe_id]["blinking_rates"]["koff"] = 0.01
+            self.fluorophore_parameters[fluorophoe_id]["blinking_rates"]["kbleach"] = 0.0
+            self.fluorophore_parameters[fluorophoe_id]["blinking_rates"]["initial_state"] = 1
+            self.fluorophore_parameters[fluorophoe_id]["blinking_rates"]["photons_per_blink"] = 1000
+        if emission is not None:
+            self.fluorophore_parameters[fluorophoe_id]["emission"] = copy.deepcopy(emission)
+        if blinking_rates is not None:
+            self.fluorophore_parameters[fluorophoe_id]["blinking_rates"] = blinking_rates
 
     def set_virtualsample_params(
         self,
@@ -1290,6 +1336,7 @@ def generate_virtual_sample(
     # secondary
     primary_probe=None,
     secondary_probe=None,
+    probe_list=None,
     **kwargs,
 ):
     """
@@ -1362,6 +1409,10 @@ def generate_virtual_sample(
         print("Adding primary and secondary probes")
         myexperiment.add_probe(as_primary=True, **primary_probe)
         myexperiment.add_probe(as_primary=False, **secondary_probe)
+    if probe_list is not None:
+        for probe in probe_list:
+            print(f"Adding probe: {probe['probe_name']}")
+            myexperiment.add_probe(**probe)
     else:
         if not clear_probes:
             print(probe_template)
@@ -1533,6 +1584,7 @@ def image_vsample(
     clear_experiment = False,
     primary_probe = None,
     secondary_probe = None,
+    probe_list = None,
     save: bool = False,
     **kwargs,
 ):
@@ -1662,6 +1714,7 @@ def image_vsample(
             clear_experiment=clear_experiment,
             primary_probe=primary_probe,
             secondary_probe=secondary_probe,
+            probe_list=probe_list
         )
         if multimodal is not None:
             for mod in multimodal:
