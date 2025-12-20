@@ -466,14 +466,13 @@ class MolecularStructureParser:
         for model in self.struct:
             for chain in model:
                 if chain.id in chainnames:
-                    pos = 0
                     for residue in chain:
-                        pos = pos + 1
+                        #pos = pos + 1
+                        pos = residue.id[1]
                         # this conditional checks if the residue is
                         # defined in resname list
                         print(
                             f"resname {pos}: {residue.get_resname()}, "
-                            f"segid: {residue.get_segid()}"
                         )
                         if residue.resname.strip() in resnames and position == pos:
                             for atom in residue:
