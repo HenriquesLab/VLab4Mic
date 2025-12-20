@@ -8,7 +8,7 @@ from vlab4mic.analysis.metrics import zoom_img
 np.random.seed(44)
 
 # parameters for simulation
-structure = "3JA9"
+structure = "4ZTD"
 modalities = ["SMLM",]
 probe_1 = dict(
     probe_template = "Linker",
@@ -81,8 +81,6 @@ images, noisless_images, my_experiment = image_vsample(
     sample_dimensions=[500,500,100],
     run_simulation=False,
     clear_experiment=True,
-    random_orientations=True,
-    yz_orientations = [150,],
 )
 # expand sample for better visualisation and run simulation
 my_experiment.coordinate_field.expand_isotropically(factor=5.0)
