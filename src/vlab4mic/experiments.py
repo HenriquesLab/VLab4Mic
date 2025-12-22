@@ -214,7 +214,7 @@ class ExperimentParametrisation:
         self.objects_created["structure"] = False
         print("Structure cleared")
 
-    def add_modality(self, modality_name, save=False, **kwargs):
+    def add_modality(self, modality_name, save=False, modality_template=None, **kwargs):
         """
         Add a new imaging modality to the experiment.
 
@@ -245,14 +245,24 @@ class ExperimentParametrisation:
             self.set_modality_acq(modality_name, save=save)
         else:
             print(
-                f"Modality {modality_name} not found in demo modalities. Using Widefield params as template to create new."
+                f"Modality {modality_name} not found in demo modalities. Using template to create new."
             )
+            if modality_template is not None:
+                template_modality = modality_template
+            else:
+                template_modality = "Widefield"
+            print(f"Using {template_modality} as template.")
             self.imaging_modalities[modality_name] = copy.deepcopy(
-                self.local_modalities_parameters["Widefield"]
+                self.local_modalities_parameters[template_modality]
             )
+            self.imaging_modalities[modality_name]["modality"] = modality_name
             for param, value in kwargs.items():
                 self.imaging_modalities[modality_name][param] = value
             self.set_modality_acq(modality_name, save=save)
+            self.local_modalities_names.append(modality_name)
+            self.local_modalities_parameters[modality_name] = copy.deepcopy(
+                self.imaging_modalities[modality_name]
+            )
 
     def update_modality(
         self,
@@ -1718,7 +1728,12 @@ def image_vsample(
         )
         if multimodal is not None:
             for mod in multimodal:
-                sample_experiment.add_modality(mod)
+                try:
+                    mod_template = kwargs[mod]["modality_template"]
+                    print(f"Adding modality: {mod}, {mod_template}")
+                    sample_experiment.add_modality(mod, modality_template=mod_template)
+                except:
+                    sample_experiment.add_modality(mod)
         else:
             sample_experiment.add_modality(modality)
         sample_experiment.build(
