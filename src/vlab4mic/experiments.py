@@ -1419,7 +1419,7 @@ def generate_virtual_sample(
         print("Adding primary and secondary probes")
         myexperiment.add_probe(as_primary=True, **primary_probe)
         myexperiment.add_probe(as_primary=False, **secondary_probe)
-    if probe_list is not None:
+    elif probe_list is not None:
         for probe in probe_list:
             print(f"Adding probe: {probe['probe_name']}")
             myexperiment.add_probe(**probe)
