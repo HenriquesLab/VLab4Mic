@@ -222,7 +222,7 @@ def image_preprocess(img, background=None, sigma=None, **kwargs):
         img = gaussian_filter(img, sigma=sigma)
     return img
 
-def local_maxima_positions(img, min_distance=1, threshold=None, **kwargs):
+def local_maxima_positions(img, min_distance=1, threshold=None, background=None, sigma=None, **kwargs):
     """
     Find local maxima positions in an image.
 
@@ -247,8 +247,8 @@ def local_maxima_positions(img, min_distance=1, threshold=None, **kwargs):
     if len(img.shape) > 2:
         img = np.mean(img, axis=-1)
     # remove background as offset value
-    img_pre = image_preprocess(img, **kwargs)
-    xy = peak_local_max(img_pre, min_distance=min_distance, threshold_abs=threshold)
+    img_pre = image_preprocess(img, background, sigma)
+    xy = peak_local_max(img_pre, min_distance=min_distance, threshold_abs=threshold, **kwargs)
     return xy, img_pre
 
 def pixel_positions_to_relative(indices, image_sizes, pixelsize):

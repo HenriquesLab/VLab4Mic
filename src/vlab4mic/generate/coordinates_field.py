@@ -992,21 +992,22 @@ def gen_positions_from_image(
         if "background" not in kwargs.keys():
             background = None
         else:
-            background = kwargs["background"]
+            background = kwargs.pop("background", None)
         if "sigma" not in kwargs.keys():
             sigma = None
         else:
-            sigma = kwargs["sigma"]
+            sigma = kwargs.pop("sigma", None)
         if "threshold" not in kwargs.keys():
             threshold = None
         else:
-            threshold = kwargs["threshold"]
+            threshold = kwargs.pop("threshold", None)
         pixel_positions, img_processed = metrics.local_maxima_positions(
             img,
             min_distance=min_distance,
             threshold=threshold,
             sigma=sigma,
             background=background,
+            **kwargs
         )
     xyz_relative = metrics.pixel_positions_to_relative(
         pixel_positions, image_sizes=image_physical_size, pixelsize=pixelsize
