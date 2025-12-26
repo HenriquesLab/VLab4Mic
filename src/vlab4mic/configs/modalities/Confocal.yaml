@@ -3,9 +3,9 @@ scale: 1.0e-09
 PSF:
   source: generate
   resolution:  # in nanometers, as standard deviations
-    X: 94
-    Y: 94
-    Z: 331
+    X: 100
+    Y: 100
+    Z: 300
   voxelsize: 10
 depth: 1000  # in nanometers
 detector:
