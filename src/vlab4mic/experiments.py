@@ -49,7 +49,7 @@ class ExperimentParametrisation:
     objects_created: Dict[str, int] = field(default_factory=dict)
     output_directory: str = None
     example_structures = ["3J3Y", "7R5K", "1XI5", "8GMO"]
-    example_modalities = ["Widefield", "Confocal", "STED", "SMLM"]
+    example_modalities = ["Widefield", "Confocal", "AiryScan", "STED", "SMLM"]
 
     def __post_init__(self):
         self.output_directory = str(output_path)
