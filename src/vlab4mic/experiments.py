@@ -1309,6 +1309,10 @@ class ExperimentParametrisation:
         else:
             return string
 
+    def expand_virtual_sample(self, factor=1):
+        if factor > 1:
+            self.coordinate_field.expand_isotropically(factor=factor)
+            self.build(modules=["imager",])
 
 def generate_virtual_sample(
     structure: str = "1XI5",
@@ -1341,6 +1345,7 @@ def generate_virtual_sample(
     random_placing=False,
     random_rotations=False,
     rotation_angles = None,
+    expansion_factor=1,
     clear_probes=False,
     clear_experiment=False,
     # secondary
@@ -1512,7 +1517,8 @@ def generate_virtual_sample(
     vsample_configuration["axial_offset"] = axial_offset
     myexperiment.virtualsample_params = vsample_configuration
     myexperiment.build(use_locals=True)
-
+    if expansion_factor > 1:
+        myexperiment.expand_virtual_sample(factor=expansion_factor)
     # myexperiment.coordinate_field_id = virtual_sample
     return myexperiment.exported_coordinate_field, myexperiment
 
@@ -1590,6 +1596,7 @@ def image_vsample(
     random_placing = False,
     random_rotations = False,
     rotation_angles = None,
+    expansion_factor = 1,
     clear_probes = False,
     clear_experiment = False,
     primary_probe = None,
@@ -1724,7 +1731,8 @@ def image_vsample(
             clear_experiment=clear_experiment,
             primary_probe=primary_probe,
             secondary_probe=secondary_probe,
-            probe_list=probe_list
+            probe_list=probe_list,
+            expansion_factor=expansion_factor,
         )
         if multimodal is not None:
             for mod in multimodal:
