@@ -1734,6 +1734,7 @@ def image_vsample(
             probe_list=probe_list,
             expansion_factor=expansion_factor,
         )
+        sample_experiment.clear_modalities()
         if multimodal is not None:
             for mod in multimodal:
                 try:
