@@ -79,13 +79,10 @@ images, noisless_images, my_experiment = image_vsample(
           "psf_voxel_nm":1, # sampling rate for PSF model
           "depth_of_field_nm":200},
     sample_dimensions=[500,500,100],
-    run_simulation=False,
+    expansion_factor=5,
+    run_simulation=True,
     clear_experiment=True,
 )
-# expand sample for better visualisation and run simulation
-my_experiment.coordinate_field.expand_isotropically(factor=5.0)
-my_experiment.build(modules=["imager",])
-images, noisless_images = my_experiment.run_simulation()
 # prepare output image for multichannel plot
 zoom_factor = 0.8 # focus on the center of the image
 modalitiy_name = modalities[0]
