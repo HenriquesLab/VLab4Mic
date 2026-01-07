@@ -56,3 +56,23 @@ def test_parameters_combinations():
     test_sweep.generate_virtual_samples()
     vsamples_unique_ids = len(test_sweep.virtual_samples_parameters.keys())
     assert total_combinations == vsamples_unique_ids
+
+
+def test_run_parameter_sweep():
+    sweep_gen_test = sweep_generator.run_parameter_sweep(
+        structures=["7R5K",],
+        probe_templates=["NPC_Nup96_Cterminal_direct",],
+        sweep_repetitions=3,
+        # parameters for sweep
+        labelling_efficiency=(0,1,2),
+        defect=(0,1,2),
+        defect_small_cluster=[300,],
+        defect_large_cluster=[600,],
+        exp_time=[0.001, 0.01,],
+        # output and analysis
+        output_name="vlab_script",
+        return_generator=True,
+        save_sweep_images=False,
+        save_analysis_results=True,
+        run_analysis=True
+        )
