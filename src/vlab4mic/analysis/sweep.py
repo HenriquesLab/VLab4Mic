@@ -306,10 +306,12 @@ def sweep_modalities_updatemod(
                         ) in modality_acq_prams.items():
                             if acq_pars:
                                 # expects to have 'channels' key with one channel at least
+                                if "channels" not in acq_pars.keys():
+                                    channel = "ch0"
+                                    acq_pars = {"channels": [channel,]}
                                 experiment.set_modality_acq(
-                                    modality_name=modality_name, **acq_pars
-                                )
-                                channel = acq_pars["channels"]
+                                        modality_name=modality_name, **acq_pars
+                                    )
                             else:
                                 channel = "ch0"
                                 experiment.set_modality_acq(
