@@ -95,6 +95,8 @@ class sweep_generator:
         self.plot_parameters["lineplots"]["style"] = None
         self.plot_parameters["lineplots"]["estimator"] = "mean"
         self.plot_parameters["lineplots"]["errorbar"] = "ci"
+        self.plot_parameters["general"] = {}
+        self.plot_parameters["general"]["na_as_zero"] = True
         self.structures_info_list = self.experiment.structures_info_list
         # Use the directly loaded parameter_settings instead of experiment.param_settings
         # to ensure all parameter groups (including particle_defect) are available
@@ -753,6 +755,22 @@ class sweep_generator:
             for key, val in kwargs.items():
                 self.plot_parameters[plot_type][key] = val
 
+    def set_na_as_zero_in_plots(self, na_as_zero: bool = True):
+        """
+        Set whether to treat NaN values as zero in plots.
+
+        Parameters
+        ----------
+        :param na_as_zero: bool, optional
+            If True, NaN values will be treated as zero in plots. Defaults to True.
+            This does not affect the underlying data, only the visualization.
+
+        Returns
+        -------
+        None
+        """
+        self.plot_parameters["general"]["na_as_zero"] = na_as_zero        
+
     def run_analysis(
         self,
         save=True,
@@ -818,6 +836,7 @@ class sweep_generator:
                         return_figure=True,
                         metric_name=metric_name,
                         filter_dictionary=None,
+                        na_as_zero=self.plot_parameters["general"]["na_as_zero"],
                     )
         if save:
             self.save_analysis(
@@ -1331,6 +1350,8 @@ def run_parameter_sweep(
     psf_voxel_nm = None,
     depth_of_field_nm = None,
     exp_time = None,
+    # for plot generation
+    na_as_zero = True,
     # Add more as needed for your sweep
 ):
     """
@@ -1476,6 +1497,7 @@ def run_parameter_sweep(
         reference_structure=reference_structure,
         reference_probe=reference_probe,
         **reference_parameters)
+    sweep_gen.set_na_as_zero_in_plots(na_as_zero=na_as_zero)
     if run_analysis:
         sweep_gen.run_analysis(
             save=save_analysis_results, 
