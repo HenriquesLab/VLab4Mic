@@ -1369,7 +1369,7 @@ def run_parameter_sweep(
     sweep_gen.select_modalities(modalities=modalities)
     sweep_gen.set_output_directory(output_directory=output_directory)
     sweep_gen.set_number_of_repetitions(sweep_repetitions)
-    # number of particles accross sweep
+    # number of particles across sweep
     if particle_positions is not None:
         # set those positions
         sweep_gen.experiment.set_virtualsample_params(

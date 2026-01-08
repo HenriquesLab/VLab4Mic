@@ -840,7 +840,7 @@ def pivot_dataframes_byCategory(
             )
             .reset_index()
         )
-        # get mean and std accross parameter combinations of axes_param_names
+        # get mean and std across parameter combinations of axes_param_names
         condition_mean_pivot = summarised_group.pivot(
             index=param1, columns=param2, values="Mean_Value"
         ).round(4)
