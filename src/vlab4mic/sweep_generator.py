@@ -1095,7 +1095,7 @@ class sweep_generator:
         axes.xaxis.set_major_formatter(FormatStrFormatter(decimals))
         title = estimator + " " + metric_name + " for " + x_param
         if style is not None:
-            title = title + "per " + style
+            title = title + " per " + style
         plt.title(title)
         plt.close()
         return fig
