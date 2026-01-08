@@ -876,6 +876,7 @@ class sweep_generator:
         decimals: int = None,
         return_figure=True,
         filter_dictionary=None,
+        na_as_zero = True,
         **kwargs,
     ):
         """
@@ -918,6 +919,7 @@ class sweep_generator:
                 return_figure=return_figure,
                 decimals=decimals,
                 filter_dictionary=filter_dictionary,
+                na_as_zero = na_as_zero,
                 **plot_params,
                 **kwargs
             )
@@ -929,6 +931,7 @@ class sweep_generator:
                 decimals=decimals,
                 return_figure=return_figure,
                 filter_dictionary=filter_dictionary,
+                na_as_zero = na_as_zero,
                 **plot_params,
                 **kwargs
             )
@@ -945,6 +948,7 @@ class sweep_generator:
         filter_dictionary=None,
         annotations=False,
         palette=None,
+        na_as_zero = False,
         **kwargs,
     ):
         """
@@ -1016,6 +1020,7 @@ class sweep_generator:
             metric_name=metric_name,
             conditions_cmaps=[cmap_palette]*nconditions,
             decimals=decimals,
+            na_as_zero = na_as_zero,
             **kwargs
         )
         return plot
@@ -1034,6 +1039,7 @@ class sweep_generator:
         decimals="%.4f",
         return_figure=True,
         filter_dictionary=None,
+        na_as_zero = False,
         **kwargs,
     ):
         """
@@ -1079,8 +1085,13 @@ class sweep_generator:
         if style is None and len(self.parameters_with_set_values) > 1:
             style = self.parameters_with_set_values[1]
         fig, axes = plt.subplots(figsize=figsize)
+        if na_as_zero:
+            data_to_plot = data.copy(deep=True)
+            data_to_plot.fillna(0, inplace=True)
+        else:
+            data_to_plot = data
         sns.lineplot(
-            data=data,
+            data=data_to_plot,
             x=x_param,
             y=metric_name,
             hue=hue,
