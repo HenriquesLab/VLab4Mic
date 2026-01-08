@@ -23,7 +23,7 @@ def sns_heatmap_pivots(
         annot_kws = {"size": 10, "rotation": 45}
     else:
         annot_kws = kwargs["annot_kws"]
-    f, axes = plt.subplots(nconditions, 2, figsize=figsize)
+    f, axes = plt.subplots(nconditions, 2, figsize=figsize, squeeze = False)
     plot_num = 0
     if cmaps_range == "same":
         # min and max here correspond to SSIM
