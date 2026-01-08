@@ -1140,6 +1140,17 @@ class sweep_generator:
             if keyname == "dataframes":
                 df = self.get_analysis_output(keyname)
                 df_name = output_name + "_dataframe.csv"
+                files_indir = os.listdir(output_directory)
+                if df_name in files_indir:
+                    count = 1
+                    df_name = (
+                        output_name + "_dataframe_" + str(count) + ".csv"
+                    )
+                    while df_name in files_indir:
+                        count += 1
+                        df_name = (
+                            output_name + "_dataframe_" + str(count) + ".csv"
+                        )
                 df.to_csv(os.path.join(output_directory, df_name), index=False)
             elif keyname == "plots":
                 plots_dictionary = self.get_analysis_output(keyname)
@@ -1153,6 +1164,31 @@ class sweep_generator:
                             + plot_type
                             + ".png"
                         )
+                        current_files = os.listdir(output_directory)
+                        if figure_name in current_files:
+                            count = 1
+                            figure_name = (
+                                output_name
+                                + "_"
+                                + metric
+                                + "_"
+                                + plot_type
+                                + "_"
+                                + str(count)
+                                + ".png"
+                            )
+                            while figure_name in current_files:
+                                dt_string = dt_string + "_1"
+                                figure_name = (
+                                    output_name
+                                    + "_"
+                                    + metric
+                                    + "_"
+                                    + plot_type
+                                    + "_"
+                                    + str(count)
+                                    + ".png"
+                                )
                         plot.savefig(
                             os.path.join(output_directory, figure_name)
                         )
@@ -1182,11 +1218,21 @@ class sweep_generator:
         - If `self.reference_image` is present, saves it as "reference.tiff" in the output directory.
         - Saves acquisition parameters as a YAML file in the output directory.
         """
+        now = datetime.now()  # dd/mm/YY H:M:S
+        dt_string = now.strftime("%Y%m%d")
         if output_name is None:
             output_name = "vLab4mic_images_"
         if output_directory is None:
+            foldername = "simulated_images_" + dt_string
+            filesindir = os.listdir(self.output_directory)
+            if foldername in filesindir:
+                count = 1
+                foldername = "simulated_images_" + dt_string + "_" + str(count)
+                while foldername in filesindir:
+                    count+=1
+                    foldername = "simulated_images_" + dt_string + "_" + str(count)
             output_directory = os.path.join(
-                self.output_directory, "simulated_images", ""
+                self.output_directory, foldername
             )
             if not os.path.exists(output_directory):
                 os.makedirs(output_directory)
@@ -1198,8 +1244,9 @@ class sweep_generator:
             image = replicates[0]
             for i in range(1, nreps):
                 image = np.concatenate((image, replicates[i]))
-            name = output_directory + param_combination_id + ".tiff"
-            tiff.imwrite(name, image)
+            name = param_combination_id + ".tiff"
+            dir_name = os.path.join(output_directory, name)
+            tiff.imwrite(dir_name, image)
         if floats_as is not None and callable(floats_as):
             copy_of_params = copy.deepcopy(self.acquisition_outputs_parameters)
             for combination_id, list_of_parameters in copy_of_params.items():
@@ -1221,8 +1268,10 @@ class sweep_generator:
             )
         if self.reference_image is not None:
             # save reference image
-            name_ref = output_directory + "reference.tiff"
-            tiff.imwrite(name_ref, self.reference_image)
+            name_ref = param_combination_id + ".tiff"
+            dir_name_ref = os.path.join(output_directory, name_ref)
+            #name_ref = output_directory + "reference.tiff"
+            tiff.imwrite(dir_name_ref, self.reference_image)
 
 
 def run_parameter_sweep(
