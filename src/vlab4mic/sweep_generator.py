@@ -814,6 +814,7 @@ class sweep_generator:
         else:
             reference_image = self.reference_image
             reference_image_mask = self.reference_image_mask
+        print("Running analysis...")
         measurement_vectors, inputs, metric = (
             sweep.analyse_sweep_single_reference(
                 img_outputs=self.acquisition_outputs,
@@ -825,10 +826,14 @@ class sweep_generator:
                 **self.analysis_parameters,
             )
         )
+        print("Analysis complete.")
         self.analysis["unsorted"]["measurement_vectors"] = measurement_vectors
         self.analysis["unsorted"]["inputs"] = inputs
+        print("Generating analysis dataframe...")
         self.gen_analysis_dataframe()
+        print("Analysis dataframe generated.")
         if plots:
+            print("Generating analysis plots...")
             for metric_name in self.analysis_parameters["metrics_list"]:
                 for plot_type in self.plot_parameters.keys():
                     self.generate_analysis_plots(
@@ -838,10 +843,14 @@ class sweep_generator:
                         filter_dictionary=None,
                         na_as_zero=self.plot_parameters["general"]["na_as_zero"],
                     )
+            print("Analysis plots generated.")
         if save:
+            print("saving analysis...")
             self.save_analysis(
                 output_name=output_name, output_directory=output_directory
             )
+            print("Analysis saved.")
+        print("Analysis run complete.")
 
     def gen_analysis_dataframe(self):
         """
@@ -1208,7 +1217,7 @@ class sweep_generator:
                                 + ".png"
                             )
                             while figure_name in current_files:
-                                dt_string = dt_string + "_1"
+                                count += 1
                                 figure_name = (
                                     output_name
                                     + "_"
