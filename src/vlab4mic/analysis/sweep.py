@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import itertools
 import copy
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 from IPython.utils import io
 
 
