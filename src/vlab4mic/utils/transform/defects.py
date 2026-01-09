@@ -197,11 +197,11 @@ def xmersubset_byclustering(
         else:
             return np.array([])
     # ids_validated are the ids of the center of each xmer that we want to preserve
-    # we only need to then retreive the appropiate indices of the epitopes themselves
+    # we only need to then retrieve the appropriate indices of the epitopes themselves
     # that correspond to these labels
     epitopes_ids = notin_logical_list(
         label_p_epitope, ids_validated
-    )  # this function retreives false
+    )  # this function retrieves false
     # for each time a value ids_validated appears in label_p_epitope
     final_epitopes_ids = epitopes_ids
     subset = epitopes_coords[final_epitopes_ids,]

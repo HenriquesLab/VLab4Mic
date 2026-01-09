@@ -597,7 +597,7 @@ class MolecularStructureParser:
         **kwargs
             Additional keyword arguments (e.g., fluorophore, labeling_efficiency, method).
         """
-        #  only the first appearance of the epitope in every chain is retreived
+        #  only the first appearance of the epitope in every chain is retrieved
         #  if a chain has more than one epitope, only the first one is returned
         target_seq = sequence
         method = "average"

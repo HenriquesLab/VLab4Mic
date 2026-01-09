@@ -14,7 +14,7 @@ def sns_heatmap_pivots(
     return_figure=False,
     metric_name=None,
     decimals="%.4f",
-    fillna = True,
+    na_as_zero = True,
     **kwargs,
 ):
     conditions = list(df_pivots.keys())
@@ -23,7 +23,7 @@ def sns_heatmap_pivots(
         annot_kws = {"size": 10, "rotation": 45}
     else:
         annot_kws = kwargs["annot_kws"]
-    f, axes = plt.subplots(nconditions, 2, figsize=figsize)
+    f, axes = plt.subplots(nconditions, 2, figsize=figsize, squeeze = False)
     plot_num = 0
     if cmaps_range == "same":
         # min and max here correspond to SSIM
@@ -37,7 +37,7 @@ def sns_heatmap_pivots(
     else:
         metric_n = "Metric"
     for n, cond in enumerate(conditions):
-        if fillna:
+        if na_as_zero:
             mask = df_pivots[cond][0].isna()
             df_pivots[cond][0][mask] = 0.0
             mask2 = df_pivots[cond][1].isna()

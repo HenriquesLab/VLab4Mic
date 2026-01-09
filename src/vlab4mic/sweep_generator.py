@@ -95,6 +95,8 @@ class sweep_generator:
         self.plot_parameters["lineplots"]["style"] = None
         self.plot_parameters["lineplots"]["estimator"] = "mean"
         self.plot_parameters["lineplots"]["errorbar"] = "ci"
+        self.plot_parameters["general"] = {}
+        self.plot_parameters["general"]["na_as_zero"] = True
         self.structures_info_list = self.experiment.structures_info_list
         # Use the directly loaded parameter_settings instead of experiment.param_settings
         # to ensure all parameter groups (including particle_defect) are available
@@ -753,6 +755,22 @@ class sweep_generator:
             for key, val in kwargs.items():
                 self.plot_parameters[plot_type][key] = val
 
+    def set_na_as_zero_in_plots(self, na_as_zero: bool = True):
+        """
+        Set whether to treat NaN values as zero in plots.
+
+        Parameters
+        ----------
+        :param na_as_zero: bool, optional
+            If True, NaN values will be treated as zero in plots. Defaults to True.
+            This does not affect the underlying data, only the visualization.
+
+        Returns
+        -------
+        None
+        """
+        self.plot_parameters["general"]["na_as_zero"] = na_as_zero        
+
     def run_analysis(
         self,
         save=True,
@@ -818,6 +836,7 @@ class sweep_generator:
                         return_figure=True,
                         metric_name=metric_name,
                         filter_dictionary=None,
+                        na_as_zero=self.plot_parameters["general"]["na_as_zero"],
                     )
         if save:
             self.save_analysis(
@@ -876,6 +895,7 @@ class sweep_generator:
         decimals: int = None,
         return_figure=True,
         filter_dictionary=None,
+        na_as_zero = True,
         **kwargs,
     ):
         """
@@ -918,6 +938,7 @@ class sweep_generator:
                 return_figure=return_figure,
                 decimals=decimals,
                 filter_dictionary=filter_dictionary,
+                na_as_zero = na_as_zero,
                 **plot_params,
                 **kwargs
             )
@@ -929,6 +950,7 @@ class sweep_generator:
                 decimals=decimals,
                 return_figure=return_figure,
                 filter_dictionary=filter_dictionary,
+                na_as_zero = na_as_zero,
                 **plot_params,
                 **kwargs
             )
@@ -945,6 +967,7 @@ class sweep_generator:
         filter_dictionary=None,
         annotations=False,
         palette=None,
+        na_as_zero = False,
         **kwargs,
     ):
         """
@@ -1016,6 +1039,7 @@ class sweep_generator:
             metric_name=metric_name,
             conditions_cmaps=[cmap_palette]*nconditions,
             decimals=decimals,
+            na_as_zero = na_as_zero,
             **kwargs
         )
         return plot
@@ -1034,6 +1058,7 @@ class sweep_generator:
         decimals="%.4f",
         return_figure=True,
         filter_dictionary=None,
+        na_as_zero = False,
         **kwargs,
     ):
         """
@@ -1079,8 +1104,13 @@ class sweep_generator:
         if style is None and len(self.parameters_with_set_values) > 1:
             style = self.parameters_with_set_values[1]
         fig, axes = plt.subplots(figsize=figsize)
+        if na_as_zero:
+            data_to_plot = data.copy(deep=True)
+            data_to_plot.fillna(0, inplace=True)
+        else:
+            data_to_plot = data
         sns.lineplot(
-            data=data,
+            data=data_to_plot,
             x=x_param,
             y=metric_name,
             hue=hue,
@@ -1095,7 +1125,7 @@ class sweep_generator:
         axes.xaxis.set_major_formatter(FormatStrFormatter(decimals))
         title = estimator + " " + metric_name + " for " + x_param
         if style is not None:
-            title = title + "per " + style
+            title = title + " per " + style
         plt.title(title)
         plt.close()
         return fig
@@ -1140,6 +1170,17 @@ class sweep_generator:
             if keyname == "dataframes":
                 df = self.get_analysis_output(keyname)
                 df_name = output_name + "_dataframe.csv"
+                files_indir = os.listdir(output_directory)
+                if df_name in files_indir:
+                    count = 1
+                    df_name = (
+                        output_name + "_dataframe_" + str(count) + ".csv"
+                    )
+                    while df_name in files_indir:
+                        count += 1
+                        df_name = (
+                            output_name + "_dataframe_" + str(count) + ".csv"
+                        )
                 df.to_csv(os.path.join(output_directory, df_name), index=False)
             elif keyname == "plots":
                 plots_dictionary = self.get_analysis_output(keyname)
@@ -1153,6 +1194,31 @@ class sweep_generator:
                             + plot_type
                             + ".png"
                         )
+                        current_files = os.listdir(output_directory)
+                        if figure_name in current_files:
+                            count = 1
+                            figure_name = (
+                                output_name
+                                + "_"
+                                + metric
+                                + "_"
+                                + plot_type
+                                + "_"
+                                + str(count)
+                                + ".png"
+                            )
+                            while figure_name in current_files:
+                                dt_string = dt_string + "_1"
+                                figure_name = (
+                                    output_name
+                                    + "_"
+                                    + metric
+                                    + "_"
+                                    + plot_type
+                                    + "_"
+                                    + str(count)
+                                    + ".png"
+                                )
                         plot.savefig(
                             os.path.join(output_directory, figure_name)
                         )
@@ -1182,11 +1248,21 @@ class sweep_generator:
         - If `self.reference_image` is present, saves it as "reference.tiff" in the output directory.
         - Saves acquisition parameters as a YAML file in the output directory.
         """
+        now = datetime.now()  # dd/mm/YY H:M:S
+        dt_string = now.strftime("%Y%m%d")
         if output_name is None:
             output_name = "vLab4mic_images_"
         if output_directory is None:
+            foldername = "simulated_images_" + dt_string
+            filesindir = os.listdir(self.output_directory)
+            if foldername in filesindir:
+                count = 1
+                foldername = "simulated_images_" + dt_string + "_" + str(count)
+                while foldername in filesindir:
+                    count+=1
+                    foldername = "simulated_images_" + dt_string + "_" + str(count)
             output_directory = os.path.join(
-                self.output_directory, "simulated_images", ""
+                self.output_directory, foldername
             )
             if not os.path.exists(output_directory):
                 os.makedirs(output_directory)
@@ -1198,8 +1274,9 @@ class sweep_generator:
             image = replicates[0]
             for i in range(1, nreps):
                 image = np.concatenate((image, replicates[i]))
-            name = output_directory + param_combination_id + ".tiff"
-            tiff.imwrite(name, image)
+            name = param_combination_id + ".tiff"
+            dir_name = os.path.join(output_directory, name)
+            tiff.imwrite(dir_name, image)
         if floats_as is not None and callable(floats_as):
             copy_of_params = copy.deepcopy(self.acquisition_outputs_parameters)
             for combination_id, list_of_parameters in copy_of_params.items():
@@ -1221,8 +1298,10 @@ class sweep_generator:
             )
         if self.reference_image is not None:
             # save reference image
-            name_ref = output_directory + "reference.tiff"
-            tiff.imwrite(name_ref, self.reference_image)
+            name_ref = param_combination_id + ".tiff"
+            dir_name_ref = os.path.join(output_directory, name_ref)
+            #name_ref = output_directory + "reference.tiff"
+            tiff.imwrite(dir_name_ref, self.reference_image)
 
 
 def run_parameter_sweep(
@@ -1271,6 +1350,8 @@ def run_parameter_sweep(
     psf_voxel_nm = None,
     depth_of_field_nm = None,
     exp_time = None,
+    # for plot generation
+    na_as_zero = True,
     # Add more as needed for your sweep
 ):
     """
@@ -1369,7 +1450,7 @@ def run_parameter_sweep(
     sweep_gen.select_modalities(modalities=modalities)
     sweep_gen.set_output_directory(output_directory=output_directory)
     sweep_gen.set_number_of_repetitions(sweep_repetitions)
-    # number of particles accross sweep
+    # number of particles across sweep
     if particle_positions is not None:
         # set those positions
         sweep_gen.experiment.set_virtualsample_params(
@@ -1416,6 +1497,7 @@ def run_parameter_sweep(
         reference_structure=reference_structure,
         reference_probe=reference_probe,
         **reference_parameters)
+    sweep_gen.set_na_as_zero_in_plots(na_as_zero=na_as_zero)
     if run_analysis:
         sweep_gen.run_analysis(
             save=save_analysis_results, 

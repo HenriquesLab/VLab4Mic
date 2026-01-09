@@ -35,9 +35,9 @@ def voxelate_points_withrange(coordinates, bin_pixelsize, ranges):
 
     binrange = [ranges[0], ranges[1], ranges[2]]
     nbins = [
-        int(np.diff(ranges[0]) / bin_pixelsize),
-        int(np.diff(ranges[1]) / bin_pixelsize),
-        int(np.diff(ranges[2]) / bin_pixelsize),
+        int(np.diff(ranges[0])[0] / bin_pixelsize),
+        int(np.diff(ranges[1])[0] / bin_pixelsize),
+        int(np.diff(ranges[2])[0] / bin_pixelsize),
     ]
     hist3D, edges = np.histogramdd(coordinates, bins=nbins, range=binrange)
     return hist3D

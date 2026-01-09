@@ -6,7 +6,7 @@ import copy
 
 def test_simple_imaging_system():
     imager, _ = experiments.build_virtual_microscope()
-    assert imager.get_absoulte_reference_point().shape == (1, 3)
+    assert imager.get_absolute_reference_point().shape == (1, 3)
 
 
 def test_get_raw_volume(experiment_7r5k_base):
@@ -21,7 +21,7 @@ def test_multi_imaging_system():
     imager, _ = experiments.build_virtual_microscope(
         multimodal=["STED", "Confocal"]
     )
-    assert imager.get_absoulte_reference_point().shape == (1, 3)
+    assert imager.get_absolute_reference_point().shape == (1, 3)
 
 
 def test_image_from_field(configuration_directory, gt_structural_model_field):
@@ -35,7 +35,7 @@ def test_image_from_field(configuration_directory, gt_structural_model_field):
         save=True,
         multimodal=selected_mods,
     )
-    assert experiment_test.imager.get_absoulte_reference_point().shape == (
+    assert experiment_test.imager.get_absolute_reference_point().shape == (
         1,
         3,
     )
