@@ -12,6 +12,7 @@ data/
 # Files
 .DS_Store
 .coverage
+*.xml
 __pycache__
 poetry.lock
 uv.lock

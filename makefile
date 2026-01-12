@@ -34,7 +34,7 @@ format:
 	pre-commit run ruff-format --all-files
 
 pytest:
-	pytest --cov=vlab4mic
+	pytest --cov=vlab4mic --cov-report=xml
 
 mypy:
 	mypy --ignore-missing-imports src
