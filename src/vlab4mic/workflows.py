@@ -22,7 +22,7 @@ from .utils.transform.datatype import truncate
 from .utils.data_format.structural_format import label_builder_format
 from pathlib import Path
 
-def load_structure(structure_id: str = None, config_dir=None, structure_path=None):
+def load_structure(structure_id: str = None, config_dir=None, structure_path=None, structure_format="CIF"):
     """
     Initialise a BioPython object for the PDB/CIF ID and retrieve available information about specific labelling.
 
@@ -47,10 +47,10 @@ def load_structure(structure_id: str = None, config_dir=None, structure_path=Non
         if structure_path is not None:
             print("Loading structure from local file")
             structure = build_structure_cif(
-                cif_file=structure_path, struct_title="", cif_id=structure_id
+                cif_file=structure_path, struct_title="", cif_id=structure_id, format_type=structure_format
             )
             structure_params = dict(
-                model = {"ID": structure_id, "format": "CIF", "title": "", "database": ""},
+                model = {"ID": structure_id, "format": structure_format, "title": "", "database": ""},
             )
             print("Structure Loaded!")
             return structure, structure_params
