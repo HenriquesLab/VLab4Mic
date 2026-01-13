@@ -37,6 +37,7 @@ if not os.path.exists(output_path):
 class ExperimentParametrisation:
     experiment_id: str = "vLab4mic_experiment"
     structure_id: str = "1XI5"
+    structure_format: str = "CIF"
     configuration_path: str = ""
     structure_label: str = "NHS_ester"
     fluorophore_id: str = "AF647"
@@ -194,6 +195,7 @@ class ExperimentParametrisation:
         if structure_path is not None:
             self.structure_path = structure_path
             self.structure_id = structure_id
+            self.structure_format = structure_path.split(".")[-1].upper()
         else:
             self.structure_id = structure_id
         if build:
@@ -450,7 +452,7 @@ class ExperimentParametrisation:
         """
         if self.structure_id and self.structure_path:
             struct, struct_param = load_structure(
-                self.structure_id, self.configuration_path, self.structure_path
+                self.structure_id, self.configuration_path, self.structure_path, self.structure_format
             )
             self.structure = struct
             self.objects_created["structure"] = True
