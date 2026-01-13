@@ -172,7 +172,11 @@ class MolecularStructureParser:
         list of str
             List of protein names.
         """
-        return list(self.protein_names.keys())
+        if self.protein_names is not None:
+            if len(list(self.protein_names.keys())) > 0:
+                return list(self.protein_names.keys())
+        else:
+            return []
 
     def _random_substring(string, size=5):
         """
