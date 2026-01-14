@@ -9,8 +9,8 @@ sweep_gen = sweep_generator.run_parameter_sweep(
     probe_templates=["NPC_Nup96_Cterminal_direct",],
     sweep_repetitions=20,
     # parameters for sweep
-    labelling_efficiency=(0,1,5),
-    defect=(0,1,5),
+    labelling_efficiency=(0,1,0.25),
+    defect=(0,1,0.25),
     defect_small_cluster=[300,],
     defect_large_cluster=[600,],
     exp_time=[0.001, 0.01,],

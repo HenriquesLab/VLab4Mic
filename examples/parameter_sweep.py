@@ -6,8 +6,8 @@ sweep_gen = run_parameter_sweep(
     probe_templates=["NPC_Nup96_Cterminal_direct",],  # Probe template tailored to 7R5K
     sweep_repetitions=3,
     # parameters for sweep
-    labelling_efficiency=(0, 1, 3),  # 3 linearly spaced values between 0 and 1
-    defect=(0, 1, 3),  # 3 linearly spaced values between 0 and 1
+    labelling_efficiency=(0, 1, 0.5),  # values between 0 and 1 with step of 0.5
+    defect=(0, 1, 0.5),  # values between 0 and 1 with step of 0.5
     defect_small_cluster=[300,],  # 1 single value 
     defect_large_cluster=[600,],  # 1 single value 
     exp_time=[0.001, 0.01,],  # 2 values
