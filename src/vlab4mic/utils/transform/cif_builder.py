@@ -151,10 +151,13 @@ def indirect_labelling(coords_nomrals, label_data, **kwargs):
         # select randomly, and according to labelling_efficiency
         # the places that will be labelled
         #efficiency = label_data["labelling_efficiency"]
-        if label_data["conjugation_sites"]["efficiency"] != 1:
-            dol=label_data["conjugation_sites"]["efficiency"]
+        if label_data["conjugation_sites"]["DoL"] is not None:
+            if label_data["conjugation_sites"]["DoL"] > 0:
+                dol=label_data["conjugation_sites"]["DoL"]
+            else:
+                dol = None
         else:
-            dol=None
+            dol = None
         epitopes, normals = binomial_epitope_sampling(
             epitopes=coords_nomrals["coordinates"],
             p=label_data["labelling_efficiency"],

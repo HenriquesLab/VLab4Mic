@@ -26,7 +26,7 @@ conjugation_sites:
       - CAA
       residues: 
       - OGQ
-  efficiency: 1
+  DoL: 1
 epitope: # for secondary
   target:
     type: 

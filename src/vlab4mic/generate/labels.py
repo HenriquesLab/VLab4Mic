@@ -52,9 +52,9 @@ class Label:
         for key, value in kwargs.items():
             self.model[key] = value
 
-    def _set_conjugation_params(self, target: dict, efficiency, **kwargs):
+    def _set_conjugation_params(self, target: dict, dol, **kwargs):
         self.conjugation["target"] = target
-        self.conjugation["efficiency"] = efficiency
+        self.conjugation["DoL"] = dol
         for key, value in kwargs.items():
             self.conjugation[key] = value
 

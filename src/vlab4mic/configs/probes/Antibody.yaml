@@ -26,7 +26,7 @@ conjugation_sites:
       - CA
       residues:
       - LYS
-  efficiency: 1
+  DoL: 1
 epitope: # for secondary
   target:
     type: Sequence
