@@ -252,6 +252,7 @@ class sweep_generator:
             vsample_outputs=self.virtual_samples,
             vsampl_pars=self.virtual_samples_parameters,
             modalities=self.modalities,
+            modality_params=self.modality_parameters,
             modality_acq_prams=self.acquisition_parameters,
         )
 
@@ -501,18 +502,19 @@ class sweep_generator:
                             ]
                             == "int_slider"
                         ):
-                            step = np.ceil((values[1] - values[0]) / values[2])
+                            #step = np.ceil((values[1] - values[0]) / values[2])
                             self.params_by_group[param_group][param_name] = (
                                 np.arange(
                                     start=values[0],
                                     stop=values[1],
-                                    step=step,
+                                    step=values[2],
                                     dtype=int,
                                 )
                             )
                         else:
+                            num = int((values[1]-values[0]) / values[2]) + 1
                             param_iterables = np.linspace(
-                                values[0], values[1], values[2]
+                                values[0], values[1], num
                             )
                             self.params_by_group[param_group][
                                 param_name
