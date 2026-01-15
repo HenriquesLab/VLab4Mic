@@ -252,6 +252,7 @@ class sweep_generator:
             vsample_outputs=self.virtual_samples,
             vsampl_pars=self.virtual_samples_parameters,
             modalities=self.modalities,
+            modality_params=self.modality_parameters,
             modality_acq_prams=self.acquisition_parameters,
         )
 

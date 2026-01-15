@@ -151,17 +151,21 @@ def sweep_vasmples(
                         #    keep=False, use_self_particle=True, **vsample_pars
                         # )
                         for rep in range(repetitions):
-                            if relative_positions_exist and relative_positions is not None:
+                            if relative_positions_exist and relative_positions is not None: # keep the same positions
                                 experiment.clear_virtual_sample()
                                 experiment.set_virtualsample_params(
                                     update_mode=True,
-                                    particle_positions = relative_positions)
+                                    particle_positions = relative_positions,
+                                    **vsample_pars)
                                 experiment.build(
                                     modules=["coordinate_field"],
                                     use_self_particle=True,
                                 )
                             else:
                                 experiment.clear_virtual_sample()
+                                experiment.set_virtualsample_params(
+                                    update_mode=True,
+                                    **vsample_pars)
                                 experiment.build(
                                     modules=["coordinate_field"],
                                     use_self_particle=True,
@@ -296,6 +300,7 @@ def sweep_modalities_updatemod(
                 mod_n = 0
                 for modality_name in experiment.selected_mods.keys():
                     for mod_pars_number, mod_pars in modality_params.items():
+                        print(f"Modality: {modality_name}, params set: {mod_pars} ")
                         experiment.update_modality(modality_name, **mod_pars)
                         # calculate virtual sample mask per modality
                         vsample_mask_per_mod = experiment.imager.generate_modality_mask(modality=modality_name)
