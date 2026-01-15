@@ -118,10 +118,21 @@ def decorate_epitopes_normals(normals_ft_epitopes, labeling_entity, dol:int = No
             max_emitters = len(new_points)
             if int_dol != 0:
                 if int_dol > max_emitters - 2 :
+                    # use max value
                     list_reoriented_points.append(new_points)
                 else:
-                    new_points = new_points[0:(2+int_dol)]
-                    list_reoriented_points.append(new_points)
+                    # take the first two points to keep pivot and axis
+                    new_points_dol = copy.copy(new_points[0:2])
+                    # then randomly select the rest of the emitters
+                    emitter_indices = np.arange(2, max_emitters)
+                    selected_emitters = np.random.choice(
+                        emitter_indices, size=int_dol, replace=False
+                    )
+                    for se in selected_emitters:
+                        new_points_dol = np.vstack((new_points_dol, new_points[se]))
+                    list_reoriented_points.append(new_points_dol)
+                    #new_points = new_points[0:(2+int_dol)]
+                    #list_reoriented_points.append(new_points)
         else:
             # print(new_points, rot_axis)
             list_reoriented_points.append(new_points)
