@@ -407,7 +407,7 @@ If a parameter is `None`, it will not be swept and will use default values.
 - peptide_motif
 - probe_distance_to_epitope
 - probe_steric_hindrance
-- probe_conjugation_efficiency
+- probe_DoL
 - probe_wobble_theta
 - labelling_efficiency
 - defect
@@ -449,7 +449,7 @@ If a parameter is `None`, it will not be swept and will use default values.
 | **probe_fluorophore** | Fluorophore name for emitters (e.g., "AF647") |
 | **probe_paratope** | If probe_model is defined, the paratope defines the anchor point of the probe |
 | **probe_conjugation_target_info** | If probe_model is defined, this dictionary specifies the sites to use as probe emitters |
-| **probe_conjugation_efficiency** | Efficiency of conjugation of emitters (float) |
+| **probe_DoL** | Efficiency of conjugation of emitters (float) |
 | **probe_seconday_epitope** | If probe is secondary, this amino acid sequence defines the epitope on the primary antibody model |
 | **probe_wobble_theta** | Enable probe wobbling (float or None) |
 | **probe_steric_hindrance** | Steric hindrance value or configuration (distance between epitopes) |

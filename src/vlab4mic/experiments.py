@@ -934,7 +934,7 @@ class ExperimentParametrisation:
         probe_steric_hindrance=None,
         probe_paratope: str = None,
         probe_conjugation_target_info=None,
-        probe_conjugation_efficiency: float = None,
+        probe_DoL: float = None,
         probe_seconday_epitope=None,
         probe_wobble_theta: float = None,
         labelling_efficiency: float = 1.0,
@@ -972,7 +972,7 @@ class ExperimentParametrisation:
             Paratope identifier or information.
         :param probe_conjugation_target_info : Any, optional
             Information about the conjugation target.
-        :param probe_conjugation_efficiency : float, optional
+        :param probe_DoL : float, optional
             Efficiency of the probe conjugation.
         :param probe_seconday_epitope : Any, optional
             Information about a secondary epitope target.
@@ -1063,9 +1063,9 @@ class ExperimentParametrisation:
             probe_configuration["conjugation_sites"]["target"]["value"] = (
                 probe_conjugation_target_info["value"]
             )
-        if probe_conjugation_efficiency is not None:
-            probe_configuration["conjugation_efficiency"] = (
-                probe_conjugation_efficiency
+        if probe_DoL is not None:
+            probe_configuration["DoL"] = (
+                probe_DoL
             )
         if probe_seconday_epitope is not None:
             probe_configuration["epitope_target_info"] = probe_seconday_epitope
@@ -1328,7 +1328,7 @@ def generate_virtual_sample(
     probe_fluorophore: str = "AF647",
     probe_paratope: str = None,
     probe_conjugation_target_info=None,
-    probe_conjugation_efficiency: float = None,
+    probe_DoL: float = None,
     probe_seconday_epitope=None,
     probe_wobble_theta=None,
     labelling_efficiency: float = 1.0,
@@ -1381,7 +1381,7 @@ def generate_virtual_sample(
         Sequence of the paratope site for when probe includes a model.
     :param probe_conjugation_target_info : Any, optional
         Information about the probe conjugation target.
-    :param probe_conjugation_efficiency : float, optional
+    :param probe_DoL : float, optional
         Efficiency of conjugation of emitters.
     :param probe_seconday_epitope : str, optional
         Sequence within probe model to be used as epitope for a secondary.
@@ -1462,9 +1462,9 @@ def generate_virtual_sample(
                 probe_configuration["conjugation_target_info"] = (
                     probe_conjugation_target_info
                 )
-            if probe_conjugation_efficiency is not None:
-                probe_configuration["conjugation_efficiency"] = (
-                    probe_conjugation_efficiency
+            if probe_DoL is not None:
+                probe_configuration["DoL"] = (
+                    probe_DoL
                 )
             if probe_seconday_epitope is not None:
                 probe_configuration["epitope_target_info"] = probe_seconday_epitope
@@ -1579,7 +1579,7 @@ def image_vsample(
     probe_fluorophore: str = "AF647",
     probe_paratope: str = None,
     probe_conjugation_target_info = None,
-    probe_conjugation_efficiency: float = None,
+    probe_DoL: float = None,
     probe_seconday_epitope = None,
     probe_wobble_theta = None,
     labelling_efficiency: float = 1.0,
@@ -1649,7 +1649,7 @@ def image_vsample(
         Sequence of the paratope site for when probe includes a model.
     :param probe_conjugation_target_info : any, optional
         Information about the probe conjugation target.
-    :param probe_conjugation_efficiency : float, optional
+    :param probe_DoL : float, optional
         Efficiency of conjugation of emitters.
     :param probe_seconday_epitope : str, optional
         Sequence within probe model to be used as epitope for a secondary.
@@ -1710,7 +1710,7 @@ def image_vsample(
             probe_fluorophore=probe_fluorophore,
             probe_paratope=probe_paratope,
             probe_conjugation_target_info=probe_conjugation_target_info,
-            probe_conjugation_efficiency=probe_conjugation_efficiency,
+            probe_DoL=probe_DoL,
             probe_seconday_epitope=probe_seconday_epitope,
             probe_wobble_theta=probe_wobble_theta,
             labelling_efficiency=labelling_efficiency,

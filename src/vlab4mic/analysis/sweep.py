@@ -868,7 +868,7 @@ def probe_parameters_sweep(
     probe_fluorophore: str = None,
     probe_paratope: str = None,
     probe_conjugation_target_info=None,
-    probe_conjugation_efficiency: list[float] = None,
+    probe_DoL: list[float] = None,
     probe_seconday_epitope=None,
     probe_wobbling=None,
     labelling_efficiency: list[float] = None,
@@ -885,7 +885,7 @@ def probe_parameters_sweep(
     probe_fluorophore : str, optional
     probe_paratope : str, optional
     probe_conjugation_target_info : any, optional
-    probe_conjugation_efficiency : list of float, optional
+    probe_DoL : list of float, optional
     probe_seconday_epitope : any, optional
     probe_wobbling : any, optional
     labelling_efficiency : list of float, optional

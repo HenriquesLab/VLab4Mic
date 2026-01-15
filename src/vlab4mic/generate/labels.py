@@ -52,9 +52,9 @@ class Label:
         for key, value in kwargs.items():
             self.model[key] = value
 
-    def _set_conjugation_params(self, target: dict, dol, **kwargs):
+    def _set_conjugation_params(self, target: dict, DoL=None, **kwargs):
         self.conjugation["target"] = target
-        self.conjugation["DoL"] = dol
+        self.conjugation["DoL"] = DoL
         for key, value in kwargs.items():
             self.conjugation[key] = value
 
@@ -265,9 +265,9 @@ def construct_label(
         label_params["conjugation_sites"]["target"] = kwargs[
             "conjugation_target_info"
         ]
-    if "conjugation_efficiency" in kwargs.keys():
-        label_params["conjugation_sites"]["efficiency"] = kwargs[
-            "conjugation_efficiency"
+    if "DoL" in kwargs.keys():
+        label_params["conjugation_sites"]["DoL"] = kwargs[
+            "DoL"
         ]
     if "epitope_target_info" in kwargs.keys():
         label_params["epitope"]["target"] = kwargs["epitope_target_info"]
