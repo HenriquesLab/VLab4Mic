@@ -26,7 +26,7 @@ conjugation_sites:
       - C1
       residues: 
       - CRO
-  efficiency: 1
+  DoL:
 epitope: # for secondary
   target:
     type: 

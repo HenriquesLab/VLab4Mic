@@ -934,7 +934,7 @@ class ExperimentParametrisation:
         probe_steric_hindrance=None,
         probe_paratope: str = None,
         probe_conjugation_target_info=None,
-        probe_conjugation_efficiency: float = None,
+        probe_DoL: float = None,
         probe_seconday_epitope=None,
         probe_wobble_theta: float = None,
         labelling_efficiency: float = 1.0,
@@ -972,7 +972,7 @@ class ExperimentParametrisation:
             Paratope identifier or information.
         :param probe_conjugation_target_info : Any, optional
             Information about the conjugation target.
-        :param probe_conjugation_efficiency : float, optional
+        :param probe_DoL : float, optional
             Efficiency of the probe conjugation.
         :param probe_seconday_epitope : Any, optional
             Information about a secondary epitope target.
@@ -1063,10 +1063,13 @@ class ExperimentParametrisation:
             probe_configuration["conjugation_sites"]["target"]["value"] = (
                 probe_conjugation_target_info["value"]
             )
-        if probe_conjugation_efficiency is not None:
-            probe_configuration["conjugation_efficiency"] = (
-                probe_conjugation_efficiency
+        if probe_DoL is not None:
+            print(f"Setting probe DoL to: {probe_DoL}")
+            probe_configuration["conjugation_sites"]["DoL"] = (
+                probe_DoL
             )
+        else:
+            print("Add_probe: Using default probe DoL from template")
         if probe_seconday_epitope is not None:
             probe_configuration["epitope_target_info"] = probe_seconday_epitope
         if probe_wobble_theta is not None:
@@ -1328,7 +1331,7 @@ def generate_virtual_sample(
     probe_fluorophore: str = "AF647",
     probe_paratope: str = None,
     probe_conjugation_target_info=None,
-    probe_conjugation_efficiency: float = None,
+    probe_DoL: float = None,
     probe_seconday_epitope=None,
     probe_wobble_theta=None,
     labelling_efficiency: float = 1.0,
@@ -1381,7 +1384,7 @@ def generate_virtual_sample(
         Sequence of the paratope site for when probe includes a model.
     :param probe_conjugation_target_info : Any, optional
         Information about the probe conjugation target.
-    :param probe_conjugation_efficiency : float, optional
+    :param probe_DoL : float, optional
         Efficiency of conjugation of emitters.
     :param probe_seconday_epitope : str, optional
         Sequence within probe model to be used as epitope for a secondary.
@@ -1421,6 +1424,21 @@ def generate_virtual_sample(
     myexperiment = ExperimentParametrisation()
     if clear_experiment:
         myexperiment.clear_experiment()
+    # select structure
+    if structure_is_path:
+        print(f"Selecting structure from path: {structure}")
+        myexperiment.select_structure(
+            structure_id=structure.split(".")[0], 
+            structure_path=structure,
+            build=True
+        )
+    else:
+        print("Selecting structure from ID:", structure)
+        myexperiment.select_structure(
+            structure_id=structure, 
+            structure_path=None,
+            build=True
+        )
     # load default configuration for probe
     if (primary_probe is not None) and (secondary_probe is not None):
         print("Adding primary and secondary probes")
@@ -1462,9 +1480,9 @@ def generate_virtual_sample(
                 probe_configuration["conjugation_target_info"] = (
                     probe_conjugation_target_info
                 )
-            if probe_conjugation_efficiency is not None:
-                probe_configuration["conjugation_efficiency"] = (
-                    probe_conjugation_efficiency
+            if probe_DoL is not None:
+                probe_configuration["probe_DoL"] = (
+                    probe_DoL
                 )
             if probe_seconday_epitope is not None:
                 probe_configuration["epitope_target_info"] = probe_seconday_epitope
@@ -1478,22 +1496,7 @@ def generate_virtual_sample(
         virtual_sample_template + ".yaml",
     )
     vsample_configuration = load_yaml(virtual_sample_template)
-    myexperiment.configuration_path
-    if structure_is_path:
-        print(f"Selecting structure from path: {structure}")
-        myexperiment.select_structure(
-            structure_id=structure.split(".")[0], 
-            structure_path=structure,
-            build=False
-        )
-    else:
-        print("Selecting structure from ID:", structure)
-        myexperiment.select_structure(
-            structure_id=structure, 
-            structure_path=None,
-            build=False
-        )
-
+    #myexperiment.configuration_path
     if defect and defect_large_cluster and defect_small_cluster:
         myexperiment.defect_eps["eps1"] = defect_small_cluster
         myexperiment.defect_eps["eps2"] = defect_large_cluster
@@ -1518,7 +1521,10 @@ def generate_virtual_sample(
     vsample_configuration["yz_orientations"] = yz_orientations
     vsample_configuration["axial_offset"] = axial_offset
     myexperiment.virtualsample_params = vsample_configuration
-    myexperiment.build(use_locals=True)
+    myexperiment.build(modules=[
+                "particle",
+                "coordinate_field",
+                "imager"], use_locals=True)
     if expansion_factor > 1:
         myexperiment.expand_virtual_sample(factor=expansion_factor)
     # myexperiment.coordinate_field_id = virtual_sample
@@ -1579,7 +1585,7 @@ def image_vsample(
     probe_fluorophore: str = "AF647",
     probe_paratope: str = None,
     probe_conjugation_target_info = None,
-    probe_conjugation_efficiency: float = None,
+    probe_DoL: float = None,
     probe_seconday_epitope = None,
     probe_wobble_theta = None,
     labelling_efficiency: float = 1.0,
@@ -1649,7 +1655,7 @@ def image_vsample(
         Sequence of the paratope site for when probe includes a model.
     :param probe_conjugation_target_info : any, optional
         Information about the probe conjugation target.
-    :param probe_conjugation_efficiency : float, optional
+    :param probe_DoL : float, optional
         Efficiency of conjugation of emitters.
     :param probe_seconday_epitope : str, optional
         Sequence within probe model to be used as epitope for a secondary.
@@ -1710,7 +1716,7 @@ def image_vsample(
             probe_fluorophore=probe_fluorophore,
             probe_paratope=probe_paratope,
             probe_conjugation_target_info=probe_conjugation_target_info,
-            probe_conjugation_efficiency=probe_conjugation_efficiency,
+            probe_DoL=probe_DoL,
             probe_seconday_epitope=probe_seconday_epitope,
             probe_wobble_theta=probe_wobble_theta,
             labelling_efficiency=labelling_efficiency,

@@ -75,6 +75,7 @@ def test_vsample_function():
         rotation_angles=[0,20,30],
         yz_orientations=yz_orientations,
         axial_offset=axial_offset,
+        probe_DoL=5,
         number_of_particles=10,
         clear_experiment=True
     )

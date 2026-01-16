@@ -21,7 +21,7 @@ conjugation_sites:
   target:
     type:
     value:
-  efficiency:
+  DoL:
   fluorophore:
 epitope: 
   target:

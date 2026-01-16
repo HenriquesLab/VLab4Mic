@@ -537,7 +537,7 @@ class sweep_generator:
             peptide_motif: dict = None,
             probe_distance_to_epitope= None,
             probe_steric_hindrance= None,
-            probe_conjugation_efficiency = None,
+            probe_DoL = None,
             probe_wobble_theta = None,
             labelling_efficiency = None,
             # defects
@@ -568,9 +568,9 @@ class sweep_generator:
             self.set_parameter_values(
                 "probe", "probe_steric_hindrance", values=probe_steric_hindrance
             )
-        if probe_conjugation_efficiency is not None:
+        if probe_DoL is not None:
             self.set_parameter_values(
-                "probe", "probe_conjugation_efficiency", values=probe_conjugation_efficiency
+                "probe", "probe_DoL", values=probe_DoL
             )
         if probe_wobble_theta is not None:
             self.set_parameter_values(
@@ -1345,7 +1345,7 @@ def run_parameter_sweep(
     peptide_motif: dict = None,
     probe_distance_to_epitope = None,
     probe_steric_hindrance = None,
-    probe_conjugation_efficiency = None,
+    probe_DoL = None,
     probe_wobble_theta = None,
     labelling_efficiency = None,
     defect = None,
@@ -1424,7 +1424,7 @@ def run_parameter_sweep(
         - peptide_motif
         - probe_distance_to_epitope
         - probe_steric_hindrance
-        - probe_conjugation_efficiency
+        - probe_DoL
         - probe_wobble_theta
         - labelling_efficiency
         - defect
@@ -1484,7 +1484,7 @@ def run_parameter_sweep(
         peptide_motif=peptide_motif,
         probe_distance_to_epitope=probe_distance_to_epitope,
         probe_steric_hindrance=probe_steric_hindrance,
-        probe_conjugation_efficiency=probe_conjugation_efficiency,
+        probe_DoL=probe_DoL,
         probe_wobble_theta=probe_wobble_theta,
         labelling_efficiency=labelling_efficiency,
         defect=defect,
