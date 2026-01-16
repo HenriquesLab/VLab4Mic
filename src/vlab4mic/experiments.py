@@ -1473,7 +1473,6 @@ def generate_virtual_sample(
                 probe_configuration["epitope_target_info"] = probe_seconday_epitope
             if probe_wobble_theta is not None:
                 probe_configuration["probe_wobble_theta"] = probe_wobble_theta
-            print("Adding probe to experiment with Dol:", probe_configuration["probe_DoL"])
             myexperiment.add_probe(**probe_configuration)
     # load default configuration for virtual sample
     virtual_sample_template = os.path.join(
