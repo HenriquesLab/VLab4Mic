@@ -26,7 +26,7 @@ conjugation_sites:
       - C1
       residues: 
       - PIA
-  DoL: 1
+  DoL:
 epitope: # for secondary
   target:
     type: 

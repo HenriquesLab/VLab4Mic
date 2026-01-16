@@ -28,7 +28,7 @@ conjugation_sites:
       - LYS
       chains: 
       - B
-  DoL: 1
+  DoL:
 epitope: # for secondary
   target:
     type: 
