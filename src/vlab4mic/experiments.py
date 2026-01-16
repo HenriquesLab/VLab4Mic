@@ -1424,6 +1424,21 @@ def generate_virtual_sample(
     myexperiment = ExperimentParametrisation()
     if clear_experiment:
         myexperiment.clear_experiment()
+    # select structure
+    if structure_is_path:
+        print(f"Selecting structure from path: {structure}")
+        myexperiment.select_structure(
+            structure_id=structure.split(".")[0], 
+            structure_path=structure,
+            build=True
+        )
+    else:
+        print("Selecting structure from ID:", structure)
+        myexperiment.select_structure(
+            structure_id=structure, 
+            structure_path=None,
+            build=True
+        )
     # load default configuration for probe
     if (primary_probe is not None) and (secondary_probe is not None):
         print("Adding primary and secondary probes")
@@ -1481,22 +1496,7 @@ def generate_virtual_sample(
         virtual_sample_template + ".yaml",
     )
     vsample_configuration = load_yaml(virtual_sample_template)
-    myexperiment.configuration_path
-    if structure_is_path:
-        print(f"Selecting structure from path: {structure}")
-        myexperiment.select_structure(
-            structure_id=structure.split(".")[0], 
-            structure_path=structure,
-            build=False
-        )
-    else:
-        print("Selecting structure from ID:", structure)
-        myexperiment.select_structure(
-            structure_id=structure, 
-            structure_path=None,
-            build=False
-        )
-
+    #myexperiment.configuration_path
     if defect and defect_large_cluster and defect_small_cluster:
         myexperiment.defect_eps["eps1"] = defect_small_cluster
         myexperiment.defect_eps["eps2"] = defect_large_cluster
@@ -1521,7 +1521,10 @@ def generate_virtual_sample(
     vsample_configuration["yz_orientations"] = yz_orientations
     vsample_configuration["axial_offset"] = axial_offset
     myexperiment.virtualsample_params = vsample_configuration
-    myexperiment.build(use_locals=True)
+    myexperiment.build(modules=[
+                "particle",
+                "coordinate_field",
+                "imager"], use_locals=True)
     if expansion_factor > 1:
         myexperiment.expand_virtual_sample(factor=expansion_factor)
     # myexperiment.coordinate_field_id = virtual_sample
