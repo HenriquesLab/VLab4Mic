@@ -265,10 +265,12 @@ def construct_label(
         label_params["conjugation_sites"]["target"] = kwargs[
             "conjugation_target_info"
         ]
-    if "DoL" in kwargs.keys():
-        label_params["conjugation_sites"]["DoL"] = kwargs[
-            "DoL"
-        ]
+    #if "probe_DoL" in label_params.keys():
+    #    label_params["conjugation_sites"]["DoL"] = kwargs[
+    #        "probe_DoL"
+    #    ]
+    #else:
+    #    print("No DoL provided, using default value. ########################")
     if "epitope_target_info" in kwargs.keys():
         label_params["epitope"]["target"] = kwargs["epitope_target_info"]
     if "wobble_theta" in label_params.keys():

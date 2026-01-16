@@ -1064,9 +1064,12 @@ class ExperimentParametrisation:
                 probe_conjugation_target_info["value"]
             )
         if probe_DoL is not None:
-            probe_configuration["DoL"] = (
+            print(f"Setting probe DoL to: {probe_DoL}")
+            probe_configuration["conjugation_sites"]["DoL"] = (
                 probe_DoL
             )
+        else:
+            print("Add_probe: Using default probe DoL from template")
         if probe_seconday_epitope is not None:
             probe_configuration["epitope_target_info"] = probe_seconday_epitope
         if probe_wobble_theta is not None:
@@ -1463,13 +1466,14 @@ def generate_virtual_sample(
                     probe_conjugation_target_info
                 )
             if probe_DoL is not None:
-                probe_configuration["DoL"] = (
+                probe_configuration["probe_DoL"] = (
                     probe_DoL
                 )
             if probe_seconday_epitope is not None:
                 probe_configuration["epitope_target_info"] = probe_seconday_epitope
             if probe_wobble_theta is not None:
                 probe_configuration["probe_wobble_theta"] = probe_wobble_theta
+            print("Adding probe to experiment with Dol:", probe_configuration["probe_DoL"])
             myexperiment.add_probe(**probe_configuration)
     # load default configuration for virtual sample
     virtual_sample_template = os.path.join(
