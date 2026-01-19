@@ -45,7 +45,7 @@ class LabeledInstance:
         self.radial_hindance = None
         self.incomplete_labelling = False
         self.incomplete_labelling_params = dict()
-        # Contains the subset of epitopes after defect calculation
+        # Contains the subset of epitopes after incomplete_labelling calculation
         self.incomplete_labelling_target_normals = None
         self.fluo2labels = []
         self.status = dict(source=False, labels=False)
@@ -365,10 +365,10 @@ class LabeledInstance:
         label4target = self._get_source_target_label(target_name)
         # at this point we can sample pairs of target_normals to model incomplete_labelling
         if self.incomplete_labelling:
-            defect_target_normals = self._model_incomplete_labelling(target_normals)
-            target_normals = copy.copy(defect_target_normals)
+            incomplete_labelling_target_normals = self._model_incomplete_labelling(target_normals)
+            target_normals = copy.copy(incomplete_labelling_target_normals)
         else:
-            defect_target_normals = None
+            incomplete_labelling_target_normals = None
         ##### print(f"target_normals after breaking: {target_normals}")
         # print(target_normals, label4target)
         labelling_realisation = np.array([])
@@ -397,7 +397,7 @@ class LabeledInstance:
             labelling_realisation_vectors,
             fluorophore_name,
             plotting_params,
-            defect_target_normals,
+            incomplete_labelling_target_normals,
         )
 
     def _generate_instance_constructor(self):
