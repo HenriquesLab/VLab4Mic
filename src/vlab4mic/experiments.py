@@ -540,13 +540,13 @@ class ExperimentParametrisation:
                         incomplete_labelling = incomplete_labelling_build
                     else:
                         incomplete_labelling = self.incomplete_labelling_eps["incomplete_labelling"]
-                    particle.add_incomplete_labellings(
+                    particle.add_incomplete_labelling(
                         eps1=self.incomplete_labelling_eps["eps1"],
                         xmer_neigh_distance=self.incomplete_labelling_eps["eps2"],
                         deg_dissasembly=incomplete_labelling,
                     )
                 else:
-                    particle.add_incomplete_labellings(
+                    particle.add_incomplete_labelling(
                         deg_dissasembly=0,
                     )
                 if keep:
