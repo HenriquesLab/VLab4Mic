@@ -1314,6 +1314,31 @@ class sweep_generator:
             #name_ref = output_directory + "reference.tiff"
             tiff.imwrite(dir_name_ref, self.reference_image)
 
+    def add_custom_analysis_metric(self, metric_function: callable, metric_name: str):
+        """
+        Add a custom analysis metric function to the sweep generator.
+
+        Parameters
+        ----------
+        :param metric_function: callable
+            A function that takes two numpy arrays (image output and reference image)
+            and returns a float representing the calculated metric.
+        :param metric_name: str
+            The name of the custom metric to be added.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        The custom metric function should have the following signature:
+            def custom_metric(image_output: np.ndarray, reference_image: np.ndarray) -> float:
+                # Calculate and return the metric value
+        """
+        self.analysis_parameters["metrics_list"].append(metric_name)
+        self.custom_metrics[metric_name] = metric_function
+
 
 def run_parameter_sweep(
     structures: list[str] = None,
