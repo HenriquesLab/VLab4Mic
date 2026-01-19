@@ -6,7 +6,7 @@ from skimage.feature import peak_local_max
 from scipy.stats import pearsonr
 import cv2
 
-def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, ref_mask = None, query_mask = None, **kwargs):
+def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, ref_mask = None, query_mask = None, custom_metrics = None, **kwargs):
     """
     Compare two images using specified similarity metrics.
 
@@ -74,6 +74,14 @@ def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, ref_
         elif method == "pearson":
             similarity, pval = pearsonr(ref[union_mask].flatten(), query[union_mask].flatten())
             similarity_vector.append(similarity)
+        elif method in custom_metrics.keys():
+            custom_measure = custom_metrics[method](
+                ref,
+                query,
+                union_mask,
+                **kwargs)
+            print(f"custom meatric measurement: {custom_measure}")
+            similarity_vector.append(custom_measure)
     return similarity_vector, ref, query, masks_used
 
 

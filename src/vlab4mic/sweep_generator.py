@@ -103,6 +103,7 @@ class sweep_generator:
         self.param_settings = self.parameter_settings
         self.use_experiment_structure = False
         self.reference_parameters_unsorted = dict()
+        self.custom_metrics = dict()
         print("vLab4mic sweep generator initialised")
 
     def set_number_of_repetitions(self, repeats: int = 3):
@@ -825,6 +826,7 @@ class sweep_generator:
                 reference_image=reference_image,
                 reference_image_mask=reference_image_mask,
                 reference_params=self.reference_image_parameters,
+                custom_metrics=self.custom_metrics,
                 **self.analysis_parameters,
             )
         )
@@ -1336,7 +1338,8 @@ class sweep_generator:
             def custom_metric(image_output: np.ndarray, reference_image: np.ndarray) -> float:
                 # Calculate and return the metric value
         """
-        self.analysis_parameters["metrics_list"].append(metric_name)
+        if metric_name not in self.analysis_parameters["metrics_list"]:
+            self.analysis_parameters["metrics_list"].append(metric_name)
         self.custom_metrics[metric_name] = metric_function
 
 
@@ -1388,6 +1391,8 @@ def run_parameter_sweep(
     exp_time = None,
     # for plot generation
     na_as_zero = True,
+    custom_metric: callable = None,
+    custom_metric_name: str = None
     # Add more as needed for your sweep
 ):
     """
@@ -1534,6 +1539,10 @@ def run_parameter_sweep(
         reference_probe=reference_probe,
         **reference_parameters)
     sweep_gen.set_na_as_zero_in_plots(na_as_zero=na_as_zero)
+    if custom_metric is not None and custom_metric_name is not None:
+        sweep_gen.add_custom_analysis_metric(
+            metric_function=custom_metric, 
+            metric_name=custom_metric_name)
     if run_analysis:
         sweep_gen.run_analysis(
             save=save_analysis_results, 

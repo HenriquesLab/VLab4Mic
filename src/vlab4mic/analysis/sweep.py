@@ -559,6 +559,7 @@ def analyse_sweep_single_reference(
     metrics_list: list = [
         "ssim",
     ],
+    custom_metrics = None,
     **kwargs,
 ):
     """
@@ -613,6 +614,7 @@ def analyse_sweep_single_reference(
                 force_match=True,
                 zoom_in=zoom_in,
                 metric=metrics_list,
+                custom_metrics = custom_metrics
             )
             r_vector = list([params_id, rep_number]) + list([*rep_measurement])
             measurement_vectors.append(r_vector)
