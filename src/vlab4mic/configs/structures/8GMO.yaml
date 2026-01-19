@@ -3,7 +3,7 @@ model:
   format: CIF
   database: RCSB
   title: Bacteriophage T4 capsid shell 
-defects:
+incomplete_labelling:
   small_cluster:
   big_cluster: 
   

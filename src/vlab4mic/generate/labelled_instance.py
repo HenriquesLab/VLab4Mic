@@ -18,7 +18,7 @@ from ..utils.visualisation.matplotlib_plots import (
     draw_nomral_segments,
 )
 from ..utils.transform.cif_builder import create_instance_label
-from ..utils.transform.defects import xmersubset_byclustering
+from ..utils.transform.incomplete_labelling import xmersubset_byclustering
 from ..utils.data_format.structural_format import builder_format
 
 
@@ -43,10 +43,10 @@ class LabeledInstance:
         self.axis = dict()
         self.plotting_params = dict()
         self.radial_hindance = None
-        self.defects = False
-        self.defects_params = dict()
+        self.incomplete_labelling = False
+        self.incomplete_labelling_params = dict()
         # Contains the subset of epitopes after defect calculation
-        self.defects_target_normals = None
+        self.incomplete_labelling_target_normals = None
         self.fluo2labels = []
         self.status = dict(source=False, labels=False)
         # attributes for sequencial labelling
@@ -363,9 +363,9 @@ class LabeledInstance:
         target_normals = self._get_source_coords_normals(target_name)
         ###### print(f"target_normals before breaking: {target_normals}")
         label4target = self._get_source_target_label(target_name)
-        # at this point we can sample pairs of target_normals to model defects
-        if self.defects:
-            defect_target_normals = self._model_defects(target_normals)
+        # at this point we can sample pairs of target_normals to model incomplete_labelling
+        if self.incomplete_labelling:
+            defect_target_normals = self._model_incomplete_labelling(target_normals)
             target_normals = copy.copy(defect_target_normals)
         else:
             defect_target_normals = None
@@ -408,16 +408,16 @@ class LabeledInstance:
         # for each target create the emitters
         for target_name in self._get_source_target_names():
             # print(target_name)
-            self.defects_target_normals = None
+            self.incomplete_labelling_target_normals = None
             (
                 emitters,
                 labelling_realisation_vectors,
                 fluorophore_name,
                 plotting_par,
-                defects_target_normals,
+                incomplete_labelling_target_normals,
             ) = self._label_source_target(target_name)
-            if defects_target_normals is not None:
-                self.defects_target_normals = defects_target_normals
+            if incomplete_labelling_target_normals is not None:
+                self.incomplete_labelling_target_normals = incomplete_labelling_target_normals
             # print(f"Emitters for target {target_name}")
             # print(emitters)
             targets_labeled_instance[target_name] = emitters
@@ -505,7 +505,7 @@ class LabeledInstance:
         else:
             print("Missing source or Label info")
 
-    def add_defects(
+    def add_incomplete_labelling(
         self,
         deg_dissasembly=0.5,
         xmer_neigh_distance=100,
@@ -514,7 +514,7 @@ class LabeledInstance:
         minsamples=1,
     ):
         """
-        Specify parameters for adding defects to the instance.
+        Specify parameters for adding incomplete_labelling to the instance.
 
         Parameters
         ----------
@@ -530,8 +530,8 @@ class LabeledInstance:
             Minimum samples for clustering. Default is 1.
         """
         if deg_dissasembly == 0:
-            self.defects = False
-            self.defects_target_normals = None
+            self.incomplete_labelling = False
+            self.incomplete_labelling_target_normals = None
             self.generate_instance()
         else:
             d_cluster_params = dict(
@@ -540,14 +540,14 @@ class LabeledInstance:
                 eps2=xmer_neigh_distance,
                 minsamples2=minsamples,
             )
-            self.defects_params["d_cluster_params"] = d_cluster_params
-            self.defects_params["deg_dissasembly"] = deg_dissasembly
-            self.defects_params["xmer_neigh_distance"] = xmer_neigh_distance
-            self.defects_params["fracture"] = fracture
-            self.defects = True
+            self.incomplete_labelling_params["d_cluster_params"] = d_cluster_params
+            self.incomplete_labelling_params["deg_dissasembly"] = deg_dissasembly
+            self.incomplete_labelling_params["xmer_neigh_distance"] = xmer_neigh_distance
+            self.incomplete_labelling_params["fracture"] = fracture
+            self.incomplete_labelling = True
             self.generate_instance()
 
-    def _model_defects(self, target_normals_dictionary):
+    def _model_incomplete_labelling(self, target_normals_dictionary):
         """
         target_normals_dictionary: dictionary with keys: "coordinates"
         and "normals".
@@ -558,14 +558,14 @@ class LabeledInstance:
                 normals: numpy array of unit vector to define nomral
                     from its corresponding epitope
         """
-        # print(f"input for _model_defects: {target_normals_dictionary}")
+        # print(f"input for _model_incomplete_labelling: {target_normals_dictionary}")
         target_sites = target_normals_dictionary["coordinates"]
-        # print(f"in model_defects: {target_sites.shape}")
-        # print(target_sites, self.defects_params)
+        # print(f"in model_incomplete_labelling: {target_sites.shape}")
+        # print(target_sites, self.incomplete_labelling_params)
         boolean_subset = xmersubset_byclustering(
             epitopes_coords=target_sites,
             return_ids=True,
-            **self.defects_params,
+            **self.incomplete_labelling_params,
         )
         coor = target_normals_dictionary["coordinates"][boolean_subset,]
         if target_normals_dictionary["normals"] is not None:
@@ -912,10 +912,10 @@ class LabeledInstance:
                     "between_targets"
                 ] *= probe_scaling_factor
             self.secondary[labeltype]["scale"] = new_scale
-        if self.defects:
-            self.defects_params["d_cluster_params"]["eps1"] *= scaling_factor
-            self.defects_params["d_cluster_params"]["eps2"] *= scaling_factor
-            self.defects_params["xmer_neigh_distance"] *= scaling_factor
+        if self.incomplete_labelling:
+            self.incomplete_labelling_params["d_cluster_params"]["eps1"] *= scaling_factor
+            self.incomplete_labelling_params["d_cluster_params"]["eps2"] *= scaling_factor
+            self.incomplete_labelling_params["xmer_neigh_distance"] *= scaling_factor
 
     # methods to get emitters by target name
 
@@ -1233,11 +1233,11 @@ class LabeledInstance:
                         source_plotsize = source_plotsize
                     else:
                         source_plotsize = 1
-                    if self.defects_target_normals is not None:
+                    if self.incomplete_labelling_target_normals is not None:
                         add_ax_scatter(
                             axis_object,
                             format_coordinates(
-                                self.defects_target_normals["coordinates"]
+                                self.incomplete_labelling_target_normals["coordinates"]
                             ),
                         )
                         add_ax_scatter(

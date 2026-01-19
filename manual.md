@@ -389,7 +389,7 @@ sweep_gen = run_parameter_sweep(
 ```
 
 > ⚠️ **Note:** When running a parameter sweep, all possible parameter combinations will be used.  
-> For example, setting 10 values for labelling efficiencies and 10 values for particle defects will generate 100 combinations.
+> For example, setting 10 values for labelling efficiencies and 10 values for particle incomplete_labelling will generate 100 combinations.
 
 ### 📝 Available parameters for sweeping
 

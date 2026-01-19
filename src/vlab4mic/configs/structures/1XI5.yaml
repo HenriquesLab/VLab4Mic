@@ -3,7 +3,7 @@ model:
   format: CIF
   database: RCSB
   title: Clathrin D6 coat with auxilin J-domain
-defects:
+incomplete_labelling:
   small_cluster:
   big_cluster:
   

@@ -3,6 +3,6 @@ model:
   format: CIF
   database: RCSB
   title: Solution structure of human Immunoglobulin M
-defects:
+incomplete_labelling:
   small_cluster:
   big_cluster:
