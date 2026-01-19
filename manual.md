@@ -456,13 +456,13 @@ If a parameter is `None`, it will not be swept and will use default values.
 | **peptide_motif** | Dictionary specifying motif extraction for probe target sequence |
 | **as_primary** | Whether to treat the probe as a primary linker (bool) |
 
-## 🧩 Defects parameters
+## 🧩 Incomplete Labelling parameters
 
 | Parameter name | Description |
 | --- | --- | 
-| **defect** | Fraction of the particle rendered inaccessible to probes (float) |
-| **defect_small_cluster** | Maximum distance between epitopes for first grouping (in Å) |
-| **defect_large_cluster** | Minimum distance between epitopes for second grouping (in Å) |
+| **incomplete_labelling** | Fraction of the particle rendered inaccessible to probes (float) |
+| **incomplete_labelling_small_cluster** | Maximum distance between epitopes for first grouping (in Å) |
+| **incomplete_labelling_large_cluster** | Minimum distance between epitopes for second grouping (in Å) |
 
 ## 🧱 Virtual sample parameters
 

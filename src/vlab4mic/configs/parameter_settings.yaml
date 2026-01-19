@@ -9,18 +9,18 @@ probe:
     wtype: float_slider
     range: [0, 300, 0.1]
     nintervals: 2
-particle_defect:
-  defect:
+particle_incomplete_labelling:
+  incomplete_labelling:
     ptype: numeric
     wtype: float_slider
     range: [0, 1, 0.05]
     nintervals: 4
-  defect_small_cluster:
+  incomplete_labelling_small_cluster:
     ptype: numeric
     wtype: float_slider
     range: [0, 10000, 1]
     nintervals: 3
-  defect_large_cluster:
+  incomplete_labelling_large_cluster:
     ptype: numeric
     wtype: float_slider
     range: [0, 10000, 1]

@@ -11,9 +11,9 @@ def test_run_parameter_sweep():
         sweep_repetitions=3,
         # parameters for sweep
         labelling_efficiency=(0,1,1),
-        defect=[0,0.5],
-        defect_small_cluster=[300,],
-        defect_large_cluster=[600,],
+        incomplete_labelling=[0,0.5],
+        incomplete_labelling_small_cluster=[300,],
+        incomplete_labelling_large_cluster=[600,],
         #exp_time=[0.001, 0.01,],
         # output and analysis
         output_name="vlab_script",

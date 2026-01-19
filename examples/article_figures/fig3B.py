@@ -10,9 +10,9 @@ sweep_gen = sweep_generator.run_parameter_sweep(
     sweep_repetitions=20,
     # parameters for sweep
     labelling_efficiency=(0,1,0.25),
-    defect=(0,1,0.25),
-    defect_small_cluster=[300,],
-    defect_large_cluster=[600,],
+    incomplete_labelling=(0,1,0.25),
+    incomplete_labelling_small_cluster=[300,],
+    incomplete_labelling_large_cluster=[600,],
     exp_time=[0.001, 0.01,],
     # output and analysis
     output_name="vlab_script",
