@@ -375,9 +375,9 @@ sweep_gen = run_parameter_sweep(
     sweep_repetitions=20,
     # parameters for sweep
     labelling_efficiency=(0, 1, 5),  # 5 linearly spaced values between 0 and 1
-    defect=(0, 1, 5),  # 5 linearly spaced values between 0 and 1
-    defect_small_cluster=[300,],  # 1 single value 
-    defect_large_cluster=[600,],  # 1 single value 
+    incomplete_labelling=(0, 1, 5),  # 5 linearly spaced values between 0 and 1
+    incomplete_labelling_small_cluster=[300,],  # 1 single value 
+    incomplete_labelling_large_cluster=[600,],  # 1 single value 
     exp_time=[0.001, 0.01,],  # 2 values
     # output and analysis
     output_name="vlab_script",
@@ -410,9 +410,9 @@ If a parameter is `None`, it will not be swept and will use default values.
 - probe_DoL
 - probe_wobble_theta
 - labelling_efficiency
-- defect
-- defect_small_cluster
-- defect_large_cluster
+- incomplete_labelling
+- incomplete_labelling_small_cluster
+- incomplete_labelling_large_cluster
 - sample_dimensions
 - particle_orientations
 - rotation_angles
