@@ -1,5 +1,5 @@
 import numpy as np
-
+import copy
 
 # # Rodrigues Rotation
 def rotate_point(point, axis, angle):
@@ -90,7 +90,7 @@ def rotate_pts_by_vector(pts, current_vector, new_vector, pts_referece_center):
 
 # method that takes the epitopes with their corresponding normals
 # and takes the labeling entity generated with gen_labeling_entity
-def decorate_epitopes_normals(normals_ft_epitopes, labeling_entity):
+def decorate_epitopes_normals(normals_ft_epitopes, labeling_entity, dol:int = None, **kwargs):
     """
     labeling_entity is assumed to have the pivot and the axis orientation
     as the first two points, only after that are defined the actual emitters
@@ -98,22 +98,45 @@ def decorate_epitopes_normals(normals_ft_epitopes, labeling_entity):
 
     output: the new positioned emitters without pivots
     """
-    #
+    labeling_entity_copy = copy.copy(labeling_entity)
     pivot_reference_index = 0
     axis_defining_index = 1
     list_reoriented_points = []
     list_reoriented_points_normals = []
     for repl in range(np.shape(normals_ft_epitopes)[1]):
         new_points, rot_axis = labeling_reorient_set(
-            labeling_entity,
+            labeling_entity_copy,
             pivot_reference_index,
             axis_defining_index,
             normals_ft_epitopes[0][repl],
             normals_ft_epitopes[1][repl],
         )
-        # print(new_points, rot_axis)
-        list_reoriented_points.append(new_points)
-        list_reoriented_points_normals.append(normals_ft_epitopes[0][repl])
+        # model degree of labelling
+        if dol is not None:
+            int_dol = np.random.poisson(lam=dol)
+            print(f"DOL = {int_dol}")
+            max_emitters = len(new_points)
+            if int_dol != 0:
+                if int_dol > max_emitters - 2 :
+                    # use max value
+                    list_reoriented_points.append(new_points)
+                else:
+                    # take the first two points to keep pivot and axis
+                    new_points_dol = copy.copy(new_points[0:2])
+                    # then randomly select the rest of the emitters
+                    emitter_indices = np.arange(2, max_emitters)
+                    selected_emitters = np.random.choice(
+                        emitter_indices, size=int_dol, replace=False
+                    )
+                    for se in selected_emitters:
+                        new_points_dol = np.vstack((new_points_dol, new_points[se]))
+                    list_reoriented_points.append(new_points_dol)
+                    #new_points = new_points[0:(2+int_dol)]
+                    #list_reoriented_points.append(new_points)
+        else:
+            # print(new_points, rot_axis)
+            list_reoriented_points.append(new_points)
+            list_reoriented_points_normals.append(normals_ft_epitopes[0][repl])
     #print(f"before cleaning: {len(list_reoriented_points)}")
     # cleanup label entities and leave only the true emitters
     cleaned_up_labels = cleanup_labeling_entities(list_reoriented_points)
