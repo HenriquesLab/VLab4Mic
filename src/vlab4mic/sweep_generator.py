@@ -81,6 +81,12 @@ class sweep_generator:
             "pearson"
         ]
         self.plot_parameters = {}
+        self.plot_parameters["ssim"] = {}
+        self.plot_parameters["ssim"]["heatmaps"] = {}
+        self.plot_parameters["ssim"]["lineplots"] = {}
+        self.plot_parameters["pearson"] = {}
+        self.plot_parameters["pearson"]["heatmaps"] = {}
+        self.plot_parameters["pearson"]["lineplots"] = {}
         self.plot_parameters["heatmaps"] = {}
         self.plot_parameters["heatmaps"]["category"] = "modality_name"
         self.plot_parameters["heatmaps"]["param1"] = None
@@ -839,13 +845,14 @@ class sweep_generator:
         if plots:
             print("Generating analysis plots...")
             for metric_name in self.analysis_parameters["metrics_list"]:
-                for plot_type in self.plot_parameters.keys():
+                for plot_type in ["heatmaps", "lineplots"]:
                     self.generate_analysis_plots(
                         plot_type=plot_type,
                         return_figure=True,
                         metric_name=metric_name,
                         filter_dictionary=None,
                         na_as_zero=self.plot_parameters["general"]["na_as_zero"],
+                        **self.plot_parameters[metric_name][plot_type]
                     )
             print("Analysis plots generated.")
         if save:
@@ -1316,7 +1323,7 @@ class sweep_generator:
             #name_ref = output_directory + "reference.tiff"
             tiff.imwrite(dir_name_ref, self.reference_image)
 
-    def add_custom_analysis_metric(self, metric_function: callable, metric_name: str):
+    def add_custom_analysis_metric(self, metric_function: callable, metric_name: str, heatmap_params=None, lineplots_params =None, **kwargs):
         """
         Add a custom analysis metric function to the sweep generator.
 
@@ -1340,7 +1347,17 @@ class sweep_generator:
         """
         if metric_name not in self.analysis_parameters["metrics_list"]:
             self.analysis_parameters["metrics_list"].append(metric_name)
+            self.plot_parameters[metric_name] = dict()
+        if heatmap_params is not None:
+            self.plot_parameters[metric_name]["heatmaps"] = heatmap_params
+        else:
+            self.plot_parameters[metric_name]["heatmaps"] = {}
+        if lineplots_params is not None:
+            self.plot_parameters[metric_name]["lineplots"] = lineplots_params
+        else:
+            self.plot_parameters[metric_name]["lineplots"] = {}
         self.custom_metrics[metric_name] = metric_function
+        
 
 
 def run_parameter_sweep(
