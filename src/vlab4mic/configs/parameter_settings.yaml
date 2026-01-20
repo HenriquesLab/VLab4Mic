@@ -9,18 +9,18 @@ probe:
     wtype: float_slider
     range: [0, 300, 0.1]
     nintervals: 2
-particle_incomplete_labelling:
-  incomplete_labelling:
+particle_structural_integrity:
+  structural_integrity:
     ptype: numeric
     wtype: float_slider
     range: [0, 1, 0.05]
     nintervals: 4
-  incomplete_labelling_small_cluster:
+  structural_integrity_small_cluster:
     ptype: numeric
     wtype: float_slider
     range: [0, 10000, 1]
     nintervals: 3
-  incomplete_labelling_large_cluster:
+  structural_integrity_large_cluster:
     ptype: numeric
     wtype: float_slider
     range: [0, 10000, 1]

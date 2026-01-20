@@ -3,7 +3,7 @@ model:
   format: CIF
   database: RCSB
   title: Atomic-level structure of the entire HIV-1 capsid (186 hexamers + 12 pentamers)
-incomplete_labelling:
+structural_integrity:
   small_cluster: 20
   big_cluster: 100
   

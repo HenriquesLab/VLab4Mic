@@ -2,7 +2,7 @@ model:
   id:
   format:
   database: RCSB
-incomplete_labelling:
+structural_integrity:
   small_cluster:
   big_cluster:
   

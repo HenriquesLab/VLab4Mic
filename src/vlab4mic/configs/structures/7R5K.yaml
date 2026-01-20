@@ -3,7 +3,7 @@ model:
   format: CIF
   database: RCSB
   title: Human nuclear pore complex (constricted)
-incomplete_labelling:
+structural_integrity:
   small_cluster: 300
   big_cluster: 600
   
