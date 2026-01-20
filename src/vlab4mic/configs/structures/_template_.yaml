@@ -2,7 +2,7 @@ model:
   id:
   format:
   database: RCSB
-defects:
+structural_integrity:
   small_cluster:
   big_cluster:
   

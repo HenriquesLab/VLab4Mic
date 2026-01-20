@@ -47,7 +47,7 @@ In this example we select a NPC model, labelled at the C-terminal of Nup96.
 
 Then we set up parameters for sweep:
 - Labelling efficiency: 3 values from 0 to 1
-- Incomplete labelling (or defects):  3 values from 0 to 1
+- Incomplete labelling (or structural_integrity):  3 values from 0 to 1
 
 We then compare each image output against a reference, for example, by calculating its pearson correlation.
 

@@ -375,9 +375,9 @@ sweep_gen = run_parameter_sweep(
     sweep_repetitions=20,
     # parameters for sweep
     labelling_efficiency=(0, 1, 5),  # 5 linearly spaced values between 0 and 1
-    defect=(0, 1, 5),  # 5 linearly spaced values between 0 and 1
-    defect_small_cluster=[300,],  # 1 single value 
-    defect_large_cluster=[600,],  # 1 single value 
+    structural_integrity=(0, 1, 5),  # 5 linearly spaced values between 0 and 1
+    structural_integrity_small_cluster=[300,],  # 1 single value 
+    structural_integrity_large_cluster=[600,],  # 1 single value 
     exp_time=[0.001, 0.01,],  # 2 values
     # output and analysis
     output_name="vlab_script",
@@ -389,7 +389,7 @@ sweep_gen = run_parameter_sweep(
 ```
 
 > ⚠️ **Note:** When running a parameter sweep, all possible parameter combinations will be used.  
-> For example, setting 10 values for labelling efficiencies and 10 values for particle defects will generate 100 combinations.
+> For example, setting 10 values for labelling efficiencies and 10 values for particle structural_integrity will generate 100 combinations.
 
 ### 📝 Available parameters for sweeping
 
@@ -410,9 +410,9 @@ If a parameter is `None`, it will not be swept and will use default values.
 - probe_DoL
 - probe_wobble_theta
 - labelling_efficiency
-- defect
-- defect_small_cluster
-- defect_large_cluster
+- structural_integrity
+- structural_integrity_small_cluster
+- structural_integrity_large_cluster
 - sample_dimensions
 - particle_orientations
 - rotation_angles
@@ -456,13 +456,13 @@ If a parameter is `None`, it will not be swept and will use default values.
 | **peptide_motif** | Dictionary specifying motif extraction for probe target sequence |
 | **as_primary** | Whether to treat the probe as a primary linker (bool) |
 
-## 🧩 Defects parameters
+## 🧩 Structural Integrity parameters
 
 | Parameter name | Description |
 | --- | --- | 
-| **defect** | Fraction of the particle rendered inaccessible to probes (float) |
-| **defect_small_cluster** | Maximum distance between epitopes for first grouping (in Å) |
-| **defect_large_cluster** | Minimum distance between epitopes for second grouping (in Å) |
+| **structural_integrity** | Fraction of the particle rendered inaccessible to probes (float) |
+| **structural_integrity_small_cluster** | Maximum distance between epitopes for first grouping (in Å) |
+| **structural_integrity_large_cluster** | Minimum distance between epitopes for second grouping (in Å) |
 
 ## 🧱 Virtual sample parameters
 

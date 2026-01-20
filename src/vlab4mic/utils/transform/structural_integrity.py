@@ -124,7 +124,7 @@ def xmersubset_byclustering(
     return_ids=False,
 ):
     """
-    Model Structureal defects by nearest neighbors of the emitters and clustering
+    Model Structureal structural_integrity by nearest neighbors of the emitters and clustering
 
     """
     default_true = [True] * epitopes_coords.shape[0]
@@ -190,7 +190,7 @@ def xmersubset_byclustering(
         d_cluster_params["minsamples2"],
     )
     if ids_validated is None:
-        print("error while simulating defects, returning No emitters")
+        print("error while simulating structural_integrity, returning No emitters")
         if return_ids:
             default_false = [False] * epitopes_coords.shape[0]
             return default_false

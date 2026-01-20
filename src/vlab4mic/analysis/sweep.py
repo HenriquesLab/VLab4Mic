@@ -16,14 +16,14 @@ def sweep_vasmples(
     structures=None,
     probes=None,
     probe_parameters=None,
-    particle_defects=None,
+    particle_structural_integrity=None,
     virtual_samples=None,
     repetitions=1,
     use_experiment_structure=False,
     **kwargs,
 ):
     """
-    Generate virtual samples for all combinations of structures, probes, probe parameters, defects, and virtual sample parameters.
+    Generate virtual samples for all combinations of structures, probes, probe parameters, structural_integrity, and virtual sample parameters.
 
     Parameters
     ----------
@@ -35,8 +35,8 @@ def sweep_vasmples(
         List of probe names.
     probe_parameters : dict, optional
         Dictionary of probe parameter sets.
-    particle_defects : dict, optional
-        Dictionary of defect parameter sets.
+    particle_structural_integrity : dict, optional
+        Dictionary of structural integrity parameter sets.
     virtual_samples : dict, optional
         Dictionary of virtual sample parameter sets.
     repetitions : int, optional
@@ -77,9 +77,9 @@ def sweep_vasmples(
         default_params = load_yaml(probe_filepath)
         probe_parameters = dict()
         probe_parameters[0] = None
-    if particle_defects is None:
-        particle_defects = dict()
-        particle_defects[0] = {"use_defects": False}
+    if particle_structural_integrity is None:
+        particle_structural_integrity = dict()
+        particle_structural_integrity[0] = {"use_structural_integrity": False}
     if virtual_samples is None:
         # vprobe_filepath = os.path.join(local_dir, "probes", default_probe + ".yaml")
         # default_vsample =  load_yaml(vprobe_filepath)
@@ -122,16 +122,15 @@ def sweep_vasmples(
                     p_param_copy = copy.deepcopy(p_param)
                     p_param_copy["fluorophore_id"] = default_fluorophore
                     experiment.add_probe(probe_template=probe, **p_param_copy)
-                for defect_n, defects_pars in particle_defects.items():
-                    particle_defects_copy = copy.deepcopy(defects_pars)
-                    for d_key, d_val in particle_defects_copy.items():
-                        if d_key == "defect_small_cluster":
-                            experiment.defect_eps["eps1"] = d_val
-                        if d_key == "defect_large_cluster":
-                            experiment.defect_eps["eps2"] = d_val
-                        if d_key == "defect":
-                            experiment.defect_eps["defect"] = d_val
-                    # print(experiment.defect_eps)
+                for structural_integrity_n, structural_integrity_pars in particle_structural_integrity.items():
+                    particle_structural_integrity_copy = copy.deepcopy(structural_integrity_pars)
+                    for d_key, d_val in particle_structural_integrity_copy.items():
+                        if d_key == "structural_integrity_small_cluster":
+                            experiment.structural_integrity_eps["eps1"] = d_val
+                        if d_key == "structural_integrity_large_cluster":
+                            experiment.structural_integrity_eps["eps2"] = d_val
+                        if d_key == "structural_integrity":
+                            experiment.structural_integrity_eps["structural_integrity"] = d_val
                     print(experiment.probe_parameters)
                     experiment._build_particle(keep=True)
                     if experiment.generators_status("particle"):
@@ -182,7 +181,7 @@ def sweep_vasmples(
                                 + "_"
                                 + str(probe_param_n)
                                 + "_"
-                                + str(defect_n)
+                                + str(structural_integrity_n)
                                 + "_"
                                 + str(vsample_n)
                             )
@@ -190,7 +189,7 @@ def sweep_vasmples(
                                 struct,
                                 probe,
                                 p_param,
-                                defects_pars,
+                                structural_integrity_pars,
                                 vsample_pars,
                             ]
                             if combination_n not in vsample_params.keys():
@@ -199,10 +198,6 @@ def sweep_vasmples(
                             vsample_outputs[combination_n].append(
                                 _exported_field
                             )
-                        #
-                        #
-                        # vsample_n += 1
-                    # defect_n += 1
             probe_n += 1
     return experiment, vsample_outputs, vsample_params
 
@@ -630,7 +625,7 @@ def analyse_sweep_single_reference(
 def measurements_dataframe(
     measurement_vectors,
     probe_parameters=None,
-    p_defects=None,
+    p_structural_integrity=None,
     mod_names=None,
     sample_params=None,
     mod_params=None,
@@ -646,8 +641,8 @@ def measurements_dataframe(
         List of measurement results.
     probe_parameters : dict, optional
         Dictionary of probe parameter sets.
-    p_defects : dict, optional
-        Dictionary of defect parameter sets.
+    p_structural_integrity : dict, optional
+        Dictionary of structural integrity parameter sets.
     mod_names : list, optional
         List of modality names.
     sample_params : dict, optional
@@ -675,7 +670,7 @@ def measurements_dataframe(
             "Combination_id": measurement_array[:, 0],
             "probe_n": ids_array[:, 0],
             "probe_param_n": ids_array[:, 1],
-            "defects": ids_array[:, 2],
+            "structural_integrity_n": ids_array[:, 2],
             "vsample": ids_array[:, 3],
             "modality": ids_array[:, 4],
             "modality_parameters": ids_array[:, 5],
@@ -707,16 +702,16 @@ def measurements_dataframe(
                 )
         tmp1 = pd.DataFrame(tmp_df1)
         df_combined = df_combined.join(tmp1)
-    if p_defects:
-        defect_param_names = p_defects[0].keys()
+    if p_structural_integrity:
+        structural_integrity_param_names = p_structural_integrity[0].keys()
         tmp_df2 = dict()
-        for column_name in defect_param_names:
+        for column_name in structural_integrity_param_names:
             tmp_df2[column_name] = []
         for i in range(nrows):
-            defect_par_comb_id = int(data_frame.iloc[i]["defects"])
-            for column_name in defect_param_names:
+            structural_integrity_par_comb_id = int(data_frame.iloc[i]["structural_integrity_n"])
+            for column_name in structural_integrity_param_names:
                 tmp_df2[column_name].append(
-                    p_defects[defect_par_comb_id][column_name]
+                    p_structural_integrity[structural_integrity_par_comb_id][column_name]
                 )
         tmp2 = pd.DataFrame(tmp_df2)
         df_combined = df_combined.join(tmp2)
@@ -960,43 +955,43 @@ def virtual_sample_parameters_sweep(
     return field_parameters
 
 
-def defects_parameters_sweep(
-    defect_small_cluster: float = None,
-    defect_large_cluster: float = None,
-    defect: float = None,
+def structural_integrity_parameters_sweep(
+    structural_integrity_small_cluster: float = None,
+    structural_integrity_large_cluster: float = None,
+    structural_integrity: float = None,
 ):
     """
-    Generate combinations of defect parameters for a sweep.
+    Generate combinations of structural integrity parameters for a sweep.
 
     Parameters
     ----------
-    defect_small_cluster : float, optional
-    defect_large_cluster : float, optional
-    defect : float, optional
+    structural_integrity_small_cluster : float, optional
+    structural_integrity_large_cluster : float, optional
+    structural_integrity : float, optional
 
     Returns
     -------
-    defects_parameters : dict or None
+    structural_integrity_parameters : dict or None
         Dictionary of parameter combinations, or None if no parameters.
     """
     local_params = locals()
-    defects_parameters_vectors = {}
+    structural_integrity_parameters_vectors = {}
     for par, value in local_params.items():
         if value is not None and type(value) is list:
             if len(value) == 1:
-                defects_parameters_vectors[par] = value
+                structural_integrity_parameters_vectors[par] = value
             else:
                 if isinstance(value[0], (str, bool)):
-                    defects_parameters_vectors[par] = value
+                    structural_integrity_parameters_vectors[par] = value
                 else:
                     sequence = np.linspace(value[0], value[1], value[2])
-                    defects_parameters_vectors[par] = sequence
-    defects_parameters = None
-    if bool(defects_parameters_vectors):
-        defects_parameters = create_param_combinations(
-            **defects_parameters_vectors
+                    structural_integrity_parameters_vectors[par] = sequence
+    structural_integrity_parameters = None
+    if bool(structural_integrity_parameters_vectors):
+        structural_integrity_parameters = create_param_combinations(
+            **structural_integrity_parameters_vectors
         )
-    return defects_parameters
+    return structural_integrity_parameters
 
 
 def modality_parameters_sweep(
