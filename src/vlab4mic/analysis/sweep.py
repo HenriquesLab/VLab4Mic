@@ -36,7 +36,7 @@ def sweep_vasmples(
     probe_parameters : dict, optional
         Dictionary of probe parameter sets.
     particle_structural_integrity : dict, optional
-        Dictionary of incomplete labelling parameter sets.
+        Dictionary of structural integrity parameter sets.
     virtual_samples : dict, optional
         Dictionary of virtual sample parameter sets.
     repetitions : int, optional
@@ -642,7 +642,7 @@ def measurements_dataframe(
     probe_parameters : dict, optional
         Dictionary of probe parameter sets.
     p_structural_integrity : dict, optional
-        Dictionary of incomplete labelling parameter sets.
+        Dictionary of structural integrity parameter sets.
     mod_names : list, optional
         List of modality names.
     sample_params : dict, optional
@@ -961,7 +961,7 @@ def structural_integrity_parameters_sweep(
     structural_integrity: float = None,
 ):
     """
-    Generate combinations of incomplete labelling parameters for a sweep.
+    Generate combinations of structural integrity parameters for a sweep.
 
     Parameters
     ----------

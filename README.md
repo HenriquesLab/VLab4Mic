@@ -21,7 +21,7 @@ Whether you are new to Python or an experienced bioimage researcher, VLab4Mic pr
 
 - Build **virtual samples** from PDB/CIF structures  
 - Apply **direct or indirect fluorescent labeling**  
-- Introduce **incomplete labelling**, crowding, and structural variation  
+- Introduce **Structural integrity**, crowding, and structural variation  
 - Simulate image acquisition across modalities  
 - Run **parameter sweeps** to explore experimental conditions  
 - Compare **noiseless vs. realistic** acquisitions  
