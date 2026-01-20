@@ -10,9 +10,9 @@ sweep_gen = sweep_generator.run_parameter_sweep(
     sweep_repetitions=20,
     # parameters for sweep
     labelling_efficiency=(0,1,0.25),
-    incomplete_labelling=(0,1,0.25),
-    incomplete_labelling_small_cluster=[300,],
-    incomplete_labelling_large_cluster=[600,],
+    structural_integrity=(0,1,0.25),
+    structural_integrity_small_cluster=[300,],
+    structural_integrity_large_cluster=[600,],
     exp_time=[0.001, 0.01,],
     # output and analysis
     output_name="vlab_script",
@@ -26,21 +26,21 @@ sweep_gen = sweep_generator.run_parameter_sweep(
 plt.rcParams['figure.figsize'] = [20, 10]
 
 fig, axs = plt.subplots(1, 4)
-image, parameters = sweep_gen.preview_image_output_by_ID(probe_parameters=4, incomplete_labelling_parameters=0, modality_template=3, return_image=True)
+image, parameters = sweep_gen.preview_image_output_by_ID(probe_parameters=4, structural_integrity_parameters=0, modality_template=3, return_image=True)
 axs[0].imshow(image, cmap="grey")
-title = "Labelling efficiency: " + str(parameters[2]["labelling_efficiency"]) + "\n" + "Incomplete Labelling: " + str(parameters[3]["incomplete_labelling"])
+title = "Labelling efficiency: " + str(parameters[2]["labelling_efficiency"]) + "\n" + "Structural Integrity: " + str(parameters[3]["structural_integrity"])
 axs[0].set_title(title)
-image, parameters = sweep_gen.preview_image_output_by_ID(probe_parameters=1, incomplete_labelling_parameters=0, modality_template=3, return_image=True)
+image, parameters = sweep_gen.preview_image_output_by_ID(probe_parameters=1, structural_integrity_parameters=0, modality_template=3, return_image=True)
 axs[1].imshow(image, cmap="grey")
-title = "Labelling efficiency: " + str(parameters[2]["labelling_efficiency"]) + "\n" + "Incomplete Labelling: " + str(parameters[3]["incomplete_labelling"])
+title = "Labelling efficiency: " + str(parameters[2]["labelling_efficiency"]) + "\n" + "Structural Integrity: " + str(parameters[3]["structural_integrity"])
 axs[1].set_title(title)
-image, parameters = sweep_gen.preview_image_output_by_ID(probe_parameters=4, incomplete_labelling_parameters=2, modality_template=3, return_image=True)
+image, parameters = sweep_gen.preview_image_output_by_ID(probe_parameters=4, structural_integrity_parameters=2, modality_template=3, return_image=True)
 axs[2].imshow(image, cmap="grey")
-title = "Labelling efficiency: " + str(parameters[2]["labelling_efficiency"]) + "\n" + "Incomplete Labelling: " + str(parameters[3]["incomplete_labelling"])
+title = "Labelling efficiency: " + str(parameters[2]["labelling_efficiency"]) + "\n" + "Structural Integrity: " + str(parameters[3]["structural_integrity"])
 axs[2].set_title(title)
-image, parameters = sweep_gen.preview_image_output_by_ID(probe_parameters=1, incomplete_labelling_parameters=2, modality_template=3, return_image=True)
+image, parameters = sweep_gen.preview_image_output_by_ID(probe_parameters=1, structural_integrity_parameters=2, modality_template=3, return_image=True)
 axs[3].imshow(image, cmap="grey")
-title = "Labelling efficiency: " + str(parameters[2]["labelling_efficiency"]) + "\n" + "Incomplete Labelling: " + str(parameters[3]["incomplete_labelling"])
+title = "Labelling efficiency: " + str(parameters[2]["labelling_efficiency"]) + "\n" + "Structural Integrity: " + str(parameters[3]["structural_integrity"])
 axs[3].set_title(title)
 
 
