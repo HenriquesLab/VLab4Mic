@@ -45,7 +45,7 @@ class ExperimentParametrisation:
     selected_mods: Dict[str, int] = field(default_factory=dict)
     imaging_modalities: Dict[str, int] = field(default_factory=dict)
     probe_parameters: Dict[str, int] = field(default_factory=dict)
-    incomplete_labelling_eps: Dict[str, int] = field(default_factory=dict)
+    structural_integrity_eps: Dict[str, int] = field(default_factory=dict)
     sweep_pars: Dict[str, int] = field(default_factory=dict)
     objects_created: Dict[str, int] = field(default_factory=dict)
     output_directory: str = None
@@ -68,10 +68,10 @@ class ExperimentParametrisation:
             output_reference=False,
         )
         self.virtualsample_params = dict()
-        self.incomplete_labelling_eps["incomplete_labelling"] = None
-        self.incomplete_labelling_eps["eps1"] = None
-        self.incomplete_labelling_eps["eps2"] = None
-        self.incomplete_labelling_eps["use_incomplete_labelling"] = False
+        self.structural_integrity_eps["structural_integrity"] = None
+        self.structural_integrity_eps["eps1"] = None
+        self.structural_integrity_eps["eps2"] = None
+        self.structural_integrity_eps["use_structural_integrity"] = False
         # read information of local modalities configuration
         modalities_dir = os.path.join(local_dir, "modalities")
         modalities_names_list = []
@@ -493,32 +493,32 @@ class ExperimentParametrisation:
             )
         return labels_list
 
-    def _check_if_incomplete_labellings(self):
+    def _check_if_structural_integrity(self):
         """
-        Check if incomplete_labelling parameters are set and update the use_incomplete_labelling flag.
+        Check if structural_integrity parameters are set and update the use_structural_integrity flag.
 
         Returns
         -------
         None
         """
         if (
-            self.incomplete_labelling_eps["incomplete_labelling"]
-            and self.incomplete_labelling_eps["eps1"]
-            and self.incomplete_labelling_eps["eps2"]
+            self.structural_integrity_eps["structural_integrity"] is not None
+            and self.structural_integrity_eps["eps1"]
+            and self.structural_integrity_eps["eps2"]
         ):
-            self.incomplete_labelling_eps["use_incomplete_labelling"] = True
+            self.structural_integrity_eps["use_structural_integrity"] = True
         else:
-            self.incomplete_labelling_eps["use_incomplete_labelling"] = False
+            self.structural_integrity_eps["use_structural_integrity"] = False
 
-    def _build_particle(self, lab_eff=1.0, incomplete_labelling_build=None, keep=False):
+    def _build_particle(self, lab_eff=1.0, structural_integrity_build=None, keep=False):
         """
-        Build the particle object for the experiment, optionally adding incomplete_labellings.
+        Build the particle object for the experiment, optionally adding structural_integritys.
 
         Parameters
         ----------
         :param lab_eff : float, optional
             Labelling efficiency. Default is 1.0.
-        :param incomplete_labelling_build : float or None, optional
+        :param structural_integrity_build : float or None, optional
             Defect parameter to use. Default is None.
         :param keep : bool, optional
             If True, store the particle in the experiment. Default is False.
@@ -529,25 +529,25 @@ class ExperimentParametrisation:
             The particle object if created, else None.
         """
         if self.generators_status("structure"):
-            self._check_if_incomplete_labellings()
+            self._check_if_structural_integrity()
             labels_list = self._build_label(lab_eff=lab_eff)
             if len(labels_list) > 0:
                 particle, label_params_list = particle_from_structure(
                     self.structure, labels_list, self.configuration_path
                 )
-                if self.incomplete_labelling_eps["use_incomplete_labelling"]:
-                    if incomplete_labelling_build is not None:
-                        incomplete_labelling = incomplete_labelling_build
+                if self.structural_integrity_eps["use_structural_integrity"]:
+                    if structural_integrity_build is not None:
+                        structural_integrity = structural_integrity_build
                     else:
-                        incomplete_labelling = self.incomplete_labelling_eps["incomplete_labelling"]
-                    particle.add_incomplete_labelling(
-                        eps1=self.incomplete_labelling_eps["eps1"],
-                        xmer_neigh_distance=self.incomplete_labelling_eps["eps2"],
-                        deg_dissasembly=incomplete_labelling,
+                        structural_integrity = self.structural_integrity_eps["structural_integrity"]
+                    particle.add_structural_integrity(
+                        eps1=self.structural_integrity_eps["eps1"],
+                        xmer_neigh_distance=self.structural_integrity_eps["eps2"],
+                        integrity=structural_integrity,
                     )
                 else:
-                    particle.add_incomplete_labelling(
-                        deg_dissasembly=0,
+                    particle.add_structural_integrity(
+                        integrity=1,
                     )
                 if keep:
                     self.particle = particle
@@ -1335,9 +1335,9 @@ def generate_virtual_sample(
     probe_seconday_epitope=None,
     probe_wobble_theta=None,
     labelling_efficiency: float = 1.0,
-    incomplete_labelling_small_cluster: float = None,
-    incomplete_labelling_large_cluster: float = None,
-    incomplete_labelling: float = None,
+    structural_integrity_small_cluster: float = None,
+    structural_integrity_large_cluster: float = None,
+    structural_integrity: float = None,
     virtual_sample_template: str = "square1x1um_randomised",
     sample_dimensions: list[float] = None,
     number_of_particles: int = None,
@@ -1392,12 +1392,12 @@ def generate_virtual_sample(
         Enable probe wobbling. Default is False.
     :param labelling_efficiency : float, optional
         Labelling efficiency of probe. Default is 1.0.
-    :param incomplete_labelling_small_cluster : float, optional
+    :param structural_integrity_small_cluster : float, optional
         In Å, distance used to group epitopes into multimers.
-    :param incomplete_labelling_large_cluster : float, optional
+    :param structural_integrity_large_cluster : float, optional
         In Å, distance within multimers to consider neighbors.
-    :param incomplete_labelling : float, optional
-        Fraction of incomplete_labelling to model.
+    :param structural_integrity : float, optional
+        Fraction of structural_integrity to model.
     :param virtual_sample_template : str, optional
         Name of the configuration file for template. Default is "square1x1um_randomised".
     :param sample_dimensions : list of float, optional
@@ -1497,11 +1497,11 @@ def generate_virtual_sample(
     )
     vsample_configuration = load_yaml(virtual_sample_template)
     #myexperiment.configuration_path
-    if incomplete_labelling and incomplete_labelling_large_cluster and incomplete_labelling_small_cluster:
-        myexperiment.incomplete_labelling_eps["eps1"] = incomplete_labelling_small_cluster
-        myexperiment.incomplete_labelling_eps["eps2"] = incomplete_labelling_large_cluster
-        myexperiment.incomplete_labelling_eps["incomplete_labelling"] = incomplete_labelling
-        myexperiment.incomplete_labelling_eps["use_incomplete_labelling"] = True
+    if structural_integrity is not None and structural_integrity_large_cluster and structural_integrity_small_cluster:
+        myexperiment.structural_integrity_eps["eps1"] = structural_integrity_small_cluster
+        myexperiment.structural_integrity_eps["eps2"] = structural_integrity_large_cluster
+        myexperiment.structural_integrity_eps["structural_integrity"] = structural_integrity
+        myexperiment.structural_integrity_eps["use_structural_integrity"] = True
 
     if sample_dimensions is not None:
         vsample_configuration["sample_dimensions"] = sample_dimensions
@@ -1589,9 +1589,9 @@ def image_vsample(
     probe_seconday_epitope = None,
     probe_wobble_theta = None,
     labelling_efficiency: float = 1.0,
-    incomplete_labelling_small_cluster: float = None,
-    incomplete_labelling_large_cluster: float = None,
-    incomplete_labelling: float = None,
+    structural_integrity_small_cluster: float = None,
+    structural_integrity_large_cluster: float = None,
+    structural_integrity: float = None,
     virtual_sample_template: str = "square1x1um_randomised",
     sample_dimensions: list = None,
     number_of_particles: int = None,
@@ -1663,12 +1663,12 @@ def image_vsample(
         Enable probe wobbling.
     :param labelling_efficiency : float, optional
         Labelling efficiency of probe. Default is 1.0.
-    :param incomplete_labelling_small_cluster : float, optional
+    :param structural_integrity_small_cluster : float, optional
         In Å, distance used to group epitopes into multimers.
-    :param incomplete_labelling_large_cluster : float, optional
+    :param structural_integrity_large_cluster : float, optional
         In Å, distance within multimers to consider neighbors.
-    :param incomplete_labelling : float, optional
-        Fraction of incomplete_labelling to model.
+    :param structural_integrity : float, optional
+        Fraction of structural_integrity to model.
     :param virtual_sample_template : str, optional
         Name of the configuration file for template. Default is "square1x1um_randomised".
     :param sample_dimensions : list, optional
@@ -1720,9 +1720,9 @@ def image_vsample(
             probe_seconday_epitope=probe_seconday_epitope,
             probe_wobble_theta=probe_wobble_theta,
             labelling_efficiency=labelling_efficiency,
-            incomplete_labelling_small_cluster=incomplete_labelling_small_cluster,
-            incomplete_labelling_large_cluster=incomplete_labelling_large_cluster,
-            incomplete_labelling=incomplete_labelling,
+            structural_integrity_small_cluster=structural_integrity_small_cluster,
+            structural_integrity_large_cluster=structural_integrity_large_cluster,
+            structural_integrity=structural_integrity,
             virtual_sample_template=virtual_sample_template,
             sample_dimensions=sample_dimensions,
             number_of_particles=number_of_particles,

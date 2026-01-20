@@ -29,7 +29,7 @@ class sweep_generator:
     modalities = ["Widefield", "Confocal", "STED", "SMLM"]
     sweep_repetitions = 3
     probe_parameters = None
-    incomplete_labelling_parameters = None
+    structural_integrity_parameters = None
     vsample_parameters = None
     modality_parameters = None
     acquisition_parameters = None
@@ -65,7 +65,7 @@ class sweep_generator:
         self.params_by_group = {}
         self.params_by_group["probe"] = {}
         self.params_by_group["virtual_sample"] = {}
-        self.params_by_group["particle_incomplete_labelling"] = {}
+        self.params_by_group["particle_structural_integrity"] = {}
         self.params_by_group["modality"] = {}
         self.params_by_group["acquisition"] = {}
         self.output_directory = self.experiment.output_directory
@@ -99,7 +99,7 @@ class sweep_generator:
         self.plot_parameters["general"]["na_as_zero"] = True
         self.structures_info_list = self.experiment.structures_info_list
         # Use the directly loaded parameter_settings instead of experiment.param_settings
-        # to ensure all parameter groups (including particle_incomplete_labelling) are available
+        # to ensure all parameter groups (including particle_structural_integrity) are available
         self.param_settings = self.parameter_settings
         self.use_experiment_structure = False
         self.reference_parameters_unsorted = dict()
@@ -208,7 +208,7 @@ class sweep_generator:
                 structures=self.structures,
                 probes=self.probes,
                 probe_parameters=self.probe_parameters,
-                particle_incomplete_labelling=self.incomplete_labelling_parameters,
+                particle_structural_integrity=self.structural_integrity_parameters,
                 virtual_samples=self.vsample_parameters,
                 repetitions=self.sweep_repetitions,
                 use_experiment_structure=True
@@ -223,7 +223,7 @@ class sweep_generator:
                 structures=self.structures,
                 probes=self.probes,
                 probe_parameters=self.probe_parameters,
-                particle_incomplete_labelling=self.incomplete_labelling_parameters,
+                particle_structural_integrity=self.structural_integrity_parameters,
                 virtual_samples=self.vsample_parameters,
                 repetitions=self.sweep_repetitions,
             )
@@ -380,7 +380,7 @@ class sweep_generator:
         self,
         probe_template=0,
         probe_parameters=0,
-        incomplete_labelling_parameters=0,
+        structural_integrity_parameters=0,
         virtual_sample_parameters=0,
         modality_template=0,
         modality_parameters=0,
@@ -408,7 +408,7 @@ class sweep_generator:
             + "_"
             + str(probe_parameters)
             + "_"
-            + str(incomplete_labelling_parameters)
+            + str(structural_integrity_parameters)
             + "_"
             + str(virtual_sample_parameters)
             + "_"
@@ -540,10 +540,10 @@ class sweep_generator:
             probe_DoL = None,
             probe_wobble_theta = None,
             labelling_efficiency = None,
-            # incomplete_labelling
-            incomplete_labelling=None,
-            incomplete_labelling_small_cluster=None,
-            incomplete_labelling_large_cluster=None,
+            # structural_integrity
+            structural_integrity=None,
+            structural_integrity_small_cluster=None,
+            structural_integrity_large_cluster=None,
             # vsample
             sample_dimensions = None,
             particle_positions = None,
@@ -613,17 +613,17 @@ class sweep_generator:
                 "probe", "probe_secondary_epitope", values=probe_seconday_epitope
             )
 
-        if incomplete_labelling is not None:
+        if structural_integrity is not None:
             self.set_parameter_values(
-                "particle_incomplete_labelling", "incomplete_labelling", values=incomplete_labelling
+                "particle_structural_integrity", "structural_integrity", values=structural_integrity
             )
-        if incomplete_labelling_small_cluster is not None:
+        if structural_integrity_small_cluster is not None:
             self.set_parameter_values(
-                "particle_incomplete_labelling", "incomplete_labelling_small_cluster", values=incomplete_labelling_small_cluster
+                "particle_structural_integrity", "structural_integrity_small_cluster", values=structural_integrity_small_cluster
             )
-        if incomplete_labelling_large_cluster is not None:
+        if structural_integrity_large_cluster is not None:
             self.set_parameter_values(
-                "particle_incomplete_labelling", "incomplete_labelling_large_cluster", values=incomplete_labelling_large_cluster
+                "particle_structural_integrity", "structural_integrity_large_cluster", values=structural_integrity_large_cluster
             )
         if sample_dimensions is not None:
             self.set_parameter_values(
@@ -703,8 +703,8 @@ class sweep_generator:
         self.probe_parameters = sweep.create_param_combinations(
             **self.params_by_group["probe"]
         )
-        self.incomplete_labelling_parameters = sweep.create_param_combinations(
-            **self.params_by_group["particle_incomplete_labelling"]
+        self.structural_integrity_parameters = sweep.create_param_combinations(
+            **self.params_by_group["particle_structural_integrity"]
         )
         self.vsample_parameters = sweep.create_param_combinations(
             **self.params_by_group["virtual_sample"]
@@ -868,7 +868,7 @@ class sweep_generator:
                     "measurement_vectors"
                 ],
                 probe_parameters=self.probe_parameters,
-                p_incomplete_labelling=self.incomplete_labelling_parameters,
+                p_structural_integrity=self.structural_integrity_parameters,
                 sample_params=self.vsample_parameters,
                 mod_acq=self.acquisition_parameters,
                 mod_names=self.modalities,
@@ -1348,9 +1348,9 @@ def run_parameter_sweep(
     probe_DoL = None,
     probe_wobble_theta = None,
     labelling_efficiency = None,
-    incomplete_labelling = None,
-    incomplete_labelling_small_cluster = None,
-    incomplete_labelling_large_cluster = None,
+    structural_integrity = None,
+    structural_integrity_small_cluster = None,
+    structural_integrity_large_cluster = None,
     sample_dimensions = None,
     particle_orientations = None,
     rotation_angles = None,
@@ -1427,9 +1427,9 @@ def run_parameter_sweep(
         - probe_DoL
         - probe_wobble_theta
         - labelling_efficiency
-        - incomplete_labelling
-        - incomplete_labelling_small_cluster
-        - incomplete_labelling_large_cluster
+        - structural_integrity
+        - structural_integrity_small_cluster
+        - structural_integrity_large_cluster
         - sample_dimensions
         - particle_orientations
         - rotation_angles
@@ -1487,9 +1487,9 @@ def run_parameter_sweep(
         probe_DoL=probe_DoL,
         probe_wobble_theta=probe_wobble_theta,
         labelling_efficiency=labelling_efficiency,
-        incomplete_labelling=incomplete_labelling,
-        incomplete_labelling_small_cluster=incomplete_labelling_small_cluster,
-        incomplete_labelling_large_cluster=incomplete_labelling_large_cluster,
+        structural_integrity=structural_integrity,
+        structural_integrity_small_cluster=structural_integrity_small_cluster,
+        structural_integrity_large_cluster=structural_integrity_large_cluster,
         sample_dimensions=sample_dimensions,
         particle_positions=particle_positions,
         particle_orientations=particle_orientations,
