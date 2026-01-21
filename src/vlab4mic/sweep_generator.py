@@ -365,7 +365,7 @@ class sweep_generator:
         )
 
     def load_reference_image(
-        self, ref_image_path=None, ref_pixelsize=None, ref_image_mask_path = None, override=True
+        self, ref_image_path=None, ref_pixelsize=None, ref_image_mask_path = None, override=True, reference_image=None, **kwargs
     ):
         """
         Load a reference image from a specified path.
@@ -374,7 +374,13 @@ class sweep_generator:
         reference_parameters["Vector"] = None
         ref_pixelsize
         reference_parameters["ref_pixelsize"] = ref_pixelsize
-        ref_image = tiff.imread(ref_image_path)
+        if reference_image is not None:
+            ref_image = reference_image.copy()
+        elif ref_image_path is not None:
+            ref_image = tiff.imread(ref_image_path)
+        else:
+            override = False
+            ref_image = None    
         if ref_image_mask_path is not None:
             image_mask = tiff.imread(ref_image_mask_path)
             ref_image_mask = image_mask > 0
@@ -1411,6 +1417,8 @@ def run_parameter_sweep(
     reference_structure = None,
     reference_probe = None,
     reference_parameters: dict = None,
+    reference_image= None,
+    reference_image_parameters = None,
     clear_experiment=True,
     run_analysis=True,
     # parameters to sweep
@@ -1594,6 +1602,11 @@ def run_parameter_sweep(
         depth_of_field_nm=depth_of_field_nm,
         exp_time=exp_time,
     )
+    if reference_image is not None and reference_image_parameters is not None:
+        sweep_gen.load_reference_image(
+            reference_image=reference_image,
+            **reference_image_parameters
+        )
     if reference_parameters is None:
         reference_parameters = dict()
     sweep_gen.set_reference_parameters(
@@ -1616,7 +1629,8 @@ def run_parameter_sweep(
         sweep_gen.run_analysis(
             save=save_analysis_results, 
             plots=analysis_plots,
-            output_name=output_name
+            output_name=output_name,
+            capture_outputs=capture_outputs
             )
         if save_sweep_images:
             sweep_gen.save_images(
