@@ -1560,7 +1560,8 @@ def run_parameter_sweep(
     if custom_metric is not None and custom_metric_name is not None:
         sweep_gen.add_custom_analysis_metric(
             metric_function=custom_metric, 
-            metric_name=custom_metric_name)
+            metric_name=custom_metric_name,
+            heatmap_params={"cmaps_range": "each"})
     if plot_parameters is not None:
         for plot_type, parameters in plot_parameters.items():
             sweep_gen.set_plot_parameters(
