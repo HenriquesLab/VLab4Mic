@@ -1409,7 +1409,8 @@ def run_parameter_sweep(
     # for plot generation
     na_as_zero = True,
     custom_metric: callable = None,
-    custom_metric_name: str = None
+    custom_metric_name: str = None,
+    plot_parameters=None
     # Add more as needed for your sweep
 ):
     """
@@ -1560,6 +1561,12 @@ def run_parameter_sweep(
         sweep_gen.add_custom_analysis_metric(
             metric_function=custom_metric, 
             metric_name=custom_metric_name)
+    if plot_parameters is not None:
+        for plot_type, parameters in plot_parameters.items():
+            sweep_gen.set_plot_parameters(
+                plot_type=plot_type,
+                **parameters)
+
     if run_analysis:
         sweep_gen.run_analysis(
             save=save_analysis_results, 

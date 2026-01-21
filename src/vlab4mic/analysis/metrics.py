@@ -80,7 +80,6 @@ def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, ref_
                 query,
                 union_mask,
                 **kwargs)
-            print(f"custom metric measurement: {custom_measure}")
             similarity_vector.append(custom_measure)
     return similarity_vector, ref, query, masks_used
 
