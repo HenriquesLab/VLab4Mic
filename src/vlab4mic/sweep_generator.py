@@ -374,7 +374,10 @@ class sweep_generator:
             image_mask = tiff.imread(ref_image_mask_path)
             ref_image_mask = image_mask > 0
         else:
-            image_mask = np.ones(shape=ref_image[0].shape)
+            if len(ref_image.shape) == 3:
+                image_mask = np.ones(shape=ref_image[0].shape)
+            else:
+                image_mask = np.ones(shape=ref_image.shape)
             ref_image_mask = image_mask > 0
         if override:
             self.reference_image = ref_image
@@ -466,7 +469,10 @@ class sweep_generator:
         if return_image:
             return self.reference_image
         else:
-            plt.imshow(self.reference_image[0], cmap=cmap)
+            if len(self.reference_image.shape) > 2:
+                plt.imshow(self.reference_image[0], cmap=cmap)
+            else:
+                plt.imshow(self.reference_image, cmap=cmap)
             print(self.reference_image_parameters)
 
     # set and change parameters
