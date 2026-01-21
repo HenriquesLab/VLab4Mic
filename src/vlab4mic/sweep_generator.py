@@ -1336,7 +1336,7 @@ class sweep_generator:
         Parameters
         ----------
         :param metric_function: callable
-            A function that takes two numpy arrays (image output and reference image)
+            A function that takes two numpy arrays (reference image and query image)
             and returns a float representing the calculated metric.
         :param metric_name: str
             The name of the custom metric to be added.
@@ -1348,7 +1348,8 @@ class sweep_generator:
         Notes
         -----
         The custom metric function should have the following signature:
-            def custom_metric(image_output: np.ndarray, reference_image: np.ndarray) -> float:
+            def custom_metric(ref: np.ndarray, query: np.ndarray, union_mask, **kwargs) -> float:
+                # here union_mask is a binary mask that can be used to filter pixel to use for calculations
                 # Calculate and return the metric value
         """
         if metric_name not in self.analysis_parameters["metrics_list"]:
