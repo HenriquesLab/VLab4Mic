@@ -803,6 +803,7 @@ class sweep_generator:
         output_directory=None,
         plots=False,
         save_images=True,
+        capture_outputs=True,
         **kwargs,
     ):
         """
@@ -829,7 +830,7 @@ class sweep_generator:
         None
         """
         if self.acquisition_outputs is None:
-            self.generate_acquisitions()
+            self.generate_acquisitions(capture_outputs=capture_outputs)
         if self.reference_image is None:
             self.generate_reference_image()
         if len(self.reference_image.shape) == 3:
