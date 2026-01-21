@@ -206,6 +206,7 @@ class sweep_generator:
         None
         """
         self.create_parameters_iterables()
+        print("Generating virtual samples.... this might take some minutes")
         if self.use_experiment_structure:
                        (
                 self.experiment,
@@ -236,7 +237,7 @@ class sweep_generator:
                 repetitions=self.sweep_repetitions,
             )
 
-    def generate_acquisitions(self):
+    def generate_acquisitions(self, capture_outputs=True):
         """
         Generate image simulation acquisition for all virtual samples generated with generate_virtual_samples.
 
@@ -245,9 +246,12 @@ class sweep_generator:
         None
         """
         # generate virtual samples
-        with io.capture_output() as captured:
-            if self.virtual_samples is None:
-                self.generate_virtual_samples()
+        if self.virtual_samples is None:
+                if capture_outputs:
+                    with io.capture_output() as captured:
+                        self.generate_virtual_samples()
+                else:
+                    self.generate_virtual_samples()
         # acquisition of virtual samples
         (
             self.experiment,
