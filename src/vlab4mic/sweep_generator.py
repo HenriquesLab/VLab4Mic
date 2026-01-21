@@ -1488,11 +1488,13 @@ def run_parameter_sweep(
     # for plot generation
     na_as_zero=True,
     custom_metrics: list[callable] = None,
-    default_metrics=["ssim", "pearson"],
-    # custom_metric_name: str = None,
+    default_metrics =  ["ssim", "pearson"],
     plot_parameters=None,
     random_seed: int = None,
-    # Add more as needed for your sweep
+    # Parameterise vsample from image
+    image4vsample = None,
+    image4vsample_parameters = None,
+    capture_outputs=True
 ):
     """
     Run a parameter sweep for virtual microscopy simulations and analysis.
@@ -1591,7 +1593,13 @@ def run_parameter_sweep(
     sweep_gen.set_output_directory(output_directory=output_directory)
     sweep_gen.set_number_of_repetitions(sweep_repetitions)
     # number of particles across sweep
-    if particle_positions is not None:
+    if image4vsample is not None and image4vsample_parameters is not None:
+        # use image to parameterise virtual sample
+        sweep_gen.virtual_sample_from_image(
+            image=image4vsample,
+            **image4vsample_parameters
+        )   
+    elif particle_positions is not None:
         # set those positions
         sweep_gen.experiment.set_virtualsample_params(
             particle_positions=particle_positions
