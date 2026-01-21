@@ -1377,7 +1377,18 @@ class sweep_generator:
                 self.plot_parameters[metric_name]["lineplots"] = {}
             self.metrics[metric_name] = custom_metrics[m]
         
-
+    def virtual_sample_from_image(self, image, as_int=True, **kwargs):
+        if as_int:
+            experimental_image_int = np.array(image, dtype=int)
+        else:
+            experimental_image_int = image
+        print("Using image to position particles in virtual sample")
+        self.experiment.use_image_for_positioning(
+            img=experimental_image_int,
+            background=experimental_image_int.min(),
+            **kwargs
+        )
+        print(f"Virtual sample parameterised to: {self.experiment.virtualsample_params}")
 
 def run_parameter_sweep(
     structures: list[str] = None,
