@@ -1329,7 +1329,7 @@ class sweep_generator:
             #name_ref = output_directory + "reference.tiff"
             tiff.imwrite(dir_name_ref, self.reference_image)
 
-    def add_custom_analysis_metric(self, metric_function: callable, metric_name: str, heatmap_params=None, lineplots_params =None, **kwargs):
+    def add_custom_analysis_metrics(self, custom_metrics: list = None, heatmap_params={"cmaps_range": "each"}, lineplots_params=None, **kwargs):
         """
         Add a custom analysis metric function to the sweep generator.
 
@@ -1352,18 +1352,22 @@ class sweep_generator:
                 # here union_mask is a binary mask that can be used to filter pixel to use for calculations
                 # Calculate and return the metric value
         """
-        if metric_name not in self.analysis_parameters["metrics_list"]:
-            self.analysis_parameters["metrics_list"].append(metric_name)
-            self.plot_parameters[metric_name] = dict()
-        if heatmap_params is not None:
-            self.plot_parameters[metric_name]["heatmaps"] = heatmap_params
-        else:
-            self.plot_parameters[metric_name]["heatmaps"] = {}
-        if lineplots_params is not None:
-            self.plot_parameters[metric_name]["lineplots"] = lineplots_params
-        else:
-            self.plot_parameters[metric_name]["lineplots"] = {}
-        self.custom_metrics[metric_name] = metric_function
+        for custom_class in custom_metrics:
+            metric_callable = custom_class()
+            if metric_callable.get_metric_name() not in self.analysis_parameters["metrics_list"]:
+                metric_name = metric_callable.get_metric_name()
+                self.analysis_parameters["metrics_list"].append(metric_name)
+                self.plot_parameters[metric_name] = dict()
+            # change plot parameters to different method
+            if heatmap_params is not None:
+                self.plot_parameters[metric_name]["heatmaps"] = heatmap_params
+            else:
+                self.plot_parameters[metric_name]["heatmaps"] = {}
+            if lineplots_params is not None:
+                self.plot_parameters[metric_name]["lineplots"] = lineplots_params
+            else:
+                self.plot_parameters[metric_name]["lineplots"] = {}
+            self.custom_metrics[metric_name] = custom_class
         
 
 
@@ -1415,8 +1419,8 @@ def run_parameter_sweep(
     exp_time = None,
     # for plot generation
     na_as_zero = True,
-    custom_metric: callable = None,
-    custom_metric_name: str = None,
+    custom_metrics: list = None,
+    #custom_metric_name: str = None,
     plot_parameters=None
     # Add more as needed for your sweep
 ):
@@ -1564,11 +1568,10 @@ def run_parameter_sweep(
         reference_probe=reference_probe,
         **reference_parameters)
     sweep_gen.set_na_as_zero_in_plots(na_as_zero=na_as_zero)
-    if custom_metric is not None and custom_metric_name is not None:
-        sweep_gen.add_custom_analysis_metric(
-            metric_function=custom_metric, 
-            metric_name=custom_metric_name,
-            heatmap_params={"cmaps_range": "each"})
+    if custom_metrics is not None:
+        sweep_gen.add_custom_analysis_metrics(
+            custom_metrics=custom_metrics
+            )
     if plot_parameters is not None:
         for plot_type, parameters in plot_parameters.items():
             sweep_gen.set_plot_parameters(
