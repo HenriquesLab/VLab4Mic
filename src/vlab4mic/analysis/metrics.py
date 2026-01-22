@@ -34,14 +34,57 @@ def match_image_sizes(
                 union_mask = np.logical_or(
                     reference_mask_interpolated,
                     simulated_image_mask_interpolated)
-                masks_used["reference_mask"] = reference_mask_interpolated
-                masks_used["query_mask"] = simulated_image_mask_interpolated
-                masks_used["union_mask"] = union_mask
-            else:
-                masks_used["reference_mask"] = None
-                masks_used["query_mask"] = None
-                masks_used["union_mask"] = None
-        return reference_interpolated, simulated_image_interpolated, masks_used
+                #masks_interpolated["reference_mask"] = reference_mask_interpolated
+                #masks_interpolated["query_mask"] = simulated_image_mask_interpolated
+                #masks_interpolated["union_mask"] = union_mask
+        return reference_interpolated, simulated_image_interpolated, union_mask
+
+
+def calculate_ssim(
+        reference_image = None, 
+        reference_image_pixelsize_nm = None,
+        reference_image_mask = None,
+        simulated_image = None,
+        simulated_image_pixelsize_nm = None,
+        simulated_image_mask = None
+):
+    reference_interpolated, simulated_image_interpolated, union_mask = match_image_sizes(
+        reference_image = reference_image, 
+        reference_image_pixelsize_nm = reference_image_pixelsize_nm,
+        reference_image_mask = reference_image_mask,
+        simulated_image = simulated_image,
+        simulated_image_pixelsize_nm = simulated_image_pixelsize_nm,
+        simulated_image_mask = simulated_image_mask
+    )
+    similarity = ssim(
+        reference_interpolated[union_mask],
+        simulated_image_interpolated[union_mask],
+        data_range=simulated_image_interpolated[union_mask].max() - simulated_image_interpolated[union_mask].min()
+    )
+    return similarity
+
+
+def calculate_pearson_correlation(
+        reference_image = None, 
+        reference_image_pixelsize_nm = None,
+        reference_image_mask = None,
+        simulated_image = None,
+        simulated_image_pixelsize_nm = None,
+        simulated_image_mask = None
+):
+    reference_interpolated, simulated_image_interpolated, union_mask = match_image_sizes(
+        reference_image = reference_image, 
+        reference_image_pixelsize_nm = reference_image_pixelsize_nm,
+        reference_image_mask = reference_image_mask,
+        simulated_image = simulated_image,
+        simulated_image_pixelsize_nm = simulated_image_pixelsize_nm,
+        simulated_image_mask = simulated_image_mask
+    )
+    pearson_correlation, pval = pearsonr(
+        reference_interpolated[union_mask].flatten(),
+        simulated_image_interpolated[union_mask].flatten()
+    )
+    return pearson_correlation
 
 
 def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, ref_mask = None, query_mask = None, custom_metrics = None, **kwargs):
