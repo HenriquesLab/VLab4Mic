@@ -503,51 +503,6 @@ def generate_global_reference_modality(
     return reference_output[modality]["ch0"], reference_parameters, reference_output_mask
 
 
-def analyse_image_sweep(
-    img_outputs, img_params, reference, analysis_case_params=None
-):
-    """
-    Analyse a sweep of images against a reference image.
-
-    Parameters
-    ----------
-    img_outputs : dict
-        Dictionary of simulated image outputs.
-    img_params : dict
-        Dictionary of image parameters.
-    reference : numpy.ndarray
-        Reference image.
-    analysis_case_params : dict, optional
-        Additional parameters for analysis.
-
-    Returns
-    -------
-    measurement_vectors : list
-        List of measurement results for each image.
-    inputs : dict
-        Dictionary of input images and used references.
-    """
-    measurement_vectors = []
-    # ref_pixelsize = analysis_case_params["ref_pixelsize"]
-    inputs = dict()
-    for params_id in img_params.keys():
-        inputs[params_id] = dict()
-        rep_number = 0
-        mod_name = img_params[params_id][5]  # 5th item corresponds to Modality
-        for img_r in img_outputs[params_id]:
-            im1 = img_r[0]
-            im_ref = reference[0]
-            rep_measurement, ref_used, qry_used_, masks_used = metrics.img_compare(
-                im_ref, im1, **analysis_case_params[mod_name]
-            )
-            measurement_vectors.append(
-                [params_id, rep_number, rep_measurement]
-            )
-            inputs[params_id][rep_number] = [qry_used, im1]
-            rep_number += 1
-    return measurement_vectors, inputs
-
-
 def analyse_sweep_single_reference(
     img_outputs,
     img_outputs_masks,
