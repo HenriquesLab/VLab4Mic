@@ -602,7 +602,6 @@ def analyse_sweep_single_reference(
         for img_r, img_mask in zip(img_outputs[params_id], img_outputs_masks[params_id]):
             im1 = img_r[0]
             im1_mask = img_mask
-            #print(f"query: {im1.shape},{im1_mask.shape}")
             im_ref = reference_image
             rep_measurement, ref_used, qry_used, masks_used = metrics.img_compare(
                 ref = im_ref,
