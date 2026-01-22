@@ -81,7 +81,7 @@ def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, ref_
             similarity, pval = pearsonr(ref[union_mask].flatten(), query[union_mask].flatten())
             similarity_vector.append(similarity)
         elif method in custom_metrics.keys():
-            metric_calculator = custom_metrics[method](
+            custom_measurement = custom_metrics[method](
                 reference_image = reference_image,
                 reference_image_pixelsize_nm = ref_pixelsize,
                 simulated_image = query_image,
@@ -91,7 +91,7 @@ def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, ref_
                 resized_simulated_image = query,
                 **kwargs
             )  
-            custom_measurement = metric_calculator.run_metric()
+            #custom_measurement = metric_calculator.run_metric()
             if isinstance(custom_measurement, float):
                 similarity_vector.append(custom_measurement)
             else:
