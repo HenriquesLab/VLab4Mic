@@ -7,6 +7,43 @@ from scipy.stats import pearsonr
 import cv2
 import copy
 
+def match_image_sizes(
+        reference_image = None, 
+        reference_image_pixelsize_nm = None,
+        reference_image_mask = None,
+        simulated_image = None,
+        simulated_image_pixelsize_nm = None,
+        simulated_image_mask = None
+        ):
+        masks_used = dict()
+        if reference_image_pixelsize_nm and simulated_image_pixelsize_nm:
+            reference_interpolated, simulated_image_interpolated = resize_images_interpolation(
+                img1=reference_image,
+                img2=simulated_image,
+                px_size_im1=reference_image_pixelsize_nm,
+                px_size_im2=simulated_image_pixelsize_nm,
+            )
+            if reference_image_mask is not None and simulated_image_mask is not None:
+                reference_mask_interpolated, simulated_image_mask_interpolated = resize_images_interpolation(
+                    img1=reference_image_mask,
+                    img2=simulated_image_mask,
+                    px_size_im1=reference_image_pixelsize_nm,
+                    px_size_im2=simulated_image_pixelsize_nm,
+                    interpolation_order=0 # becauese they are masks
+                )
+                union_mask = np.logical_or(
+                    reference_mask_interpolated,
+                    simulated_image_mask_interpolated)
+                masks_used["reference_mask"] = reference_mask_interpolated
+                masks_used["query_mask"] = simulated_image_mask_interpolated
+                masks_used["union_mask"] = union_mask
+            else:
+                masks_used["reference_mask"] = None
+                masks_used["query_mask"] = None
+                masks_used["union_mask"] = None
+        return reference_interpolated, simulated_image_interpolated, masks_used
+
+
 def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, ref_mask = None, query_mask = None, custom_metrics = None, **kwargs):
     """
     Compare two images using specified similarity metrics.
