@@ -337,6 +337,7 @@ def sweep_modalities_updatemod(
                             acq_pars,
                         ) in modality_acq_prams.items():
                             if acq_pars is not None:
+                            if acq_pars is not None:
                                 # expects to have 'channels' key with one channel at least
                                 if "channels" not in acq_pars.keys():
                                     channel = "ch0"
