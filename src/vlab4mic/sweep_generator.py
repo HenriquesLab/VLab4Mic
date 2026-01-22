@@ -13,6 +13,7 @@ from matplotlib.ticker import FormatStrFormatter
 import copy
 import tifffile as tiff
 from pandas.api.types import is_numeric_dtype
+from .analysis.metrics import structural_similarity, pearson_correlation
 
 #output_dir = Path.home() / "vlab4mic_outputs"
 
@@ -109,7 +110,10 @@ class sweep_generator:
         self.param_settings = self.parameter_settings
         self.use_experiment_structure = False
         self.reference_parameters_unsorted = dict()
-        self.custom_metrics = dict()
+        self.metrics = {
+            "ssim": structural_similarity,
+            "pearson": pearson_correlation
+        }
         print("vLab4mic sweep generator initialised")
 
     def set_number_of_repetitions(self, repeats: int = 3):
@@ -838,7 +842,7 @@ class sweep_generator:
                 reference_image=reference_image,
                 reference_image_mask=reference_image_mask,
                 reference_params=self.reference_image_parameters,
-                custom_metrics=self.custom_metrics,
+                metrics=self.metrics,
                 **self.analysis_parameters,
             )
         )
@@ -1366,7 +1370,7 @@ class sweep_generator:
                 self.plot_parameters[metric_name]["lineplots"] = lineplots_params
             else:
                 self.plot_parameters[metric_name]["lineplots"] = {}
-            self.custom_metrics[metric_name] = custom_metrics[m]
+            self.metrics[metric_name] = custom_metrics[m]
         
 
 

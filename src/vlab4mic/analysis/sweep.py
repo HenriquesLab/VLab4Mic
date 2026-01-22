@@ -511,10 +511,8 @@ def analyse_sweep_single_reference(
     reference_image_mask,
     reference_params,
     zoom_in=0,
-    metrics_list: list = [
-        "ssim",
-    ],
-    custom_metrics = None,
+    metrics: dict = None,
+    #custom_metrics = None,
     **kwargs,
 ):
     """
@@ -556,26 +554,39 @@ def analyse_sweep_single_reference(
         modality_pixelsize = img_params[params_id][6]["pixelsize"]
         for img_r, img_mask in zip(img_outputs[params_id], img_outputs_masks[params_id]):
             im1 = img_r[0]
-            im1_mask = img_mask
-            im_ref = reference_image
-            rep_measurement, ref_used, qry_used, masks_used = metrics.img_compare(
-                ref = im_ref,
-                ref_mask=reference_image_mask,
-                query=im1,
-                query_mask=im1_mask,
-                modality_pixelsize=modality_pixelsize,
-                ref_pixelsize=reference_params["ref_pixelsize"],
-                force_match=True,
-                zoom_in=zoom_in,
-                metric=metrics_list,
-                custom_metrics = custom_metrics
-            )
-            r_vector = list([params_id, rep_number]) + list([*rep_measurement])
+            #im1_mask = img_mask
+            #im_ref = reference_image
+            similarity_vector = []
+            metrics_names_list = []
+            for metric_name, metric in metrics.items():
+                metrics_names_list.append(metric_name)
+                similarity_vector.append(metric(
+                        reference_image = reference_image, 
+                        reference_image_pixelsize_nm = reference_params["ref_pixelsize"],
+                        reference_image_mask = reference_image_mask,
+                        simulated_image = im1,
+                        simulated_image_pixelsize_nm = modality_pixelsize,
+                        simulated_image_mask = img_mask,
+                    )
+                )
+            #rep_measurement, ref_used, qry_used, masks_used = metrics.img_compare(
+            #    ref = im_ref,
+            #    ref_mask=reference_image_mask,
+            #    query=im1,
+            #    query_mask=im1_mask,
+            #    modality_pixelsize=modality_pixelsize,
+            #    ref_pixelsize=reference_params["ref_pixelsize"],
+            #    force_match=True,
+            #    zoom_in=zoom_in,
+            #    metrics = metrics
+            #)
+            r_vector = list([params_id, rep_number]) + list([*similarity_vector])
             measurement_vectors.append(r_vector)
             # measurement_vectors = measurement_vectors + rep_measurement[0]
-            inputs[params_id][rep_number] = [qry_used, im1, ref_used, masks_used]
+            # for methods that require image resizing
+            #inputs[params_id][rep_number] = [qry_used, im1, ref_used, masks_used]
             rep_number += 1
-    return measurement_vectors, inputs, metrics_list
+    return measurement_vectors, inputs, metrics_names_list
 
 
 def measurements_dataframe(

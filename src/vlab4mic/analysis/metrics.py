@@ -15,7 +15,7 @@ def match_image_sizes(
         simulated_image_pixelsize_nm = None,
         simulated_image_mask = None
         ):
-        masks_used = dict()
+        union_mask = None
         if reference_image_pixelsize_nm and simulated_image_pixelsize_nm:
             reference_interpolated, simulated_image_interpolated = resize_images_interpolation(
                 img1=reference_image,
@@ -40,7 +40,7 @@ def match_image_sizes(
         return reference_interpolated, simulated_image_interpolated, union_mask
 
 
-def calculate_ssim(
+def structural_similarity(
         reference_image = None, 
         reference_image_pixelsize_nm = None,
         reference_image_mask = None,
@@ -64,7 +64,7 @@ def calculate_ssim(
     return similarity
 
 
-def calculate_pearson_correlation(
+def pearson_correlation(
         reference_image = None, 
         reference_image_pixelsize_nm = None,
         reference_image_mask = None,
