@@ -5,6 +5,7 @@ from scipy.ndimage import gaussian_filter
 from skimage.feature import peak_local_max
 from scipy.stats import pearsonr
 import cv2
+import copy
 
 def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, ref_mask = None, query_mask = None, custom_metrics = None, **kwargs):
     """
@@ -34,8 +35,14 @@ def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, ref_
     query : numpy.ndarray
         (Possibly resized) query image.
     """
+    reference_image = ref.copy()
+    query_image = query.copy()
+    ref_pixelsize = None
+    query_pixelsize = None
     if force_match:
         if 'ref_pixelsize' in kwargs and 'modality_pixelsize' in kwargs:
+            ref_pixelsize = copy.copy(kwargs['ref_pixelsize'])
+            query_pixelsize = copy.copy(kwargs['modality_pixelsize'])
             ref, query = resize_images_interpolation(
                 img1=ref,
                 img2=query,
@@ -66,7 +73,6 @@ def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, ref_
                 zoom_in=zoom_in
             )
     similarity_vector = []
-    
     for method in metric:
         if method == "ssim":
             similarity = ssim(ref[union_mask], query[union_mask], data_range=query[union_mask].max() - query[union_mask].min())
@@ -75,12 +81,21 @@ def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, ref_
             similarity, pval = pearsonr(ref[union_mask].flatten(), query[union_mask].flatten())
             similarity_vector.append(similarity)
         elif method in custom_metrics.keys():
-            custom_measure = custom_metrics[method](
-                ref,
-                query,
-                union_mask,
-                **kwargs)
-            similarity_vector.append(custom_measure)
+            metric_calculator = custom_metrics[method](
+                reference_image = reference_image,
+                reference_image_pixelsize_nm = ref_pixelsize,
+                simulated_image = query_image,
+                simulated_image_pixelsize_nm = query_pixelsize,
+                image_mask = union_mask,
+                resized_reference_image = ref,
+                resized_simulated_image = query,
+                **kwargs
+            )  
+            custom_measurement = metric_calculator.run_metric()
+            if isinstance(custom_measurement, float):
+                similarity_vector.append(custom_measurement)
+            else:
+                similarity_vector.append(None)
     return similarity_vector, ref, query, masks_used
 
 
