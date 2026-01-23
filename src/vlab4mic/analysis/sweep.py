@@ -559,7 +559,7 @@ def analyse_sweep_single_reference(
             similarity_vector = []
             metrics_names_list = []
             for metric_name, metric in metrics.items():
-                metrics_names_list.append(metric_name)
+                #metrics_names_list.append(metric_name)
                 similarity_vector.append(metric(
                         reference_image = reference_image, 
                         reference_image_pixelsize_nm = reference_params["ref_pixelsize"],
@@ -569,22 +569,22 @@ def analyse_sweep_single_reference(
                         simulated_image_mask = img_mask,
                     )
                 )
-            #rep_measurement, ref_used, qry_used, masks_used = metrics.img_compare(
-            #    ref = im_ref,
-            #    ref_mask=reference_image_mask,
-            #    query=im1,
-            #    query_mask=im1_mask,
-            #    modality_pixelsize=modality_pixelsize,
-            #    ref_pixelsize=reference_params["ref_pixelsize"],
-            #    force_match=True,
-            #    zoom_in=zoom_in,
-            #    metrics = metrics
-            #)
-            r_vector = list([params_id, rep_number]) + list([*similarity_vector])
-            measurement_vectors.append(r_vector)
-            # measurement_vectors = measurement_vectors + rep_measurement[0]
-            # for methods that require image resizing
-            #inputs[params_id][rep_number] = [qry_used, im1, ref_used, masks_used]
+                #rep_measurement, ref_used, qry_used, masks_used = metrics.img_compare(
+                #    ref = im_ref,
+                #    ref_mask=reference_image_mask,
+                #    query=im1,
+                #    query_mask=im1_mask,
+                #    modality_pixelsize=modality_pixelsize,
+                #    ref_pixelsize=reference_params["ref_pixelsize"],
+                #    force_match=True,
+                #    zoom_in=zoom_in,
+                #    metrics = metrics
+                #)
+            # each image as its ID, a replica number and the metrics associated to it
+            replicaID_repN_metrics = list([params_id, rep_number]) + list([*similarity_vector])
+            measurement_vectors.append(replicaID_repN_metrics)
+                # for methods that require image resizing
+                #inputs[params_id][rep_number] = [qry_used, im1, ref_used, masks_used]
             rep_number += 1
     return measurement_vectors, inputs, metrics_names_list
 
@@ -650,6 +650,7 @@ def measurements_dataframe(
     nmetrics = len(metric_names)
     metrics_dictionary = dict()
     for metric_number in range(nmetrics):
+        # first two indices are ID and replica number, then one value per metric
         metricvector = measurement_array[:, 2 + metric_number]
         metrics_dictionary[metric_names[metric_number]] = np.array(
             metricvector, dtype=np.float64

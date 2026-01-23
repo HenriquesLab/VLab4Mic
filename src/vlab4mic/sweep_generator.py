@@ -77,10 +77,6 @@ class sweep_generator:
         self.parameter_settings = load_yaml(param_settings_file)
         self.analysis_parameters = {}
         self.analysis_parameters["zoom_in"] = 0
-        self.analysis_parameters["metrics_list"] = [
-            "ssim",
-            "pearson"
-        ]
         self.plot_parameters = {}
         self.plot_parameters["ssim"] = {}
         self.plot_parameters["ssim"]["heatmaps"] = {}
@@ -110,10 +106,11 @@ class sweep_generator:
         self.param_settings = self.parameter_settings
         self.use_experiment_structure = False
         self.reference_parameters_unsorted = dict()
-        self.metrics = {
+        self.default_metrics = {
             "ssim": structural_similarity,
             "pearson": pearson_correlation
         }
+        self.metrics = {}
         print("vLab4mic sweep generator initialised")
 
     def set_number_of_repetitions(self, repeats: int = 3):
@@ -751,8 +748,8 @@ class sweep_generator:
         -------
         None
         """
-        if metrics_list is not None and type(metrics_list) == list:
-            self.analysis_parameters["metrics_list"] = metrics_list
+        #if metrics_list is not None and type(metrics_list) == list:
+        #    self.analysis_parameters["metrics_list"] = metrics_list
         if zoom_in is not None:
             self.analysis_parameters["zoom_in"] = zoom_in
 
@@ -788,7 +785,12 @@ class sweep_generator:
         -------
         None
         """
-        self.plot_parameters["general"]["na_as_zero"] = na_as_zero        
+        self.plot_parameters["general"]["na_as_zero"] = na_as_zero   
+
+    def use_default_metrics(self, metrics = ["ssim", "pearson"]):
+        if metrics is not None:
+            for metric_name in metrics:
+                self.metrics[metric_name] = self.default_metrics[metric_name]
 
     def run_analysis(
         self,
@@ -833,6 +835,8 @@ class sweep_generator:
         else:
             reference_image = self.reference_image
             reference_image_mask = self.reference_image_mask
+        if len(self.metrics.keys()) == 0:
+            self.use_default_metrics() 
         print("Running analysis...")
         measurement_vectors, inputs, metric = (
             sweep.analyse_sweep_single_reference(
@@ -854,7 +858,7 @@ class sweep_generator:
         print("Analysis dataframe generated.")
         if plots:
             print("Generating analysis plots...")
-            for metric_name in self.analysis_parameters["metrics_list"]:
+            for metric_name in self.metrics.keys():
                 for plot_type in ["heatmaps", "lineplots"]:
                     self.generate_analysis_plots(
                         plot_type=plot_type,
@@ -892,7 +896,7 @@ class sweep_generator:
                 mod_acq=self.acquisition_parameters,
                 mod_names=self.modalities,
                 mod_params=self.modality_parameters,
-                metric_names=self.analysis_parameters["metrics_list"],
+                metric_names=list(self.metrics.keys()),
             )
         )
 
@@ -1025,7 +1029,7 @@ class sweep_generator:
             The generated heatmap figure.
         """
         if metric_name is None:
-            metric_name = self.analysis_parameters["metrics_list"][0]
+            metric_name = list(self.metrics.keys())[0]
         if category is None:
             category = "modality_name"
         if param1 is None:
@@ -1130,7 +1134,7 @@ class sweep_generator:
         else:
             x_param = "labelling_efficiency"
         if metric_name is None:
-            metric_name = self.analysis_parameters["metrics_list"][0]
+            metric_name = list(self.metrics.keys())[0]
         if style is None and len(self.parameters_with_set_values) > 1:
             style = self.parameters_with_set_values[1]
         fig, axes = plt.subplots(figsize=figsize)
@@ -1356,10 +1360,11 @@ class sweep_generator:
                 # here union_mask is a binary mask that can be used to filter pixel to use for calculations
                 # Calculate and return the metric value
         """
+        current_metrics = list(self.metrics.keys())
         for m in range(len(custom_metrics)):
             metric_name = custom_metrics[m].__name__
-            if metric_name not in self.analysis_parameters["metrics_list"]:
-                self.analysis_parameters["metrics_list"].append(metric_name)
+            if metric_name not in current_metrics:
+                #self.analysis_parameters["metrics_list"].append(metric_name)
                 self.plot_parameters[metric_name] = dict()
             # change plot parameters to different method
             if heatmap_params is not None:
@@ -1423,6 +1428,7 @@ def run_parameter_sweep(
     # for plot generation
     na_as_zero = True,
     custom_metrics: list[callable] = None,
+    default_metrics =  ["ssim", "pearson"],
     #custom_metric_name: str = None,
     plot_parameters=None
     # Add more as needed for your sweep
@@ -1571,6 +1577,7 @@ def run_parameter_sweep(
         reference_probe=reference_probe,
         **reference_parameters)
     sweep_gen.set_na_as_zero_in_plots(na_as_zero=na_as_zero)
+    sweep_gen.use_default_metrics(metrics=default_metrics)         
     if custom_metrics is not None:
         sweep_gen.add_custom_analysis_metrics(
             custom_metrics=custom_metrics
