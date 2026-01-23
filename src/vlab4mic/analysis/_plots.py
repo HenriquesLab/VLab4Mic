@@ -26,7 +26,6 @@ def sns_heatmap_pivots(
     f, axes = plt.subplots(nconditions, 2, figsize=figsize, squeeze = False)
     plot_num = 0
     if cmaps_range == "same":
-        # min and max here correspond to SSIM
         hist_params = dict(vmin=0, vmax=1)
     elif cmaps_range == "each":
         hist_params = dict()
