@@ -37,8 +37,16 @@ def test_run_parameter_sweep():
 
 def test_custom_metric():
     
-    def mean_of_image(ref=None, query=None, union_mask=None, **kwargs):
-        return np.mean(query)
+    def mean_value(reference_image = None,
+            reference_image_pixelsize_nm = None,
+            simulated_image = None,
+            simulated_image_pixelsize_nm = None,
+            image_mask = None,
+            resized_reference_image = None,
+            resized_simulated_image = None,
+            *args,**kwargs):
+        return np.mean(simulated_image)
+
     
     sweep_gen = sweep_generator.run_parameter_sweep(
         sweep_repetitions=3,
@@ -49,6 +57,5 @@ def test_custom_metric():
         save_sweep_images=False,  # By default, the saving directory is set to the home path of the user
         save_analysis_results=False,
         run_analysis=True,
-        custom_metric=mean_of_image,
-        custom_metric_name="mean_intensity",
+        custom_metrics=[mean_value,],
     )
