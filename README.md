@@ -3,12 +3,25 @@
 
 <img src="src/logo/logo.png" align="right" width="180" style="margin-left: 20px;"/>
 
+[![PyPI](https://img.shields.io/pypi/v/vlab4mic.svg?color=green)](https://pypi.org/project/vlab4mic)
+[![Python Version](https://img.shields.io/pypi/pyversions/vlab4mic.svg?color=green)](https://python.org)
+[![Downloads](https://img.shields.io/pypi/dm/vlab4mic)](https://pypi.org/project/vlab4mic)
+[![License](https://img.shields.io/github/license/HenriquesLab/vlab4mic?color=Green)](https://github.com/HenriquesLab/vlab4mic/blob/main/LICENSE.txt)
+[![Tests](https://github.com/HenriquesLab/vlab4mic/actions/workflows/package_build_test_oncall.yml/badge.svg)](https://github.com/HenriquesLab/vlab4mic/actions/workflows/package_build_test_oncall.yml)
+[![Coverage](https://img.shields.io/codecov/c/github/HenriquesLab/vlab4mic.svg?branch=main)](https://img.shields.io/codecov/c/github/HenriquesLab/vlab4mic?branch=main)
+[![Contributors](https://img.shields.io/github/contributors-anon/HenriquesLab/vlab4mic)](https://github.com/HenriquesLab/vlab4mic/graphs/contributors)
+[![GitHub stars](https://img.shields.io/github/stars/HenriquesLab/vlab4mic?style=social)](https://github.com/HenriquesLab/vlab4mic/)
+[![GitHub forks](https://img.shields.io/github/forks/HenriquesLab/vlab4mic?style=social)](https://github.com/HenriquesLab/vlab4mic/)
+
+
+
+
 VLab4Mic lets you explore, test, and validate imaging experiments **before stepping into the microscope room**.  
 Whether you are new to Python or an experienced bioimage researcher, VLab4Mic provides a safe sandbox to:
 
 - Build **virtual samples** from PDB/CIF structures  
 - Apply **direct or indirect fluorescent labeling**  
-- Introduce **defects**, crowding, and structural variation  
+- Introduce **Structural integrity**, crowding, and structural variation  
 - Simulate image acquisition across modalities  
 - Run **parameter sweeps** to explore experimental conditions  
 - Compare **noiseless vs. realistic** acquisitions  
@@ -79,7 +92,7 @@ conda activate MYENV
 
 ### 2️⃣ Install VLab4Mic and its associated library to use the codeless jupyter notebooks
 ```bash
-pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple vlab4mic vlab4micjupyter
+pip install vlab4mic vlab4micjupyter
 ```
 
 ---

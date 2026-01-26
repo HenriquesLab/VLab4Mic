@@ -79,11 +79,11 @@ def compile_modality_parameters(
                 if prints:
                     print(fluoname)
                 channel_name = "ch" + str(ch)
-                fluorophores_in_chanel = []
-                fluorophores_in_chanel.append(
+                fluorophores_in_channel = []
+                fluorophores_in_channel.append(
                     fluoname
                 )  # this is because a channel can have several fluorophores
-                filter_dictionary[channel_name] = fluorophores_in_chanel
+                filter_dictionary[channel_name] = fluorophores_in_channel
                 ch += 1
         else:
             filter_dictionary = mod_pars["filters"]

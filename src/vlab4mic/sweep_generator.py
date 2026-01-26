@@ -13,6 +13,7 @@ from matplotlib.ticker import FormatStrFormatter
 import copy
 import tifffile as tiff
 from pandas.api.types import is_numeric_dtype
+from .analysis.metrics import structural_similarity, pearson_correlation
 
 #output_dir = Path.home() / "vlab4mic_outputs"
 
@@ -29,7 +30,7 @@ class sweep_generator:
     modalities = ["Widefield", "Confocal", "STED", "SMLM"]
     sweep_repetitions = 3
     probe_parameters = None
-    defect_parameters = None
+    structural_integrity_parameters = None
     vsample_parameters = None
     modality_parameters = None
     acquisition_parameters = None
@@ -65,7 +66,7 @@ class sweep_generator:
         self.params_by_group = {}
         self.params_by_group["probe"] = {}
         self.params_by_group["virtual_sample"] = {}
-        self.params_by_group["particle_defect"] = {}
+        self.params_by_group["particle_structural_integrity"] = {}
         self.params_by_group["modality"] = {}
         self.params_by_group["acquisition"] = {}
         self.output_directory = self.experiment.output_directory
@@ -76,11 +77,13 @@ class sweep_generator:
         self.parameter_settings = load_yaml(param_settings_file)
         self.analysis_parameters = {}
         self.analysis_parameters["zoom_in"] = 0
-        self.analysis_parameters["metrics_list"] = [
-            "ssim",
-            "pearson"
-        ]
         self.plot_parameters = {}
+        self.plot_parameters["ssim"] = {}
+        self.plot_parameters["ssim"]["heatmaps"] = {}
+        self.plot_parameters["ssim"]["lineplots"] = {}
+        self.plot_parameters["pearson"] = {}
+        self.plot_parameters["pearson"]["heatmaps"] = {}
+        self.plot_parameters["pearson"]["lineplots"] = {}
         self.plot_parameters["heatmaps"] = {}
         self.plot_parameters["heatmaps"]["category"] = "modality_name"
         self.plot_parameters["heatmaps"]["param1"] = None
@@ -95,12 +98,19 @@ class sweep_generator:
         self.plot_parameters["lineplots"]["style"] = None
         self.plot_parameters["lineplots"]["estimator"] = "mean"
         self.plot_parameters["lineplots"]["errorbar"] = "ci"
+        self.plot_parameters["general"] = {}
+        self.plot_parameters["general"]["na_as_zero"] = True
         self.structures_info_list = self.experiment.structures_info_list
         # Use the directly loaded parameter_settings instead of experiment.param_settings
-        # to ensure all parameter groups (including particle_defect) are available
+        # to ensure all parameter groups (including particle_structural_integrity) are available
         self.param_settings = self.parameter_settings
         self.use_experiment_structure = False
         self.reference_parameters_unsorted = dict()
+        self.default_metrics = {
+            "ssim": structural_similarity,
+            "pearson": pearson_correlation
+        }
+        self.metrics = {}
         print("vLab4mic sweep generator initialised")
 
     def set_number_of_repetitions(self, repeats: int = 3):
@@ -206,7 +216,7 @@ class sweep_generator:
                 structures=self.structures,
                 probes=self.probes,
                 probe_parameters=self.probe_parameters,
-                particle_defects=self.defect_parameters,
+                particle_structural_integrity=self.structural_integrity_parameters,
                 virtual_samples=self.vsample_parameters,
                 repetitions=self.sweep_repetitions,
                 use_experiment_structure=True
@@ -221,7 +231,7 @@ class sweep_generator:
                 structures=self.structures,
                 probes=self.probes,
                 probe_parameters=self.probe_parameters,
-                particle_defects=self.defect_parameters,
+                particle_structural_integrity=self.structural_integrity_parameters,
                 virtual_samples=self.vsample_parameters,
                 repetitions=self.sweep_repetitions,
             )
@@ -250,6 +260,7 @@ class sweep_generator:
             vsample_outputs=self.virtual_samples,
             vsampl_pars=self.virtual_samples_parameters,
             modalities=self.modalities,
+            modality_params=self.modality_parameters,
             modality_acq_prams=self.acquisition_parameters,
         )
 
@@ -364,7 +375,10 @@ class sweep_generator:
             image_mask = tiff.imread(ref_image_mask_path)
             ref_image_mask = image_mask > 0
         else:
-            image_mask = np.ones(shape=ref_image[0].shape)
+            if len(ref_image.shape) == 3:
+                image_mask = np.ones(shape=ref_image[0].shape)
+            else:
+                image_mask = np.ones(shape=ref_image.shape)
             ref_image_mask = image_mask > 0
         if override:
             self.reference_image = ref_image
@@ -377,7 +391,7 @@ class sweep_generator:
         self,
         probe_template=0,
         probe_parameters=0,
-        defect_parameters=0,
+        structural_integrity_parameters=0,
         virtual_sample_parameters=0,
         modality_template=0,
         modality_parameters=0,
@@ -405,7 +419,7 @@ class sweep_generator:
             + "_"
             + str(probe_parameters)
             + "_"
-            + str(defect_parameters)
+            + str(structural_integrity_parameters)
             + "_"
             + str(virtual_sample_parameters)
             + "_"
@@ -456,7 +470,10 @@ class sweep_generator:
         if return_image:
             return self.reference_image
         else:
-            plt.imshow(self.reference_image[0], cmap=cmap)
+            if len(self.reference_image.shape) > 2:
+                plt.imshow(self.reference_image[0], cmap=cmap)
+            else:
+                plt.imshow(self.reference_image, cmap=cmap)
             print(self.reference_image_parameters)
 
     # set and change parameters
@@ -499,18 +516,19 @@ class sweep_generator:
                             ]
                             == "int_slider"
                         ):
-                            step = np.ceil((values[1] - values[0]) / values[2])
+                            #step = np.ceil((values[1] - values[0]) / values[2])
                             self.params_by_group[param_group][param_name] = (
                                 np.arange(
                                     start=values[0],
                                     stop=values[1],
-                                    step=step,
+                                    step=values[2],
                                     dtype=int,
                                 )
                             )
                         else:
+                            num = int((values[1]-values[0]) / values[2]) + 1
                             param_iterables = np.linspace(
-                                values[0], values[1], values[2]
+                                values[0], values[1], num
                             )
                             self.params_by_group[param_group][
                                 param_name
@@ -533,13 +551,13 @@ class sweep_generator:
             peptide_motif: dict = None,
             probe_distance_to_epitope= None,
             probe_steric_hindrance= None,
-            probe_conjugation_efficiency = None,
+            probe_DoL = None,
             probe_wobble_theta = None,
             labelling_efficiency = None,
-            # defects
-            defect=None,
-            defect_small_cluster=None,
-            defect_large_cluster=None,
+            # structural_integrity
+            structural_integrity=None,
+            structural_integrity_small_cluster=None,
+            structural_integrity_large_cluster=None,
             # vsample
             sample_dimensions = None,
             particle_positions = None,
@@ -564,9 +582,9 @@ class sweep_generator:
             self.set_parameter_values(
                 "probe", "probe_steric_hindrance", values=probe_steric_hindrance
             )
-        if probe_conjugation_efficiency is not None:
+        if probe_DoL is not None:
             self.set_parameter_values(
-                "probe", "probe_conjugation_efficiency", values=probe_conjugation_efficiency
+                "probe", "probe_DoL", values=probe_DoL
             )
         if probe_wobble_theta is not None:
             self.set_parameter_values(
@@ -609,17 +627,17 @@ class sweep_generator:
                 "probe", "probe_secondary_epitope", values=probe_seconday_epitope
             )
 
-        if defect is not None:
+        if structural_integrity is not None:
             self.set_parameter_values(
-                "particle_defect", "defect", values=defect
+                "particle_structural_integrity", "structural_integrity", values=structural_integrity
             )
-        if defect_small_cluster is not None:
+        if structural_integrity_small_cluster is not None:
             self.set_parameter_values(
-                "particle_defect", "defect_small_cluster", values=defect_small_cluster
+                "particle_structural_integrity", "structural_integrity_small_cluster", values=structural_integrity_small_cluster
             )
-        if defect_large_cluster is not None:
+        if structural_integrity_large_cluster is not None:
             self.set_parameter_values(
-                "particle_defect", "defect_large_cluster", values=defect_large_cluster
+                "particle_structural_integrity", "structural_integrity_large_cluster", values=structural_integrity_large_cluster
             )
         if sample_dimensions is not None:
             self.set_parameter_values(
@@ -699,8 +717,8 @@ class sweep_generator:
         self.probe_parameters = sweep.create_param_combinations(
             **self.params_by_group["probe"]
         )
-        self.defect_parameters = sweep.create_param_combinations(
-            **self.params_by_group["particle_defect"]
+        self.structural_integrity_parameters = sweep.create_param_combinations(
+            **self.params_by_group["particle_structural_integrity"]
         )
         self.vsample_parameters = sweep.create_param_combinations(
             **self.params_by_group["virtual_sample"]
@@ -730,8 +748,8 @@ class sweep_generator:
         -------
         None
         """
-        if metrics_list is not None and type(metrics_list) == list:
-            self.analysis_parameters["metrics_list"] = metrics_list
+        #if metrics_list is not None and type(metrics_list) == list:
+        #    self.analysis_parameters["metrics_list"] = metrics_list
         if zoom_in is not None:
             self.analysis_parameters["zoom_in"] = zoom_in
 
@@ -752,6 +770,27 @@ class sweep_generator:
         if plot_type in self.plot_parameters.keys():
             for key, val in kwargs.items():
                 self.plot_parameters[plot_type][key] = val
+
+    def set_na_as_zero_in_plots(self, na_as_zero: bool = True):
+        """
+        Set whether to treat NaN values as zero in plots.
+
+        Parameters
+        ----------
+        :param na_as_zero: bool, optional
+            If True, NaN values will be treated as zero in plots. Defaults to True.
+            This does not affect the underlying data, only the visualization.
+
+        Returns
+        -------
+        None
+        """
+        self.plot_parameters["general"]["na_as_zero"] = na_as_zero   
+
+    def use_default_metrics(self, metrics = ["ssim", "pearson"]):
+        if metrics is not None:
+            for metric_name in metrics:
+                self.metrics[metric_name] = self.default_metrics[metric_name]
 
     def run_analysis(
         self,
@@ -796,6 +835,9 @@ class sweep_generator:
         else:
             reference_image = self.reference_image
             reference_image_mask = self.reference_image_mask
+        if len(self.metrics.keys()) == 0:
+            self.use_default_metrics() 
+        print("Running analysis...")
         measurement_vectors, inputs, metric = (
             sweep.analyse_sweep_single_reference(
                 img_outputs=self.acquisition_outputs,
@@ -804,25 +846,36 @@ class sweep_generator:
                 reference_image=reference_image,
                 reference_image_mask=reference_image_mask,
                 reference_params=self.reference_image_parameters,
+                metrics=self.metrics,
                 **self.analysis_parameters,
             )
         )
+        print("Analysis complete.")
         self.analysis["unsorted"]["measurement_vectors"] = measurement_vectors
         self.analysis["unsorted"]["inputs"] = inputs
+        print("Generating analysis dataframe...")
         self.gen_analysis_dataframe()
+        print("Analysis dataframe generated.")
         if plots:
-            for metric_name in self.analysis_parameters["metrics_list"]:
-                for plot_type in self.plot_parameters.keys():
+            print("Generating analysis plots...")
+            for metric_name in self.metrics.keys():
+                for plot_type in ["heatmaps", "lineplots"]:
                     self.generate_analysis_plots(
                         plot_type=plot_type,
                         return_figure=True,
                         metric_name=metric_name,
                         filter_dictionary=None,
+                        na_as_zero=self.plot_parameters["general"]["na_as_zero"],
+                        **self.plot_parameters[metric_name][plot_type]
                     )
+            print("Analysis plots generated.")
         if save:
+            print("saving analysis...")
             self.save_analysis(
                 output_name=output_name, output_directory=output_directory
             )
+            print("Analysis saved.")
+        print("Analysis run complete.")
 
     def gen_analysis_dataframe(self):
         """
@@ -838,12 +891,12 @@ class sweep_generator:
                     "measurement_vectors"
                 ],
                 probe_parameters=self.probe_parameters,
-                p_defects=self.defect_parameters,
+                p_structural_integrity=self.structural_integrity_parameters,
                 sample_params=self.vsample_parameters,
                 mod_acq=self.acquisition_parameters,
                 mod_names=self.modalities,
                 mod_params=self.modality_parameters,
-                metric_names=self.analysis_parameters["metrics_list"],
+                metric_names=list(self.metrics.keys()),
             )
         )
 
@@ -876,6 +929,7 @@ class sweep_generator:
         decimals: int = None,
         return_figure=True,
         filter_dictionary=None,
+        na_as_zero = True,
         **kwargs,
     ):
         """
@@ -918,6 +972,7 @@ class sweep_generator:
                 return_figure=return_figure,
                 decimals=decimals,
                 filter_dictionary=filter_dictionary,
+                na_as_zero = na_as_zero,
                 **plot_params,
                 **kwargs
             )
@@ -929,6 +984,7 @@ class sweep_generator:
                 decimals=decimals,
                 return_figure=return_figure,
                 filter_dictionary=filter_dictionary,
+                na_as_zero = na_as_zero,
                 **plot_params,
                 **kwargs
             )
@@ -945,6 +1001,7 @@ class sweep_generator:
         filter_dictionary=None,
         annotations=False,
         palette=None,
+        na_as_zero = False,
         **kwargs,
     ):
         """
@@ -972,7 +1029,7 @@ class sweep_generator:
             The generated heatmap figure.
         """
         if metric_name is None:
-            metric_name = self.analysis_parameters["metrics_list"][0]
+            metric_name = list(self.metrics.keys())[0]
         if category is None:
             category = "modality_name"
         if param1 is None:
@@ -1016,6 +1073,7 @@ class sweep_generator:
             metric_name=metric_name,
             conditions_cmaps=[cmap_palette]*nconditions,
             decimals=decimals,
+            na_as_zero = na_as_zero,
             **kwargs
         )
         return plot
@@ -1034,6 +1092,7 @@ class sweep_generator:
         decimals="%.4f",
         return_figure=True,
         filter_dictionary=None,
+        na_as_zero = False,
         **kwargs,
     ):
         """
@@ -1075,12 +1134,17 @@ class sweep_generator:
         else:
             x_param = "labelling_efficiency"
         if metric_name is None:
-            metric_name = self.analysis_parameters["metrics_list"][0]
+            metric_name = list(self.metrics.keys())[0]
         if style is None and len(self.parameters_with_set_values) > 1:
             style = self.parameters_with_set_values[1]
         fig, axes = plt.subplots(figsize=figsize)
+        if na_as_zero:
+            data_to_plot = data.copy(deep=True)
+            data_to_plot.fillna(0, inplace=True)
+        else:
+            data_to_plot = data
         sns.lineplot(
-            data=data,
+            data=data_to_plot,
             x=x_param,
             y=metric_name,
             hue=hue,
@@ -1095,7 +1159,7 @@ class sweep_generator:
         axes.xaxis.set_major_formatter(FormatStrFormatter(decimals))
         title = estimator + " " + metric_name + " for " + x_param
         if style is not None:
-            title = title + "per " + style
+            title = title + " per " + style
         plt.title(title)
         plt.close()
         return fig
@@ -1140,6 +1204,17 @@ class sweep_generator:
             if keyname == "dataframes":
                 df = self.get_analysis_output(keyname)
                 df_name = output_name + "_dataframe.csv"
+                files_indir = os.listdir(output_directory)
+                if df_name in files_indir:
+                    count = 1
+                    df_name = (
+                        output_name + "_dataframe_" + str(count) + ".csv"
+                    )
+                    while df_name in files_indir:
+                        count += 1
+                        df_name = (
+                            output_name + "_dataframe_" + str(count) + ".csv"
+                        )
                 df.to_csv(os.path.join(output_directory, df_name), index=False)
             elif keyname == "plots":
                 plots_dictionary = self.get_analysis_output(keyname)
@@ -1153,6 +1228,31 @@ class sweep_generator:
                             + plot_type
                             + ".png"
                         )
+                        current_files = os.listdir(output_directory)
+                        if figure_name in current_files:
+                            count = 1
+                            figure_name = (
+                                output_name
+                                + "_"
+                                + metric
+                                + "_"
+                                + plot_type
+                                + "_"
+                                + str(count)
+                                + ".png"
+                            )
+                            while figure_name in current_files:
+                                count += 1
+                                figure_name = (
+                                    output_name
+                                    + "_"
+                                    + metric
+                                    + "_"
+                                    + plot_type
+                                    + "_"
+                                    + str(count)
+                                    + ".png"
+                                )
                         plot.savefig(
                             os.path.join(output_directory, figure_name)
                         )
@@ -1182,11 +1282,21 @@ class sweep_generator:
         - If `self.reference_image` is present, saves it as "reference.tiff" in the output directory.
         - Saves acquisition parameters as a YAML file in the output directory.
         """
+        now = datetime.now()  # dd/mm/YY H:M:S
+        dt_string = now.strftime("%Y%m%d")
         if output_name is None:
             output_name = "vLab4mic_images_"
         if output_directory is None:
+            foldername = "simulated_images_" + dt_string
+            filesindir = os.listdir(self.output_directory)
+            if foldername in filesindir:
+                count = 1
+                foldername = "simulated_images_" + dt_string + "_" + str(count)
+                while foldername in filesindir:
+                    count+=1
+                    foldername = "simulated_images_" + dt_string + "_" + str(count)
             output_directory = os.path.join(
-                self.output_directory, "simulated_images", ""
+                self.output_directory, foldername
             )
             if not os.path.exists(output_directory):
                 os.makedirs(output_directory)
@@ -1198,8 +1308,9 @@ class sweep_generator:
             image = replicates[0]
             for i in range(1, nreps):
                 image = np.concatenate((image, replicates[i]))
-            name = output_directory + param_combination_id + ".tiff"
-            tiff.imwrite(name, image)
+            name = param_combination_id + ".tiff"
+            dir_name = os.path.join(output_directory, name)
+            tiff.imwrite(dir_name, image)
         if floats_as is not None and callable(floats_as):
             copy_of_params = copy.deepcopy(self.acquisition_outputs_parameters)
             for combination_id, list_of_parameters in copy_of_params.items():
@@ -1221,8 +1332,51 @@ class sweep_generator:
             )
         if self.reference_image is not None:
             # save reference image
-            name_ref = output_directory + "reference.tiff"
-            tiff.imwrite(name_ref, self.reference_image)
+            name_ref = param_combination_id + ".tiff"
+            dir_name_ref = os.path.join(output_directory, name_ref)
+            #name_ref = output_directory + "reference.tiff"
+            tiff.imwrite(dir_name_ref, self.reference_image)
+
+    def add_custom_analysis_metrics(self, custom_metrics: list[callable] = None, heatmap_params={"cmaps_range": "each"}, lineplots_params=None, **kwargs):
+        """
+        Add a custom analysis metric function to the sweep generator.
+
+        Parameters
+        ----------
+        :param metric_function: callable
+            A function that takes two numpy arrays (reference image and query image)
+            and returns a float representing the calculated metric.
+        :param metric_name: str
+            The name of the custom metric to be added.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        The custom metric function should have the following signature:
+            def custom_metric(ref: np.ndarray, query: np.ndarray, union_mask, **kwargs) -> float:
+                # here union_mask is a binary mask that can be used to filter pixel to use for calculations
+                # Calculate and return the metric value
+        """
+        current_metrics = list(self.metrics.keys())
+        for m in range(len(custom_metrics)):
+            metric_name = custom_metrics[m].__name__
+            if metric_name not in current_metrics:
+                #self.analysis_parameters["metrics_list"].append(metric_name)
+                self.plot_parameters[metric_name] = dict()
+            # change plot parameters to different method
+            if heatmap_params is not None:
+                self.plot_parameters[metric_name]["heatmaps"] = heatmap_params
+            else:
+                self.plot_parameters[metric_name]["heatmaps"] = {}
+            if lineplots_params is not None:
+                self.plot_parameters[metric_name]["lineplots"] = lineplots_params
+            else:
+                self.plot_parameters[metric_name]["lineplots"] = {}
+            self.metrics[metric_name] = custom_metrics[m]
+        
 
 
 def run_parameter_sweep(
@@ -1255,12 +1409,12 @@ def run_parameter_sweep(
     peptide_motif: dict = None,
     probe_distance_to_epitope = None,
     probe_steric_hindrance = None,
-    probe_conjugation_efficiency = None,
+    probe_DoL = None,
     probe_wobble_theta = None,
     labelling_efficiency = None,
-    defect = None,
-    defect_small_cluster = None,
-    defect_large_cluster = None,
+    structural_integrity = None,
+    structural_integrity_small_cluster = None,
+    structural_integrity_large_cluster = None,
     sample_dimensions = None,
     particle_orientations = None,
     rotation_angles = None,
@@ -1271,6 +1425,12 @@ def run_parameter_sweep(
     psf_voxel_nm = None,
     depth_of_field_nm = None,
     exp_time = None,
+    # for plot generation
+    na_as_zero = True,
+    custom_metrics: list[callable] = None,
+    default_metrics =  ["ssim", "pearson"],
+    #custom_metric_name: str = None,
+    plot_parameters=None
     # Add more as needed for your sweep
 ):
     """
@@ -1332,12 +1492,12 @@ def run_parameter_sweep(
         - peptide_motif
         - probe_distance_to_epitope
         - probe_steric_hindrance
-        - probe_conjugation_efficiency
+        - probe_DoL
         - probe_wobble_theta
         - labelling_efficiency
-        - defect
-        - defect_small_cluster
-        - defect_large_cluster
+        - structural_integrity
+        - structural_integrity_small_cluster
+        - structural_integrity_large_cluster
         - sample_dimensions
         - particle_orientations
         - rotation_angles
@@ -1369,7 +1529,7 @@ def run_parameter_sweep(
     sweep_gen.select_modalities(modalities=modalities)
     sweep_gen.set_output_directory(output_directory=output_directory)
     sweep_gen.set_number_of_repetitions(sweep_repetitions)
-    # number of particles accross sweep
+    # number of particles across sweep
     if particle_positions is not None:
         # set those positions
         sweep_gen.experiment.set_virtualsample_params(
@@ -1392,12 +1552,12 @@ def run_parameter_sweep(
         peptide_motif=peptide_motif,
         probe_distance_to_epitope=probe_distance_to_epitope,
         probe_steric_hindrance=probe_steric_hindrance,
-        probe_conjugation_efficiency=probe_conjugation_efficiency,
+        probe_DoL=probe_DoL,
         probe_wobble_theta=probe_wobble_theta,
         labelling_efficiency=labelling_efficiency,
-        defect=defect,
-        defect_small_cluster=defect_small_cluster,
-        defect_large_cluster=defect_large_cluster,
+        structural_integrity=structural_integrity,
+        structural_integrity_small_cluster=structural_integrity_small_cluster,
+        structural_integrity_large_cluster=structural_integrity_large_cluster,
         sample_dimensions=sample_dimensions,
         particle_positions=particle_positions,
         particle_orientations=particle_orientations,
@@ -1416,6 +1576,18 @@ def run_parameter_sweep(
         reference_structure=reference_structure,
         reference_probe=reference_probe,
         **reference_parameters)
+    sweep_gen.set_na_as_zero_in_plots(na_as_zero=na_as_zero)
+    sweep_gen.use_default_metrics(metrics=default_metrics)         
+    if custom_metrics is not None:
+        sweep_gen.add_custom_analysis_metrics(
+            custom_metrics=custom_metrics
+            )
+    if plot_parameters is not None:
+        for plot_type, parameters in plot_parameters.items():
+            sweep_gen.set_plot_parameters(
+                plot_type=plot_type,
+                **parameters)
+
     if run_analysis:
         sweep_gen.run_analysis(
             save=save_analysis_results, 

@@ -37,6 +37,7 @@ if not os.path.exists(output_path):
 class ExperimentParametrisation:
     experiment_id: str = "vLab4mic_experiment"
     structure_id: str = "1XI5"
+    structure_format: str = "CIF"
     configuration_path: str = ""
     structure_label: str = "NHS_ester"
     fluorophore_id: str = "AF647"
@@ -44,7 +45,7 @@ class ExperimentParametrisation:
     selected_mods: Dict[str, int] = field(default_factory=dict)
     imaging_modalities: Dict[str, int] = field(default_factory=dict)
     probe_parameters: Dict[str, int] = field(default_factory=dict)
-    defect_eps: Dict[str, int] = field(default_factory=dict)
+    structural_integrity_eps: Dict[str, int] = field(default_factory=dict)
     sweep_pars: Dict[str, int] = field(default_factory=dict)
     objects_created: Dict[str, int] = field(default_factory=dict)
     output_directory: str = None
@@ -67,10 +68,10 @@ class ExperimentParametrisation:
             output_reference=False,
         )
         self.virtualsample_params = dict()
-        self.defect_eps["defect"] = None
-        self.defect_eps["eps1"] = None
-        self.defect_eps["eps2"] = None
-        self.defect_eps["use_defects"] = False
+        self.structural_integrity_eps["structural_integrity"] = None
+        self.structural_integrity_eps["eps1"] = None
+        self.structural_integrity_eps["eps2"] = None
+        self.structural_integrity_eps["use_structural_integrity"] = False
         # read information of local modalities configuration
         modalities_dir = os.path.join(local_dir, "modalities")
         modalities_names_list = []
@@ -194,6 +195,7 @@ class ExperimentParametrisation:
         if structure_path is not None:
             self.structure_path = structure_path
             self.structure_id = structure_id
+            self.structure_format = structure_path.split(".")[-1].upper()
         else:
             self.structure_id = structure_id
         if build:
@@ -450,7 +452,7 @@ class ExperimentParametrisation:
         """
         if self.structure_id and self.structure_path:
             struct, struct_param = load_structure(
-                self.structure_id, self.configuration_path, self.structure_path
+                self.structure_id, self.configuration_path, self.structure_path, self.structure_format
             )
             self.structure = struct
             self.objects_created["structure"] = True
@@ -491,32 +493,32 @@ class ExperimentParametrisation:
             )
         return labels_list
 
-    def _check_if_defects(self):
+    def _check_if_structural_integrity(self):
         """
-        Check if defect parameters are set and update the use_defects flag.
+        Check if structural_integrity parameters are set and update the use_structural_integrity flag.
 
         Returns
         -------
         None
         """
         if (
-            self.defect_eps["defect"]
-            and self.defect_eps["eps1"]
-            and self.defect_eps["eps2"]
+            self.structural_integrity_eps["structural_integrity"] is not None
+            and self.structural_integrity_eps["eps1"]
+            and self.structural_integrity_eps["eps2"]
         ):
-            self.defect_eps["use_defects"] = True
+            self.structural_integrity_eps["use_structural_integrity"] = True
         else:
-            self.defect_eps["use_defects"] = False
+            self.structural_integrity_eps["use_structural_integrity"] = False
 
-    def _build_particle(self, lab_eff=1.0, defect_build=None, keep=False):
+    def _build_particle(self, lab_eff=1.0, structural_integrity_build=None, keep=False):
         """
-        Build the particle object for the experiment, optionally adding defects.
+        Build the particle object for the experiment, optionally adding structural_integritys.
 
         Parameters
         ----------
         :param lab_eff : float, optional
             Labelling efficiency. Default is 1.0.
-        :param defect_build : float or None, optional
+        :param structural_integrity_build : float or None, optional
             Defect parameter to use. Default is None.
         :param keep : bool, optional
             If True, store the particle in the experiment. Default is False.
@@ -527,25 +529,25 @@ class ExperimentParametrisation:
             The particle object if created, else None.
         """
         if self.generators_status("structure"):
-            self._check_if_defects()
+            self._check_if_structural_integrity()
             labels_list = self._build_label(lab_eff=lab_eff)
             if len(labels_list) > 0:
                 particle, label_params_list = particle_from_structure(
                     self.structure, labels_list, self.configuration_path
                 )
-                if self.defect_eps["use_defects"]:
-                    if defect_build is not None:
-                        defect = defect_build
+                if self.structural_integrity_eps["use_structural_integrity"]:
+                    if structural_integrity_build is not None:
+                        structural_integrity = structural_integrity_build
                     else:
-                        defect = self.defect_eps["defect"]
-                    particle.add_defects(
-                        eps1=self.defect_eps["eps1"],
-                        xmer_neigh_distance=self.defect_eps["eps2"],
-                        deg_dissasembly=defect,
+                        structural_integrity = self.structural_integrity_eps["structural_integrity"]
+                    particle.add_structural_integrity(
+                        eps1=self.structural_integrity_eps["eps1"],
+                        xmer_neigh_distance=self.structural_integrity_eps["eps2"],
+                        integrity=structural_integrity,
                     )
                 else:
-                    particle.add_defects(
-                        deg_dissasembly=0,
+                    particle.add_structural_integrity(
+                        integrity=1,
                     )
                 if keep:
                     self.particle = particle
@@ -932,7 +934,7 @@ class ExperimentParametrisation:
         probe_steric_hindrance=None,
         probe_paratope: str = None,
         probe_conjugation_target_info=None,
-        probe_conjugation_efficiency: float = None,
+        probe_DoL: float = None,
         probe_seconday_epitope=None,
         probe_wobble_theta: float = None,
         labelling_efficiency: float = 1.0,
@@ -970,7 +972,7 @@ class ExperimentParametrisation:
             Paratope identifier or information.
         :param probe_conjugation_target_info : Any, optional
             Information about the conjugation target.
-        :param probe_conjugation_efficiency : float, optional
+        :param probe_DoL : float, optional
             Efficiency of the probe conjugation.
         :param probe_seconday_epitope : Any, optional
             Information about a secondary epitope target.
@@ -1061,10 +1063,13 @@ class ExperimentParametrisation:
             probe_configuration["conjugation_sites"]["target"]["value"] = (
                 probe_conjugation_target_info["value"]
             )
-        if probe_conjugation_efficiency is not None:
-            probe_configuration["conjugation_efficiency"] = (
-                probe_conjugation_efficiency
+        if probe_DoL is not None:
+            print(f"Setting probe DoL to: {probe_DoL}")
+            probe_configuration["conjugation_sites"]["DoL"] = (
+                probe_DoL
             )
+        else:
+            print("Add_probe: Using default probe DoL from template")
         if probe_seconday_epitope is not None:
             probe_configuration["epitope_target_info"] = probe_seconday_epitope
         if probe_wobble_theta is not None:
@@ -1326,13 +1331,13 @@ def generate_virtual_sample(
     probe_fluorophore: str = "AF647",
     probe_paratope: str = None,
     probe_conjugation_target_info=None,
-    probe_conjugation_efficiency: float = None,
+    probe_DoL: float = None,
     probe_seconday_epitope=None,
     probe_wobble_theta=None,
     labelling_efficiency: float = 1.0,
-    defect_small_cluster: float = None,
-    defect_large_cluster: float = None,
-    defect: float = None,
+    structural_integrity_small_cluster: float = None,
+    structural_integrity_large_cluster: float = None,
+    structural_integrity: float = None,
     virtual_sample_template: str = "square1x1um_randomised",
     sample_dimensions: list[float] = None,
     number_of_particles: int = None,
@@ -1379,7 +1384,7 @@ def generate_virtual_sample(
         Sequence of the paratope site for when probe includes a model.
     :param probe_conjugation_target_info : Any, optional
         Information about the probe conjugation target.
-    :param probe_conjugation_efficiency : float, optional
+    :param probe_DoL : float, optional
         Efficiency of conjugation of emitters.
     :param probe_seconday_epitope : str, optional
         Sequence within probe model to be used as epitope for a secondary.
@@ -1387,12 +1392,12 @@ def generate_virtual_sample(
         Enable probe wobbling. Default is False.
     :param labelling_efficiency : float, optional
         Labelling efficiency of probe. Default is 1.0.
-    :param defect_small_cluster : float, optional
+    :param structural_integrity_small_cluster : float, optional
         In Å, distance used to group epitopes into multimers.
-    :param defect_large_cluster : float, optional
+    :param structural_integrity_large_cluster : float, optional
         In Å, distance within multimers to consider neighbors.
-    :param defect : float, optional
-        Fraction of defect to model.
+    :param structural_integrity : float, optional
+        Fraction of structural_integrity to model.
     :param virtual_sample_template : str, optional
         Name of the configuration file for template. Default is "square1x1um_randomised".
     :param sample_dimensions : list of float, optional
@@ -1419,6 +1424,21 @@ def generate_virtual_sample(
     myexperiment = ExperimentParametrisation()
     if clear_experiment:
         myexperiment.clear_experiment()
+    # select structure
+    if structure_is_path:
+        print(f"Selecting structure from path: {structure}")
+        myexperiment.select_structure(
+            structure_id=structure.split(".")[0], 
+            structure_path=structure,
+            build=True
+        )
+    else:
+        print("Selecting structure from ID:", structure)
+        myexperiment.select_structure(
+            structure_id=structure, 
+            structure_path=None,
+            build=True
+        )
     # load default configuration for probe
     if (primary_probe is not None) and (secondary_probe is not None):
         print("Adding primary and secondary probes")
@@ -1460,9 +1480,9 @@ def generate_virtual_sample(
                 probe_configuration["conjugation_target_info"] = (
                     probe_conjugation_target_info
                 )
-            if probe_conjugation_efficiency is not None:
-                probe_configuration["conjugation_efficiency"] = (
-                    probe_conjugation_efficiency
+            if probe_DoL is not None:
+                probe_configuration["probe_DoL"] = (
+                    probe_DoL
                 )
             if probe_seconday_epitope is not None:
                 probe_configuration["epitope_target_info"] = probe_seconday_epitope
@@ -1476,27 +1496,12 @@ def generate_virtual_sample(
         virtual_sample_template + ".yaml",
     )
     vsample_configuration = load_yaml(virtual_sample_template)
-    myexperiment.configuration_path
-    if structure_is_path:
-        print(f"Selecting structure from path: {structure}")
-        myexperiment.select_structure(
-            structure_id=structure.split(".")[0], 
-            structure_path=structure,
-            build=False
-        )
-    else:
-        print("Selecting structure from ID:", structure)
-        myexperiment.select_structure(
-            structure_id=structure, 
-            structure_path=None,
-            build=False
-        )
-
-    if defect and defect_large_cluster and defect_small_cluster:
-        myexperiment.defect_eps["eps1"] = defect_small_cluster
-        myexperiment.defect_eps["eps2"] = defect_large_cluster
-        myexperiment.defect_eps["defect"] = defect
-        myexperiment.defect_eps["use_defects"] = True
+    #myexperiment.configuration_path
+    if structural_integrity is not None and structural_integrity_large_cluster and structural_integrity_small_cluster:
+        myexperiment.structural_integrity_eps["eps1"] = structural_integrity_small_cluster
+        myexperiment.structural_integrity_eps["eps2"] = structural_integrity_large_cluster
+        myexperiment.structural_integrity_eps["structural_integrity"] = structural_integrity
+        myexperiment.structural_integrity_eps["use_structural_integrity"] = True
 
     if sample_dimensions is not None:
         vsample_configuration["sample_dimensions"] = sample_dimensions
@@ -1516,7 +1521,10 @@ def generate_virtual_sample(
     vsample_configuration["yz_orientations"] = yz_orientations
     vsample_configuration["axial_offset"] = axial_offset
     myexperiment.virtualsample_params = vsample_configuration
-    myexperiment.build(use_locals=True)
+    myexperiment.build(modules=[
+                "particle",
+                "coordinate_field",
+                "imager"], use_locals=True)
     if expansion_factor > 1:
         myexperiment.expand_virtual_sample(factor=expansion_factor)
     # myexperiment.coordinate_field_id = virtual_sample
@@ -1577,13 +1585,13 @@ def image_vsample(
     probe_fluorophore: str = "AF647",
     probe_paratope: str = None,
     probe_conjugation_target_info = None,
-    probe_conjugation_efficiency: float = None,
+    probe_DoL: float = None,
     probe_seconday_epitope = None,
     probe_wobble_theta = None,
     labelling_efficiency: float = 1.0,
-    defect_small_cluster: float = None,
-    defect_large_cluster: float = None,
-    defect: float = None,
+    structural_integrity_small_cluster: float = None,
+    structural_integrity_large_cluster: float = None,
+    structural_integrity: float = None,
     virtual_sample_template: str = "square1x1um_randomised",
     sample_dimensions: list = None,
     number_of_particles: int = None,
@@ -1647,7 +1655,7 @@ def image_vsample(
         Sequence of the paratope site for when probe includes a model.
     :param probe_conjugation_target_info : any, optional
         Information about the probe conjugation target.
-    :param probe_conjugation_efficiency : float, optional
+    :param probe_DoL : float, optional
         Efficiency of conjugation of emitters.
     :param probe_seconday_epitope : str, optional
         Sequence within probe model to be used as epitope for a secondary.
@@ -1655,12 +1663,12 @@ def image_vsample(
         Enable probe wobbling.
     :param labelling_efficiency : float, optional
         Labelling efficiency of probe. Default is 1.0.
-    :param defect_small_cluster : float, optional
+    :param structural_integrity_small_cluster : float, optional
         In Å, distance used to group epitopes into multimers.
-    :param defect_large_cluster : float, optional
+    :param structural_integrity_large_cluster : float, optional
         In Å, distance within multimers to consider neighbors.
-    :param defect : float, optional
-        Fraction of defect to model.
+    :param structural_integrity : float, optional
+        Fraction of structural_integrity to model.
     :param virtual_sample_template : str, optional
         Name of the configuration file for template. Default is "square1x1um_randomised".
     :param sample_dimensions : list, optional
@@ -1708,13 +1716,13 @@ def image_vsample(
             probe_fluorophore=probe_fluorophore,
             probe_paratope=probe_paratope,
             probe_conjugation_target_info=probe_conjugation_target_info,
-            probe_conjugation_efficiency=probe_conjugation_efficiency,
+            probe_DoL=probe_DoL,
             probe_seconday_epitope=probe_seconday_epitope,
             probe_wobble_theta=probe_wobble_theta,
             labelling_efficiency=labelling_efficiency,
-            defect_small_cluster=defect_small_cluster,
-            defect_large_cluster=defect_large_cluster,
-            defect=defect,
+            structural_integrity_small_cluster=structural_integrity_small_cluster,
+            structural_integrity_large_cluster=structural_integrity_large_cluster,
+            structural_integrity=structural_integrity,
             virtual_sample_template=virtual_sample_template,
             sample_dimensions=sample_dimensions,
             number_of_particles=number_of_particles,

@@ -26,5 +26,5 @@ conjugation_sites:
       - CA
       residues: 
       - LYS
-  efficiency: 0.2
+  DoL:
 

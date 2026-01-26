@@ -38,7 +38,7 @@ class Imager:
         self.field["reference_point"] = None
         self.fluorophore_params = (
             dict()
-        )  # contiain its photophysical parameters such as excitation and emission
+        )  # contain its photophysical parameters such as excitation and emission
         self.emitters_by_fluorophore = dict()
         self.emitters_by_channel = dict()
         self.writing_dir = ""
@@ -101,7 +101,7 @@ class Imager:
         ]
         self.roi_params["ranges"] = [xrange, yrange, zrange]
 
-    def get_absoulte_reference_point(self):
+    def get_absolute_reference_point(self):
         """
         Get the absolute reference point in 3D (including focus plane).
 
@@ -403,11 +403,11 @@ class Imager:
                 if prints:
                     print(fluoname)
                 channel_name = "ch" + str(ch)
-                fluorophores_in_chanel = []
-                fluorophores_in_chanel.append(
+                fluorophores_in_channel = []
+                fluorophores_in_channel.append(
                     fluoname
                 )  # this is because a channel can have several fluorophores
-                filter_dictionary[channel_name] = fluorophores_in_chanel
+                filter_dictionary[channel_name] = fluorophores_in_channel
                 ch += 1
             self.modalities[modality]["filters"] = filter_dictionary
         else:
@@ -441,7 +441,7 @@ class Imager:
         if "depth" not in self.modalities[modality]["psf"]:
             depth_default = int((psf_stack.shape)[2] / 2)
             if prints:
-                print("No depth parameter found for psf, asigning default")
+                print("No depth parameter found for psf, assigning default")
             self.modalities[modality]["psf"]["depth"] = depth_default
 
     def _set_modality_emission(self, modality, emission):
@@ -450,7 +450,7 @@ class Imager:
     def _set_modality_detector(
         self,
         modality,
-        image_size=[],  # decpreciated, image size will only be taken from ROI
+        image_size=[],  # deprecated, image size will only be taken from ROI
         pixelsize=None,
         bits_pixel=None,
         noise_model=None,
@@ -480,7 +480,7 @@ class Imager:
 
     def _calculate_imsize_from_ROIranges(
         self, mod_pixelsize
-    ):  # THere should be specified the scale of the pixelsize of modality
+    ):  # There should be specified the scale of the pixelsize of modality
         roi_scale = self.get_roi_params("scale")
         xrange = self.get_roi_params("ranges")[0]
         yrange = self.get_roi_params("ranges")[1]
@@ -585,7 +585,7 @@ class Imager:
         **kwargs,
     ):
         """
-        Master funciton that generates image sequences depending on the modality
+        Master function that generates image sequences depending on the modality
         This function is responsible for
             Preparing the coordinates according to ROI (DONE!)
             Creating the Photons per frame matrix
@@ -609,7 +609,7 @@ class Imager:
                 )
             else:
                 fluonames = list(self.modalities[modality]["filters"][ch])
-                # prepare a dictionary that conaints the emitters per channel defined
+                # prepare a dictionary that contains the emitters per channel defined
                 output_per_fluoname = dict()
                 writing_notes = self.identifier + "_" + str(modality) + "_" + str(ch) + "_"
                 for fluo in fluonames:  # a channel could capture multiple fluorophores
@@ -869,8 +869,8 @@ class Imager:
 
     def _adjust_to_pixel_depth(self, modality, stack):
         bits = self.modalities[modality]["detector"]["bits_pixel"]
-        saturaton = (2**bits) - 1
-        stack[stack > saturaton] == saturaton
+        saturation = (2**bits) - 1
+        stack[stack > saturation] == saturation
         return stack
 
     def _save_timeseries_with_beads(self, timeseries_stack, beads_stack, notes):
@@ -1212,7 +1212,7 @@ class Imager:
         ax.plot_surface(xx, yy, zz, alpha=0.2)
         # show ROI reference point
         if reference_pt:
-            ref_pt = self.get_absoulte_reference_point() * factor
+            ref_pt = self.get_absolute_reference_point() * factor
             add_ax_scatter(ax, format_coordinates(ref_pt))
         # EMITTERS PER FLUOROPHORE SPECIES
         if self.emitters_by_fluorophore is not None:

@@ -172,7 +172,11 @@ class MolecularStructureParser:
         list of str
             List of protein names.
         """
-        return list(self.protein_names.keys())
+        if self.protein_names is not None:
+            if len(list(self.protein_names.keys())) > 0:
+                return list(self.protein_names.keys())
+        else:
+            return []
 
     def _random_substring(string, size=5):
         """
@@ -254,57 +258,61 @@ class MolecularStructureParser:
         """
         Parse the rotation/translation operations needed to construct a molecular assembly from an asymmetric unit.
         """
-        if self.CIFdictionary is None:  # check if already created
-            self.generate_MMCIF_dictionary()
-        if "AlphaFoldDB" in self.CIFdictionary["_database_2.database_id"]:
+        if self.format == "PDB":
+            print("Assembly operations are only defined for CIF format files.")
             self.assymetric_defined = False
         else:
-            # get to know how many transformations there are
-            transformation_ids = self.CIFdictionary["_pdbx_struct_oper_list.id"]
-            # each element of the list is pair of matrix-vector needed to transform data
-            # iterate over each of the transformations
-            assembly_transformations = []
-            for tr in range(len(transformation_ids)):
-                row1 = [
-                    self.CIFdictionary["_pdbx_struct_oper_list.matrix[1][1]"][tr],
-                    self.CIFdictionary["_pdbx_struct_oper_list.matrix[1][2]"][tr],
-                    self.CIFdictionary["_pdbx_struct_oper_list.matrix[1][3]"][tr],
-                ]
-
-                row2 = [
-                    self.CIFdictionary["_pdbx_struct_oper_list.matrix[2][1]"][tr],
-                    self.CIFdictionary["_pdbx_struct_oper_list.matrix[2][2]"][tr],
-                    self.CIFdictionary["_pdbx_struct_oper_list.matrix[2][3]"][tr],
-                ]
-
-                row3 = [
-                    self.CIFdictionary["_pdbx_struct_oper_list.matrix[3][1]"][tr],
-                    self.CIFdictionary["_pdbx_struct_oper_list.matrix[3][2]"][tr],
-                    self.CIFdictionary["_pdbx_struct_oper_list.matrix[3][3]"][tr],
-                ]
-                rotation_matrix = np.array([row1, row2, row3], dtype="float")
-
-                vector = np.array(
-                    [
-                        self.CIFdictionary["_pdbx_struct_oper_list.vector[1]"][tr],
-                        self.CIFdictionary["_pdbx_struct_oper_list.vector[2]"][tr],
-                        self.CIFdictionary["_pdbx_struct_oper_list.vector[3]"][tr],
-                    ],
-                    dtype="float",
-                )
-                assembly_transformations.append([rotation_matrix, vector])
-            struct_oper_dictionary = dict(zip(transformation_ids, assembly_transformations))
-            if len(transformation_ids) > 1:
-                self.assymetric_defined = True
-                # print(
-                #    "This model is defined with more than one symmetric transformation.
-                # Will consider the assembly as assymetric defined"
-                # )
-            else:
-                # when no assembly unit exist, there is only 1 transform expected
+            if self.CIFdictionary is None:  # check if already created
+                self.generate_MMCIF_dictionary()
+            if "AlphaFoldDB" in self.CIFdictionary["_database_2.database_id"]:
                 self.assymetric_defined = False
-                # print("This model is defined with only one symmetric transformation")
-            self.assembly_operations = struct_oper_dictionary
+            else:
+                # get to know how many transformations there are
+                transformation_ids = self.CIFdictionary["_pdbx_struct_oper_list.id"]
+                # each element of the list is pair of matrix-vector needed to transform data
+                # iterate over each of the transformations
+                assembly_transformations = []
+                for tr in range(len(transformation_ids)):
+                    row1 = [
+                        self.CIFdictionary["_pdbx_struct_oper_list.matrix[1][1]"][tr],
+                        self.CIFdictionary["_pdbx_struct_oper_list.matrix[1][2]"][tr],
+                        self.CIFdictionary["_pdbx_struct_oper_list.matrix[1][3]"][tr],
+                    ]
+
+                    row2 = [
+                        self.CIFdictionary["_pdbx_struct_oper_list.matrix[2][1]"][tr],
+                        self.CIFdictionary["_pdbx_struct_oper_list.matrix[2][2]"][tr],
+                        self.CIFdictionary["_pdbx_struct_oper_list.matrix[2][3]"][tr],
+                    ]
+
+                    row3 = [
+                        self.CIFdictionary["_pdbx_struct_oper_list.matrix[3][1]"][tr],
+                        self.CIFdictionary["_pdbx_struct_oper_list.matrix[3][2]"][tr],
+                        self.CIFdictionary["_pdbx_struct_oper_list.matrix[3][3]"][tr],
+                    ]
+                    rotation_matrix = np.array([row1, row2, row3], dtype="float")
+
+                    vector = np.array(
+                        [
+                            self.CIFdictionary["_pdbx_struct_oper_list.vector[1]"][tr],
+                            self.CIFdictionary["_pdbx_struct_oper_list.vector[2]"][tr],
+                            self.CIFdictionary["_pdbx_struct_oper_list.vector[3]"][tr],
+                        ],
+                        dtype="float",
+                    )
+                    assembly_transformations.append([rotation_matrix, vector])
+                struct_oper_dictionary = dict(zip(transformation_ids, assembly_transformations))
+                if len(transformation_ids) > 1:
+                    self.assymetric_defined = True
+                    # print(
+                    #    "This model is defined with more than one symmetric transformation.
+                    # Will consider the assembly as assymetric defined"
+                    # )
+                else:
+                    # when no assembly unit exist, there is only 1 transform expected
+                    self.assymetric_defined = False
+                    # print("This model is defined with only one symmetric transformation")
+                self.assembly_operations = struct_oper_dictionary
 
     def generate_assembly_reference_point(self):
         """
@@ -597,7 +605,7 @@ class MolecularStructureParser:
         **kwargs
             Additional keyword arguments (e.g., fluorophore, labeling_efficiency, method).
         """
-        #  only the first appearance of the epitope in every chain is retreived
+        #  only the first appearance of the epitope in every chain is retrieved
         #  if a chain has more than one epitope, only the first one is returned
         target_seq = sequence
         method = "average"

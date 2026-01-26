@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vlab4mic"
-version = "0.0.12"
+version = "0.0.14"
 description = "VLab4Mic: A virtual laboratory for microscopy simulation and validation"
 authors = [
     { name = "Damián Martinez", email = "jdmartinezigc@gmail.com" },
@@ -14,14 +14,14 @@ authors = [
 ]
 readme = { file = "README.md", content-type = "text/markdown" }
 license = { text = "MIT" }
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3.11",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent"
 ]
 dependencies = [
-    "numpy>=1.26.4",
+    "numpy>=2.0.0",
     "matplotlib>=3.9.0",
     "scipy>=1.13.1",
     "biopython>=1.83",

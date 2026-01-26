@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import itertools
 import copy
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 from IPython.utils import io
 
 
@@ -16,14 +16,14 @@ def sweep_vasmples(
     structures=None,
     probes=None,
     probe_parameters=None,
-    particle_defects=None,
+    particle_structural_integrity=None,
     virtual_samples=None,
     repetitions=1,
     use_experiment_structure=False,
     **kwargs,
 ):
     """
-    Generate virtual samples for all combinations of structures, probes, probe parameters, defects, and virtual sample parameters.
+    Generate virtual samples for all combinations of structures, probes, probe parameters, structural_integrity, and virtual sample parameters.
 
     Parameters
     ----------
@@ -35,8 +35,8 @@ def sweep_vasmples(
         List of probe names.
     probe_parameters : dict, optional
         Dictionary of probe parameter sets.
-    particle_defects : dict, optional
-        Dictionary of defect parameter sets.
+    particle_structural_integrity : dict, optional
+        Dictionary of structural integrity parameter sets.
     virtual_samples : dict, optional
         Dictionary of virtual sample parameter sets.
     repetitions : int, optional
@@ -77,9 +77,9 @@ def sweep_vasmples(
         default_params = load_yaml(probe_filepath)
         probe_parameters = dict()
         probe_parameters[0] = None
-    if particle_defects is None:
-        particle_defects = dict()
-        particle_defects[0] = {"use_defects": False}
+    if particle_structural_integrity is None:
+        particle_structural_integrity = dict()
+        particle_structural_integrity[0] = {"use_structural_integrity": False}
     if virtual_samples is None:
         # vprobe_filepath = os.path.join(local_dir, "probes", default_probe + ".yaml")
         # default_vsample =  load_yaml(vprobe_filepath)
@@ -122,16 +122,15 @@ def sweep_vasmples(
                     p_param_copy = copy.deepcopy(p_param)
                     p_param_copy["fluorophore_id"] = default_fluorophore
                     experiment.add_probe(probe_template=probe, **p_param_copy)
-                for defect_n, defects_pars in particle_defects.items():
-                    particle_defects_copy = copy.deepcopy(defects_pars)
-                    for d_key, d_val in particle_defects_copy.items():
-                        if d_key == "defect_small_cluster":
-                            experiment.defect_eps["eps1"] = d_val
-                        if d_key == "defect_large_cluster":
-                            experiment.defect_eps["eps2"] = d_val
-                        if d_key == "defect":
-                            experiment.defect_eps["defect"] = d_val
-                    # print(experiment.defect_eps)
+                for structural_integrity_n, structural_integrity_pars in particle_structural_integrity.items():
+                    particle_structural_integrity_copy = copy.deepcopy(structural_integrity_pars)
+                    for d_key, d_val in particle_structural_integrity_copy.items():
+                        if d_key == "structural_integrity_small_cluster":
+                            experiment.structural_integrity_eps["eps1"] = d_val
+                        if d_key == "structural_integrity_large_cluster":
+                            experiment.structural_integrity_eps["eps2"] = d_val
+                        if d_key == "structural_integrity":
+                            experiment.structural_integrity_eps["structural_integrity"] = d_val
                     print(experiment.probe_parameters)
                     experiment._build_particle(keep=True)
                     if experiment.generators_status("particle"):
@@ -151,17 +150,21 @@ def sweep_vasmples(
                         #    keep=False, use_self_particle=True, **vsample_pars
                         # )
                         for rep in range(repetitions):
-                            if relative_positions_exist and relative_positions is not None:
+                            if relative_positions_exist and relative_positions is not None: # keep the same positions
                                 experiment.clear_virtual_sample()
                                 experiment.set_virtualsample_params(
                                     update_mode=True,
-                                    particle_positions = relative_positions)
+                                    particle_positions = relative_positions,
+                                    **vsample_pars)
                                 experiment.build(
                                     modules=["coordinate_field"],
                                     use_self_particle=True,
                                 )
                             else:
                                 experiment.clear_virtual_sample()
+                                experiment.set_virtualsample_params(
+                                    update_mode=True,
+                                    **vsample_pars)
                                 experiment.build(
                                     modules=["coordinate_field"],
                                     use_self_particle=True,
@@ -178,7 +181,7 @@ def sweep_vasmples(
                                 + "_"
                                 + str(probe_param_n)
                                 + "_"
-                                + str(defect_n)
+                                + str(structural_integrity_n)
                                 + "_"
                                 + str(vsample_n)
                             )
@@ -186,7 +189,7 @@ def sweep_vasmples(
                                 struct,
                                 probe,
                                 p_param,
-                                defects_pars,
+                                structural_integrity_pars,
                                 vsample_pars,
                             ]
                             if combination_n not in vsample_params.keys():
@@ -195,10 +198,6 @@ def sweep_vasmples(
                             vsample_outputs[combination_n].append(
                                 _exported_field
                             )
-                        #
-                        #
-                        # vsample_n += 1
-                    # defect_n += 1
             probe_n += 1
     return experiment, vsample_outputs, vsample_params
 
@@ -296,6 +295,7 @@ def sweep_modalities_updatemod(
                 mod_n = 0
                 for modality_name in experiment.selected_mods.keys():
                     for mod_pars_number, mod_pars in modality_params.items():
+                        print(f"Modality: {modality_name}, params set: {mod_pars} ")
                         experiment.update_modality(modality_name, **mod_pars)
                         # calculate virtual sample mask per modality
                         vsample_mask_per_mod = experiment.imager.generate_modality_mask(modality=modality_name)
@@ -503,51 +503,6 @@ def generate_global_reference_modality(
     return reference_output[modality]["ch0"], reference_parameters, reference_output_mask
 
 
-def analyse_image_sweep(
-    img_outputs, img_params, reference, analysis_case_params=None
-):
-    """
-    Analyse a sweep of images against a reference image.
-
-    Parameters
-    ----------
-    img_outputs : dict
-        Dictionary of simulated image outputs.
-    img_params : dict
-        Dictionary of image parameters.
-    reference : numpy.ndarray
-        Reference image.
-    analysis_case_params : dict, optional
-        Additional parameters for analysis.
-
-    Returns
-    -------
-    measurement_vectors : list
-        List of measurement results for each image.
-    inputs : dict
-        Dictionary of input images and used references.
-    """
-    measurement_vectors = []
-    # ref_pixelsize = analysis_case_params["ref_pixelsize"]
-    inputs = dict()
-    for params_id in img_params.keys():
-        inputs[params_id] = dict()
-        rep_number = 0
-        mod_name = img_params[params_id][5]  # 5th item corresponds to Modality
-        for img_r in img_outputs[params_id]:
-            im1 = img_r[0]
-            im_ref = reference[0]
-            rep_measurement, ref_used, qry_used_, masks_used = metrics.img_compare(
-                im_ref, im1, **analysis_case_params[mod_name]
-            )
-            measurement_vectors.append(
-                [params_id, rep_number, rep_measurement]
-            )
-            inputs[params_id][rep_number] = [qry_used, im1]
-            rep_number += 1
-    return measurement_vectors, inputs
-
-
 def analyse_sweep_single_reference(
     img_outputs,
     img_outputs_masks,
@@ -556,9 +511,8 @@ def analyse_sweep_single_reference(
     reference_image_mask,
     reference_params,
     zoom_in=0,
-    metrics_list: list = [
-        "ssim",
-    ],
+    metrics: dict = None,
+    #custom_metrics = None,
     **kwargs,
 ):
     """
@@ -600,32 +554,45 @@ def analyse_sweep_single_reference(
         modality_pixelsize = img_params[params_id][6]["pixelsize"]
         for img_r, img_mask in zip(img_outputs[params_id], img_outputs_masks[params_id]):
             im1 = img_r[0]
-            im1_mask = img_mask
-            #print(f"query: {im1.shape},{im1_mask.shape}")
-            im_ref = reference_image
-            rep_measurement, ref_used, qry_used, masks_used = metrics.img_compare(
-                ref = im_ref,
-                ref_mask=reference_image_mask,
-                query=im1,
-                query_mask=im1_mask,
-                modality_pixelsize=modality_pixelsize,
-                ref_pixelsize=reference_params["ref_pixelsize"],
-                force_match=True,
-                zoom_in=zoom_in,
-                metric=metrics_list,
-            )
-            r_vector = list([params_id, rep_number]) + list([*rep_measurement])
-            measurement_vectors.append(r_vector)
-            # measurement_vectors = measurement_vectors + rep_measurement[0]
-            inputs[params_id][rep_number] = [qry_used, im1, ref_used, masks_used]
+            #im1_mask = img_mask
+            #im_ref = reference_image
+            similarity_vector = []
+            metrics_names_list = []
+            for metric_name, metric in metrics.items():
+                #metrics_names_list.append(metric_name)
+                similarity_vector.append(metric(
+                        reference_image = reference_image, 
+                        reference_image_pixelsize_nm = reference_params["ref_pixelsize"],
+                        reference_image_mask = reference_image_mask,
+                        simulated_image = im1,
+                        simulated_image_pixelsize_nm = modality_pixelsize,
+                        simulated_image_mask = img_mask,
+                    )
+                )
+                #rep_measurement, ref_used, qry_used, masks_used = metrics.img_compare(
+                #    ref = im_ref,
+                #    ref_mask=reference_image_mask,
+                #    query=im1,
+                #    query_mask=im1_mask,
+                #    modality_pixelsize=modality_pixelsize,
+                #    ref_pixelsize=reference_params["ref_pixelsize"],
+                #    force_match=True,
+                #    zoom_in=zoom_in,
+                #    metrics = metrics
+                #)
+            # each image as its ID, a replica number and the metrics associated to it
+            replicaID_repN_metrics = list([params_id, rep_number]) + list([*similarity_vector])
+            measurement_vectors.append(replicaID_repN_metrics)
+                # for methods that require image resizing
+                #inputs[params_id][rep_number] = [qry_used, im1, ref_used, masks_used]
             rep_number += 1
-    return measurement_vectors, inputs, metrics_list
+    return measurement_vectors, inputs, metrics_names_list
 
 
 def measurements_dataframe(
     measurement_vectors,
     probe_parameters=None,
-    p_defects=None,
+    p_structural_integrity=None,
     mod_names=None,
     sample_params=None,
     mod_params=None,
@@ -641,8 +608,8 @@ def measurements_dataframe(
         List of measurement results.
     probe_parameters : dict, optional
         Dictionary of probe parameter sets.
-    p_defects : dict, optional
-        Dictionary of defect parameter sets.
+    p_structural_integrity : dict, optional
+        Dictionary of structural integrity parameter sets.
     mod_names : list, optional
         List of modality names.
     sample_params : dict, optional
@@ -670,7 +637,7 @@ def measurements_dataframe(
             "Combination_id": measurement_array[:, 0],
             "probe_n": ids_array[:, 0],
             "probe_param_n": ids_array[:, 1],
-            "defects": ids_array[:, 2],
+            "structural_integrity_n": ids_array[:, 2],
             "vsample": ids_array[:, 3],
             "modality": ids_array[:, 4],
             "modality_parameters": ids_array[:, 5],
@@ -683,6 +650,7 @@ def measurements_dataframe(
     nmetrics = len(metric_names)
     metrics_dictionary = dict()
     for metric_number in range(nmetrics):
+        # first two indices are ID and replica number, then one value per metric
         metricvector = measurement_array[:, 2 + metric_number]
         metrics_dictionary[metric_names[metric_number]] = np.array(
             metricvector, dtype=np.float64
@@ -702,16 +670,16 @@ def measurements_dataframe(
                 )
         tmp1 = pd.DataFrame(tmp_df1)
         df_combined = df_combined.join(tmp1)
-    if p_defects:
-        defect_param_names = p_defects[0].keys()
+    if p_structural_integrity:
+        structural_integrity_param_names = p_structural_integrity[0].keys()
         tmp_df2 = dict()
-        for column_name in defect_param_names:
+        for column_name in structural_integrity_param_names:
             tmp_df2[column_name] = []
         for i in range(nrows):
-            defect_par_comb_id = int(data_frame.iloc[i]["defects"])
-            for column_name in defect_param_names:
+            structural_integrity_par_comb_id = int(data_frame.iloc[i]["structural_integrity_n"])
+            for column_name in structural_integrity_param_names:
                 tmp_df2[column_name].append(
-                    p_defects[defect_par_comb_id][column_name]
+                    p_structural_integrity[structural_integrity_par_comb_id][column_name]
                 )
         tmp2 = pd.DataFrame(tmp_df2)
         df_combined = df_combined.join(tmp2)
@@ -840,7 +808,7 @@ def pivot_dataframes_byCategory(
             )
             .reset_index()
         )
-        # get mean and std accross parameter combinations of axes_param_names
+        # get mean and std across parameter combinations of axes_param_names
         condition_mean_pivot = summarised_group.pivot(
             index=param1, columns=param2, values="Mean_Value"
         ).round(4)
@@ -863,7 +831,7 @@ def probe_parameters_sweep(
     probe_fluorophore: str = None,
     probe_paratope: str = None,
     probe_conjugation_target_info=None,
-    probe_conjugation_efficiency: list[float] = None,
+    probe_DoL: list[float] = None,
     probe_seconday_epitope=None,
     probe_wobbling=None,
     labelling_efficiency: list[float] = None,
@@ -880,7 +848,7 @@ def probe_parameters_sweep(
     probe_fluorophore : str, optional
     probe_paratope : str, optional
     probe_conjugation_target_info : any, optional
-    probe_conjugation_efficiency : list of float, optional
+    probe_DoL : list of float, optional
     probe_seconday_epitope : any, optional
     probe_wobbling : any, optional
     labelling_efficiency : list of float, optional
@@ -955,43 +923,43 @@ def virtual_sample_parameters_sweep(
     return field_parameters
 
 
-def defects_parameters_sweep(
-    defect_small_cluster: float = None,
-    defect_large_cluster: float = None,
-    defect: float = None,
+def structural_integrity_parameters_sweep(
+    structural_integrity_small_cluster: float = None,
+    structural_integrity_large_cluster: float = None,
+    structural_integrity: float = None,
 ):
     """
-    Generate combinations of defect parameters for a sweep.
+    Generate combinations of structural integrity parameters for a sweep.
 
     Parameters
     ----------
-    defect_small_cluster : float, optional
-    defect_large_cluster : float, optional
-    defect : float, optional
+    structural_integrity_small_cluster : float, optional
+    structural_integrity_large_cluster : float, optional
+    structural_integrity : float, optional
 
     Returns
     -------
-    defects_parameters : dict or None
+    structural_integrity_parameters : dict or None
         Dictionary of parameter combinations, or None if no parameters.
     """
     local_params = locals()
-    defects_parameters_vectors = {}
+    structural_integrity_parameters_vectors = {}
     for par, value in local_params.items():
         if value is not None and type(value) is list:
             if len(value) == 1:
-                defects_parameters_vectors[par] = value
+                structural_integrity_parameters_vectors[par] = value
             else:
                 if isinstance(value[0], (str, bool)):
-                    defects_parameters_vectors[par] = value
+                    structural_integrity_parameters_vectors[par] = value
                 else:
                     sequence = np.linspace(value[0], value[1], value[2])
-                    defects_parameters_vectors[par] = sequence
-    defects_parameters = None
-    if bool(defects_parameters_vectors):
-        defects_parameters = create_param_combinations(
-            **defects_parameters_vectors
+                    structural_integrity_parameters_vectors[par] = sequence
+    structural_integrity_parameters = None
+    if bool(structural_integrity_parameters_vectors):
+        structural_integrity_parameters = create_param_combinations(
+            **structural_integrity_parameters_vectors
         )
-    return defects_parameters
+    return structural_integrity_parameters
 
 
 def modality_parameters_sweep(

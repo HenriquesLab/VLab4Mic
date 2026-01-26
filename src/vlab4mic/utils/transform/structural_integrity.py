@@ -124,7 +124,7 @@ def xmersubset_byclustering(
     return_ids=False,
 ):
     """
-    Model Structureal defects by nearest neighbors of the emitters and clustering
+    Model Structureal structural_integrity by nearest neighbors of the emitters and clustering
 
     """
     default_true = [True] * epitopes_coords.shape[0]
@@ -190,18 +190,18 @@ def xmersubset_byclustering(
         d_cluster_params["minsamples2"],
     )
     if ids_validated is None:
-        print("error while simulating defects, returning No emitters")
+        print("error while simulating structural_integrity, returning No emitters")
         if return_ids:
             default_false = [False] * epitopes_coords.shape[0]
             return default_false
         else:
             return np.array([])
     # ids_validated are the ids of the center of each xmer that we want to preserve
-    # we only need to then retreive the appropiate indices of the epitopes themselves
+    # we only need to then retrieve the appropriate indices of the epitopes themselves
     # that correspond to these labels
     epitopes_ids = notin_logical_list(
         label_p_epitope, ids_validated
-    )  # this function retreives false
+    )  # this function retrieves false
     # for each time a value ids_validated appears in label_p_epitope
     final_epitopes_ids = epitopes_ids
     subset = epitopes_coords[final_epitopes_ids,]

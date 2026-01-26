@@ -3,6 +3,6 @@ model:
   format: CIF
   database: RCSB
   title: 
-defects:
+structural_integrity:
   small_cluster:
   big_cluster:

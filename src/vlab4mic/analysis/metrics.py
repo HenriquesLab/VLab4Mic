@@ -5,8 +5,89 @@ from scipy.ndimage import gaussian_filter
 from skimage.feature import peak_local_max
 from scipy.stats import pearsonr
 import cv2
+import copy
 
-def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, ref_mask = None, query_mask = None, **kwargs):
+def match_image_sizes(
+        reference_image = None, 
+        reference_image_pixelsize_nm = None,
+        reference_image_mask = None,
+        simulated_image = None,
+        simulated_image_pixelsize_nm = None,
+        simulated_image_mask = None
+        ):
+        union_mask = None
+        if reference_image_pixelsize_nm and simulated_image_pixelsize_nm:
+            reference_interpolated, simulated_image_interpolated = resize_images_interpolation(
+                img1=reference_image,
+                img2=simulated_image,
+                px_size_im1=reference_image_pixelsize_nm,
+                px_size_im2=simulated_image_pixelsize_nm,
+            )
+            if reference_image_mask is not None and simulated_image_mask is not None:
+                reference_mask_interpolated, simulated_image_mask_interpolated = resize_images_interpolation(
+                    img1=reference_image_mask,
+                    img2=simulated_image_mask,
+                    px_size_im1=reference_image_pixelsize_nm,
+                    px_size_im2=simulated_image_pixelsize_nm,
+                    interpolation_order=0 # becauese they are masks
+                )
+                union_mask = np.logical_or(
+                    reference_mask_interpolated,
+                    simulated_image_mask_interpolated)
+                #masks_interpolated["reference_mask"] = reference_mask_interpolated
+                #masks_interpolated["query_mask"] = simulated_image_mask_interpolated
+                #masks_interpolated["union_mask"] = union_mask
+        return reference_interpolated, simulated_image_interpolated, union_mask
+
+
+def structural_similarity(
+        reference_image = None, 
+        reference_image_pixelsize_nm = None,
+        reference_image_mask = None,
+        simulated_image = None,
+        simulated_image_pixelsize_nm = None,
+        simulated_image_mask = None
+):
+    reference_interpolated, simulated_image_interpolated, union_mask = match_image_sizes(
+        reference_image = reference_image, 
+        reference_image_pixelsize_nm = reference_image_pixelsize_nm,
+        reference_image_mask = reference_image_mask,
+        simulated_image = simulated_image,
+        simulated_image_pixelsize_nm = simulated_image_pixelsize_nm,
+        simulated_image_mask = simulated_image_mask
+    )
+    similarity = ssim(
+        reference_interpolated[union_mask],
+        simulated_image_interpolated[union_mask],
+        data_range=simulated_image_interpolated[union_mask].max() - simulated_image_interpolated[union_mask].min()
+    )
+    return similarity
+
+
+def pearson_correlation(
+        reference_image = None, 
+        reference_image_pixelsize_nm = None,
+        reference_image_mask = None,
+        simulated_image = None,
+        simulated_image_pixelsize_nm = None,
+        simulated_image_mask = None
+):
+    reference_interpolated, simulated_image_interpolated, union_mask = match_image_sizes(
+        reference_image = reference_image, 
+        reference_image_pixelsize_nm = reference_image_pixelsize_nm,
+        reference_image_mask = reference_image_mask,
+        simulated_image = simulated_image,
+        simulated_image_pixelsize_nm = simulated_image_pixelsize_nm,
+        simulated_image_mask = simulated_image_mask
+    )
+    pearson_correlation, pval = pearsonr(
+        reference_interpolated[union_mask].flatten(),
+        simulated_image_interpolated[union_mask].flatten()
+    )
+    return pearson_correlation
+
+
+def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, ref_mask = None, query_mask = None, custom_metrics = None, **kwargs):
     """
     Compare two images using specified similarity metrics.
 
@@ -34,8 +115,14 @@ def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, ref_
     query : numpy.ndarray
         (Possibly resized) query image.
     """
+    reference_image = ref.copy()
+    query_image = query.copy()
+    ref_pixelsize = None
+    query_pixelsize = None
     if force_match:
         if 'ref_pixelsize' in kwargs and 'modality_pixelsize' in kwargs:
+            ref_pixelsize = copy.copy(kwargs['ref_pixelsize'])
+            query_pixelsize = copy.copy(kwargs['modality_pixelsize'])
             ref, query = resize_images_interpolation(
                 img1=ref,
                 img2=query,
@@ -66,7 +153,6 @@ def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, ref_
                 zoom_in=zoom_in
             )
     similarity_vector = []
-    
     for method in metric:
         if method == "ssim":
             similarity = ssim(ref[union_mask], query[union_mask], data_range=query[union_mask].max() - query[union_mask].min())
@@ -74,6 +160,22 @@ def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, ref_
         elif method == "pearson":
             similarity, pval = pearsonr(ref[union_mask].flatten(), query[union_mask].flatten())
             similarity_vector.append(similarity)
+        elif method in custom_metrics.keys():
+            custom_measurement = custom_metrics[method](
+                reference_image = reference_image,
+                reference_image_pixelsize_nm = ref_pixelsize,
+                simulated_image = query_image,
+                simulated_image_pixelsize_nm = query_pixelsize,
+                image_mask = union_mask,
+                resized_reference_image = ref,
+                resized_simulated_image = query,
+                **kwargs
+            )  
+            #custom_measurement = metric_calculator.run_metric()
+            if isinstance(custom_measurement, float):
+                similarity_vector.append(custom_measurement)
+            else:
+                similarity_vector.append(None)
     return similarity_vector, ref, query, masks_used
 
 
