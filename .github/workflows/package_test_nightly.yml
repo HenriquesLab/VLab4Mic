@@ -53,7 +53,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Run tests
         run: |
-          pip install -e .[dev,test]
+          pip install .[dev,test]
           python -m pytest
 
   test_on_windows:
@@ -71,5 +71,5 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Run Tests
         run: |
-          pip install -e .[dev,test]
+          pip install .[dev,test]
           python -m pytest
