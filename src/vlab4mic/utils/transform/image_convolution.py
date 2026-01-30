@@ -5,22 +5,178 @@ import math
 import skimage
 from scipy.ndimage import zoom
 import copy
+from ..__opencl__ import (
+    opencl_works,
+    cl_array,
+    _fastest_device,
+    cl,
+    _get_cl_code,
+)
 
 
-# keep
+def test_kernel_separability(psf):
+    cz, cy, cx = (s // 2 for s in psf.shape)
+
+    kx = psf[cz, cy, :]
+    ky = psf[cz, :, cx]
+    kz = psf[:, cy, cx]
+
+    recon = kz[:, None, None] * ky[None, :, None] * kx[None, None, :]
+
+    return np.linalg.norm(psf - recon) / np.linalg.norm(psf)
+
+
 def convolve3D(voxelated_field, psf, method="fft"):
     """
     psf is the 3D superpixelated psf.
     The pixelsize of both psf and voxelated field must be equal
     psf is also assumed to be centered
     """
-    result = convolve(voxelated_field, psf, mode="same", method=method)
+    if opencl_works():
+        if test_kernel_separability(psf) < 1e-2:
+            result = convolve_opencl(voxelated_field, psf)
+        else:
+            result = convolve(voxelated_field, psf, mode="same", method=method)
+    else:
+        result = convolve(voxelated_field, psf, mode="same", method=method)
     return result
 
 
-"""
-Section: convolve in 3D, use zrange to get emitter that are to be considered
-"""
+def convolve_opencl(input, kernel):
+    # Convolve 3D using separable decomposition
+    # For a rank-1 separable 3D kernel K[z,y,x] = ky[y] * kx[x] * kz[z],
+    # extract the 1D kernels and normalize them
+
+    cz, cy, cx = (s // 2 for s in kernel.shape)
+
+    # For a separable kernel, we can extract 1D kernels from center slices
+    # K[cz, cy, x] = ky[cz] * kx[x] * kz[cy] → kx[x] = K[cz, cy, x] / (ky[cz] * kz[cy])
+    # K[cz, y, cx] = ky[y] * kx[cx] * kz[cz] → ky[y] = K[cz, y, cx] / (kx[cx] * kz[cz])
+    # K[z, cy, cx] = ky[cy] * kx[cx] * kz[z] → kz[z] = K[z, cy, cx] / (ky[cy] * kx[cx])
+
+    # The simplest approach: extract center slices and normalize to sum=1
+    center_val = kernel[cz, cy, cx]
+
+    kz = (
+        kernel[cz, cy, :] / center_val
+        if center_val != 0
+        else kernel[cz, cy, :]
+    )
+    ky = (
+        kernel[cz, :, cx] / center_val
+        if center_val != 0
+        else kernel[cz, :, cx]
+    )
+    kx = (
+        kernel[:, cy, cx] / center_val
+        if center_val != 0
+        else kernel[:, cy, cx]
+    )
+
+    # Normalize each to sum to 1
+    kz = kz / np.sum(kz) if np.sum(kz) > 0 else kz
+    ky = ky / np.sum(ky) if np.sum(ky) > 0 else ky
+    kx = kx / np.sum(kx) if np.sum(kx) > 0 else kx
+
+    # Apply separable 1D convolutions
+    intermediate = convolve1D_opencl(input, ky, axis=0)
+    intermediate = convolve1D_opencl(intermediate, kx, axis=1)
+    output = convolve1D_opencl(intermediate, kz, axis=2)
+    return output
+
+
+def convolve1D_opencl(input, kernel, axis=0, device=None):
+    """
+    Perform 1D convolution along a specified axis.
+    Matches scipy.signal.convolve behavior (kernel is flipped internally).
+
+    Parameters:
+    - input: 3D input array
+    - kernel: 1D kernel array
+    - axis: Which axis to convolve along (0=depth, 1=rows, 2=columns)
+    - device: OpenCL device to use
+    """
+
+    if device is None:
+        device = _fastest_device
+
+    # scipy.signal.convolve flips the kernel, so do it here
+    kernel_flipped = kernel[::-1]
+
+    # Ensure input and kernel are contiguous
+    input_contig = np.ascontiguousarray(input, dtype=np.float32)
+    kernel_contig = np.ascontiguousarray(kernel_flipped, dtype=np.float32)
+
+    # QUEUE AND CONTEXT
+    cl_ctx = cl.Context([device["device"]])
+    cl_queue = cl.CommandQueue(cl_ctx)
+
+    image_out = np.zeros_like(input_contig, dtype=np.float32)
+    mf = cl.mem_flags
+
+    input_image = cl.Buffer(
+        cl_ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=input_contig
+    )
+    input_kernel = cl.Buffer(
+        cl_ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=kernel_contig
+    )
+    output_opencl = cl.Buffer(cl_ctx, mf.WRITE_ONLY, image_out.nbytes)
+
+    kernelsize = np.int32(kernel_contig.shape[0])
+    ndepth = np.int32(input_contig.shape[0])  # z-dimension (depth)
+    nrows = np.int32(input_contig.shape[1])  # y-dimension (rows/height)
+    ncols = np.int32(input_contig.shape[2])  # x-dimension (columns/width)
+
+    code = _get_cl_code("_convolution.cl", device["DP"])
+    prg = cl.Program(cl_ctx, code).build()
+
+    if axis == 0:
+        # Convolution along dimension 0 (z/depth)
+        knl = prg.conv1d_z
+        knl(
+            cl_queue,
+            (int(nrows), int(ncols)),
+            None,
+            input_image,
+            output_opencl,
+            input_kernel,
+            kernelsize,
+            nrows,
+            ncols,
+            ndepth,
+        ).wait()
+    elif axis == 1:
+        # Convolution along dimension 1 (y/rows)
+        knl = prg.conv1d_y
+        knl(
+            cl_queue,
+            (int(nrows), int(ncols), int(ndepth)),
+            None,
+            input_image,
+            output_opencl,
+            input_kernel,
+            kernelsize,
+            nrows,
+            ncols,
+        ).wait()
+    elif axis == 2:
+        # Convolution along dimension 2 (x/columns)
+        knl = prg.conv1d_x
+        knl(
+            cl_queue,
+            (int(nrows), int(ncols), int(ndepth)),
+            None,
+            input_image,
+            output_opencl,
+            input_kernel,
+            kernelsize,
+            nrows,
+            ncols,
+        ).wait()
+
+    cl.enqueue_copy(cl_queue, image_out, output_opencl).wait()
+    cl_queue.finish()
+    return image_out
 
 
 # keep
@@ -64,11 +220,12 @@ def voxelize_active_fluorophores_withrange(
     coordinates_intensity = np.repeat(
         activated_coordinates, repeats=photons_per_emitter, axis=0
     )
-    voxel = voxelate_points_withrange(coordinates_intensity, bin_pixelsize, ranges)
+    voxel = voxelate_points_withrange(
+        coordinates_intensity, bin_pixelsize, ranges
+    )
     return voxel
 
 
-## keep
 def frame_by_volume_convolution(
     coordinates,
     photon_vector,
@@ -82,26 +239,27 @@ def frame_by_volume_convolution(
     as_mask=False,
 ):
     """
-    Generate a 2D image from the  3D field of active emitters
+    Generate a 2D input from the  3D field of active emitters
     convolved with the 3D PSF
-    The resulting 2D image can be generated by considering the whole
+    The resulting 2D input can be generated by considering the whole
     volume or a subset from it.
     projection_depth tells the depth of the volume to be considered
     in units of frames
 
-    IMPORTANT: All units are in the same scale, except image dimensions
+    IMPORTANT: All units are in the same scale, except input dimensions
     """
     projection_depth_half = int(projection_depth / 2)
     intensity_voxel = voxelize_active_fluorophores_withrange(
         coordinates, photon_vector, ranges, bin_pixelsize=bin_size
     )
     if as_mask:
-        frame = np.sum(np.array(intensity_voxel),axis=2)
+        frame = np.sum(np.array(intensity_voxel), axis=2)
         return frame
     if activation_only:
         return intensity_voxel
     if np.sum(photon_vector) > 0:
         convolved_intensity = convolve3D(intensity_voxel, kernel3D)
+        convolved_intensity = convolve3D_new(intensity_voxel, kernel3D)
     else:
         # there's no need to calculate the convolution if there are no photons
         convolved_intensity = intensity_voxel
@@ -115,7 +273,11 @@ def frame_by_volume_convolution(
         frame = np.sum(
             np.array(
                 convolved_intensity[
-                    :, :, zfocus_slice - projection_depth_half : zfocus_slice + projection_depth_half
+                    :,
+                    :,
+                    zfocus_slice
+                    - projection_depth_half : zfocus_slice
+                    + projection_depth_half,
                 ]
             ),
             axis=2,
@@ -123,7 +285,7 @@ def frame_by_volume_convolution(
         return frame
     else:
         return convolved_intensity
-    
+
 
 # keep
 def generate_frames_volume_convolution(
@@ -174,7 +336,7 @@ def generate_frames_volume_convolution(
                 psf_array,
                 psf_focus_slice,
                 projection_depth=psf_projection_depth,
-                as_mask=as_mask
+                as_mask=as_mask,
             )
             cframes.append(frame_n)
 
@@ -213,7 +375,7 @@ def generate_frames_volume_convolution(
                 psf_focus_slice,
                 projection_depth=psf_projection_depth,
                 asframe=asframes,
-                activation_only=activation_only
+                activation_only=activation_only,
             )
             volume_frames.append(v_frame)
         return volume_frames
@@ -226,7 +388,7 @@ def lateral_binning_stack(stack, currentpixelsizes, newpixelsizes, field_size):
 
     field_size is a touple that contains the absolute size of each dimension
     """
-    print("Binning image stack")
+    print("Binning input stack")
     nframes = stack.shape[0]  ## Z in in the dimension 0
     binned_images = np.zeros((nframes, field_size[0], field_size[0]))
     blocks = np.floor_divide(
@@ -244,7 +406,9 @@ def lateral_binning_stack(stack, currentpixelsizes, newpixelsizes, field_size):
 
 
 # keep
-def discretise_field_xyz(coordinates: np.ndarray, binsizes: list, ranges: list):
+def discretise_field_xyz(
+    coordinates: np.ndarray, binsizes: list, ranges: list
+):
     """
     Generate a 3D histogram from a set of coordinates.
 
@@ -287,7 +451,8 @@ def _prepare_data_4convolutions(
     **kwargs,
 ):
     psf_half_range = (
-        min((psf_array.shape[2] - psf_focus_slice), psf_focus_slice) * psf_zstep
+        min((psf_array.shape[2] - psf_focus_slice), psf_focus_slice)
+        * psf_zstep
     )
     zrange = psf_half_range * 2
     nframes = np.shape(photons_frames)[1]
@@ -357,21 +522,27 @@ def generate_frames_projection_conv_optimised2(
 
 
 # keep
-def construct_frames(convolved_emitters_list, nframes, photons_frames, **kwargs):
+def construct_frames(
+    convolved_emitters_list, nframes, photons_frames, **kwargs
+):
     print("constructing frames")
     timeserie = []
     for f in tqdm(range(int(nframes))):
         # extract the vector that corresponds to the current frame
         photons_in_frame_vect = photons_frames[:, f]
         timeserie.append(
-            merge_emissions_lookup(photons_in_frame_vect, convolved_emitters_list)
+            merge_emissions_lookup(
+                photons_in_frame_vect, convolved_emitters_list
+            )
         )
     return np.array(timeserie)
 
 
 # keep
-def bin_timeseries(timeseires, currentpixelsizes, newpixelsizes, field_size, **kwargs):
-    # field_size is equivalent to image size
+def bin_timeseries(
+    timeseires, currentpixelsizes, newpixelsizes, field_size, **kwargs
+):
+    # field_size is equivalent to input size
     # assumes the stack has dimensions tXY
     print(
         f"current pixels size for bining: {currentpixelsizes}; new ones {newpixelsizes}"
@@ -463,7 +634,9 @@ def merge_emissions_lookup(photons_in_frame_vect, convolved_emitters_list):
     if total_photons_frame > 0:
         for pos in range(len(photons_in_frame_vect)):
             if photons_in_frame_vect[pos] > 0:
-                intensity = convolved_emitters_list[pos] * photons_in_frame_vect[pos]
+                intensity = (
+                    convolved_emitters_list[pos] * photons_in_frame_vect[pos]
+                )
                 frame = np.sum([frame, intensity], axis=0)
-    # shall return a single image
+    # shall return a single input
     return frame
