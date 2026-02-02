@@ -1050,9 +1050,11 @@ class ExperimentParametrisation:
         if labelling_efficiency is not None:
             probe_configuration["labelling_efficiency"] = labelling_efficiency
         if probe_model is not None:
-            probe_configuration["model_ID"] = probe_model
+            #probe_configuration["model_ID"] = probe_model
+            probe_configuration["model"]["ID"] = probe_model
         if probe_paratope is not None:
             probe_configuration["paratope"] = probe_paratope
+            probe_configuration["binding"]["paratope"] = probe_paratope
         if probe_conjugation_target_info is not None:
             probe_configuration["conjugation_target_info"] = (
                 probe_conjugation_target_info

@@ -230,7 +230,6 @@ def construct_label(
     label_config_dictionary: None,
     lab_eff: float = None,
     target_info=None,
-    **kwargs,
 ):
     """
     Construct an object of class Label.
@@ -247,22 +246,22 @@ def construct_label(
     label_params = copy.deepcopy(label_config_dictionary)
 
     # keynames reserved for parameters that can be iteratet over
-    if "model_ID" in kwargs.keys():
-        label_params["model"]["ID"] = kwargs["model_ID"]
+    if "model_ID" in label_config_dictionary.keys():
+        label_params["model"]["ID"] = label_config_dictionary["model_ID"]
     if "distance_to_epitope" in label_params.keys():
         label_params["binding"]["distance"]["to_target"] = label_params[
             "distance_to_epitope"
         ]
     else:
         print("No distance to epitope provided, using default value.")
-    if "distance_between_epitope" in kwargs.keys():
-        label_params["binding"]["distance"]["between_targets"] = kwargs[
+    if "distance_between_epitope" in label_config_dictionary.keys():
+        label_params["binding"]["distance"]["between_targets"] = label_config_dictionary[
             "distance_between_epitope"
         ]
-    if "paratope" in kwargs.keys():
-        label_params["binding"]["paratope"] = kwargs["paratope"]
-    if "conjugation_target_info" in kwargs.keys():
-        label_params["conjugation_sites"]["target"] = kwargs[
+    if "paratope" in label_config_dictionary.keys():
+        label_params["binding"]["paratope"] = label_config_dictionary["paratope"]
+    if "conjugation_target_info" in label_config_dictionary.keys():
+        label_params["conjugation_sites"]["target"] = label_config_dictionary[
             "conjugation_target_info"
         ]
     #if "probe_DoL" in label_params.keys():
@@ -271,8 +270,8 @@ def construct_label(
     #    ]
     #else:
     #    print("No DoL provided, using default value. ########################")
-    if "epitope_target_info" in kwargs.keys():
-        label_params["epitope"]["target"] = kwargs["epitope_target_info"]
+    if "epitope_target_info" in label_config_dictionary.keys():
+        label_params["epitope"]["target"] = label_config_dictionary["epitope_target_info"]
     if "wobble_theta" in label_params.keys():
         label_params["binding"]["wobble_range"]["theta"] = label_params[
             "wobble_theta"
