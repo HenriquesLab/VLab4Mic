@@ -259,7 +259,6 @@ def frame_by_volume_convolution(
         return intensity_voxel
     if np.sum(photon_vector) > 0:
         convolved_intensity = convolve3D(intensity_voxel, kernel3D)
-        convolved_intensity = convolve3D_new(intensity_voxel, kernel3D)
     else:
         # there's no need to calculate the convolution if there are no photons
         convolved_intensity = intensity_voxel
