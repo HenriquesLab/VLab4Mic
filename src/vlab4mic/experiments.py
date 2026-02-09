@@ -1356,6 +1356,7 @@ def generate_virtual_sample(
     structural_integrity: float = None,
     virtual_sample_template: str = "square1x1um_randomised",
     sample_dimensions: list[float] = None,
+    sample_inital_orientation = None,
     number_of_particles: int = None,
     particle_positions: list[np.array] = None,
     random_orientations=False,
@@ -1385,7 +1386,7 @@ def generate_virtual_sample(
     :param structure_is_path : logical
         Use structure value as absolute path for the PDB/CIF file.
     :param structure_axis_euler: list
-        Specify euler angles for structure central axis orientation
+        Specify euler angles for structure central axis orientation with order zyx. For perspective angles the order is [Azimutal, Elevation, Roll]
     :param probe_name : str, optional
         Name ID of probe configuration file (filename).
     :param probe_target_type : str, optional
@@ -1525,6 +1526,10 @@ def generate_virtual_sample(
 
     if sample_dimensions is not None:
         vsample_configuration["sample_dimensions"] = sample_dimensions
+    if sample_inital_orientation is not None:
+        vsample_configuration["sample_inital_orientation"] = sample_inital_orientation
+    else:
+        vsample_configuration["sample_inital_orientation"] = None
     if number_of_particles is not None:
         vsample_configuration["number_of_particles"] = number_of_particles
     if particle_positions is not None:
@@ -1615,6 +1620,7 @@ def image_vsample(
     structural_integrity: float = None,
     virtual_sample_template: str = "square1x1um_randomised",
     sample_dimensions: list = None,
+    sample_inital_orientation = None,
     number_of_particles: int = None,
     particle_positions: list = None,
     random_orientations = False,
@@ -1659,7 +1665,7 @@ def image_vsample(
     :param structure_is_path : bool, optional
         Use structure value as absolute path for the PDB/CIF file.
     :param structure_axis_euler: list
-        Specify euler angles for structure central axis orientation
+        Specify euler angles for structure central axis orientation with order zyx. For perspective angles the order is [Azimutal, Elevation, Roll]
     :param probe_template : str, optional
         Name of probe configuration file (filename). Default is "NHS_ester".
     :param probe_name : str, optional
@@ -1748,6 +1754,7 @@ def image_vsample(
             structural_integrity=structural_integrity,
             virtual_sample_template=virtual_sample_template,
             sample_dimensions=sample_dimensions,
+            sample_inital_orientation=sample_inital_orientation,
             number_of_particles=number_of_particles,
             particle_positions=particle_positions,
             random_orientations=random_orientations,
