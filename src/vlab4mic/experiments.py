@@ -9,6 +9,7 @@ from .workflows import (
     field_from_particle,
     generate_multi_imaging_modalities,
 )
+from .utils.transform.points_transforms import apply_euler_rotation
 from .generate import coordinates_field
 from .utils.data_format.structural_format import label_builder_format
 from .utils.data_format import configuration_format
@@ -1321,9 +1322,22 @@ class ExperimentParametrisation:
             self.coordinate_field.expand_isotropically(factor=factor)
             self.build(modules=["imager",])
 
+    def set_structure_axis_euler(self, phi = 0, psi=0, theta=0, order="zyx"):
+        reference_vector = np.array([1,0,0]) # unitary vector in X
+        reference_rotated = apply_euler_rotation(
+            reference_vector, 
+            phi = phi, 
+            psi=psi, 
+            theta=theta, 
+            order="zyx")
+        new_orientation_point = self.structure.axis["pivot"] + reference_rotated
+        self.structure.set_axis_from_point(new_orientation_point)
+
+
 def generate_virtual_sample(
     structure: str = "1XI5",
     structure_is_path = False,
+    structure_axis_euler:list = [0,0,0],
     probe_template: str = "NHS_ester",
     probe_name: str = None,
     probe_target_type: str = None,
@@ -1370,6 +1384,8 @@ def generate_virtual_sample(
         4-letter ID of PDB/CIF model. Default is "1XI5".
     :param structure_is_path : logical
         Use structure value as absolute path for the PDB/CIF file.
+    :param structure_axis_euler: list
+        Specify euler angles for structure central axis orientation
     :param probe_name : str, optional
         Name ID of probe configuration file (filename).
     :param probe_target_type : str, optional
@@ -1441,6 +1457,8 @@ def generate_virtual_sample(
             structure_path=None,
             build=True
         )
+    if structure_axis_euler[0] or structure_axis_euler[1] or structure_axis_euler[2]:
+        myexperiment.set_structure_axis_euler(*structure_axis_euler)
     # load default configuration for probe
     if (primary_probe is not None) and (secondary_probe is not None):
         print("Adding primary and secondary probes")
@@ -1578,6 +1596,7 @@ def image_vsample(
     run_simulation: bool = True,
     structure: str = "1XI5",
     structure_is_path: bool = False,
+    structure_axis_euler:list = [0,0,0], 
     probe_template: str = "NHS_ester",
     probe_name: str = None,
     probe_target_type: str = None,
@@ -1639,6 +1658,8 @@ def image_vsample(
         4-letter ID of PDB/CIF model. Default is "1XI5".
     :param structure_is_path : bool, optional
         Use structure value as absolute path for the PDB/CIF file.
+    :param structure_axis_euler: list
+        Specify euler angles for structure central axis orientation
     :param probe_template : str, optional
         Name of probe configuration file (filename). Default is "NHS_ester".
     :param probe_name : str, optional
@@ -1743,6 +1764,7 @@ def image_vsample(
             secondary_probe=secondary_probe,
             probe_list=probe_list,
             expansion_factor=expansion_factor,
+            structure_axis_euler=structure_axis_euler
         )
         sample_experiment.clear_modalities()
         if multimodal is not None:
