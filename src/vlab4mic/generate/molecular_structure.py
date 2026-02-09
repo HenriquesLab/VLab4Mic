@@ -1,5 +1,6 @@
 import numpy as np
 import yaml
+import copy
 import os
 from Bio.PDB import PDBParser, MMCIFParser, PPBuilder, CaPPBuilder
 from Bio.PDB.MMCIF2Dict import MMCIF2Dict
@@ -24,6 +25,7 @@ from ..utils.data_format.structural_format import builder_format  # verified
 
 from ..utils.transform.normals import normals_by_scaling  # verified
 from ..utils.sample import arrays
+
 
 class MolecularStructureParser:
     def __init__(self):
@@ -348,6 +350,7 @@ class MolecularStructureParser:
             # print("Defining axis from rotations")
             vect = self._central_axis_from_rotations()
             self.set_axis_with_vector(vect)
+            self.axis_reset = copy.copy(self.axis)
         else:
             # print(
             #    "Strcture is not defined by assymetric units. Using only atoms in file"
@@ -364,6 +367,7 @@ class MolecularStructureParser:
             else:
                 self.assembly_refpt = np.mean(allatoms_defined, axis=0)
             self.set_axis_with_vector()  # default [0,0,1]
+            self.axis_reset = copy.copy(self.axis)
 
     def _get_assemblyatoms(self):
         return self.assembly_atoms["coordinates"]

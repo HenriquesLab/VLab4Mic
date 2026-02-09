@@ -68,6 +68,7 @@ class Field:
         self.random_placing = False
         self.random_orientations = False
         self.random_rotations = False
+        self.sample_initial_orientation = None
         self.rotation_angles = None
         # print(f'Working scale of the Field of View is {self.scale} meters')
 
@@ -188,6 +189,8 @@ class Field:
             self.yz_orientations = kwargs["yz_orientations"]
         if "axial_offset" in kwargs.keys():
             self.axial_offset = kwargs["axial_offset"]
+        if "sample_inital_orientation" in kwargs.keys():
+            self.sample_initial_orientation = kwargs["sample_inital_orientation"]
 
 
     def calculate_absolute_reference(self):
@@ -535,6 +538,8 @@ class Field:
         for r in range(reps):
             molecules.append(copy.deepcopy(particle_copy))
         self.molecules = molecules
+        if self.sample_initial_orientation is not None:
+            self.generate_global_orientation(self.sample_initial_orientation)
         if self.random_orientations:
             self.generate_random_orientations()
         if self.random_rotations:
