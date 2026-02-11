@@ -27,4 +27,8 @@ conjugation_sites:
     type:
     value:
   DoL:
-
+epitope: # for secondary
+  target:
+    type: 
+    value: 
+  normals:
