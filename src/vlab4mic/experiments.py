@@ -343,7 +343,7 @@ class ExperimentParametrisation:
                 changes = True
             if depth_of_field_nm is not None:
                 depth_in_slices = None
-                voxel_size = self.local_modalities_parameters[modality_name][
+                voxel_size = self.imaging_modalities[modality_name][
                     "psf_params"
                 ]["voxelsize"][2]
                 depth = int(depth_of_field_nm / voxel_size)
@@ -1332,12 +1332,17 @@ class ExperimentParametrisation:
             order="zyx")
         new_orientation_point = self.structure.axis["pivot"] + reference_rotated
         self.structure.set_axis_from_point(new_orientation_point)
+    
+    def set_structure_normal_params(self, mode = "scaling", normal_vector = None):
+        self.structure.normals_params["mode"] = mode
+        self.structure.normals_params["normal_vector"] = normal_vector
 
 
 def generate_virtual_sample(
     structure: str = "1XI5",
     structure_is_path = False,
     structure_axis_euler:list = [0,0,0],
+    structure_global_normal_orientation = None,
     probe_template: str = "NHS_ester",
     probe_name: str = None,
     probe_target_type: str = None,
@@ -1460,6 +1465,18 @@ def generate_virtual_sample(
         )
     if structure_axis_euler[0] or structure_axis_euler[1] or structure_axis_euler[2]:
         myexperiment.set_structure_axis_euler(*structure_axis_euler)
+    if structure_global_normal_orientation is not None:
+        if type(structure_global_normal_orientation) is str:
+            myexperiment.set_structure_normal_params(
+                mode=structure_global_normal_orientation)
+        elif isinstance(structure_global_normal_orientation, np.ndarray):
+            myexperiment.set_structure_normal_params(
+                mode="global",
+                normal_vector=structure_global_normal_orientation)
+        else:
+            print("set_structure_normal_params type error")
+            print(isinstance(structure_global_normal_orientation, np.ndarray))
+            
     # load default configuration for probe
     if (primary_probe is not None) and (secondary_probe is not None):
         print("Adding primary and secondary probes")
@@ -1601,7 +1618,8 @@ def image_vsample(
     run_simulation: bool = True,
     structure: str = "1XI5",
     structure_is_path: bool = False,
-    structure_axis_euler:list = [0,0,0], 
+    structure_axis_euler:list = [0,0,0],
+    structure_global_normal_orientation = None,
     probe_template: str = "NHS_ester",
     probe_name: str = None,
     probe_target_type: str = None,
@@ -1736,6 +1754,8 @@ def image_vsample(
         vsample, sample_experiment = generate_virtual_sample(
             structure=structure,
             structure_is_path=structure_is_path,
+            structure_axis_euler=structure_axis_euler,
+            structure_global_normal_orientation=structure_global_normal_orientation,
             probe_template=probe_template,
             probe_name=probe_name,
             probe_target_type=probe_target_type,
@@ -1771,7 +1791,6 @@ def image_vsample(
             secondary_probe=secondary_probe,
             probe_list=probe_list,
             expansion_factor=expansion_factor,
-            structure_axis_euler=structure_axis_euler
         )
         sample_experiment.clear_modalities()
         if multimodal is not None:

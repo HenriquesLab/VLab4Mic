@@ -23,7 +23,7 @@ from ..utils.data_format.visualisation import (
 
 from ..utils.data_format.structural_format import builder_format  # verified
 
-from ..utils.transform.normals import normals_by_scaling  # verified
+from ..utils.transform.normals import normals_by_scaling, global_normal_direction  # verified
 from ..utils.sample import arrays
 
 
@@ -52,6 +52,9 @@ class MolecularStructureParser:
         self.plotting_params = dict()
         self.scale = 1e-10  # in meters
         self.axis = dict(pivot=None, direction=None)
+        self.normals_params = {}
+        self.normals_params["mode"] = "scaling"
+        self.normals_params["normal_vector"] = None
 
     def _clear_labels(self):
         """
@@ -1004,7 +1007,7 @@ class MolecularReplicates(MolecularStructureParser):
         self.plotcolours[labelobj.get_name()] = labelobj.get_plotcolour()
         self.label_fluorophore[labelobj.get_name()] = labelobj.get_fluorophore()
 
-    def assign_normals2targets(self, mode="scaling", target=None):
+    def assign_normals2targets(self, target: str = None):
         """
         Assign normals to targets using a specified method.
 
@@ -1015,18 +1018,42 @@ class MolecularReplicates(MolecularStructureParser):
         target : str, optional
             Specific target to assign normals to. If None, assign to all.
         """
-        print(f"Assigning normals to targets with method: {mode}")
+        print(f"Assigning normals to targets with method: {self.normals_params['mode']}")
         if target is None:
             for target_name, value in self.label_targets.items():
-                if mode == "scaling":
+                if self.normals_params["mode"] == "scaling":
                     normals = normals_by_scaling(
                         self.label_targets[target_name]["coordinates"]
                     )
                     self.label_targets[target_name]["normals"] = normals
+                elif self.normals_params["mode"] == "global":
+                    normals = global_normal_direction(
+                        self.label_targets[target_name]["coordinates"],
+                        normal_vector = self.normals_params["normal_vector"]
+                    )
+                    self.label_targets[target_name]["normals"] = normals
+                elif self.normals_params["mode"] == "structure_axis":
+                    normals = global_normal_direction(
+                        self.label_targets[target_name]["coordinates"],
+                        normal_vector = self.axis["direction"]
+                    )
+                    self.label_targets[target_name]["normals"] = normals
         else:
-            if mode == "scaling":
+            if self.normals_params["mode"] == "scaling":
                 normals = normals_by_scaling(self.label_targets[target]["coordinates"])
                 self.label_targets[target]["normals"] = normals
+            elif self.normals_params["mode"] == "global":
+                normals = global_normal_direction(
+                        self.label_targets[target_name]["coordinates"],
+                        normal_vector = self.normals_params["normal_vector"]
+                    )
+                self.label_targets[target_name]["normals"] = normals
+            elif self.normals_params["mode"] == "structure_axis":
+                    normals = global_normal_direction(
+                        self.label_targets[target_name]["coordinates"],
+                        normal_vector = self.axis["direction"]
+                    )
+                    self.label_targets[target_name]["normals"] = normals
 
 
 def build_structure_cif(

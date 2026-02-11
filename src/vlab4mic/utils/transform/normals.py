@@ -15,6 +15,11 @@ def normals_by_scaling(epitope_locs, scale=0.95):
     return normals
     # return normals_ft_epitopes
 
+def global_normal_direction(epitope_locs, normal_vector = np.array([0,0,1])):
+    normals = np.zeros((len(epitope_locs), 3))
+    for i in range(len(epitope_locs)):
+        normals[i, :] = normal_vector
+    return normals
 
 def coordinates_scaling(
     epitope_array, scaling_factor
