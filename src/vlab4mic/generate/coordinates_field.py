@@ -953,7 +953,7 @@ def create_min_field(
 
 
 def gen_positions_from_image(
-    img, mode="mask", pixelsize=None, min_distance=None, **kwargs
+    img, mode="mask", pixelsize=None, min_distance=None, elevation_img=None, normalise_elevation=True, **kwargs
 ):
     """
     Generate relative positions from an image using either a mask or local maxima.
@@ -1015,6 +1015,6 @@ def gen_positions_from_image(
             **kwargs
         )
     xyz_relative = metrics.pixel_positions_to_relative(
-        pixel_positions, image_sizes=image_physical_size, pixelsize=pixelsize
+        pixel_positions, image_sizes=image_physical_size, pixelsize=pixelsize, elevation_img=elevation_img, normalise_elevation=normalise_elevation 
     )
     return xyz_relative, image_physical_size

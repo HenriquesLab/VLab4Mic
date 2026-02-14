@@ -1221,6 +1221,8 @@ class ExperimentParametrisation:
         threshold=None,
         pixelsize=None,
         min_distance=None,
+        elevation_img=None,
+        max_elevation_nm=100,
         **kwargs,
     ):
         """
@@ -1267,6 +1269,7 @@ class ExperimentParametrisation:
                 threshold=threshold,
                 pixelsize=pixelsize,
                 min_distance=min_distance,
+                elevation_img=elevation_img,
                 **kwargs,
             )
         )
@@ -1274,7 +1277,7 @@ class ExperimentParametrisation:
             sample_dimensions=[
                 image_physical_size[0],
                 image_physical_size[1],
-                100,
+                max_elevation_nm,
             ],
             particle_positions=xyz_relative,
             number_of_particles=len(xyz_relative),
