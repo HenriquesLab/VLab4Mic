@@ -1351,6 +1351,7 @@ def generate_virtual_sample(
     probe_target_type: str = None,
     probe_target_value: str = None,
     probe_distance_to_epitope: float = None,
+    probe_steric_hindrance: float = None,
     probe_model: list[str] = None,
     probe_fluorophore: str = "AF647",
     probe_paratope: str = None,
@@ -1501,24 +1502,27 @@ def generate_virtual_sample(
                 probe_name = probe_template
             else:
                 probe_configuration["label_name"] = probe_name
+                probe_configuration["probe_name"] = probe_name
             if probe_target_type and probe_target_value:
                 print(probe_target_type, probe_target_value)
                 probe_configuration["probe_target_type"] = probe_target_type
                 probe_configuration["probe_target_value"] = probe_target_value
             if probe_distance_to_epitope is not None:
-                probe_configuration["distance_to_epitope"] = (
+                probe_configuration["probe_distance_to_epitope"] = (
                     probe_distance_to_epitope
                 )
+            if probe_steric_hindrance is not None:
+                probe_configuration["probe_steric_hindrance"] = probe_steric_hindrance
             if probe_fluorophore is not None:
-                probe_configuration["fluorophore_id"] = probe_fluorophore
+                probe_configuration["probe_fluorophore"] = probe_fluorophore
             if labelling_efficiency is not None:
                 probe_configuration["labelling_efficiency"] = labelling_efficiency
             if probe_model is not None:
-                probe_configuration["model_ID"] = probe_model
+                probe_configuration["probe_model_ID"] = probe_model
             if probe_paratope is not None:
-                probe_configuration["paratope"] = probe_paratope
+                probe_configuration["probe_paratope"] = probe_paratope
             if probe_conjugation_target_info is not None:
-                probe_configuration["conjugation_target_info"] = (
+                probe_configuration["probe_conjugation_target_info"] = (
                     probe_conjugation_target_info
                 )
             if probe_DoL is not None:
@@ -1526,7 +1530,7 @@ def generate_virtual_sample(
                     probe_DoL
                 )
             if probe_seconday_epitope is not None:
-                probe_configuration["epitope_target_info"] = probe_seconday_epitope
+                probe_configuration["probe_epitope_target_info"] = probe_seconday_epitope
             if probe_wobble_theta is not None:
                 probe_configuration["probe_wobble_theta"] = probe_wobble_theta
             myexperiment.add_probe(**probe_configuration)
@@ -1628,6 +1632,7 @@ def image_vsample(
     probe_target_type: str = None,
     probe_target_value: str = None,
     probe_distance_to_epitope: float = None,
+    probe_steric_hindrance: float = None,
     probe_model: list = None,
     probe_fluorophore: str = "AF647",
     probe_paratope: str = None,
@@ -1764,6 +1769,7 @@ def image_vsample(
             probe_target_type=probe_target_type,
             probe_target_value=probe_target_value,
             probe_distance_to_epitope=probe_distance_to_epitope,
+            probe_steric_hindrance=probe_steric_hindrance,
             probe_model=probe_model,
             probe_fluorophore=probe_fluorophore,
             probe_paratope=probe_paratope,
