@@ -392,6 +392,8 @@ class LabeledInstance:
             # generate the emitters positions
             # create_instance_label is capable of cosidering direct and indirect labelling
             # Once created, define the instance
+        else:
+            n_epitopes = 0
         return (
             labelling_realisation,
             labelling_realisation_vectors,
