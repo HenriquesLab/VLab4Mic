@@ -248,7 +248,7 @@ def construct_label(
     # keynames reserved for parameters that can be iteratet over
     if "model_ID" in label_config_dictionary.keys():
         label_params["model"]["ID"] = label_config_dictionary["model_ID"]
-    if "distance_to_epitope" in label_params.keys():
+    if "distance_to_epitope" in label_config_dictionary.keys():
         label_params["binding"]["distance"]["to_target"] = label_params[
             "distance_to_epitope"
         ]
