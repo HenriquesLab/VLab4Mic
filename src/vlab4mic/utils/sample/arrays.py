@@ -13,18 +13,21 @@ def boolean_epitope_selection(epitopes, selected_epitopes, new_epitope, min_dist
     # min_distance is the minimum distance between the epitopes
     # function should return indices of the selected epitopes
     n_epi = len(selected_epitopes)
-    for i in range(n_epi):
-        is_available = 1
-        if (
-            np.linalg.norm(epitopes[selected_epitopes[i]] - epitopes[new_epitope])
-            < min_distance
-        ):
-            is_available = 0
-            break
-    return is_available
+    if min_distance == 0:
+        return 1
+    else:
+        for i in range(n_epi):
+            is_available = 1
+            if (
+                np.linalg.norm(epitopes[selected_epitopes[i]] - epitopes[new_epitope])
+                < min_distance
+            ):
+                is_available = 0
+                break
+        return is_available
 
 
-def sample_epitopes_sterically(epitopes, min_distance):
+def sample_epitopes_sterically(epitopes, min_distance, p=1):
     # epitopes is the coordinates array for the epitopes
     # min_distance is the minimum eculidean distance between the epitopes
     # step 1: select an epitope randomly
@@ -34,11 +37,17 @@ def sample_epitopes_sterically(epitopes, min_distance):
         range(epitopes.shape[0]), epitopes.shape[0], replace=False
     )
     selected_indices.append(randomized_indices[0])
+    #n = 0
+    total = epitopes.shape[0]
     for i in randomized_indices[1:]:
         # i here contains the index of the next epitope
         # verify is the next epitope is within the minimum distance
+        #print(f"Compare epitope with all others: {n}/{total}, current index: {i}, started at: {randomized_indices[0]}")
         if boolean_epitope_selection(epitopes, selected_indices, i, min_distance):
-            selected_indices.append(i)
+            if np.random.rand() < p:
+                # bernoulli trials for probe to bind epitope
+                selected_indices.append(i)
+        #n+=1
     # function should return indices of the selected epitopes
     return selected_indices
 
@@ -57,22 +66,24 @@ def sample_array(array, fraction=1):
 def binomial_epitope_sampling(epitopes, p=1, normals=None, min_distance=0.0):
     if min_distance:
         #print(f"sampling with min epitope distance: {min_distance}, and efficiency: {p}")
-        available_epitopes_id = sample_epitopes_sterically(epitopes, min_distance)
-        n_epitopes = len(available_epitopes_id)
+        ids_selected = sample_epitopes_sterically(
+            epitopes=epitopes,
+            min_distance=min_distance,
+            p=p)
+        n_epitopes = len(ids_selected)
     else:
-        #print(f"sampling with efficiency: {p}")
-        n_epitopes = epitopes.shape[0]
-        available_epitopes_id = np.arange(0, n_epitopes)
-    # bernoulli trials for each epitope 
-    ids_selected = [x for x in available_epitopes_id if np.random.rand() < p]
-    #ids_selected = np.random.binomial(available_epitopes_id, p)
+        ids_selected = sample_epitopes_sterically(
+            epitopes=epitopes,
+            min_distance=0.0,
+            p=p)
+        n_epitopes = len(ids_selected)
+    # create a subset of only the epitopes that were selected
     subset_epitopes = epitopes[ids_selected, :]
-    n_epitopes_ = len(ids_selected)
     if normals is None:
-        return subset_epitopes, n_epitopes_,  None
+        return subset_epitopes, n_epitopes,  None
     else:
         subset_normals = normals[ids_selected, :]
-        return subset_epitopes, n_epitopes_, subset_normals
+        return subset_epitopes, n_epitopes, subset_normals
 
 def get_random_pixels(binary_image, num_pixels=3, min_distance=2):
     # Find indices of all positive pixels (value = 1)
