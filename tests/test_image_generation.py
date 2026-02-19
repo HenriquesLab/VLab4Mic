@@ -48,4 +48,4 @@ def test_imager_optional_methods(experiment_7r5k_base):
     imager.set_roi_position(x=0.1, y=0.2)
     imager.set_roi_sizes(x=2, y=2)
     imager.recenter_roi()
-    imager.show_field()
+    #imager.show_field()

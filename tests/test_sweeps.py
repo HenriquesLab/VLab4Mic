@@ -20,7 +20,8 @@ def test_run_parameter_sweep():
         return_generator=True,
         save_sweep_images=False,
         save_analysis_results=False,
-        run_analysis=True
+        run_analysis=True,
+        analysis_plots=False
         )
     
     assert sweep_gen_test.analysis["dataframes"] is not None
@@ -53,7 +54,7 @@ def test_custom_metric():
         # parameters for sweep
         labelling_efficiency=(0, 1, 0.5),  # values between 0 and 1 with step of 0.5
         return_generator=True,
-        analysis_plots=True,
+        analysis_plots=False,
         save_sweep_images=False,  # By default, the saving directory is set to the home path of the user
         save_analysis_results=False,
         run_analysis=True,

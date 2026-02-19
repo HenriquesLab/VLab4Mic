@@ -9,11 +9,6 @@ import numpy as np
 def test_empty_particle():
     particle = lp.LabeledInstance()
 
-
-def test_create_particle():
-    particle = lp.create_particle()
-
-
 # test with source and label params from fixture
 
 structure_list = [
