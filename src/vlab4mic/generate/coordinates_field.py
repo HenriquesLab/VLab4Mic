@@ -744,6 +744,7 @@ class Field:
         axis_object=None,
         zoom_in=None,
         emitters_plotsize=None,
+        initial_pos_plotsize = 1,
         **kwargs,
     ):
         """
@@ -793,7 +794,8 @@ class Field:
                 add_ax_scatter(
                     ax,
                     format_coordinates(
-                        np.array(self.molecules_params["absolute_positions"])
+                        np.array(self.molecules_params["absolute_positions"]),
+                        plotsize=initial_pos_plotsize
                     ),
                 )
         if len(self.fluorophre_emitters) == 0:
