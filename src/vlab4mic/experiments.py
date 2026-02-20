@@ -1217,6 +1217,7 @@ class ExperimentParametrisation:
         self,
         img,
         mode="localmaxima",
+        positions_are_epitopes=False,
         sigma=None,
         background=None,
         threshold=None,
@@ -1274,25 +1275,54 @@ class ExperimentParametrisation:
                 **kwargs,
             )
         )
-        self.set_virtualsample_params(
-            sample_dimensions=[
-                image_physical_size[0],
-                image_physical_size[1],
-                max_elevation_nm,
-            ],
-            particle_positions=xyz_relative,
-            number_of_particles=len(xyz_relative),
-            random_orientations=False,
-            random_placing=False,
-            minimal_distance=min_distance,
-        )
-        # self.virtualsample_params["relative_positions"] = xyz_relative
-        # self.virtualsample_params["sample_dimensions"] = [
-        #    image_physical_size[0],
-        #    image_physical_size[1],
-        #    100,
-        # ]
-        self.build(modules=["coordinate_field", "imager"])
+        if positions_are_epitopes:
+            self.clear_structure()
+            xyz_abs = np.array(xyz_relative)
+            xyz_abs[:,0]*= image_physical_size[0]
+            xyz_abs[:,1]*= image_physical_size[1]
+            xyz_abs[:,2]*= max_elevation_nm
+            print(xyz_abs.shape)
+            normals = np.zeros(shape=xyz_abs.shape)
+            normals[:,2] = 1
+            particle_generator_data = dict(
+                targets={
+                    "custom":dict(
+                        coordinates = xyz_abs,
+                        normals=normals
+                    )
+                },
+                scale=1e-9,
+                reference_point = np.array([image_physical_size[0]*0.5, image_physical_size[1]*0.5, 0]),
+                axis=dict(pivot=np.array([0.0, 0.0, 0.0]), direction=np.array([0.0, 0.0, 1.0]))
+            )
+            self.particle.source = dict()
+            # Input custom epitopes
+            self.particle.load_source(**copy.deepcopy(particle_generator_data))
+            self.particle.generate_instance()
+            self.set_virtualsample_params(
+                sample_dimensions=[
+                    image_physical_size[0],
+                    image_physical_size[1],
+                    max_elevation_nm,
+                ]
+            )
+            self.particle.generate_instance() # relabels particle based on current attributes
+            # of build method is used it will insetead take info from available structure
+            self.build(modules=["coordinate_field", "imager"])
+        else:
+            self.set_virtualsample_params(
+                sample_dimensions=[
+                    image_physical_size[0],
+                    image_physical_size[1],
+                    max_elevation_nm,
+                ],
+                particle_positions=xyz_relative,
+                number_of_particles=len(xyz_relative),
+                random_orientations=False,
+                random_placing=False,
+                minimal_distance=min_distance,
+            )
+            self.build(modules=["coordinate_field", "imager"])
 
     def current_settings(
         self, as_string=True, newline="<br>", modalities_acq_params=False
