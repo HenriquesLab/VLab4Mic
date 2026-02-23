@@ -1224,6 +1224,7 @@ class ExperimentParametrisation:
         pixelsize=None,
         min_distance=None,
         elevation_img=None,
+        normalise_elevation=True,
         max_elevation_nm=100,
         **kwargs,
     ):
@@ -1272,6 +1273,7 @@ class ExperimentParametrisation:
                 pixelsize=pixelsize,
                 min_distance=min_distance,
                 elevation_img=elevation_img,
+                normalise_elevation = normalise_elevation,
                 **kwargs,
             )
         )
