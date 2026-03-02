@@ -68,6 +68,7 @@ class Field:
         self.random_placing = False
         self.random_orientations = False
         self.random_rotations = False
+        self.sample_initial_orientation = None
         self.rotation_angles = None
         # print(f'Working scale of the Field of View is {self.scale} meters')
 
@@ -188,6 +189,8 @@ class Field:
             self.yz_orientations = kwargs["yz_orientations"]
         if "axial_offset" in kwargs.keys():
             self.axial_offset = kwargs["axial_offset"]
+        if "sample_inital_orientation" in kwargs.keys():
+            self.sample_initial_orientation = kwargs["sample_inital_orientation"]
 
 
     def calculate_absolute_reference(self):
@@ -535,6 +538,8 @@ class Field:
         for r in range(reps):
             molecules.append(copy.deepcopy(particle_copy))
         self.molecules = molecules
+        if self.sample_initial_orientation is not None:
+            self.generate_global_orientation(self.sample_initial_orientation)
         if self.random_orientations:
             self.generate_random_orientations()
         if self.random_rotations:
@@ -739,6 +744,7 @@ class Field:
         axis_object=None,
         zoom_in=None,
         emitters_plotsize=None,
+        initial_pos_plotsize = 1,
         **kwargs,
     ):
         """
@@ -788,7 +794,8 @@ class Field:
                 add_ax_scatter(
                     ax,
                     format_coordinates(
-                        np.array(self.molecules_params["absolute_positions"])
+                        np.array(self.molecules_params["absolute_positions"]),
+                        plotsize=initial_pos_plotsize
                     ),
                 )
         if len(self.fluorophre_emitters) == 0:
@@ -948,7 +955,7 @@ def create_min_field(
 
 
 def gen_positions_from_image(
-    img, mode="mask", pixelsize=None, min_distance=None, **kwargs
+    img, mode="mask", pixelsize=None, min_distance=None, elevation_img=None, normalise_elevation=True, **kwargs
 ):
     """
     Generate relative positions from an image using either a mask or local maxima.
@@ -1010,6 +1017,6 @@ def gen_positions_from_image(
             **kwargs
         )
     xyz_relative = metrics.pixel_positions_to_relative(
-        pixel_positions, image_sizes=image_physical_size, pixelsize=pixelsize
+        pixel_positions, image_sizes=image_physical_size, pixelsize=pixelsize, elevation_img=elevation_img, normalise_elevation=normalise_elevation 
     )
     return xyz_relative, image_physical_size

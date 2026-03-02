@@ -9,6 +9,7 @@ from .workflows import (
     field_from_particle,
     generate_multi_imaging_modalities,
 )
+from .utils.transform.points_transforms import apply_euler_rotation
 from .generate import coordinates_field
 from .utils.data_format.structural_format import label_builder_format
 from .utils.data_format import configuration_format
@@ -342,7 +343,7 @@ class ExperimentParametrisation:
                 changes = True
             if depth_of_field_nm is not None:
                 depth_in_slices = None
-                voxel_size = self.local_modalities_parameters[modality_name][
+                voxel_size = self.imaging_modalities[modality_name][
                     "psf_params"
                 ]["voxelsize"][2]
                 depth = int(depth_of_field_nm / voxel_size)
@@ -1050,9 +1051,11 @@ class ExperimentParametrisation:
         if labelling_efficiency is not None:
             probe_configuration["labelling_efficiency"] = labelling_efficiency
         if probe_model is not None:
-            probe_configuration["model_ID"] = probe_model
+            #probe_configuration["model_ID"] = probe_model
+            probe_configuration["model"]["ID"] = probe_model
         if probe_paratope is not None:
             probe_configuration["paratope"] = probe_paratope
+            probe_configuration["binding"]["paratope"] = probe_paratope
         if probe_conjugation_target_info is not None:
             probe_configuration["conjugation_target_info"] = (
                 probe_conjugation_target_info
@@ -1133,7 +1136,7 @@ class ExperimentParametrisation:
         random_placing: bool = None,
         minimal_distance: float = None,
         update_mode: bool = True,
-        random_rotations=False,
+        random_rotations=None,
         rotation_angles=None,
         xy_orientations = None,
         xz_orientations = None,
@@ -1197,7 +1200,8 @@ class ExperimentParametrisation:
             self.virtualsample_params["minimal_distance"] = (
                 particle_minimal_distance
             )
-        self.virtualsample_params["random_rotations"] = random_rotations
+        if random_rotations is not None:
+            self.virtualsample_params["random_rotations"] = random_rotations
         if rotation_angles is not None:
             self.virtualsample_params["rotation_angles"] = rotation_angles
         if xy_orientations is not None:
@@ -1213,11 +1217,15 @@ class ExperimentParametrisation:
         self,
         img,
         mode="localmaxima",
+        positions_are_epitopes=False,
         sigma=None,
         background=None,
         threshold=None,
         pixelsize=None,
         min_distance=None,
+        elevation_img=None,
+        normalise_elevation=True,
+        max_elevation_nm=100,
         **kwargs,
     ):
         """
@@ -1264,28 +1272,59 @@ class ExperimentParametrisation:
                 threshold=threshold,
                 pixelsize=pixelsize,
                 min_distance=min_distance,
+                elevation_img=elevation_img,
+                normalise_elevation = normalise_elevation,
                 **kwargs,
             )
         )
-        self.set_virtualsample_params(
-            sample_dimensions=[
-                image_physical_size[0],
-                image_physical_size[1],
-                100,
-            ],
-            particle_positions=xyz_relative,
-            number_of_particles=len(xyz_relative),
-            random_orientations=False,
-            random_placing=False,
-            minimal_distance=min_distance,
-        )
-        # self.virtualsample_params["relative_positions"] = xyz_relative
-        # self.virtualsample_params["sample_dimensions"] = [
-        #    image_physical_size[0],
-        #    image_physical_size[1],
-        #    100,
-        # ]
-        self.build(modules=["coordinate_field", "imager"])
+        if positions_are_epitopes:
+            self.clear_structure()
+            xyz_abs = np.array(xyz_relative)
+            xyz_abs[:,0]*= image_physical_size[0]
+            xyz_abs[:,1]*= image_physical_size[1]
+            xyz_abs[:,2]*= max_elevation_nm
+            print(xyz_abs.shape)
+            normals = np.zeros(shape=xyz_abs.shape)
+            normals[:,2] = 1
+            particle_generator_data = dict(
+                targets={
+                    "custom":dict(
+                        coordinates = xyz_abs,
+                        normals=normals
+                    )
+                },
+                scale=1e-9,
+                reference_point = np.array([image_physical_size[0]*0.5, image_physical_size[1]*0.5, 0]),
+                axis=dict(pivot=np.array([0.0, 0.0, 0.0]), direction=np.array([0.0, 0.0, 1.0]))
+            )
+            self.particle.source = dict()
+            # Input custom epitopes
+            self.particle.load_source(**copy.deepcopy(particle_generator_data))
+            self.particle.generate_instance()
+            self.set_virtualsample_params(
+                sample_dimensions=[
+                    image_physical_size[0],
+                    image_physical_size[1],
+                    max_elevation_nm,
+                ]
+            )
+            self.particle.generate_instance() # relabels particle based on current attributes
+            # of build method is used it will insetead take info from available structure
+            self.build(modules=["coordinate_field", "imager"])
+        else:
+            self.set_virtualsample_params(
+                sample_dimensions=[
+                    image_physical_size[0],
+                    image_physical_size[1],
+                    max_elevation_nm,
+                ],
+                particle_positions=xyz_relative,
+                number_of_particles=len(xyz_relative),
+                random_orientations=False,
+                random_placing=False,
+                minimal_distance=min_distance,
+            )
+            self.build(modules=["coordinate_field", "imager"])
 
     def current_settings(
         self, as_string=True, newline="<br>", modalities_acq_params=False
@@ -1319,14 +1358,33 @@ class ExperimentParametrisation:
             self.coordinate_field.expand_isotropically(factor=factor)
             self.build(modules=["imager",])
 
+    def set_structure_axis_euler(self, phi = 0, psi=0, theta=0, order="zyx"):
+        reference_vector = np.array([1,0,0]) # unitary vector in X
+        reference_rotated = apply_euler_rotation(
+            reference_vector, 
+            phi = phi, 
+            psi=psi, 
+            theta=theta, 
+            order="zyx")
+        new_orientation_point = self.structure.axis["pivot"] + reference_rotated
+        self.structure.set_axis_from_point(new_orientation_point)
+    
+    def set_structure_normal_params(self, mode = "scaling", normal_vector = None):
+        self.structure.normals_params["mode"] = mode
+        self.structure.normals_params["normal_vector"] = normal_vector
+
+
 def generate_virtual_sample(
     structure: str = "1XI5",
     structure_is_path = False,
+    structure_axis_euler:list = [0,0,0],
+    structure_global_normal_orientation = None,
     probe_template: str = "NHS_ester",
     probe_name: str = None,
     probe_target_type: str = None,
     probe_target_value: str = None,
     probe_distance_to_epitope: float = None,
+    probe_steric_hindrance: float = None,
     probe_model: list[str] = None,
     probe_fluorophore: str = "AF647",
     probe_paratope: str = None,
@@ -1340,6 +1398,7 @@ def generate_virtual_sample(
     structural_integrity: float = None,
     virtual_sample_template: str = "square1x1um_randomised",
     sample_dimensions: list[float] = None,
+    sample_inital_orientation = None,
     number_of_particles: int = None,
     particle_positions: list[np.array] = None,
     random_orientations=False,
@@ -1368,6 +1427,8 @@ def generate_virtual_sample(
         4-letter ID of PDB/CIF model. Default is "1XI5".
     :param structure_is_path : logical
         Use structure value as absolute path for the PDB/CIF file.
+    :param structure_axis_euler: list
+        Specify euler angles for structure central axis orientation with order zyx. For perspective angles the order is [Azimutal, Elevation, Roll]
     :param probe_name : str, optional
         Name ID of probe configuration file (filename).
     :param probe_target_type : str, optional
@@ -1439,6 +1500,20 @@ def generate_virtual_sample(
             structure_path=None,
             build=True
         )
+    if structure_axis_euler[0] or structure_axis_euler[1] or structure_axis_euler[2]:
+        myexperiment.set_structure_axis_euler(*structure_axis_euler)
+    if structure_global_normal_orientation is not None:
+        if type(structure_global_normal_orientation) is str:
+            myexperiment.set_structure_normal_params(
+                mode=structure_global_normal_orientation)
+        elif isinstance(structure_global_normal_orientation, np.ndarray):
+            myexperiment.set_structure_normal_params(
+                mode="global",
+                normal_vector=structure_global_normal_orientation)
+        else:
+            print("set_structure_normal_params type error")
+            print(isinstance(structure_global_normal_orientation, np.ndarray))
+            
     # load default configuration for probe
     if (primary_probe is not None) and (secondary_probe is not None):
         print("Adding primary and secondary probes")
@@ -1460,24 +1535,27 @@ def generate_virtual_sample(
                 probe_name = probe_template
             else:
                 probe_configuration["label_name"] = probe_name
+                probe_configuration["probe_name"] = probe_name
             if probe_target_type and probe_target_value:
                 print(probe_target_type, probe_target_value)
                 probe_configuration["probe_target_type"] = probe_target_type
                 probe_configuration["probe_target_value"] = probe_target_value
             if probe_distance_to_epitope is not None:
-                probe_configuration["distance_to_epitope"] = (
+                probe_configuration["probe_distance_to_epitope"] = (
                     probe_distance_to_epitope
                 )
+            if probe_steric_hindrance is not None:
+                probe_configuration["probe_steric_hindrance"] = probe_steric_hindrance
             if probe_fluorophore is not None:
-                probe_configuration["fluorophore_id"] = probe_fluorophore
+                probe_configuration["probe_fluorophore"] = probe_fluorophore
             if labelling_efficiency is not None:
                 probe_configuration["labelling_efficiency"] = labelling_efficiency
             if probe_model is not None:
-                probe_configuration["model_ID"] = probe_model
+                probe_configuration["probe_model_ID"] = probe_model
             if probe_paratope is not None:
-                probe_configuration["paratope"] = probe_paratope
+                probe_configuration["probe_paratope"] = probe_paratope
             if probe_conjugation_target_info is not None:
-                probe_configuration["conjugation_target_info"] = (
+                probe_configuration["probe_conjugation_target_info"] = (
                     probe_conjugation_target_info
                 )
             if probe_DoL is not None:
@@ -1485,7 +1563,7 @@ def generate_virtual_sample(
                     probe_DoL
                 )
             if probe_seconday_epitope is not None:
-                probe_configuration["epitope_target_info"] = probe_seconday_epitope
+                probe_configuration["probe_epitope_target_info"] = probe_seconday_epitope
             if probe_wobble_theta is not None:
                 probe_configuration["probe_wobble_theta"] = probe_wobble_theta
             myexperiment.add_probe(**probe_configuration)
@@ -1505,6 +1583,10 @@ def generate_virtual_sample(
 
     if sample_dimensions is not None:
         vsample_configuration["sample_dimensions"] = sample_dimensions
+    if sample_inital_orientation is not None:
+        vsample_configuration["sample_inital_orientation"] = sample_inital_orientation
+    else:
+        vsample_configuration["sample_inital_orientation"] = None
     if number_of_particles is not None:
         vsample_configuration["number_of_particles"] = number_of_particles
     if particle_positions is not None:
@@ -1576,11 +1658,14 @@ def image_vsample(
     run_simulation: bool = True,
     structure: str = "1XI5",
     structure_is_path: bool = False,
+    structure_axis_euler:list = [0,0,0],
+    structure_global_normal_orientation = None,
     probe_template: str = "NHS_ester",
     probe_name: str = None,
     probe_target_type: str = None,
     probe_target_value: str = None,
     probe_distance_to_epitope: float = None,
+    probe_steric_hindrance: float = None,
     probe_model: list = None,
     probe_fluorophore: str = "AF647",
     probe_paratope: str = None,
@@ -1594,6 +1679,7 @@ def image_vsample(
     structural_integrity: float = None,
     virtual_sample_template: str = "square1x1um_randomised",
     sample_dimensions: list = None,
+    sample_inital_orientation = None,
     number_of_particles: int = None,
     particle_positions: list = None,
     random_orientations = False,
@@ -1637,6 +1723,8 @@ def image_vsample(
         4-letter ID of PDB/CIF model. Default is "1XI5".
     :param structure_is_path : bool, optional
         Use structure value as absolute path for the PDB/CIF file.
+    :param structure_axis_euler: list
+        Specify euler angles for structure central axis orientation with order zyx. For perspective angles the order is [Azimutal, Elevation, Roll]
     :param probe_template : str, optional
         Name of probe configuration file (filename). Default is "NHS_ester".
     :param probe_name : str, optional
@@ -1707,11 +1795,14 @@ def image_vsample(
         vsample, sample_experiment = generate_virtual_sample(
             structure=structure,
             structure_is_path=structure_is_path,
+            structure_axis_euler=structure_axis_euler,
+            structure_global_normal_orientation=structure_global_normal_orientation,
             probe_template=probe_template,
             probe_name=probe_name,
             probe_target_type=probe_target_type,
             probe_target_value=probe_target_value,
             probe_distance_to_epitope=probe_distance_to_epitope,
+            probe_steric_hindrance=probe_steric_hindrance,
             probe_model=probe_model,
             probe_fluorophore=probe_fluorophore,
             probe_paratope=probe_paratope,
@@ -1725,6 +1816,7 @@ def image_vsample(
             structural_integrity=structural_integrity,
             virtual_sample_template=virtual_sample_template,
             sample_dimensions=sample_dimensions,
+            sample_inital_orientation=sample_inital_orientation,
             number_of_particles=number_of_particles,
             particle_positions=particle_positions,
             random_orientations=random_orientations,

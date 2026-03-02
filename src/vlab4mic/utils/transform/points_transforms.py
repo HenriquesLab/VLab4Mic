@@ -1,5 +1,6 @@
 import numpy as np
 import copy
+from scipy.spatial.transform import Rotation as R  
 
 # # Rodrigues Rotation
 def rotate_point(point, axis, angle):
@@ -192,3 +193,16 @@ def planar_rotation(points, points_reference, unitary_vector_of_rotation, theta)
         rotated_at_origin, np.array([0, 0, 0]), points_reference
     )
     return rotated
+  
+def apply_euler_rotation(vector, phi=0, theta=0, psi=0, order = "zyx", reset_orientation=False, **kwargs):
+    """
+    Rotations are extrinsic.
+
+    
+    theta: rotation around x axis in degrees
+    phi: rotation around z axis in degrees
+    psi: rotation around y axis in degrees
+    """
+    combined_R = R.from_euler(order, [phi,theta, psi], degrees=True)
+    new_vector = combined_R.apply(vector)
+    return new_vector

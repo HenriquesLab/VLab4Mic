@@ -377,7 +377,7 @@ class LabeledInstance:
         labelling_realisation_vectors = None
         if target_normals["coordinates"].shape[0] > 0:
             if label4target is not None:
-                labelling_realisation, labelling_realisation_vectors = (
+                labelling_realisation, n_epitopes, labelling_realisation_vectors = (
                     create_instance_label(
                         target_normals, target_type, label4target
                     )
@@ -392,12 +392,15 @@ class LabeledInstance:
             # generate the emitters positions
             # create_instance_label is capable of cosidering direct and indirect labelling
             # Once created, define the instance
+        else:
+            n_epitopes = 0
         return (
             labelling_realisation,
             labelling_realisation_vectors,
             fluorophore_name,
             plotting_params,
             structural_integrity_target_normals,
+            n_epitopes
         )
 
     def _generate_instance_constructor(self):
@@ -415,6 +418,7 @@ class LabeledInstance:
                 fluorophore_name,
                 plotting_par,
                 structural_integrity_target_normals,
+                n_epitopes
             ) = self._label_source_target(target_name)
             if structural_integrity_target_normals is not None:
                 self.structural_integrity_target_normals = structural_integrity_target_normals
@@ -436,6 +440,7 @@ class LabeledInstance:
             axis=self.axis,
             label_fluorophore=label_fluorophore,
             plotting_params=plotting_params,
+            n_epitopes=n_epitopes
         )
         return instance_constructor
 
@@ -457,7 +462,7 @@ class LabeledInstance:
             label4target = self.secondary[target_name]
             # print(target_normals.keys())
             print(label4target)
-            emitters, labelling_realisation_vectors = create_instance_label(
+            emitters, n_epitopes, labelling_realisation_vectors = create_instance_label(
                 target_normals, "indirect", label4target
             )
             return emitters
@@ -495,9 +500,10 @@ class LabeledInstance:
         if self.sequential_labelling:
             print("Sequential_labelling")
             primaries = self._generate_instance_constructor()
+            n_epitopes = primaries["n_epitopes"]
             self._generate_primary_epitopes(**primaries)
             secondaries = self._generate_secondary_labelling()
-            self.add_emitters_n_refpoint(**secondaries)
+            self.add_emitters_n_refpoint(n_epitopes= n_epitopes, **secondaries)
             # return primaries
         elif self.status["source"] and self.status["labels"]:
             constructor = self._generate_instance_constructor()
@@ -605,6 +611,7 @@ class LabeledInstance:
         axis: dict,
         label_fluorophore: dict,
         plotting_params: dict,
+        n_epitopes = None,
         **kwargs,
     ):
         """
@@ -636,6 +643,7 @@ class LabeledInstance:
         self._set_axis(dict(axis))
         self._set_label_fluorophopre(dict(label_fluorophore))
         self._gen_fluo2labels()
+        self.current_n_epitopes = n_epitopes
         self.plotting_params = dict(plotting_params)
 
     def get_axis(self):
@@ -739,7 +747,7 @@ class LabeledInstance:
                                 self.get_ref_point(),
                             )
                             self.emitters[trgt] = reoriented
-                            self.axis["direction"] = nori
+                    self.axis["direction"] = nori
 
     def transform_rotate_around_axis(self, degree: float = 0.0):
         theta_radians = degree * (math.pi / 180)

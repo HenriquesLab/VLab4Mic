@@ -1,5 +1,6 @@
 import numpy as np
 import yaml
+import copy
 import os
 from Bio.PDB import PDBParser, MMCIFParser, PPBuilder, CaPPBuilder
 from Bio.PDB.MMCIF2Dict import MMCIF2Dict
@@ -22,8 +23,9 @@ from ..utils.data_format.visualisation import (
 
 from ..utils.data_format.structural_format import builder_format  # verified
 
-from ..utils.transform.normals import normals_by_scaling  # verified
+from ..utils.transform.normals import normals_by_scaling, global_normal_direction  # verified
 from ..utils.sample import arrays
+
 
 class MolecularStructureParser:
     def __init__(self):
@@ -50,6 +52,9 @@ class MolecularStructureParser:
         self.plotting_params = dict()
         self.scale = 1e-10  # in meters
         self.axis = dict(pivot=None, direction=None)
+        self.normals_params = {}
+        self.normals_params["mode"] = "scaling"
+        self.normals_params["normal_vector"] = None
 
     def _clear_labels(self):
         """
@@ -156,11 +161,14 @@ class MolecularStructureParser:
         Generate a dictionary of protein names and associated chain/strand information.
         """
         protein_name = dict()
-        chain_name = self.CIFdictionary["_entity.pdbx_description"]
-        chain_number = self.CIFdictionary["_entity.id"]
-        strand_id = self.CIFdictionary["_entity_poly.pdbx_strand_id"]
-        for  name, number, strands in zip(chain_name, chain_number, strand_id):
-            protein_name[name] = {"number": number, "strand_id": strands}
+        try:
+            chain_name = self.CIFdictionary["_entity.pdbx_description"]
+            chain_number = self.CIFdictionary["_entity.id"]
+            strand_id = self.CIFdictionary["_entity_poly.pdbx_strand_id"]
+            for  name, number, strands in zip(chain_name, chain_number, strand_id):
+                protein_name[name] = {"number": number, "strand_id": strands}
+        except:
+            pass
         self.protein_names = protein_name
     
     def list_protein_names(self):
@@ -264,55 +272,60 @@ class MolecularStructureParser:
         else:
             if self.CIFdictionary is None:  # check if already created
                 self.generate_MMCIF_dictionary()
-            if "AlphaFoldDB" in self.CIFdictionary["_database_2.database_id"]:
-                self.assymetric_defined = False
-            else:
-                # get to know how many transformations there are
-                transformation_ids = self.CIFdictionary["_pdbx_struct_oper_list.id"]
-                # each element of the list is pair of matrix-vector needed to transform data
-                # iterate over each of the transformations
-                assembly_transformations = []
-                for tr in range(len(transformation_ids)):
-                    row1 = [
-                        self.CIFdictionary["_pdbx_struct_oper_list.matrix[1][1]"][tr],
-                        self.CIFdictionary["_pdbx_struct_oper_list.matrix[1][2]"][tr],
-                        self.CIFdictionary["_pdbx_struct_oper_list.matrix[1][3]"][tr],
-                    ]
-
-                    row2 = [
-                        self.CIFdictionary["_pdbx_struct_oper_list.matrix[2][1]"][tr],
-                        self.CIFdictionary["_pdbx_struct_oper_list.matrix[2][2]"][tr],
-                        self.CIFdictionary["_pdbx_struct_oper_list.matrix[2][3]"][tr],
-                    ]
-
-                    row3 = [
-                        self.CIFdictionary["_pdbx_struct_oper_list.matrix[3][1]"][tr],
-                        self.CIFdictionary["_pdbx_struct_oper_list.matrix[3][2]"][tr],
-                        self.CIFdictionary["_pdbx_struct_oper_list.matrix[3][3]"][tr],
-                    ]
-                    rotation_matrix = np.array([row1, row2, row3], dtype="float")
-
-                    vector = np.array(
-                        [
-                            self.CIFdictionary["_pdbx_struct_oper_list.vector[1]"][tr],
-                            self.CIFdictionary["_pdbx_struct_oper_list.vector[2]"][tr],
-                            self.CIFdictionary["_pdbx_struct_oper_list.vector[3]"][tr],
-                        ],
-                        dtype="float",
-                    )
-                    assembly_transformations.append([rotation_matrix, vector])
-                struct_oper_dictionary = dict(zip(transformation_ids, assembly_transformations))
-                if len(transformation_ids) > 1:
-                    self.assymetric_defined = True
-                    # print(
-                    #    "This model is defined with more than one symmetric transformation.
-                    # Will consider the assembly as assymetric defined"
-                    # )
-                else:
-                    # when no assembly unit exist, there is only 1 transform expected
+            if "_database_2.database_id" in self.CIFdictionary.keys():
+                if "AlphaFoldDB" in self.CIFdictionary["_database_2.database_id"]:
                     self.assymetric_defined = False
-                    # print("This model is defined with only one symmetric transformation")
-                self.assembly_operations = struct_oper_dictionary
+            else:
+                try:
+                    # get to know how many transformations there are
+                    transformation_ids = self.CIFdictionary["_pdbx_struct_oper_list.id"]
+                    # each element of the list is pair of matrix-vector needed to transform data
+                    # iterate over each of the transformations
+                    assembly_transformations = []
+                    for tr in range(len(transformation_ids)):
+                        row1 = [
+                            self.CIFdictionary["_pdbx_struct_oper_list.matrix[1][1]"][tr],
+                            self.CIFdictionary["_pdbx_struct_oper_list.matrix[1][2]"][tr],
+                            self.CIFdictionary["_pdbx_struct_oper_list.matrix[1][3]"][tr],
+                        ]
+
+                        row2 = [
+                            self.CIFdictionary["_pdbx_struct_oper_list.matrix[2][1]"][tr],
+                            self.CIFdictionary["_pdbx_struct_oper_list.matrix[2][2]"][tr],
+                            self.CIFdictionary["_pdbx_struct_oper_list.matrix[2][3]"][tr],
+                        ]
+
+                        row3 = [
+                            self.CIFdictionary["_pdbx_struct_oper_list.matrix[3][1]"][tr],
+                            self.CIFdictionary["_pdbx_struct_oper_list.matrix[3][2]"][tr],
+                            self.CIFdictionary["_pdbx_struct_oper_list.matrix[3][3]"][tr],
+                        ]
+                        rotation_matrix = np.array([row1, row2, row3], dtype="float")
+
+                        vector = np.array(
+                            [
+                                self.CIFdictionary["_pdbx_struct_oper_list.vector[1]"][tr],
+                                self.CIFdictionary["_pdbx_struct_oper_list.vector[2]"][tr],
+                                self.CIFdictionary["_pdbx_struct_oper_list.vector[3]"][tr],
+                            ],
+                            dtype="float",
+                        )
+                        assembly_transformations.append([rotation_matrix, vector])
+                    struct_oper_dictionary = dict(zip(transformation_ids, assembly_transformations))
+                    if len(transformation_ids) > 1:
+                        self.assymetric_defined = True
+                            # print(
+                            #    "This model is defined with more than one symmetric transformation.
+                            # Will consider the assembly as assymetric defined"
+                            # )
+                    else:
+                        # when no assembly unit exist, there is only 1 transform expected
+                        self.assymetric_defined = False
+                        # print("This model is defined with only one symmetric transformation")
+                    self.assembly_operations = struct_oper_dictionary
+                except:
+                    self.assymetric_defined = False
+                
 
     def generate_assembly_reference_point(self):
         """
@@ -348,6 +361,7 @@ class MolecularStructureParser:
             # print("Defining axis from rotations")
             vect = self._central_axis_from_rotations()
             self.set_axis_with_vector(vect)
+            self.axis_reset = copy.copy(self.axis)
         else:
             # print(
             #    "Strcture is not defined by assymetric units. Using only atoms in file"
@@ -364,6 +378,7 @@ class MolecularStructureParser:
             else:
                 self.assembly_refpt = np.mean(allatoms_defined, axis=0)
             self.set_axis_with_vector()  # default [0,0,1]
+            self.axis_reset = copy.copy(self.axis)
 
     def _get_assemblyatoms(self):
         return self.assembly_atoms["coordinates"]
@@ -1000,7 +1015,7 @@ class MolecularReplicates(MolecularStructureParser):
         self.plotcolours[labelobj.get_name()] = labelobj.get_plotcolour()
         self.label_fluorophore[labelobj.get_name()] = labelobj.get_fluorophore()
 
-    def assign_normals2targets(self, mode="scaling", target=None):
+    def assign_normals2targets(self, target: str = None):
         """
         Assign normals to targets using a specified method.
 
@@ -1011,18 +1026,42 @@ class MolecularReplicates(MolecularStructureParser):
         target : str, optional
             Specific target to assign normals to. If None, assign to all.
         """
-        print(f"Assigning normals to targets with method: {mode}")
+        print(f"Assigning normals to targets with method: {self.normals_params['mode']}")
         if target is None:
             for target_name, value in self.label_targets.items():
-                if mode == "scaling":
+                if self.normals_params["mode"] == "scaling":
                     normals = normals_by_scaling(
                         self.label_targets[target_name]["coordinates"]
                     )
                     self.label_targets[target_name]["normals"] = normals
+                elif self.normals_params["mode"] == "global":
+                    normals = global_normal_direction(
+                        self.label_targets[target_name]["coordinates"],
+                        normal_vector = self.normals_params["normal_vector"]
+                    )
+                    self.label_targets[target_name]["normals"] = normals
+                elif self.normals_params["mode"] == "structure_axis":
+                    normals = global_normal_direction(
+                        self.label_targets[target_name]["coordinates"],
+                        normal_vector = self.axis["direction"]
+                    )
+                    self.label_targets[target_name]["normals"] = normals
         else:
-            if mode == "scaling":
+            if self.normals_params["mode"] == "scaling":
                 normals = normals_by_scaling(self.label_targets[target]["coordinates"])
                 self.label_targets[target]["normals"] = normals
+            elif self.normals_params["mode"] == "global":
+                normals = global_normal_direction(
+                        self.label_targets[target_name]["coordinates"],
+                        normal_vector = self.normals_params["normal_vector"]
+                    )
+                self.label_targets[target_name]["normals"] = normals
+            elif self.normals_params["mode"] == "structure_axis":
+                    normals = global_normal_direction(
+                        self.label_targets[target_name]["coordinates"],
+                        normal_vector = self.axis["direction"]
+                    )
+                    self.label_targets[target_name]["normals"] = normals
 
 
 def build_structure_cif(
