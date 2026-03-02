@@ -1132,6 +1132,7 @@ class ExperimentParametrisation:
         sample_dimensions: list[int, int, int] = None,
         number_of_particles: int = None,
         particle_positions: list = None,
+        sample_inital_orientation: list = None,
         random_orientations: bool = None,
         random_placing: bool = None,
         minimal_distance: float = None,
@@ -1212,6 +1213,11 @@ class ExperimentParametrisation:
             self.virtualsample_params["yz_orientations"] = yz_orientations
         if axial_offset is not None:
             self.virtualsample_params["axial_offset"] = axial_offset
+        if sample_inital_orientation is not None:
+            if len(sample_inital_orientation) == 3:
+                self.virtualsample_params["sample_inital_orientation"] = sample_inital_orientation
+                self.virtualsample_params["random_rotations"] = False
+
 
     def use_image_for_positioning(
         self,
