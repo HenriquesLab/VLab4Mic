@@ -66,7 +66,8 @@ def test_epitopes_from_mask():
 def test_nparticles_constraints():
     number_of_particles = 200
     sample, expr = experiments.generate_virtual_sample(
-        number_of_particles=number_of_particles
+        number_of_particles=number_of_particles,
+        sample_dimensions=[200,200,100],
     )
     assert (
         expr.coordinate_field.molecules_params["minimal_distance"] is not None
