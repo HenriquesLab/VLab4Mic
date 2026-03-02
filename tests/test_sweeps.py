@@ -60,3 +60,41 @@ def test_custom_metric():
         run_analysis=True,
         custom_metrics=[mean_value,],
     )
+
+def test_sweep_based_on_image():
+
+    img_mask = np.random.rand(24, 24)
+    p = 0.9
+    img_mask[img_mask >= p] = 1
+    img_mask[img_mask < p] = 0
+    # image parameters
+    image_parameters = dict(
+        pixelsize = 100, # in nm
+        mode = "mask",
+    )
+
+    sweep_gen = sweep_generator.run_parameter_sweep(
+        sweep_repetitions=3,
+        # parameters for sweep
+        labelling_efficiency=(0, 1, 0.5),  # values between 0 and 1 with step of 0.5
+        # Image for virtual sample positioning
+        image4vsample=img_mask,
+        image4vsample_parameters=image_parameters,
+        # reference image
+        reference_image=img_mask,
+        reference_image_parameters={
+            "ref_pixelsize": image_parameters["pixelsize"]
+        },
+        # output and analysis
+        output_name="vlab_example_sweep",
+        return_generator=True,
+        analysis_plots=False,  # Do not create plots on tests
+        save_sweep_images=False,  # By default, the saving directory is set to the home path of the user
+        save_analysis_results=False,
+        run_analysis=True,
+        capture_outputs=True,
+        plot_parameters={
+            "heatmaps": {"param1":"labelling_efficiency", "param2":"structural_integrity", "category":"lateral_resolution_nm"}
+        }
+    )
+    
