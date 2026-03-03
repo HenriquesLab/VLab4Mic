@@ -903,7 +903,7 @@ class MolecularStructureParser:
                 fig.show
 
     def show_assembly_atoms(
-        self, assembly_fraction=0.01, view_init=[0, 0, 0], axesoff=True,return_plot=False
+        self, assembly_fraction=0.01, view_init=[0, 0, 0], axesoff=True, return_plot=False, show_axis=False
     ):
         """
         Visualize a fraction of the assembly atoms.
@@ -932,6 +932,8 @@ class MolecularStructureParser:
             ax,
             format_coordinates(atoms_subset, **self.plotting_params["assemblyatoms"]),
         )
+        if show_axis:
+            draw1nomral_segment(self.axis, ax, lenght=150, colors=["g", "y"])
         ax.view_init(elev=view_init[0], azim=view_init[1], roll=view_init[2])
         ax.set_box_aspect(
             [ub - lb for lb, ub in (getattr(ax, f"get_{a}lim")() for a in "xyz")]
