@@ -1292,9 +1292,10 @@ class ExperimentParametrisation:
             print(xyz_abs.shape)
             normals = np.zeros(shape=xyz_abs.shape)
             normals[:,2] = 1
+            probe_name = list(self.probe_parameters.keys())[0]
             particle_generator_data = dict(
                 targets={
-                    "custom":dict(
+                    probe_name:dict(
                         coordinates = xyz_abs,
                         normals=normals
                     )
