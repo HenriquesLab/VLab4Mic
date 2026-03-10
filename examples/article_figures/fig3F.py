@@ -251,6 +251,9 @@ list_of_positions, rendered_smlm, smlm_experiment = render_from_localisations(
     centerx = xrange*0.5,
     precision_nm=loc_prec
     )
+my_experiment.set_virtualsample_params(
+    random_rotations=True,
+)
 SMLM_experimental_img_patch, relative_positions = mimic_experimental_image(
     experiment=my_experiment,
     experimental_image=rendered_smlm["SMLM"]["ch0"][0],
@@ -292,7 +295,7 @@ for i, mod in enumerate(modalities):
     axs[0,i].imshow(sim_vs_exp[mod][1], cmap="grey")
     axs[0,i].tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
     axs[0,i].set_title(f"{mod}", fontsize=20)
-    axs[1,i].imshow(sim_vs_exp[mod][0], cmap="magma")
+    axs[1,i].imshow(sim_vs_exp[mod][0], cmap="grey")
     axs[1,i].tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
     scalebar = AnchoredSizeBar(axs[1,i].transData,
                            mods_scalebar[mod]["length_px"],
