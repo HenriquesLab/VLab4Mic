@@ -1427,6 +1427,7 @@ def generate_virtual_sample(
     primary_probe=None,
     secondary_probe=None,
     probe_list=None,
+    random_seed: int = None,
     **kwargs,
 ):
     """
@@ -1493,7 +1494,7 @@ def generate_virtual_sample(
         - dict: The virtual sample as exported format. This can be used as input for the `image_vsample` method.
         - ExperimentParametrisation: The experiment containing all modules that were generated to build the virtual sample, and the virtual sample module itself. This experiment can be further used and tweaked for subsequent analysis or branching workflows.
     """
-    myexperiment = ExperimentParametrisation()
+    myexperiment = ExperimentParametrisation(random_seed=random_seed)
     if clear_experiment:
         myexperiment.clear_experiment()
     # select structure
@@ -1625,7 +1626,7 @@ def generate_virtual_sample(
 
 
 def build_virtual_microscope(
-    modality="STED", multimodal: list[str] = None, experiment=None, **kwargs
+    modality="STED", multimodal: list[str] = None, experiment=None, random_seed=None, **kwargs
 ):
     """
     Initialise a virtual microscope for single or multimodal imaging.
@@ -1648,7 +1649,7 @@ def build_virtual_microscope(
         - ExperimentParametrisation: The experiment containing the virtual microscope. All other modules are not initialised. This experiment can be further used and tweaked for subsequent analysis or branching workflows.
     """
     if experiment is None:
-        experiment = ExperimentParametrisation()
+        experiment = ExperimentParametrisation(random_seed=random_seed)
     if multimodal is not None:
         for mod in multimodal:
             print(mod)
@@ -1708,6 +1709,7 @@ def image_vsample(
     secondary_probe = None,
     probe_list = None,
     save: bool = False,
+    random_seed: int = None,
     **kwargs,
 ):
     """
@@ -1844,6 +1846,7 @@ def image_vsample(
             secondary_probe=secondary_probe,
             probe_list=probe_list,
             expansion_factor=expansion_factor,
+            random_seed=random_seed,
         )
         sample_experiment.clear_modalities()
         if multimodal is not None:
