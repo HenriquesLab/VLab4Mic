@@ -52,6 +52,7 @@ class ExperimentParametrisation:
     output_directory: str = None
     example_structures = ["3J3Y", "7R5K", "1XI5", "8GMO"]
     example_modalities = ["Widefield", "Confocal", "AiryScan", "STED", "SMLM"]
+    random_seed: int = None
 
     def __post_init__(self):
         self.output_directory = str(output_path)
@@ -177,6 +178,8 @@ class ExperimentParametrisation:
         self.results = dict()
         self.create_example_experiment()
         self.modality_noise_images = dict()
+        if self.random_seed is not None:
+            np.random.seed(self.random_seed)
 
     def select_structure(self, structure_id="1XI5", build=True, structure_path:str = None):
         """
@@ -868,6 +871,7 @@ class ExperimentParametrisation:
         dict or None
             Simulation output as a dictionary mapping modality names to results. Returns None if the imager could not be created.
         """
+        np.random.seed(None)
         if not self.generators_status("imager"):
             self.build(modules="imager")
             if self.imager is None:
