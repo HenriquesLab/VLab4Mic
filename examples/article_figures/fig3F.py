@@ -110,18 +110,22 @@ smlm_experimental_locs = localisations_all[localisations_all.numberInGroup == 1]
 
 # parameters
 structure = "7R5K"
-probe_template = "NPC_Nup96_Cterminal_direct"
+probe_template = "GFP_w_nanobody"
 modalities = ["Widefield", "Confocal", "AiryScan","STED", "SMLM"]
 # Run simulation
 # Prepare experiment object
 _1, _2, my_experiment = experiments.image_vsample(
     structure=structure,
     probe_template=probe_template,
-    labelling_efficiency=1,
+    probe_DoL=2,
+    labelling_efficiency=0.4,
+    probe_target_type="Sequence",
+    probe_target_value="ELAVGSL", # Nup96 C-terminal
     multimodal=modalities,
     random_rotation=True,
     clear_experiment=True,
     run_simulation=False,
+    random_rotations=True
 )
 FOV_nm = 1500
 widefield_pixelsize = 100
@@ -251,9 +255,9 @@ list_of_positions, rendered_smlm, smlm_experiment = render_from_localisations(
     centerx = xrange*0.5,
     precision_nm=loc_prec
     )
-my_experiment.set_virtualsample_params(
-    random_rotations=True,
-)
+#my_experiment.set_virtualsample_params(
+#    random_rotations=True,
+#)
 SMLM_experimental_img_patch, relative_positions = mimic_experimental_image(
     experiment=my_experiment,
     experimental_image=rendered_smlm["SMLM"]["ch0"][0],
