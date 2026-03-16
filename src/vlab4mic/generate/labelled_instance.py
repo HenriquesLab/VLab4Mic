@@ -994,6 +994,7 @@ class LabeledInstance:
         atoms_fraction=0.1,
         atoms_plotsize=1,
         atoms_plotalpha=1,
+        use_dol=False,
         **kwargs,
     ):
         """
@@ -1040,7 +1041,7 @@ class LabeledInstance:
         centered_emitters, translation_vector1 = transform_displace_set(
             probe_emitters, center, np.array([0, 0, 0])
         )
-        if dol is not None:
+        if dol is not None and use_dol:
             list_reoriented_points = []
             int_dol = np.random.poisson(lam=dol)
             max_emitters = centered_emitters.shape[0]
