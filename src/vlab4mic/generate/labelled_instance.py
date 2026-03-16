@@ -1028,16 +1028,38 @@ class LabeledInstance:
         total_coordinates = copy.copy(self.labels[probe_name]["emitters"])
         total_number_coordinates = total_coordinates.shape[0]
         center = np.mean(total_coordinates, axis=0)
+        dol = self.labels[probe_name]["conjugation_sites"]["DoL"]
+        int_dol = np.random.poisson(lam=dol)
         probe_emitters = total_coordinates[2:, :].reshape(
-            total_number_coordinates - 2, 3
-        )
-        probe_axis = total_coordinates[0:2, :]
+                total_number_coordinates - 2, 3
+            )
         centered_emitters, translation_vector1 = transform_displace_set(
             probe_emitters, center, np.array([0, 0, 0])
         )
+        if dol is not None:
+            list_reoriented_points = []
+            int_dol = np.random.poisson(lam=dol)
+            print(f"DOL = {int_dol}")
+            max_emitters = centered_emitters.shape[0]
+            if int_dol != 0:
+                if int_dol > max_emitters:
+                    # use max value
+                    pass
+                else:
+                    emitter_indices = np.arange(max_emitters)
+                    selected_emitters = np.random.choice(
+                        emitter_indices, size=int_dol, replace=False
+                    )
+                    for se in selected_emitters:
+                        list_reoriented_points.append(centered_emitters[se])
+                    centered_emitters = np.array(list_reoriented_points)
+            print(centered_emitters, len(list_reoriented_points), centered_emitters.shape)
+        probe_axis = total_coordinates[0:2, :]
+        
         centered_axis, translation_vector2 = transform_displace_set(
             probe_axis, center, np.array([0, 0, 0])
         )
+        
         add_ax_scatter(
             ax,
             format_coordinates(
