@@ -20,7 +20,7 @@ from ..utils.visualisation.matplotlib_plots import (
 from ..utils.transform.cif_builder import create_instance_label
 from ..utils.transform.structural_integrity import xmersubset_byclustering
 from ..utils.data_format.structural_format import builder_format
-
+from ..utils.sample.arrays import sample_array
 
 class LabeledInstance:
     def __init__(self):
@@ -990,6 +990,10 @@ class LabeledInstance:
         ylims=[-100, 100],
         zlims=None,
         central_axis=True,
+        with_structural_atoms=False,
+        atoms_fraction=0.1,
+        atoms_plotsize=1,
+        atoms_plotalpha=1,
         **kwargs,
     ):
         """
@@ -1039,7 +1043,6 @@ class LabeledInstance:
         if dol is not None:
             list_reoriented_points = []
             int_dol = np.random.poisson(lam=dol)
-            print(f"DOL = {int_dol}")
             max_emitters = centered_emitters.shape[0]
             if int_dol != 0:
                 if int_dol > max_emitters:
@@ -1053,19 +1056,33 @@ class LabeledInstance:
                     for se in selected_emitters:
                         list_reoriented_points.append(centered_emitters[se])
                     centered_emitters = np.array(list_reoriented_points)
-            print(centered_emitters, len(list_reoriented_points), centered_emitters.shape)
         probe_axis = total_coordinates[0:2, :]
         
         centered_axis, translation_vector2 = transform_displace_set(
             probe_axis, center, np.array([0, 0, 0])
         )
-        
+        ##
         add_ax_scatter(
             ax,
             format_coordinates(
                 centered_emitters, plotmarker="o", plotsize=20, **kwargs
             ),
         )
+        if with_structural_atoms:
+            subset_atoms = sample_array(
+                array=self.labels[probe_name]["structural_atoms"],
+                fraction=atoms_fraction)
+            centered_atoms, translation_vector1 = transform_displace_set(
+                    subset_atoms, center, np.array([0, 0, 0])
+                )
+            add_ax_scatter(
+                ax,
+                format_coordinates(
+                    centered_atoms, plotmarker="o", plotsize=atoms_plotsize,
+                    plotalpha=atoms_plotalpha,
+                ),
+            )
+            
         if central_axis:
             axis_segment = dict()
             axis_segment["pivot"] = centered_axis[0]
