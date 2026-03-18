@@ -8,7 +8,7 @@ from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import tifffile as tif
 import io
 import pandas as pd
-np.random.seed(44)
+random_seed=44
 sim_vs_exp = dict() 
 
 def mimic_experimental_image(experiment, experimental_image, halfpatch, centerx, centery, as_int=True, **kwargs):
@@ -35,7 +35,7 @@ def read_image_from_url(url):
     # Check that request succeeded
     return tif.imread(io.BytesIO(resp.content))
 
-def render_from_localisations(localisations, crop_size_nm = 3000, centerx = None, centery = None,precision_nm=None):
+def render_from_localisations(localisations, crop_size_nm = 3000, centerx = None, centery = None,precision_nm=None, random_seed=None):
     if precision_nm is None:
         precision_nm = np.mean(localisations.locprecnm)
     minx = np.min(localisations.xnm)
@@ -72,7 +72,8 @@ def render_from_localisations(localisations, crop_size_nm = 3000, centerx = None
     normalised_y = normalised_y / normalised_y.max()
     sample, experiment = generate_virtual_sample(
         structure=None,
-        particle_positions=(normalised_x, normalised_y)
+        particle_positions=(normalised_x, normalised_y),
+        random_seed=random_seed
     )
     experiment.clear_structure()
     experiment.remove_probes()
@@ -125,7 +126,8 @@ _1, _2, my_experiment = experiments.image_vsample(
     random_rotation=True,
     clear_experiment=True,
     run_simulation=False,
-    random_rotations=True
+    random_rotations=True,
+    random_seed=random_seed
 )
 FOV_nm = 1500
 widefield_pixelsize = 100
