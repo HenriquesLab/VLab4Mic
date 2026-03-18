@@ -798,6 +798,7 @@ class LabeledInstance:
                     )
                 )
 
+
         # then replace reference point
         self._set_ref_point(nref)
         self.axis["pivot"] = nref
@@ -991,6 +992,9 @@ class LabeledInstance:
         zlims=None,
         central_axis=True,
         with_structural_atoms=False,
+        emitter_plotsize=10,
+        emitter_plotcolour="#984ea3",
+        emitter_plotalpha=1,
         atoms_fraction=0.1,
         atoms_plotsize=1,
         atoms_plotalpha=1,
@@ -1025,8 +1029,8 @@ class LabeledInstance:
             The axis if return_plot is True, otherwise None.
         """
         if probe_name is None:
-            first_probe = self.labelnames[0]
-            probe_name = self.emitters[first_probe]
+            probe_name = list(self.labels.keys())[0]
+            print(probe_name)
         fig = plt.figure()
         ax = fig.add_subplot(111, projection="3d")
         # probe_plotting_params = self._get_label_plotting_params(probe_name)
@@ -1066,7 +1070,9 @@ class LabeledInstance:
         add_ax_scatter(
             ax,
             format_coordinates(
-                centered_emitters, plotmarker="o", plotsize=20, **kwargs
+                centered_emitters, plotmarker="o", plotsize=emitter_plotsize,
+                plotalpha=emitter_plotalpha, plotcolour=emitter_plotcolour,
+                
             ),
         )
         if with_structural_atoms:
@@ -1286,12 +1292,12 @@ class LabeledInstance:
                     else:
                         source_plotsize = 1
                     if self.structural_integrity_target_normals is not None:
-                        add_ax_scatter(
-                            axis_object,
-                            format_coordinates(
-                                self.structural_integrity_target_normals["coordinates"]
-                            ),
-                        )
+                        #add_ax_scatter(
+                        #    axis_object,
+                        #    format_coordinates(
+                        #        self.structural_integrity_target_normals["coordinates"]
+                        #    ),
+                        #)
                         add_ax_scatter(
                             axis_object,
                             format_coordinates(
