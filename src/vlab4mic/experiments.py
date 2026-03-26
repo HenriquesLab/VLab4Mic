@@ -201,6 +201,7 @@ class ExperimentParametrisation:
             self.structure_id = structure_id
             self.structure_format = structure_path.split(".")[-1].upper()
         else:
+            self.structure_path = None
             self.structure_id = structure_id
         if build:
             self.build(modules=["structure"])
