@@ -192,6 +192,8 @@ class Field:
                 self.yz_orientations = kwargs["yz_orientations"]
         else:
             self.random_orientations = False
+            if "orientation_per_particle" in kwargs.keys():
+                self.set_molecule_param("orientation_per_particle", kwargs["orientation_per_particle"])
         # rotation within plane of each particle 
         if random_rotations:
             self.random_rotations = True
@@ -199,6 +201,8 @@ class Field:
                 self.rotation_angles = kwargs["rotation_angles"]
         else:
             self.random_rotations = False
+            if "rotation_per_particle" in kwargs.keys():
+                self.set_molecule_param("rotation_per_particle", kwargs["rotation_per_particle"])
         # global axial offset 
         if "axial_offset" in kwargs.keys():
             self.axial_offset = kwargs["axial_offset"]
@@ -271,7 +275,20 @@ class Field:
         value : Any
             Value to set.
         """
-        self.molecules_params[parameter] = value
+        if parameter == "orientation_per_particle":
+            # check if the length of the list has the same size as number of particles
+            if len(value) == self.molecules_params["nMolecules"]:
+                self.molecules_params["orientations"] = value
+            else:
+                print("Number of values provided does not equal the number of existing particles")
+        if parameter == "rotation_per_particle":
+            # check if the length of the list has the same size as number of particles
+            if len(value) == self.molecules_params["nMolecules"]:
+                self.molecules_params["rotations"] = value
+            else:
+                print("Number of values provided does not equal the number of existing particles")
+        else:
+            self.molecules_params[parameter] = value
 
     def set_molecules_params(
         self,

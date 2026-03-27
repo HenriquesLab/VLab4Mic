@@ -1148,6 +1148,8 @@ class ExperimentParametrisation:
         xz_orientations = None,
         yz_orientations = None,
         axial_offset=None,
+        rotation_per_particle=None,
+        orientation_per_particle=None,
         **kwargs,
     ):
         """
@@ -1218,6 +1220,10 @@ class ExperimentParametrisation:
             self.virtualsample_params["yz_orientations"] = yz_orientations
         if axial_offset is not None:
             self.virtualsample_params["axial_offset"] = axial_offset
+        if orientation_per_particle is not None:
+            self.virtualsample_params["orientation_per_particle"] = orientation_per_particle
+        if rotation_per_particle is not None:
+            self.virtualsample_params["rotation_per_particle"] = rotation_per_particle
         if sample_inital_orientation is not None:
             if len(sample_inital_orientation) == 3:
                 self.virtualsample_params["sample_inital_orientation"] = sample_inital_orientation
@@ -1413,12 +1419,14 @@ def generate_virtual_sample(
     sample_inital_orientation = None,
     number_of_particles: int = None,
     particle_positions: list[np.array] = None,
-    random_orientations=False,
+    orientation_per_particle = None,
+    random_orientations = False,
     xy_orientations = None,
     xz_orientations = None,
     yz_orientations = None,
     axial_offset = None,
     random_placing=False,
+    rotation_per_particle = None,
     random_rotations=False,
     rotation_angles = None,
     expansion_factor=1,
@@ -1610,6 +1618,10 @@ def generate_virtual_sample(
         vsample_configuration["random_placing"] = random_placing
     if random_rotations:
         vsample_configuration["random_rotations"] = random_rotations
+    if orientation_per_particle is not None:
+        vsample_configuration["orientation_per_particle"] = orientation_per_particle
+    if rotation_per_particle is not None:
+        vsample_configuration["rotation_per_particle"] = rotation_per_particle
     vsample_configuration["rotation_angles"] = rotation_angles
     vsample_configuration["xy_orientations"] = xy_orientations
     vsample_configuration["xz_orientations"] = xz_orientations
@@ -1695,12 +1707,14 @@ def image_vsample(
     sample_inital_orientation = None,
     number_of_particles: int = None,
     particle_positions: list = None,
+    orientation_per_particle = None,
     random_orientations = False,
     xy_orientations: list[int] = None,
     xz_orientations: list[int] = None,
     yz_orientations: list[int] = None,
     axial_offset: list[int] = None,
     random_placing = False,
+    rotation_per_particle = None,
     random_rotations = False,
     rotation_angles = None,
     expansion_factor = 1,
@@ -1833,12 +1847,14 @@ def image_vsample(
             sample_inital_orientation=sample_inital_orientation,
             number_of_particles=number_of_particles,
             particle_positions=particle_positions,
+            orientation_per_particle=orientation_per_particle,
             random_orientations=random_orientations,
             xy_orientations=xy_orientations,
             xz_orientations=xz_orientations,
             yz_orientations=yz_orientations,
             axial_offset=axial_offset,
             random_placing=random_placing,
+            rotation_per_particle=rotation_per_particle,
             random_rotations=random_rotations,
             rotation_angles=rotation_angles,
             clear_probes=clear_probes,
