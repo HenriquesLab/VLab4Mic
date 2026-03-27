@@ -144,7 +144,9 @@ class Field:
         if "sample_dimensions" in kwargs.keys():
             self._set_dimension_sizes(kwargs["sample_dimensions"])
             self.calculate_absolute_reference()
+        # positioning of particles in the field
         if "relative_positions" in kwargs.keys():
+            self.random_placing = False
             print("Using relative positons to initialise field")
             nmolecules = len(kwargs["relative_positions"])
             self.set_molecule_param("nMolecules", nmolecules)
@@ -177,20 +179,29 @@ class Field:
             point = self.get_molecule_param("absolute_positions")
             self.fluorophre_emitters = {fluo_name: point.reshape(1, 3)}
         self._set_fluo_plotting_params(fluo_name)
-        self.random_orientations = random_orientations
-        self.random_rotations = random_rotations
-        if "rotation_angles" in kwargs.keys():
-            self.rotation_angles = kwargs["rotation_angles"]
-        if "xy_orientations" in kwargs.keys():
-            self.xy_orientations = kwargs["xy_orientations"]
-        if "xz_orientations" in kwargs.keys():
-            self.xz_orientations = kwargs["xz_orientations"]
-        if "yz_orientations" in kwargs.keys():
-            self.yz_orientations = kwargs["yz_orientations"]
+        # Orientation of each particle 
+        if random_orientations:
+            self.random_orientations = True
+            if "sample_inital_orientation" in kwargs.keys():
+                self.sample_initial_orientation = kwargs["sample_inital_orientation"]
+            if "xy_orientations" in kwargs.keys():
+                self.xy_orientations = kwargs["xy_orientations"]
+            if "xz_orientations" in kwargs.keys():
+                self.xz_orientations = kwargs["xz_orientations"]
+            if "yz_orientations" in kwargs.keys():
+                self.yz_orientations = kwargs["yz_orientations"]
+        else:
+            self.random_orientations = False
+        # rotation within plane of each particle 
+        if random_rotations:
+            self.random_rotations = True
+            if "rotation_angles" in kwargs.keys():
+                self.rotation_angles = kwargs["rotation_angles"]
+        else:
+            self.random_rotations = False
+        # global axial offset 
         if "axial_offset" in kwargs.keys():
             self.axial_offset = kwargs["axial_offset"]
-        if "sample_inital_orientation" in kwargs.keys():
-            self.sample_initial_orientation = kwargs["sample_inital_orientation"]
 
 
     def calculate_absolute_reference(self):
