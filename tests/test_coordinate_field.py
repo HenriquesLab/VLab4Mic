@@ -77,3 +77,19 @@ def test_nparticles_constraints():
         expr.coordinate_field.molecules_params["nMolecules"]
         < number_of_particles
     )
+
+def test_parameter_per_particle():
+    relative_pos = [[0.24,0.24,0], [0.75,0.75,0]]
+    rotation_per_particle = [0,30]
+    orientation_per_particle = [
+        [0,0,1],
+        [1,0,0]
+    ]
+    vsample, myexperiment = experiments.generate_virtual_sample(
+        particle_positions=relative_pos,
+        rotation_per_particle=rotation_per_particle,
+        orientation_per_particle=orientation_per_particle,
+        clear_experiment=True,
+    )
+    assert myexperiment.coordinate_field.molecules[0].axis["direction"] == orientation_per_particle[0]
+    assert myexperiment.coordinate_field.molecules[1].axis["direction"] == orientation_per_particle[1]
