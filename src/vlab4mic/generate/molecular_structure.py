@@ -163,12 +163,19 @@ class MolecularStructureParser:
         protein_name = dict()
         try:
             chain_name = self.CIFdictionary["_entity.pdbx_description"]
+        except:
+            chain_name = None
+        try:
             chain_number = self.CIFdictionary["_entity.id"]
+        except:
+            chain_number = None
+        try:
             strand_id = self.CIFdictionary["_entity_poly.pdbx_strand_id"]
+        except:
+            strand_id = [None] * len(chain_name)
+        if chain_name is not None and chain_number is not None:
             for  name, number, strands in zip(chain_name, chain_number, strand_id):
                 protein_name[name] = {"number": number, "strand_id": strands}
-        except:
-            pass
         self.protein_names = protein_name
     
     def list_protein_names(self):
@@ -258,7 +265,10 @@ class MolecularStructureParser:
             chains_in_structure = list(self.protein_names.keys())
             chain_name = random.choice(chains_in_structure)
         if chain_id is None:
-            chain_id = random.choice(self.protein_names[chain_name]["strand_id"].split(","))
+            try:
+                chain_id = random.choice(self.protein_names[chain_name]["strand_id"].split(","))
+            except:
+                chain_id = random.choice(list(self.chains_dict.keys()))
         chain_sequence = self.chains_dict[chain_id]
         return chain_name, chain_id, position, self._sequence_substring(chain_sequence, size=size, position=position)
 
