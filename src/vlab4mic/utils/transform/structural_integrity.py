@@ -198,6 +198,7 @@ def xmersubset_byclustering(
             d_cluster_params["minsamples2"],
         )
         if ids_validated is None:
+            i+=1
             continue
         # ids_validated are the ids of the center of each xmer that we want to preserve
         # we only need to then retrieve the appropriate indices of the epitopes themselves
