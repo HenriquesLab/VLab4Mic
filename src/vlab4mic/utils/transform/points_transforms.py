@@ -115,7 +115,7 @@ def decorate_epitopes_normals(normals_ft_epitopes, labeling_entity, dol:int = No
         # model degree of labelling
         if dol is not None:
             int_dol = np.random.poisson(lam=dol)
-            print(f"DOL = {int_dol}")
+            #print(f"DOL = {int_dol}")
             max_emitters = len(new_points)
             if int_dol != 0:
                 if int_dol > max_emitters - 2 :

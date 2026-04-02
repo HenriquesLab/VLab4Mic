@@ -1301,9 +1301,7 @@ class LabeledInstance:
                         add_ax_scatter(
                             axis_object,
                             format_coordinates(
-                                self._get_source_coords_normals(labs)[
-                                    "coordinates"
-                                ],
+                                self.structural_integrity_target_normals["coordinates"],
                                 plotcolour=source_plotcolour,
                                 plotsize=source_plotsize,
                                 plotmarker=source_plotmarker,

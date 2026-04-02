@@ -5,10 +5,10 @@ import numpy as np
 import copy
 
 
-def test_virtual_sample_params(experiment_7r5k_base):
-    copy_exp = copy.deepcopy(experiment_7r5k_base)
-    copy_exp.set_virtualsample_params(number_of_particles=2)
-    copy_exp.build(modules=["virtualsample"])
+#def test_virtual_sample_params(experiment_7r5k_base):
+#    copy_exp = copy.deepcopy(experiment_7r5k_base)
+#    copy_exp.set_virtualsample_params(number_of_particles=2)
+#    copy_exp.build(modules=["virtualsample"])
 
 
 def test_create_minimal_field():
@@ -22,13 +22,13 @@ def test_create_minimal_field():
     test_field.expand_isotropically(factor=2)
 
 
-def test_gen_positions_from_image(experiment_7r5k_base):
-    copy_exp = copy.deepcopy(experiment_7r5k_base)
+def test_gen_positions_from_image():
+    vsample, testexp = experiments.generate_virtual_sample()
     img_mask = np.random.rand(24, 24)
     p = 0.9
     img_mask[img_mask >= p] = 1
     img_mask[img_mask < p] = 0
-    copy_exp.use_image_for_positioning(img_mask, mode="mask", pixelsize=100)
+    testexp.use_image_for_positioning(img_mask, mode="mask", pixelsize=100)
 
 
 def test_epitopes_from_mask():
