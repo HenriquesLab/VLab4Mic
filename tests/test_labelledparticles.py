@@ -1,5 +1,5 @@
 import vlab4mic.generate.labelled_instance as lp
-from vlab4mic import workflows
+from vlab4mic import experiments
 from vlab4mic.utils import data_format
 import pytest
 import copy
@@ -24,29 +24,29 @@ generic_labels = [
 ]
 
 
-def test_add_probe_with_peptide_motif(experiment_7r5k_base):
-    test_experiment = copy.copy(experiment_7r5k_base)
-    test_experiment.remove_probes()
-    list_of_proteins = test_experiment.structure.list_protein_names()
+def test_add_probe_with_peptide_motif():
+    vsample, testexp = experiments.generate_virtual_sample()
+    testexp.remove_probes()
+    list_of_proteins = testexp.structure.list_protein_names()
     chain_name = list_of_proteins[np.random.randint(0, len(list_of_proteins))]
     probe_name = "Antibody"
-    test_experiment.add_probe(
+    testexp.add_probe(
         probe_template=probe_name,
         peptide_motif={
             "chain_name": chain_name,
             "position": "cterminal",
         },
     )
-    assert len(test_experiment.probe_parameters) == 1
+    assert len(testexp.probe_parameters) == 1
     assert (
-        test_experiment.probe_parameters[probe_name]["label_name"]
+        testexp.probe_parameters[probe_name]["label_name"]
         == probe_name
     )
     assert (
-        test_experiment.probe_parameters[probe_name]["target"]["type"]
+        testexp.probe_parameters[probe_name]["target"]["type"]
         == "Sequence"
     )
     assert (
-        type(test_experiment.probe_parameters[probe_name]["target"]["value"])
+        type(testexp.probe_parameters[probe_name]["target"]["value"])
         == str
     )
