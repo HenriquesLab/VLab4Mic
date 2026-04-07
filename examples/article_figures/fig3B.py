@@ -2,24 +2,25 @@ from vlab4mic import sweep_generator
 import matplotlib.pyplot as plt
 import os
 import numpy as np
-np.random.seed(44)
+random_seed = 24
 
 sweep_gen = sweep_generator.run_parameter_sweep(
-    structures=["7R5K",],
-    probe_templates=["NPC_Nup96_Cterminal_direct",],
+    structures=["3J3Y",],
+    probe_templates=["anti-p24_primary_antibody_HIV",],
     sweep_repetitions=10,
     # parameters for sweep
     labelling_efficiency=(0,1,0.25),
     structural_integrity=(0,1,0.25),
-    structural_integrity_small_cluster=[300,],
-    structural_integrity_large_cluster=[600,],
+    structural_integrity_small_cluster=[20,],
+    structural_integrity_large_cluster=[100,],
     exp_time=[0.001, 0.01,],
     # output and analysis
     output_name="vlab_script",
     return_generator=True,
-    save_sweep_images=True,
+    save_sweep_images=False,
     save_analysis_results=True,
-    run_analysis=True
+    run_analysis=True,
+    random_seed=random_seed
     )
 
 

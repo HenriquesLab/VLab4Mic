@@ -26,5 +26,5 @@ conjugation_sites:
       - CA
       residues: 
       - LYS
-  DoL:
+  DoL: 2
 
