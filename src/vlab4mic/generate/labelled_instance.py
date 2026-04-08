@@ -1136,6 +1136,9 @@ class LabeledInstance:
         return_plot=False,
         source_size=None,
         emitter_plotsize=None,
+        xlim=None,
+        ylim=None,
+        zlim=None,
     ):
         """
         Visualize the labelled instance in 3D.
@@ -1192,8 +1195,9 @@ class LabeledInstance:
                         ),
                     )
                 # add_ax_scatter(ax, format_coordinates(self.emitters[labs]))
+        ref = self.get_ref_point()
+        margin = self.radial_hindance * 0.6
         if reference_point:
-            ref = self.get_ref_point()
             print(f"Reference point at {ref}")
             ax.scatter(
                 ref[0], ref[1], ref[2], c="k", label="ref", s=20, marker="x"
@@ -1202,12 +1206,27 @@ class LabeledInstance:
             print(f'current axis direction: {self.axis["direction"]}')
             draw1nomral_segment(self.axis, ax, lenght=150, colors=["g", "y"])
         ax.view_init(elev=view_init[0], azim=view_init[1], roll=view_init[2])
-        ax.set_box_aspect(
-            [
-                ub - lb
-                for lb, ub in (getattr(ax, f"get_{a}lim")() for a in "xyz")
-            ]
-        )
+        if xlim is not None:
+            ax.set_xlim(xlim[0], xlim[1])
+        else:
+            ax.set_xlim(
+                ref[0] - margin,
+                ref[0] + margin
+            )
+        if ylim is not None:
+            ax.set_ylim(ylim[0], ylim[1])
+        else:
+            ax.set_ylim(
+                ref[1] - margin,
+                ref[1] + margin
+            )
+        if zlim is not None:
+            ax.set_zlim(zlim[0], zlim[1])
+        else:
+            ax.set_zlim(
+                ref[2] - margin,
+                ref[2] + margin
+            )
         if axesoff:
             ax.set_axis_off()
         else:
@@ -1219,6 +1238,12 @@ class LabeledInstance:
                 ax.set_xlabel("X (Nanometers)")
                 ax.set_ylabel("Y (Nanometers)")
                 ax.set_zlabel("Z (Nanometers)")
+        ax.set_box_aspect(
+            [
+                ub - lb
+                for lb, ub in (getattr(ax, f"get_{a}lim")() for a in "xyz")
+            ]
+        )
         if return_plot:
             return ax
         else:
@@ -1241,6 +1266,9 @@ class LabeledInstance:
         source_plotmarker="D",
         source_plotalpha=1,
         with_normals=False,
+        xlim=None,
+        ylim=None,
+        zlim=None,
         **kwargs,
     ):
         """
@@ -1267,7 +1295,6 @@ class LabeledInstance:
         emitter_plotsize : int, optional
             Size of emitter markers. Default is 1.
         """
-        zlims = [0, 1]
         if labelnames == "All":
             for labs in self.labelnames:
                 lab_plotparams = self._get_label_plotting_params(labs)
@@ -1284,8 +1311,8 @@ class LabeledInstance:
                         axis_object,
                         format_coordinates(self.emitters[labs], **lab_plotparams),
                     )
-                    zlims[0] = np.min(self.emitters[labs])
-                    zlims[1] = np.max(self.emitters[labs])
+                    #if zlim is None:
+                    #    zlim = [np.min(self.emitters[labs]), np.max(self.emitters[labs])]
                 if with_sources:
                     if source_plotsize is not None:
                         source_plotsize = source_plotsize
@@ -1333,8 +1360,9 @@ class LabeledInstance:
                         )
 
                 # add_ax_scatter(ax, format_coordinates(self.emitters[labs]))
+        ref = self.get_ref_point()
+        margin = self.radial_hindance * 0.6
         if reference_point:
-            ref = self.get_ref_point()
             print(f"Reference point at {ref}")
             axis_object.scatter(
                 ref[0], ref[1], ref[2], c="k", label="ref", s=20, marker="x"
@@ -1347,11 +1375,32 @@ class LabeledInstance:
         axis_object.view_init(
             elev=view_init[0], azim=view_init[1], roll=view_init[2]
         )
+        if xlim is not None:
+            axis_object.set_xlim(xlim[0], xlim[1])
+        else:
+            axis_object.set_xlim(
+                ref[0] - margin,
+                ref[0] + margin
+            )
+        if ylim is not None:
+            axis_object.set_ylim(ylim[0], ylim[1])
+        else:
+            axis_object.set_ylim(
+                ref[1] - margin,
+                ref[1] + margin
+            )
+        if zlim is not None:
+            axis_object.set_zlim(zlim[0], zlim[1])
+        else:
+            axis_object.set_zlim(
+                ref[2] - margin,
+                ref[2] + margin
+            )
         if axesoff:
             axis_object.set_axis_off()
         else:
             fontsize = 5
-            axis_object.set_zlim(zlims[0], zlims[1])
+            axis_object.set_zlim(zlim[0], zlim[1])
             # axis_object.set_zticks(np.arange(-200, 200, 200))
             axis_object.set_xlabel("X (Angstroms)", size=fontsize)
             axis_object.set_ylabel("Y (Angstroms)", size=fontsize)
