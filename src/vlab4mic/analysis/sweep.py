@@ -124,13 +124,21 @@ def sweep_vasmples(
                     experiment.add_probe(probe_template=probe, **p_param_copy)
                 for structural_integrity_n, structural_integrity_pars in particle_structural_integrity.items():
                     particle_structural_integrity_copy = copy.deepcopy(structural_integrity_pars)
+                    structural_integrity_small_cluster = None
+                    structural_integrity_large_cluster = None
+                    structural_integrity = None
                     for d_key, d_val in particle_structural_integrity_copy.items():
                         if d_key == "structural_integrity_small_cluster":
-                            experiment.structural_integrity_eps["eps1"] = d_val
+                            structural_integrity_small_cluster = d_val
                         if d_key == "structural_integrity_large_cluster":
-                            experiment.structural_integrity_eps["eps2"] = d_val
+                            structural_integrity_large_cluster = d_val
                         if d_key == "structural_integrity":
-                            experiment.structural_integrity_eps["structural_integrity"] = d_val
+                            structural_integrity = d_val
+                    experiment.set_structural_integrity(
+                        structural_integrity=structural_integrity,
+                        structural_integrity_small_cluster=structural_integrity_small_cluster,
+                        structural_integrity_large_cluster=structural_integrity_large_cluster
+                    )
                     print(experiment.probe_parameters)
                     experiment._build_particle(keep=True)
                     if experiment.generators_status("particle"):
