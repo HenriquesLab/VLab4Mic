@@ -1390,6 +1390,29 @@ class ExperimentParametrisation:
     def set_structure_normal_params(self, mode = "scaling", normal_vector = None):
         self.structure.normals_params["mode"] = mode
         self.structure.normals_params["normal_vector"] = normal_vector
+    
+    def set_structural_integrity(
+            self,
+            structural_integrity: float = None,
+            structural_integrity_small_cluster: float = None,
+            structural_integrity_large_cluster: float = None,
+            reset_parameters=False,
+    ):
+        if reset_parameters:
+            self.structural_integrity_eps["structural_integrity"] = None
+            self.structural_integrity_eps["eps1"] =  None
+            self.structural_integrity_eps["eps2"] =  None
+        else:
+            if structural_integrity is not None:
+                self.structural_integrity_eps["structural_integrity"] = structural_integrity
+            if structural_integrity_small_cluster is not None:
+                self.structural_integrity_eps["eps1"] = structural_integrity_small_cluster
+            if structural_integrity_large_cluster is not None:
+                self.structural_integrity_eps["eps2"] = structural_integrity_large_cluster
+        if self.structural_integrity_eps["structural_integrity"] is not None and self.structural_integrity_eps["eps1"] and self.structural_integrity_eps["eps2"]:
+            self.structural_integrity_eps["use_structural_integrity"] = True
+        else:
+            self.structural_integrity_eps["use_structural_integrity"] = False
 
 
 def generate_virtual_sample(
