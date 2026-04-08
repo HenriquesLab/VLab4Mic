@@ -1619,12 +1619,11 @@ def generate_virtual_sample(
     )
     vsample_configuration = load_yaml(virtual_sample_template)
     #myexperiment.configuration_path
-    if structural_integrity is not None and structural_integrity_large_cluster and structural_integrity_small_cluster:
-        myexperiment.structural_integrity_eps["eps1"] = structural_integrity_small_cluster
-        myexperiment.structural_integrity_eps["eps2"] = structural_integrity_large_cluster
-        myexperiment.structural_integrity_eps["structural_integrity"] = structural_integrity
-        myexperiment.structural_integrity_eps["use_structural_integrity"] = True
-
+    myexperiment.set_structural_integrity(
+        structural_integrity=structural_integrity,
+        structural_integrity_small_cluster=structural_integrity_small_cluster,
+        structural_integrity_large_cluster=structural_integrity_large_cluster
+    )
     if sample_dimensions is not None:
         vsample_configuration["sample_dimensions"] = sample_dimensions
     if sample_inital_orientation is not None:
