@@ -92,7 +92,6 @@ def singlecluster_verification(
     xmer_subset = xmer_centers[xmerids_logical,]
     # print(xmer_subset, xmer_subset.shape)
     if xmer_subset.shape[0] == 0:
-        print("Verification step yield no result, try new parameters")
         return None
     # verify single cluster on this subset
     db_xmers = DBSCAN(eps=max_dist, min_samples=min_samples).fit(xmer_subset)
