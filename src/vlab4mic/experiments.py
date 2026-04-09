@@ -872,7 +872,6 @@ class ExperimentParametrisation:
         dict or None
             Simulation output as a dictionary mapping modality names to results. Returns None if the imager could not be created.
         """
-        np.random.seed(None)
         if not self.generators_status("imager"):
             self.build(modules="imager")
             if self.imager is None:
