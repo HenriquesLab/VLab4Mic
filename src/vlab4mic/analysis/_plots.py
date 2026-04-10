@@ -58,6 +58,7 @@ def sns_heatmap_pivots(
         axes[n, 0].set_title(titles["category"] + ": " + cond + ". Mean " + metric_n)
         #axes[n, 0].yaxis.set_major_formatter(FormatStrFormatter(decimals))
         #axes[n, 0].xaxis.set_major_formatter(FormatStrFormatter(decimals))
+        axes[n, 0].invert_yaxis()
         # std
         sns.heatmap(
             df_pivots[cond][1],
@@ -72,6 +73,7 @@ def sns_heatmap_pivots(
         axes[n, 1].set_title(
             titles["category"] + ": " + cond + ". Std Dev " + metric_n
         )
+        axes[n, 1].invert_yaxis()
         #axes[n, 1].yaxis.set_major_formatter(FormatStrFormatter(decimals))
         #axes[n, 1].xaxis.set_major_formatter(FormatStrFormatter(decimals))
 
