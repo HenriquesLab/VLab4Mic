@@ -1400,7 +1400,6 @@ class LabeledInstance:
             axis_object.set_axis_off()
         else:
             fontsize = 5
-            axis_object.set_zlim(zlim[0], zlim[1])
             # axis_object.set_zticks(np.arange(-200, 200, 200))
             axis_object.set_xlabel("X (Angstroms)", size=fontsize)
             axis_object.set_ylabel("Y (Angstroms)", size=fontsize)
