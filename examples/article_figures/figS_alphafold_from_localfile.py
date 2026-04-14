@@ -40,7 +40,7 @@ images , noiseless =  experiment.run_simulation()
 
 # Plotting figure with 3 panels
 # panel 1
-fig = plt.figure(figsize=[10,10])
+fig = plt.figure(figsize=[20,20])
 ax = fig.add_subplot(131, projection="3d")
 experiment.structure.show_target_labels(
     axis_object=ax,
@@ -48,7 +48,8 @@ experiment.structure.show_target_labels(
     assembly_fraction=0.1,
     atoms_alpha=0.1,
     show_axis=False,
-    axesoff=False
+    axesoff=False,
+    reference_point=False
 )
 ax.set_title('Target sites on structure \n' + f' ({structure_name})')
 ax.set_ylabel('Angstroms')
@@ -76,6 +77,6 @@ scalebar = AnchoredSizeBar(ax.transData,
                            frameon=False,
                            size_vertical=5)
 ax.add_artist(scalebar)
-filename = os.path.join(experiment.output_directory, 'vlab4mic_alphafold_from_local_file.png')
+filename = os.path.join(experiment.output_directory, 'vlab4mic_alphafold_from_local_file.pdf')
 fig.savefig(filename, dpi=300, bbox_inches='tight')
 plt.close()
