@@ -23,7 +23,9 @@ detector:
       mean: 0
       standard_dev: 0
     ADU: 1
-  
+emitters:
+  precision: 5
+  nlocalisations: 5
   
     # no value is only poisson noise. Expected order of values
     # p (binomial), mean, standard deviation (gaussian), gain (gamma), mean, standard deviation (abaselevel), adu (conversion factor) 
