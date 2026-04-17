@@ -359,6 +359,7 @@ class Imager:
         detector: dict,
         emission="blinking",
         modality: str = "modality1",
+        emitters: dict = None,
         prints=False,
         **kwargs,
     ):
@@ -387,10 +388,25 @@ class Imager:
         self._set_modality_emission(modality, emission)
         self._set_modality_psf(modality, **psf_params, prints=prints)
         self._set_modality_detector(modality, **detector)
+        if emitters is not None:
+            self._set_emitter_params(modality, **emitters)
+        else:
+            self._set_emitter_params(modality)
+        
+    def _set_emitter_params(self, modality:str, precision = None, nlocalisations = None):
+        self.modalities[modality]["emitters"] = dict()
+        if precision is not None:
+            self.modalities[modality]["emitters"]["precision"] = precision
+        else: 
+            self.modalities[modality]["emitters"]["precision"] = None
+        if nlocalisations is not None:
+            self.modalities[modality]["emitters"]["nlocalisations"] = nlocalisations
+        else: 
+            self.modalities[modality]["emitters"]["nlocalisations"] = None
 
     def _create_modality(self, modality: str):
         self.modalities[modality] = dict(
-            filters=None, detector=None, psf=None, emission=None
+            filters=None, detector=None, psf=None, emission=None, emitters=None
         )
 
     def _set_modality_channels(self, modality, fluorophores_in_channel, prints=False):
