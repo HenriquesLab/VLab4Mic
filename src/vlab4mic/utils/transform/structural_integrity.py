@@ -177,6 +177,7 @@ def xmersubset_byclustering(
     upper_bound = np.floor(n_epitopes_to_keep + (total_number_epitopes*0.05))
     expected_number_reached = False
     i = 0
+    epitopes_ids = None
     while i < 50: # maximum number of trials before returning empty selection
         # sample starting point each time if no fracture was specified
         if fracture == -24:
@@ -209,17 +210,16 @@ def xmersubset_byclustering(
         if sum(epitopes_ids) >= lower_bound and sum(epitopes_ids) <= upper_bound:
             expected_number_reached = True
             break
-        i+=1
-    final_epitopes_ids = epitopes_ids
-    subset = epitopes_coords[final_epitopes_ids,]
+        i+=1     
     if return_ids:
         if expected_number_reached:
-            return final_epitopes_ids
+            return epitopes_ids
         else:
             default_false = [False] * epitopes_coords.shape[0]
             return default_false
     else:
         if expected_number_reached:
+            subset = epitopes_coords[epitopes_ids,]
             return subset
         else:
             return np.array([])
