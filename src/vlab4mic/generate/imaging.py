@@ -671,7 +671,6 @@ class Imager:
                                 array3d=field_data["field_coordinates"],
                                 loc_precision_nm=loc_precision_nm,
                                 av_loc_per_emitter=av_loc_per_emitter,
-                                z_pos=0
                             )
                             n_emitters = localisations.shape[0]
                             photons_frames, emission_notes = self.calculate_photons_per_frame(
