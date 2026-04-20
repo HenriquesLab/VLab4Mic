@@ -394,12 +394,16 @@ class Imager:
         else:
             self._set_emitter_params(modality)
         
-    def _set_emitter_params(self, modality:str, precision = None, nlocalisations = None):
+    def _set_emitter_params(self, modality:str, lateral_precision = None, axial_precision = None, nlocalisations = None):
         self.modalities[modality]["emitters"] = dict()
-        if precision is not None:
-            self.modalities[modality]["emitters"]["precision"] = precision
+        if lateral_precision is not None:
+            self.modalities[modality]["emitters"]["lateral_precision"] = lateral_precision
         else: 
-            self.modalities[modality]["emitters"]["precision"] = None
+            self.modalities[modality]["emitters"]["lateral_precision"] = None
+        if axial_precision is not None:
+            self.modalities[modality]["emitters"]["axial_precision"] = axial_precision
+        else: 
+            self.modalities[modality]["emitters"]["axial_precision"] = None
         if nlocalisations is not None:
             self.modalities[modality]["emitters"]["nlocalisations"] = nlocalisations
         else: 
@@ -664,12 +668,14 @@ class Imager:
                             modality, emitters, photons_frames
                         )
                         # check for parameters for localisaiton generation
-                        loc_precision_nm = self.modalities[modality]["emitters"]["precision"]
+                        loc_precision_xy_nm = self.modalities[modality]["emitters"]["lateral_precision"]
+                        loc_precision_z_nm = self.modalities[modality]["emitters"]["axial_precision"]
                         av_loc_per_emitter = self.modalities[modality]["emitters"]["nlocalisations"]
-                        if loc_precision_nm is not None and av_loc_per_emitter is not None:
+                        if loc_precision_xy_nm is not None and av_loc_per_emitter is not None:
                             localisations = points_transforms.generate_localisations_with_noise(
                                 array3d=field_data["field_coordinates"],
-                                loc_precision_nm=loc_precision_nm,
+                                loc_precision_xy_nm=loc_precision_xy_nm,
+                                loc_precision_z_nm=loc_precision_z_nm,
                                 av_loc_per_emitter=av_loc_per_emitter,
                             )
                             n_emitters = localisations.shape[0]

@@ -208,15 +208,15 @@ def apply_euler_rotation(vector, phi=0, theta=0, psi=0, order = "zyx", reset_ori
     return new_vector
 
 
-def generate_localisations_with_noise(array3d, loc_precision_nm, av_loc_per_emitter=1, z_pos=0):
+def generate_localisations_with_noise(array3d, loc_precision_xy_nm, loc_precision_z_nm, av_loc_per_emitter=1, z_pos=0):
     locs_i_x_list = []
     locs_i_y_list = []
     locs_i_z_list = []
     for emitter in range(array3d.shape[0]):
         n_locs = np.random.poisson(lam=av_loc_per_emitter)
-        locs_i_x = np.random.normal(loc=array3d[emitter][0], scale=loc_precision_nm, size=n_locs)
-        locs_i_y = np.random.normal(loc=array3d[emitter][1], scale=loc_precision_nm, size=n_locs)
-        locs_i_z = np.random.normal(loc=array3d[emitter][2], scale=loc_precision_nm, size=n_locs)
+        locs_i_x = np.random.normal(loc=array3d[emitter][0], scale=loc_precision_xy_nm, size=n_locs)
+        locs_i_y = np.random.normal(loc=array3d[emitter][1], scale=loc_precision_xy_nm, size=n_locs)
+        locs_i_z = np.random.normal(loc=array3d[emitter][2], scale=loc_precision_z_nm, size=n_locs)
         locs_i_x_list.extend(locs_i_x.tolist())
         locs_i_y_list.extend(locs_i_y.tolist())
         locs_i_z_list.extend(locs_i_z.tolist())

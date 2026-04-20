@@ -24,7 +24,8 @@ detector:
       standard_dev: 0
     ADU: 1
 emitters:
-  precision: 5
+  lateral_precision: 5
+  axial_precision: 5
   nlocalisations: 5
   
     # no value is only poisson noise. Expected order of values

@@ -280,7 +280,8 @@ class ExperimentParametrisation:
         psf_voxel_nm: int = None,
         depth_of_field_nm: int = None,
         remove=False,
-        loc_precision = None,
+        lateral_precision = None,
+        axial_precision = None,
         nlocalisations = None,
         simulate_localistations = False,
         **kwargs,
@@ -359,14 +360,18 @@ class ExperimentParametrisation:
                 ] = depth
                 changes = True
             if simulate_localistations:
-                if loc_precision is not None:
-                    self.imaging_modalities[modality_name]["emitters"]["precision"] = loc_precision
+                if lateral_precision is not None:
+                    self.imaging_modalities[modality_name]["emitters"]["lateral_precision"] = lateral_precision
+                    changes = True
+                if axial_precision is not None:
+                    self.imaging_modalities[modality_name]["emitters"]["axial_precision"] = axial_precision
                     changes = True
                 if nlocalisations is not None:
                     self.imaging_modalities[modality_name]["emitters"]["nlocalisations"] = nlocalisations
                     changes = True
             else:
-                self.imaging_modalities[modality_name]["emitters"]["precision"] = None
+                self.imaging_modalities[modality_name]["emitters"]["lateral_precision"] = None
+                self.imaging_modalities[modality_name]["emitters"]["axial_precision"] = None
                 self.imaging_modalities[modality_name]["emitters"]["nlocalisations"] = None
                 changes = True
             if changes:
