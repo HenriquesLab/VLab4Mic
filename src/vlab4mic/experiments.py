@@ -292,7 +292,7 @@ class ExperimentParametrisation:
         lateral_precision = None,
         axial_precision = None,
         nlocalisations = None,
-        simulate_localistations = False,
+        simulate_localistations = True,
         **kwargs,
     ):
         """
