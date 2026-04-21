@@ -16,7 +16,7 @@ def test_get_raw_volume():
     images_volumes, beads, img_noiseless, b_noiseless = testexperiment.imager.generate_imaging(
         modality="SMLM", convolution_type="raw_volume", exp_time=0.001
     )
-    assert images_volumes["raw_volume"][0].shape == (200, 200, 150)
+    assert images_volumes["raw_volume"][0].shape == (500, 500, 150)
 
 
 def test_multi_imaging_system():
