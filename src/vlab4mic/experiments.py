@@ -273,6 +273,12 @@ class ExperimentParametrisation:
             self.local_modalities_parameters[modality_name] = copy.deepcopy(
                 self.imaging_modalities[modality_name]
             )
+        keys = list(self.imaging_modalities[modality_name].keys())
+        if "emitters" not in keys or  self.imaging_modalities[modality_name]["emitters"] is None:
+            self.imaging_modalities[modality_name]["emitters"] = dict()
+            self.imaging_modalities[modality_name]["emitters"]["lateral_precision"] = None
+            self.imaging_modalities[modality_name]["emitters"]["axial_precision"] = None
+            self.imaging_modalities[modality_name]["emitters"]["nlocalisations"] = None
 
     def update_modality(
         self,
