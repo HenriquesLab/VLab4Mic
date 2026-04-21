@@ -1113,6 +1113,7 @@ class ExperimentParametrisation:
         if as_primary:
             print("Adding probe as primary linker")
             probe_configuration["as_linker"] = True
+            probe_configuration["conjugation_sites"]["DoL"] = None
         else:
             probe_configuration["as_linker"] = False
         if probe_steric_hindrance is not None:
