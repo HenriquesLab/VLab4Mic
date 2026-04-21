@@ -316,7 +316,7 @@ for i, mod in enumerate(modalities):
 axs[0,0].set_ylabel("Thevathasan, et al. 2019", fontsize=24)
 axs[1,0].set_ylabel("VLab4Mic simulation", fontsize=24)
 plt.tight_layout(h_pad=0, w_pad=3)
-
-filename = os.path.join(my_experiment.output_directory, 'vlab4mic_fig3F_url.png')
+name = my_experiment.date_as_string + 'vlab4mic_fig3F_url.png'
+filename = os.path.join(my_experiment.output_directory, name)
 fig.savefig(filename, dpi=300, bbox_inches='tight')
 plt.close()
