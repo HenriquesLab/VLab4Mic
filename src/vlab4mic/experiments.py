@@ -22,6 +22,7 @@ from vlab4mic.utils.io import yaml_functions
 from IPython.utils import io
 from pathlib import Path
 import sys
+from datetime import datetime
 
 IN_COLAB = "google.colab" in sys.modules
 if IN_COLAB:
@@ -180,6 +181,8 @@ class ExperimentParametrisation:
         self.modality_noise_images = dict()
         if self.random_seed is not None:
             np.random.seed(self.random_seed)
+        self.now = datetime.now()  # dd/mm/YY H:M:S
+        self.date_as_string = self.now.strftime("%Y%m%d") + "_"
 
     def select_structure(self, structure_id="1XI5", build=True, structure_path:str = None):
         """
