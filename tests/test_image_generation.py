@@ -52,3 +52,17 @@ def test_imager_optional_methods():
     testexperiment.imager.set_roi_position(x=0.1, y=0.2)
     testexperiment.imager.set_roi_sizes(x=2, y=2)
     testexperiment.imager.recenter_roi()
+
+
+def test_smlm_with_locs():
+    images, noisless, testexperiment = experiments.image_vsample(
+        multimodal=["SMLM",],
+        run_simulation=True)
+    assert testexperiment.imager.modalities["SMLM"]["emitters"]["lateral_precision"] is not None
+    assert testexperiment.imager.modalities["SMLM"]["emitters"]["axial_precision"] is not None
+    assert testexperiment.imager.modalities["SMLM"]["emitters"]["nlocalisations"] is not None
+    testexperiment.update_modality(modality_name="SMLM", simulate_localistations=False)
+    testexperiment.build(modules=["imager"])
+    assert testexperiment.imager.modalities["SMLM"]["emitters"]["lateral_precision"] is None
+    assert testexperiment.imager.modalities["SMLM"]["emitters"]["axial_precision"] is None
+    assert testexperiment.imager.modalities["SMLM"]["emitters"]["nlocalisations"] is None
