@@ -17,6 +17,7 @@ from ..utils.io.tiff import write_tif
 from ..utils.data_format.visualisation import format_coordinates
 from ..utils.visualisation.matplotlib_plots import add_ax_scatter
 from ..utils.transform.noise import add_image_noise
+from ..utils.transform import points_transforms
 
 
 class Imager:
@@ -359,6 +360,7 @@ class Imager:
         detector: dict,
         emission="blinking",
         modality: str = "modality1",
+        emitters: dict = None,
         prints=False,
         **kwargs,
     ):
@@ -387,10 +389,29 @@ class Imager:
         self._set_modality_emission(modality, emission)
         self._set_modality_psf(modality, **psf_params, prints=prints)
         self._set_modality_detector(modality, **detector)
+        if emitters is not None:
+            self._set_emitter_params(modality, **emitters)
+        else:
+            self._set_emitter_params(modality)
+        
+    def _set_emitter_params(self, modality:str, lateral_precision = None, axial_precision = None, nlocalisations = None):
+        self.modalities[modality]["emitters"] = dict()
+        if lateral_precision is not None:
+            self.modalities[modality]["emitters"]["lateral_precision"] = lateral_precision
+        else: 
+            self.modalities[modality]["emitters"]["lateral_precision"] = None
+        if axial_precision is not None:
+            self.modalities[modality]["emitters"]["axial_precision"] = axial_precision
+        else: 
+            self.modalities[modality]["emitters"]["axial_precision"] = None
+        if nlocalisations is not None:
+            self.modalities[modality]["emitters"]["nlocalisations"] = nlocalisations
+        else: 
+            self.modalities[modality]["emitters"]["nlocalisations"] = None
 
     def _create_modality(self, modality: str):
         self.modalities[modality] = dict(
-            filters=None, detector=None, psf=None, emission=None
+            filters=None, detector=None, psf=None, emission=None, emitters=None
         )
 
     def _set_modality_channels(self, modality, fluorophores_in_channel, prints=False):
@@ -646,6 +667,23 @@ class Imager:
                         field_data, psf_data = self._homogenise_scales4convolution_modality(
                             modality, emitters, photons_frames
                         )
+                        # check for parameters for localisaiton generation
+                        loc_precision_xy_nm = self.modalities[modality]["emitters"]["lateral_precision"]
+                        loc_precision_z_nm = self.modalities[modality]["emitters"]["axial_precision"]
+                        av_loc_per_emitter = self.modalities[modality]["emitters"]["nlocalisations"]
+                        if loc_precision_xy_nm is not None and av_loc_per_emitter is not None:
+                            localisations = points_transforms.generate_localisations_with_noise(
+                                array3d=field_data["field_coordinates"],
+                                loc_precision_xy_nm=loc_precision_xy_nm,
+                                loc_precision_z_nm=loc_precision_z_nm,
+                                av_loc_per_emitter=av_loc_per_emitter,
+                            )
+                            n_emitters = localisations.shape[0]
+                            photons_frames, emission_notes = self.calculate_photons_per_frame(
+                                modality, fluo, n_emitters, nframes, exp_time, equal=100
+                            )
+                            field_data["field_coordinates"] = localisations
+                            field_data["photons_frames"] = photons_frames
                     # write emitter positions after being placed in the FOV
                     gt_notes = writing_notes_fluo + "_usedForImaging"
                     emitters_to_export = field_data["field_coordinates"]
@@ -978,7 +1016,7 @@ class Imager:
         return copy.copy(emitters_in_ROI)
 
     def calculate_photons_per_frame(
-        self, modality, fluo, n_emitters, nframes, exp_time=1, **kwargs
+        self, modality, fluo, n_emitters, nframes, exp_time=1, equal=None, **kwargs
     ):
         """
         Calculate the number of photons per frame for emitters.
@@ -1019,7 +1057,11 @@ class Imager:
                 )
                 emission_notes = dictionary2string(kinetics)
             else: #if emission == "constant":
-                photons_per_second = self.fluorophore_params[fluo]["photons_per_second"]
+                if equal is not None:
+                    photons_per_second = equal,
+                    exp_time = 1
+                else:
+                    photons_per_second = self.fluorophore_params[fluo]["photons_per_second"]
                 photons_per_frame = exp_time * photons_per_second
                 print(f"Average number of photons per frame: {photons_per_frame}")
                 photon_frames = self._generate_constant_emission_modality(

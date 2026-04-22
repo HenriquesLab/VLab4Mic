@@ -22,6 +22,7 @@ from vlab4mic.utils.io import yaml_functions
 from IPython.utils import io
 from pathlib import Path
 import sys
+from datetime import datetime
 
 IN_COLAB = "google.colab" in sys.modules
 if IN_COLAB:
@@ -180,6 +181,8 @@ class ExperimentParametrisation:
         self.modality_noise_images = dict()
         if self.random_seed is not None:
             np.random.seed(self.random_seed)
+        self.now = datetime.now()  # dd/mm/YY H:M:S
+        self.date_as_string = self.now.strftime("%Y%m%d") + "_"
 
     def select_structure(self, structure_id="1XI5", build=True, structure_path:str = None):
         """
@@ -270,6 +273,12 @@ class ExperimentParametrisation:
             self.local_modalities_parameters[modality_name] = copy.deepcopy(
                 self.imaging_modalities[modality_name]
             )
+        keys = list(self.imaging_modalities[modality_name].keys())
+        if "emitters" not in keys or  self.imaging_modalities[modality_name]["emitters"] is None:
+            self.imaging_modalities[modality_name]["emitters"] = dict()
+            self.imaging_modalities[modality_name]["emitters"]["lateral_precision"] = None
+            self.imaging_modalities[modality_name]["emitters"]["axial_precision"] = None
+            self.imaging_modalities[modality_name]["emitters"]["nlocalisations"] = None
 
     def update_modality(
         self,
@@ -280,6 +289,10 @@ class ExperimentParametrisation:
         psf_voxel_nm: int = None,
         depth_of_field_nm: int = None,
         remove=False,
+        lateral_precision = None,
+        axial_precision = None,
+        nlocalisations = None,
+        simulate_localistations = True,
         **kwargs,
     ):
         """
@@ -354,6 +367,21 @@ class ExperimentParametrisation:
                 self.imaging_modalities[modality_name]["psf_params"][
                     "depth"
                 ] = depth
+                changes = True
+            if simulate_localistations:
+                if lateral_precision is not None:
+                    self.imaging_modalities[modality_name]["emitters"]["lateral_precision"] = lateral_precision
+                    changes = True
+                if axial_precision is not None:
+                    self.imaging_modalities[modality_name]["emitters"]["axial_precision"] = axial_precision
+                    changes = True
+                if nlocalisations is not None:
+                    self.imaging_modalities[modality_name]["emitters"]["nlocalisations"] = nlocalisations
+                    changes = True
+            else:
+                self.imaging_modalities[modality_name]["emitters"]["lateral_precision"] = None
+                self.imaging_modalities[modality_name]["emitters"]["axial_precision"] = None
+                self.imaging_modalities[modality_name]["emitters"]["nlocalisations"] = None
                 changes = True
             if changes:
                 self.imager.set_imaging_modality(
@@ -1085,6 +1113,7 @@ class ExperimentParametrisation:
         if as_primary:
             print("Adding probe as primary linker")
             probe_configuration["as_linker"] = True
+            probe_configuration["conjugation_sites"]["DoL"] = None
         else:
             probe_configuration["as_linker"] = False
         if probe_steric_hindrance is not None:

@@ -999,6 +999,7 @@ class LabeledInstance:
         atoms_plotsize=1,
         atoms_plotalpha=1,
         use_dol=False,
+        axis_object=None,
         **kwargs,
     ):
         """
@@ -1031,8 +1032,13 @@ class LabeledInstance:
         if probe_name is None:
             probe_name = list(self.labels.keys())[0]
             print(probe_name)
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection="3d")
+        if axis_object is None:
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection="3d")
+            return_plot = False
+        else:
+            ax = axis_object
+            return_plot = True
         # probe_plotting_params = self._get_label_plotting_params(probe_name)
         total_coordinates = copy.copy(self.labels[probe_name]["emitters"])
         total_number_coordinates = total_coordinates.shape[0]
@@ -1123,7 +1129,7 @@ class LabeledInstance:
         if return_plot:
             return ax
         else:
-            fig.show()
+            plt.show()
 
     def show_instance(
         self,
