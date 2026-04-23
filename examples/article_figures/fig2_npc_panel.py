@@ -35,7 +35,7 @@ def read_image_from_url(url):
     # Check that request succeeded
     return tif.imread(io.BytesIO(resp.content))
 
-def render_from_localisations(localisations, crop_size_nm = 3000, centerx = None, centery = None,precision_nm=None, random_seed=None):
+def render_from_localisations(localisations, crop_size_nm = 3000, centerx = None, centery = None,precision_nm=None, random_seed=None, pixelsize=10, voxelsize=5):
     if precision_nm is None:
         precision_nm = np.mean(localisations.locprecnm)
     minx = np.min(localisations.xnm)
@@ -84,8 +84,9 @@ def render_from_localisations(localisations, crop_size_nm = 3000, centerx = None
         sample_dimensions=(crop_size_nm, crop_size_nm, 100),
         particle_positions=list_of_positions
     )
+    experiment.add_modality("SMLM", modality_template="SMLM")
     experiment.build(modules=["coordinate_field", "imager",])
-    experiment.update_modality(modality_name="SMLM",lateral_resolution_nm = precision_nm)
+    experiment.update_modality(modality_name="SMLM",lateral_resolution_nm = precision_nm, simulate_localistations=False, pixelsize_nm=pixelsize, psf_voxel_nm=voxelsize)
     experiment.set_modality_acq(modality_name="SMLM", exp_time=0.01)
     #images = {}
     images, noiseless = experiment.run_simulation(modality="SMLM")
@@ -255,7 +256,9 @@ list_of_positions, rendered_smlm, smlm_experiment = render_from_localisations(
     crop_size_nm = FOV_nm,
     centery = yrange*0.6,
     centerx = xrange*0.5,
-    precision_nm=loc_prec
+    precision_nm=loc_prec,
+    pixelsize=smlm_pixelsize,
+    voxelsize=smlm_pixelsize
     )
 #my_experiment.set_virtualsample_params(
 #    random_rotations=True,
@@ -272,7 +275,14 @@ my_experiment.imager.modalities["SMLM"]["detector"]["noise_model"]["binomial"]["
 my_experiment.imager.modalities["SMLM"]["detector"]["noise_model"]["baselevel"]["bl"] = 1
 my_experiment.imager.modalities["SMLM"]["detector"]["noise_model"]["gaussian"]["sigma"] = 0
 # Run simulation
-my_experiment.update_modality(modality_name="SMLM", lateral_resolution_nm = loc_prec)
+my_experiment.update_modality(modality_name="SMLM",
+                              lateral_resolution_nm = loc_prec,
+                              pixelsize_nm=smlm_pixelsize,
+                              psf_voxel_nm=smlm_pixelsize,
+                              axial_precision=2,
+                              simulate_localistations=False,
+                              lateral_precision=2,
+                              nlocalisations=10)
 my_experiment.set_modality_acq(modality_name="SMLM", exp_time=0.01)
 smlm_images, noiselsess = my_experiment.run_simulation(modality="SMLM")
 sim_vs_exp["SMLM"] = (smlm_images["SMLM"]["ch0"][0], SMLM_experimental_img_patch)
