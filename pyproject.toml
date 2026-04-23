@@ -39,7 +39,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-all = ["vlab4mic[dev,test]"]
+all = ["vlab4mic[dev,test,gpu]"]
 dev = [
     "pre-commit>=3.7.0",
     "ruff>=0.4.3",
@@ -53,6 +53,9 @@ test = [
     "pytest-cov>=5.0.0",
     "nbmake>=1.5.3",
     "mypy>=1.10.0"
+]
+gpu = [
+    "pyopencl>=2022.3.1"
 ]
 
 [tool.setuptools]
