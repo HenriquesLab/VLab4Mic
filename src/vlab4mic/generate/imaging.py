@@ -678,12 +678,26 @@ class Imager:
                                 loc_precision_z_nm=loc_precision_z_nm,
                                 av_loc_per_emitter=av_loc_per_emitter,
                             )
-                            n_emitters = localisations.shape[0]
-                            photons_frames, emission_notes = self.calculate_photons_per_frame(
-                                modality, fluo, n_emitters, nframes, exp_time, equal=100
-                            )
-                            field_data["field_coordinates"] = localisations
-                            field_data["photons_frames"] = photons_frames
+                            if localisations.shape[0] > 0:
+                                n_emitters = localisations.shape[0]
+                                photons_frames, emission_notes = self.calculate_photons_per_frame(
+                                    modality, fluo, n_emitters, nframes, exp_time, equal=100
+                                )
+                                field_data["field_coordinates"] = localisations
+                                field_data["photons_frames"] = photons_frames
+                            else:
+                                no_emitters = True
+                                # if no emitter is in range, an image with noise should be generated
+                                emitters = np.array(
+                                    [
+                                        [0, 0, 0],
+                                    ]
+                                )
+                                photons_frames = np.repeat(0, nframes).reshape((1, nframes))
+                                field_data, psf_data = self._homogenise_scales4convolution_modality(
+                                    modality, emitters, photons_frames
+                                )
+                                
                     # write emitter positions after being placed in the FOV
                     gt_notes = writing_notes_fluo + "_usedForImaging"
                     emitters_to_export = field_data["field_coordinates"]
