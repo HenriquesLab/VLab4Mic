@@ -325,6 +325,15 @@ class ExperimentParametrisation:
             self.selected_mods.pop(modality_name, None)
         else:
             changes = False
+            if psf_voxel_nm is not None:
+                self.imaging_modalities[modality_name]["psf_params"][
+                    "voxelsize"
+                ] = [
+                    psf_voxel_nm,
+                    psf_voxel_nm,
+                    psf_voxel_nm,
+                ]
+                changes = True
             if pixelsize_nm is not None:
                 self.imaging_modalities[modality_name]["detector"][
                     "pixelsize"
@@ -348,15 +357,6 @@ class ExperimentParametrisation:
                 self.imaging_modalities[modality_name]["psf_params"][
                     "std_devs"
                 ][2] = (axial_resolution_nm / voxel_size)
-                changes = True
-            if psf_voxel_nm is not None:
-                self.imaging_modalities[modality_name]["psf_params"][
-                    "voxelsize"
-                ] = [
-                    psf_voxel_nm,
-                    psf_voxel_nm,
-                    psf_voxel_nm,
-                ]
                 changes = True
             if depth_of_field_nm is not None:
                 depth_in_slices = None
