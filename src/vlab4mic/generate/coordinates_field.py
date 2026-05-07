@@ -858,8 +858,8 @@ class Field:
         if axesoff:
             ax.set_axis_off()
         else:
-            ax.set_xlabel("X (nm)")
-            ax.set_ylabel("Y (nm)")
+            ax.set_xlabel("Y (nm)")
+            ax.set_ylabel("X (nm)")
             ax.set_zlabel("Z (nm)")
         if axis_object is not None:
             return ax
