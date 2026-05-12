@@ -37,19 +37,6 @@ for i, experiment_name in enumerate(experiment_examples.keys()):
         reference_point = False,
         with_normals=False,
         )
-    if experiment_examples[experiment_name].structure.assymetric_defined:
-        asymmetric_unit = experiment_examples[experiment_name].structure.atoms_in_file
-        subset_of_asymmetric = arrays.sample_array(asymmetric_unit, fraction=fraction)
-        ax.scatter(subset_of_asymmetric[:,0], subset_of_asymmetric[:,1], subset_of_asymmetric[:,2], s=10, alpha=1)
-        title = "Structure: " + experiment_name 
-        title += "\n Highlighting Asymmetric Unit"
-        ax.set_title(title)
-    else:
-        chain_atoms = experiment_examples[experiment_name].structure._get_atom_res_chain(chainnames=["dm",], resnames=["LYS", "ARG"], atomnames=["CA",])
-        ax.scatter(chain_atoms[:,0], chain_atoms[:,1], chain_atoms[:,2], s=30, alpha=1, c="orange")
-        title = "Structure: " + experiment_name 
-        title += "\n  Highlighting a Protein"
-        ax.set_title(title)
     
 plt.tight_layout()
 filename = experiment_examples["HIV"].date_as_string + 'figS_structure_parsing_asymmetricUnits.png'
@@ -72,6 +59,7 @@ for i, experiment_name in enumerate(experiment_examples.keys()):
         assembly_fraction = fraction,
         view_init=[90,0,0],
         target_size = 20,
+        target_plotcolour="#377eb8",
         atoms_size = 10,
         atoms_alpha = 0.02,
         reference_point = False,
@@ -96,6 +84,7 @@ experiment_examples["NPC"].add_probe(
     probe_target_type="Sequence", 
     probe_target_value="GYEIQ")
 experiment_examples["NPC"].build(modules=["particle"])
+experiment_examples["NPC"].structure.plotting_params["NPC_Nup96_Cterminal_direct"]["plotcolour"] = "#377eb8"
 experiment_examples["NPC"].structure.plotting_params["NPC_Nup107_Cterminal_direct"]["plotcolour"] = "#ff7f00"
 
 fig = plt.figure(figsize=[20,10])
@@ -151,6 +140,7 @@ for i, experiment_name in enumerate(experiment_examples.keys()):
         show_axis=False, 
         assembly_fraction = fraction,
         view_init=[90,0,0],
+        target_plotcolour="#377eb8",
         target_size = 1,
         atoms_size = 0,
         atoms_alpha = 0.01,
