@@ -1044,7 +1044,6 @@ class LabeledInstance:
         total_number_coordinates = total_coordinates.shape[0]
         center = np.mean(total_coordinates, axis=0)
         dol = self.labels[probe_name]["conjugation_sites"]["DoL"]
-        int_dol = np.random.poisson(lam=dol)
         probe_emitters = total_coordinates[2:, :].reshape(
                 total_number_coordinates - 2, 3
             )
