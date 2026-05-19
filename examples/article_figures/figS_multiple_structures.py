@@ -8,7 +8,7 @@ from vlab4mic.analysis.metrics import zoom_img
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 
 random_seed = 24
-modalities = ["STED", "SMLM",]
+modalities = ["SMLM",]
 target_colour="#01579D"
 
 
@@ -83,14 +83,14 @@ experiment1.particle.transform_translate(np.array([0,0,0]))
 experiment1.particle.gen_axis_plot(axesoff=hide_axes, with_sources=True, axis_object=ax_general,target_colour=target_colour, source_plotsize=5, emitter_plotsize=5, source_plotmarker="o")
 
 experiment4.particle.transform_translate(np.array([0,1400,0]))
-experiment4.particle.gen_axis_plot(axesoff=hide_axes,with_sources=True, axis_object=ax_general,target_colour=target_colour, source_plotsize=2, emitter_plotsize=0.5, source_plotalpha=1, source_plotmarker="o")
+experiment4.particle.gen_axis_plot(axesoff=hide_axes,with_sources=True, axis_object=ax_general,target_colour=target_colour, source_plotsize=2, emitter_plotsize=5, source_plotalpha=1, source_plotmarker="o")
 
 experiment2.particle.transform_translate(np.array([0,2600,0]))
 
 experiment2.particle.gen_axis_plot(axesoff=hide_axes, with_sources=True, axis_object=ax_general,target_colour=target_colour, source_plotsize=0.5, emitter_plotsize=10, source_plotalpha=0.05, source_plotmarker="o")
 
 experiment3.particle.transform_translate(np.array([0,3800,0]))
-experiment3.particle.gen_axis_plot(axesoff=hide_axes, with_sources=True, axis_object=ax_general,target_colour=target_colour, source_plotsize=1, emitter_plotsize=0.5, source_plotalpha=1, source_plotmarker="o")
+experiment3.particle.gen_axis_plot(axesoff=hide_axes, with_sources=True, axis_object=ax_general,target_colour=target_colour, source_plotsize=1, emitter_plotsize=2, source_plotalpha=1, source_plotmarker="o")
 ax_general.set_zlim3d(bottom=-300, top=1000)
 ax_general.set_ylim3d(bottom=-500, top=4500)
 ax_general.set_xlim3d(left=0, right=1000)
@@ -151,6 +151,7 @@ x0,x1 = figx*0, figx*0.67
 y0,y1 = figy*0.6, figy*0.89
 
 bbox = Bbox([[x0,y0],[x1,y1]])
-filename = experiment1.date_as_string + 'vlab4mic_fig2_F.png'
+
+filename = experiment1.date_as_string + 'figS_multiple_structures_labelled.png'
 filename2 = os.path.join(experiment1.output_directory, filename)
 fig.savefig(filename2,dpi=300, bbox_inches=bbox)
