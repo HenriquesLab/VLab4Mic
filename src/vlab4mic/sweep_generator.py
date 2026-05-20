@@ -370,7 +370,7 @@ class sweep_generator:
         )
 
     def load_reference_image(
-        self, ref_image_path=None, ref_pixelsize=None, ref_image_mask_path = None, override=True, reference_image=None, **kwargs
+        self, ref_image_path=None, ref_pixelsize=None, ref_image_mask_path = None, override=True, reference_image=None, reference_image_mask=None, **kwargs
     ):
         """
         Load a reference image from a specified path.
@@ -385,8 +385,10 @@ class sweep_generator:
             ref_image = tiff.imread(ref_image_path)
         else:
             override = False
-            ref_image = None    
-        if ref_image_mask_path is not None:
+            ref_image = None  
+        if reference_image_mask is not None:
+            ref_image_mask = reference_image_mask
+        elif ref_image_mask_path is not None:
             image_mask = tiff.imread(ref_image_mask_path)
             ref_image_mask = image_mask > 0
         else:
