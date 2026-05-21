@@ -11,7 +11,9 @@ help:
 	@echo "  pytest                     Run tests using pytest"
 	@echo "  mypy                       Run type-checking using mypy"
 	@echo "  mypy-types                 Install missing types using mypy"
-	@echo "  docs                       Generate documentation using pdoc"
+	@echo "  docs                       Build documentation site using MkDocs
+  docs-serve                 Serve documentation locally with live reload
+  docs-deploy                Deploy documentation to GitHub Pages"
 	@echo "  download-structures        Run supramolsim.download:download_suggested_structures"
 	@echo "  package                    Builds python package"
 
@@ -43,8 +45,13 @@ mypy-types:
 	mypy --install-types
 
 docs:
-	rm -rf docs
-	pdoc src/vlab4mic -o docs
+	uv run mkdocs build
+
+docs-serve:
+	uv run mkdocs serve
+
+docs-deploy:
+	uv run mkdocs gh-deploy --force
 
 download-structures:
 	download-structures

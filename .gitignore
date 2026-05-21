@@ -8,6 +8,7 @@ data/
 *.egg-info/
 .folder2md_logs/
 .claude/
+site/
 
 # Files
 .DS_Store

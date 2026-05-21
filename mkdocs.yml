@@ -1,0 +1,78 @@
+site_name: VLab4Mic
+site_description: A Virtual Laboratory for Microscopy — simulate fluorescence microscopy experiments before stepping into the microscope room.
+site_url: https://henriqueslab.github.io/VLab4Mic/
+repo_url: https://github.com/HenriquesLab/VLab4Mic
+repo_name: HenriquesLab/VLab4Mic
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  logo: assets/logo.png
+  favicon: assets/logo.png
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - toc.integrate
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.copy
+    - content.code.annotate
+
+plugins:
+  - search
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.details
+  - pymdownx.snippets:
+      base_path: ["."]
+  - admonition
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Notebooks: notebooks.md
+  - Python Usage: python-usage.md
+  - Methods: methods.md
+  - Parameter Reference: parameters.md
+  - Templates: templates.md
+  - Examples: examples.md
+  - Changelog: changelog.md
+
+extra_css:
+  - stylesheets/extra.css
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/HenriquesLab/VLab4Mic
+      name: GitHub
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/vlab4mic/
+      name: PyPI

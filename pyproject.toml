@@ -45,6 +45,7 @@ dev = [
     "ruff>=0.4.3",
     "gptrepo>=1.0.3",
     "pdoc>=12.3.1",
+    "mkdocs-material>=9.5",
     "build"
 ]
 test = [
@@ -72,6 +73,11 @@ source = ["src/vlab4mic"]
 omit = [
     "*__init__.py",
     "*__*.py"
+]
+
+[dependency-groups]
+dev = [
+    "mkdocs-material>=9.7.6",
 ]
 
 [project.scripts]
