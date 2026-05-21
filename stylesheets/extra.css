@@ -1,0 +1,36 @@
+/* ── Hero section ─────────────────────────────────────────── */
+.hero {
+  text-align: center;
+  padding: 3rem 1rem 3.5rem;
+}
+
+.hero h1 {
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.4rem;
+}
+
+.hero p {
+  font-size: 1.25rem;
+  color: var(--md-default-fg-color--light);
+  max-width: 640px;
+  margin: 0 auto 2rem;
+  line-height: 1.6;
+}
+
+/* ── Grid cards — tighter gap on home ─────────────────────── */
+.md-content .grid.cards > ul {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+/* ── Responsive hero text ─────────────────────────────────── */
+@media screen and (max-width: 600px) {
+  .hero h1 {
+    font-size: 2.2rem;
+  }
+
+  .hero p {
+    font-size: 1.05rem;
+  }
+}
