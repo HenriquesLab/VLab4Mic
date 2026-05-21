@@ -11,9 +11,9 @@ help:
 	@echo "  pytest                     Run tests using pytest"
 	@echo "  mypy                       Run type-checking using mypy"
 	@echo "  mypy-types                 Install missing types using mypy"
-	@echo "  docs                       Build documentation site using MkDocs
-  docs-serve                 Serve documentation locally with live reload
-  docs-deploy                Deploy documentation to GitHub Pages"
+	@echo "  docs                       Build documentation site using MkDocs"
+	@echo "  docs-serve                 Serve documentation locally with live reload"
+	@echo "  docs-deploy                Deploy documentation to GitHub Pages"
 	@echo "  download-structures        Run supramolsim.download:download_suggested_structures"
 	@echo "  package                    Builds python package"
 
