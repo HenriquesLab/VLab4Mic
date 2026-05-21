@@ -6,13 +6,13 @@ PSF:
     X: 8
     Y: 8
     Z: 8
-  voxelsize: 5
+  voxelsize: 2
 depth: 100  # in nanometers
 detector:
   FOV_size: # in nanometers. Default unless changed 
     X: 1000
     Y: 1000
-  pixelsize: 5 # in nanometers
+  pixelsize: 2 # in nanometers
   noise: 
     binomial: 1
     gaussian:
@@ -23,7 +23,10 @@ detector:
       mean: 0
       standard_dev: 0
     ADU: 1
-  
+emitters:
+  lateral_precision: 5
+  axial_precision: 5
+  nlocalisations: 5
   
     # no value is only poisson noise. Expected order of values
     # p (binomial), mean, standard deviation (gaussian), gain (gamma), mean, standard deviation (abaselevel), adu (conversion factor) 

@@ -252,6 +252,7 @@ def particle_from_structure(
                     print("Setting emitters from probe conjugation sites")
                     label_object.set_emitters(probe_emitter_sites)
                 label_params["coordinates"] = label_object.gen_labeling_entity()
+                label_params["structural_atoms"] = copy.deepcopy(probe.assembly_atoms)
                 print(label_params["coordinates"])
             
             structure.add_label(label_object)

@@ -92,7 +92,6 @@ def singlecluster_verification(
     xmer_subset = xmer_centers[xmerids_logical,]
     # print(xmer_subset, xmer_subset.shape)
     if xmer_subset.shape[0] == 0:
-        print("Verification step yield no result, try new parameters")
         return None
     # verify single cluster on this subset
     db_xmers = DBSCAN(eps=max_dist, min_samples=min_samples).fit(xmer_subset)
@@ -124,7 +123,7 @@ def xmersubset_byclustering(
     return_ids=False,
 ):
     """
-    Model Structureal structural_integrity by nearest neighbors of the emitters and clustering
+    Model structural integrity by nearest neighbors of the emitters and clustering
 
     """
     default_true = [True] * epitopes_coords.shape[0]
@@ -160,10 +159,6 @@ def xmersubset_byclustering(
     for i in total_labels_dictionary:
         center_xmers[i, :] = sums[i, :] / total_labels_dictionary[i]
     # define point of fracture randomly or defined
-    if fracture == -24:
-        xmer_fracture = np.random.choice(np.arange(0, n_xmer))
-    else:
-        xmer_fracture = fracture
     # Define a percentage of the total objects to be removed from the whole data
     percentageoff = deg_dissasembly
     # create a list with the first proposal of xmers ids to delete
@@ -175,37 +170,56 @@ def xmersubset_byclustering(
     # print(f"max num of elements on clusters: {neighbors}")
     upbound = xmer_neigh_distance  # in angstroms
 
-    fracture_coord = xmer_tree.data[xmer_fracture, :]
-    neighbors = xmer_tree.query_ball_point(fracture_coord, upbound)
     # print(f"neighbors for initial breakpoint: {len(neighbors)}")
-    todelete = xmer_ids_remove(
-        xmer_fracture, xmer_tree, percentageoff, len(neighbors), upbound
-    )
-    ## verifify that the resulting subset does not contain isolated entities
-    ids_validated = singlecluster_verification(
-        center_xmers,
-        xmer_ids_all,
-        todelete,
-        d_cluster_params["eps2"],
-        d_cluster_params["minsamples2"],
-    )
-    if ids_validated is None:
-        print("error while simulating structural_integrity, returning No emitters")
-        if return_ids:
+    total_number_epitopes = epitopes_coords.shape[0]
+    n_epitopes_to_keep = np.floor(total_number_epitopes * (1-percentageoff))
+    lower_bound = np.floor(n_epitopes_to_keep - (total_number_epitopes*0.05))
+    upper_bound = np.floor(n_epitopes_to_keep + (total_number_epitopes*0.05))
+    expected_number_reached = False
+    i = 0
+    epitopes_ids = None
+    while i < 50: # maximum number of trials before returning empty selection
+        # sample starting point each time if no fracture was specified
+        if fracture == -24:
+            xmer_fracture = np.random.choice(np.arange(0, n_xmer))
+        else:
+            xmer_fracture = fracture
+        fracture_coord = xmer_tree.data[xmer_fracture, :]
+        neighbors = xmer_tree.query_ball_point(fracture_coord, upbound)
+        todelete = xmer_ids_remove(
+            xmer_fracture, xmer_tree, percentageoff, len(neighbors), upbound
+        )
+        ## verifify that the resulting subset does not contain isolated entities
+        ids_validated = singlecluster_verification(
+            center_xmers,
+            xmer_ids_all,
+            todelete,
+            d_cluster_params["eps2"],
+            d_cluster_params["minsamples2"],
+        )
+        if ids_validated is None:
+            i+=1
+            continue
+        # ids_validated are the ids of the center of each xmer that we want to preserve
+        # we only need to then retrieve the appropriate indices of the epitopes themselves
+        # that correspond to these labels
+        epitopes_ids = notin_logical_list(
+            label_p_epitope, ids_validated
+        )  # this function retrieves false
+        # for each time a value ids_validated appears in label_p_epitope
+        if sum(epitopes_ids) >= lower_bound and sum(epitopes_ids) <= upper_bound:
+            expected_number_reached = True
+            break
+        i+=1     
+    if return_ids:
+        if expected_number_reached:
+            return epitopes_ids
+        else:
             default_false = [False] * epitopes_coords.shape[0]
             return default_false
+    else:
+        if expected_number_reached:
+            subset = epitopes_coords[epitopes_ids,]
+            return subset
         else:
             return np.array([])
-    # ids_validated are the ids of the center of each xmer that we want to preserve
-    # we only need to then retrieve the appropriate indices of the epitopes themselves
-    # that correspond to these labels
-    epitopes_ids = notin_logical_list(
-        label_p_epitope, ids_validated
-    )  # this function retrieves false
-    # for each time a value ids_validated appears in label_p_epitope
-    final_epitopes_ids = epitopes_ids
-    subset = epitopes_coords[final_epitopes_ids,]
-    if return_ids:
-        return final_epitopes_ids
-    else:
-        return subset

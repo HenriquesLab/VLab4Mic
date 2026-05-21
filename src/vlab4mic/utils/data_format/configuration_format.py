@@ -54,6 +54,10 @@ def compile_modality_parameters(
         noise_order=["binomial", "gamma", "baselevel", "gaussian", "conversion"],
         bits_pixel=32,
     )
+    if "emitters" in mod_pars.keys():
+        emitters = mod_pars["emitters"]
+    else:
+        emitters = None
     # get filters default should be one per channel
     if fluo_emissions is None:
         filter_dictionary = None
@@ -65,6 +69,7 @@ def compile_modality_parameters(
             detector=detector_params,
             emission=emission_behaviour,  # blinking or constant
             modality=modality_name,
+            emitters=emitters
         )
         return modality_params, mod_pars
     else:
@@ -98,6 +103,7 @@ def compile_modality_parameters(
             detector=detector_params,
             emission=emission_behaviour,  # blinking or constant
             modality=modality_name,
+            emitters=emitters
         )
         return modality_params, mod_pars
 

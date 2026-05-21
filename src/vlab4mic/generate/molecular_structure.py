@@ -1,5 +1,6 @@
 import numpy as np
 import yaml
+import copy
 import os
 from Bio.PDB import PDBParser, MMCIFParser, PPBuilder, CaPPBuilder
 from Bio.PDB.MMCIF2Dict import MMCIF2Dict
@@ -22,8 +23,9 @@ from ..utils.data_format.visualisation import (
 
 from ..utils.data_format.structural_format import builder_format  # verified
 
-from ..utils.transform.normals import normals_by_scaling  # verified
+from ..utils.transform.normals import normals_by_scaling, global_normal_direction  # verified
 from ..utils.sample import arrays
+
 
 class MolecularStructureParser:
     def __init__(self):
@@ -50,6 +52,9 @@ class MolecularStructureParser:
         self.plotting_params = dict()
         self.scale = 1e-10  # in meters
         self.axis = dict(pivot=None, direction=None)
+        self.normals_params = {}
+        self.normals_params["mode"] = "scaling"
+        self.normals_params["normal_vector"] = None
 
     def _clear_labels(self):
         """
@@ -156,11 +161,21 @@ class MolecularStructureParser:
         Generate a dictionary of protein names and associated chain/strand information.
         """
         protein_name = dict()
-        chain_name = self.CIFdictionary["_entity.pdbx_description"]
-        chain_number = self.CIFdictionary["_entity.id"]
-        strand_id = self.CIFdictionary["_entity_poly.pdbx_strand_id"]
-        for  name, number, strands in zip(chain_name, chain_number, strand_id):
-            protein_name[name] = {"number": number, "strand_id": strands}
+        try:
+            chain_name = self.CIFdictionary["_entity.pdbx_description"]
+        except:
+            chain_name = None
+        try:
+            chain_number = self.CIFdictionary["_entity.id"]
+        except:
+            chain_number = None
+        try:
+            strand_id = self.CIFdictionary["_entity_poly.pdbx_strand_id"]
+        except:
+            strand_id = [None] * len(chain_name)
+        if chain_name is not None and chain_number is not None:
+            for  name, number, strands in zip(chain_name, chain_number, strand_id):
+                protein_name[name] = {"number": number, "strand_id": strands}
         self.protein_names = protein_name
     
     def list_protein_names(self):
@@ -250,7 +265,10 @@ class MolecularStructureParser:
             chains_in_structure = list(self.protein_names.keys())
             chain_name = random.choice(chains_in_structure)
         if chain_id is None:
-            chain_id = random.choice(self.protein_names[chain_name]["strand_id"].split(","))
+            try:
+                chain_id = random.choice(self.protein_names[chain_name]["strand_id"].split(","))
+            except:
+                chain_id = random.choice(list(self.chains_dict.keys()))
         chain_sequence = self.chains_dict[chain_id]
         return chain_name, chain_id, position, self._sequence_substring(chain_sequence, size=size, position=position)
 
@@ -264,9 +282,10 @@ class MolecularStructureParser:
         else:
             if self.CIFdictionary is None:  # check if already created
                 self.generate_MMCIF_dictionary()
-            if "AlphaFoldDB" in self.CIFdictionary["_database_2.database_id"]:
-                self.assymetric_defined = False
-            else:
+            if "_database_2.database_id" in self.CIFdictionary.keys():
+                if "AlphaFoldDB" in self.CIFdictionary["_database_2.database_id"]:
+                    self.assymetric_defined = False
+            try:
                 # get to know how many transformations there are
                 transformation_ids = self.CIFdictionary["_pdbx_struct_oper_list.id"]
                 # each element of the list is pair of matrix-vector needed to transform data
@@ -304,15 +323,18 @@ class MolecularStructureParser:
                 struct_oper_dictionary = dict(zip(transformation_ids, assembly_transformations))
                 if len(transformation_ids) > 1:
                     self.assymetric_defined = True
-                    # print(
-                    #    "This model is defined with more than one symmetric transformation.
-                    # Will consider the assembly as assymetric defined"
-                    # )
+                        # print(
+                        #    "This model is defined with more than one symmetric transformation.
+                        # Will consider the assembly as assymetric defined"
+                        # )
                 else:
                     # when no assembly unit exist, there is only 1 transform expected
                     self.assymetric_defined = False
                     # print("This model is defined with only one symmetric transformation")
                 self.assembly_operations = struct_oper_dictionary
+            except:
+                self.assymetric_defined = False
+                
 
     def generate_assembly_reference_point(self):
         """
@@ -348,6 +370,7 @@ class MolecularStructureParser:
             # print("Defining axis from rotations")
             vect = self._central_axis_from_rotations()
             self.set_axis_with_vector(vect)
+            self.axis_reset = copy.copy(self.axis)
         else:
             # print(
             #    "Strcture is not defined by assymetric units. Using only atoms in file"
@@ -364,6 +387,7 @@ class MolecularStructureParser:
             else:
                 self.assembly_refpt = np.mean(allatoms_defined, axis=0)
             self.set_axis_with_vector()  # default [0,0,1]
+            self.axis_reset = copy.copy(self.axis)
 
     def _get_assemblyatoms(self):
         return self.assembly_atoms["coordinates"]
@@ -888,7 +912,7 @@ class MolecularStructureParser:
                 fig.show
 
     def show_assembly_atoms(
-        self, assembly_fraction=0.01, view_init=[0, 0, 0], axesoff=True,return_plot=False
+        self, assembly_fraction=0.01, view_init=[0, 0, 0], axesoff=True, return_plot=False, show_axis=False
     ):
         """
         Visualize a fraction of the assembly atoms.
@@ -917,6 +941,8 @@ class MolecularStructureParser:
             ax,
             format_coordinates(atoms_subset, **self.plotting_params["assemblyatoms"]),
         )
+        if show_axis:
+            draw1nomral_segment(self.axis, ax, lenght=150, colors=["g", "y"])
         ax.view_init(elev=view_init[0], azim=view_init[1], roll=view_init[2])
         ax.set_box_aspect(
             [ub - lb for lb, ub in (getattr(ax, f"get_{a}lim")() for a in "xyz")]
@@ -1000,7 +1026,7 @@ class MolecularReplicates(MolecularStructureParser):
         self.plotcolours[labelobj.get_name()] = labelobj.get_plotcolour()
         self.label_fluorophore[labelobj.get_name()] = labelobj.get_fluorophore()
 
-    def assign_normals2targets(self, mode="scaling", target=None):
+    def assign_normals2targets(self, target: str = None):
         """
         Assign normals to targets using a specified method.
 
@@ -1011,18 +1037,42 @@ class MolecularReplicates(MolecularStructureParser):
         target : str, optional
             Specific target to assign normals to. If None, assign to all.
         """
-        print(f"Assigning normals to targets with method: {mode}")
+        print(f"Assigning normals to targets with method: {self.normals_params['mode']}")
         if target is None:
             for target_name, value in self.label_targets.items():
-                if mode == "scaling":
+                if self.normals_params["mode"] == "scaling":
                     normals = normals_by_scaling(
                         self.label_targets[target_name]["coordinates"]
                     )
                     self.label_targets[target_name]["normals"] = normals
+                elif self.normals_params["mode"] == "global":
+                    normals = global_normal_direction(
+                        self.label_targets[target_name]["coordinates"],
+                        normal_vector = self.normals_params["normal_vector"]
+                    )
+                    self.label_targets[target_name]["normals"] = normals
+                elif self.normals_params["mode"] == "structure_axis":
+                    normals = global_normal_direction(
+                        self.label_targets[target_name]["coordinates"],
+                        normal_vector = self.axis["direction"]
+                    )
+                    self.label_targets[target_name]["normals"] = normals
         else:
-            if mode == "scaling":
+            if self.normals_params["mode"] == "scaling":
                 normals = normals_by_scaling(self.label_targets[target]["coordinates"])
                 self.label_targets[target]["normals"] = normals
+            elif self.normals_params["mode"] == "global":
+                normals = global_normal_direction(
+                        self.label_targets[target_name]["coordinates"],
+                        normal_vector = self.normals_params["normal_vector"]
+                    )
+                self.label_targets[target_name]["normals"] = normals
+            elif self.normals_params["mode"] == "structure_axis":
+                    normals = global_normal_direction(
+                        self.label_targets[target_name]["coordinates"],
+                        normal_vector = self.axis["direction"]
+                    )
+                    self.label_targets[target_name]["normals"] = normals
 
 
 def build_structure_cif(

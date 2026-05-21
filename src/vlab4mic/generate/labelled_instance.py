@@ -20,7 +20,7 @@ from ..utils.visualisation.matplotlib_plots import (
 from ..utils.transform.cif_builder import create_instance_label
 from ..utils.transform.structural_integrity import xmersubset_byclustering
 from ..utils.data_format.structural_format import builder_format
-
+from ..utils.sample.arrays import sample_array
 
 class LabeledInstance:
     def __init__(self):
@@ -377,7 +377,7 @@ class LabeledInstance:
         labelling_realisation_vectors = None
         if target_normals["coordinates"].shape[0] > 0:
             if label4target is not None:
-                labelling_realisation, labelling_realisation_vectors = (
+                labelling_realisation, n_epitopes, labelling_realisation_vectors = (
                     create_instance_label(
                         target_normals, target_type, label4target
                     )
@@ -392,12 +392,15 @@ class LabeledInstance:
             # generate the emitters positions
             # create_instance_label is capable of cosidering direct and indirect labelling
             # Once created, define the instance
+        else:
+            n_epitopes = 0
         return (
             labelling_realisation,
             labelling_realisation_vectors,
             fluorophore_name,
             plotting_params,
             structural_integrity_target_normals,
+            n_epitopes
         )
 
     def _generate_instance_constructor(self):
@@ -415,6 +418,7 @@ class LabeledInstance:
                 fluorophore_name,
                 plotting_par,
                 structural_integrity_target_normals,
+                n_epitopes
             ) = self._label_source_target(target_name)
             if structural_integrity_target_normals is not None:
                 self.structural_integrity_target_normals = structural_integrity_target_normals
@@ -436,6 +440,7 @@ class LabeledInstance:
             axis=self.axis,
             label_fluorophore=label_fluorophore,
             plotting_params=plotting_params,
+            n_epitopes=n_epitopes
         )
         return instance_constructor
 
@@ -457,7 +462,7 @@ class LabeledInstance:
             label4target = self.secondary[target_name]
             # print(target_normals.keys())
             print(label4target)
-            emitters, labelling_realisation_vectors = create_instance_label(
+            emitters, n_epitopes, labelling_realisation_vectors = create_instance_label(
                 target_normals, "indirect", label4target
             )
             return emitters
@@ -495,9 +500,10 @@ class LabeledInstance:
         if self.sequential_labelling:
             print("Sequential_labelling")
             primaries = self._generate_instance_constructor()
+            n_epitopes = primaries["n_epitopes"]
             self._generate_primary_epitopes(**primaries)
             secondaries = self._generate_secondary_labelling()
-            self.add_emitters_n_refpoint(**secondaries)
+            self.add_emitters_n_refpoint(n_epitopes= n_epitopes, **secondaries)
             # return primaries
         elif self.status["source"] and self.status["labels"]:
             constructor = self._generate_instance_constructor()
@@ -605,6 +611,7 @@ class LabeledInstance:
         axis: dict,
         label_fluorophore: dict,
         plotting_params: dict,
+        n_epitopes = None,
         **kwargs,
     ):
         """
@@ -636,6 +643,7 @@ class LabeledInstance:
         self._set_axis(dict(axis))
         self._set_label_fluorophopre(dict(label_fluorophore))
         self._gen_fluo2labels()
+        self.current_n_epitopes = n_epitopes
         self.plotting_params = dict(plotting_params)
 
     def get_axis(self):
@@ -739,7 +747,7 @@ class LabeledInstance:
                                 self.get_ref_point(),
                             )
                             self.emitters[trgt] = reoriented
-                            self.axis["direction"] = nori
+                    self.axis["direction"] = nori
 
     def transform_rotate_around_axis(self, degree: float = 0.0):
         theta_radians = degree * (math.pi / 180)
@@ -789,6 +797,7 @@ class LabeledInstance:
                         nref,
                     )
                 )
+
 
         # then replace reference point
         self._set_ref_point(nref)
@@ -982,6 +991,15 @@ class LabeledInstance:
         ylims=[-100, 100],
         zlims=None,
         central_axis=True,
+        with_structural_atoms=False,
+        emitter_plotsize=10,
+        emitter_plotcolour="#984ea3",
+        emitter_plotalpha=1,
+        atoms_fraction=0.1,
+        atoms_plotsize=1,
+        atoms_plotalpha=1,
+        use_dol=False,
+        axis_object=None,
         **kwargs,
     ):
         """
@@ -1012,30 +1030,71 @@ class LabeledInstance:
             The axis if return_plot is True, otherwise None.
         """
         if probe_name is None:
-            first_probe = self.labelnames[0]
-            probe_name = self.emitters[first_probe]
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection="3d")
+            probe_name = list(self.labels.keys())[0]
+            print(probe_name)
+        if axis_object is None:
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection="3d")
+            return_plot = False
+        else:
+            ax = axis_object
+            return_plot = True
         # probe_plotting_params = self._get_label_plotting_params(probe_name)
         total_coordinates = copy.copy(self.labels[probe_name]["emitters"])
         total_number_coordinates = total_coordinates.shape[0]
         center = np.mean(total_coordinates, axis=0)
+        dol = self.labels[probe_name]["conjugation_sites"]["DoL"]
         probe_emitters = total_coordinates[2:, :].reshape(
-            total_number_coordinates - 2, 3
-        )
-        probe_axis = total_coordinates[0:2, :]
+                total_number_coordinates - 2, 3
+            )
         centered_emitters, translation_vector1 = transform_displace_set(
             probe_emitters, center, np.array([0, 0, 0])
         )
+        if dol is not None and use_dol:
+            list_reoriented_points = []
+            int_dol = np.random.poisson(lam=dol)
+            max_emitters = centered_emitters.shape[0]
+            if int_dol != 0:
+                if int_dol > max_emitters:
+                    # use max value
+                    pass
+                else:
+                    emitter_indices = np.arange(max_emitters)
+                    selected_emitters = np.random.choice(
+                        emitter_indices, size=int_dol, replace=False
+                    )
+                    for se in selected_emitters:
+                        list_reoriented_points.append(centered_emitters[se])
+                    centered_emitters = np.array(list_reoriented_points)
+        probe_axis = total_coordinates[0:2, :]
+        
         centered_axis, translation_vector2 = transform_displace_set(
             probe_axis, center, np.array([0, 0, 0])
         )
+        ##
         add_ax_scatter(
             ax,
             format_coordinates(
-                centered_emitters, plotmarker="o", plotsize=20, **kwargs
+                centered_emitters, plotmarker="o", plotsize=emitter_plotsize,
+                plotalpha=emitter_plotalpha, plotcolour=emitter_plotcolour,
+                
             ),
         )
+        if with_structural_atoms:
+            subset_atoms = sample_array(
+                array=self.labels[probe_name]["structural_atoms"],
+                fraction=atoms_fraction)
+            centered_atoms, translation_vector1 = transform_displace_set(
+                    subset_atoms, center, np.array([0, 0, 0])
+                )
+            add_ax_scatter(
+                ax,
+                format_coordinates(
+                    centered_atoms, plotmarker="o", plotsize=atoms_plotsize,
+                    plotalpha=atoms_plotalpha,
+                ),
+            )
+            
         if central_axis:
             axis_segment = dict()
             axis_segment["pivot"] = centered_axis[0]
@@ -1069,7 +1128,7 @@ class LabeledInstance:
         if return_plot:
             return ax
         else:
-            fig.show()
+            plt.show()
 
     def show_instance(
         self,
@@ -1082,6 +1141,9 @@ class LabeledInstance:
         return_plot=False,
         source_size=None,
         emitter_plotsize=None,
+        xlim=None,
+        ylim=None,
+        zlim=None,
     ):
         """
         Visualize the labelled instance in 3D.
@@ -1138,8 +1200,9 @@ class LabeledInstance:
                         ),
                     )
                 # add_ax_scatter(ax, format_coordinates(self.emitters[labs]))
+        ref = self.get_ref_point()
+        margin = self.radial_hindance * 0.6
         if reference_point:
-            ref = self.get_ref_point()
             print(f"Reference point at {ref}")
             ax.scatter(
                 ref[0], ref[1], ref[2], c="k", label="ref", s=20, marker="x"
@@ -1148,12 +1211,27 @@ class LabeledInstance:
             print(f'current axis direction: {self.axis["direction"]}')
             draw1nomral_segment(self.axis, ax, lenght=150, colors=["g", "y"])
         ax.view_init(elev=view_init[0], azim=view_init[1], roll=view_init[2])
-        ax.set_box_aspect(
-            [
-                ub - lb
-                for lb, ub in (getattr(ax, f"get_{a}lim")() for a in "xyz")
-            ]
-        )
+        if xlim is not None:
+            ax.set_xlim(xlim[0], xlim[1])
+        else:
+            ax.set_xlim(
+                ref[0] - margin,
+                ref[0] + margin
+            )
+        if ylim is not None:
+            ax.set_ylim(ylim[0], ylim[1])
+        else:
+            ax.set_ylim(
+                ref[1] - margin,
+                ref[1] + margin
+            )
+        if zlim is not None:
+            ax.set_zlim(zlim[0], zlim[1])
+        else:
+            ax.set_zlim(
+                ref[2] - margin,
+                ref[2] + margin
+            )
         if axesoff:
             ax.set_axis_off()
         else:
@@ -1165,6 +1243,12 @@ class LabeledInstance:
                 ax.set_xlabel("X (Nanometers)")
                 ax.set_ylabel("Y (Nanometers)")
                 ax.set_zlabel("Z (Nanometers)")
+        ax.set_box_aspect(
+            [
+                ub - lb
+                for lb, ub in (getattr(ax, f"get_{a}lim")() for a in "xyz")
+            ]
+        )
         if return_plot:
             return ax
         else:
@@ -1187,6 +1271,9 @@ class LabeledInstance:
         source_plotmarker="D",
         source_plotalpha=1,
         with_normals=False,
+        xlim=None,
+        ylim=None,
+        zlim=None,
         **kwargs,
     ):
         """
@@ -1213,7 +1300,6 @@ class LabeledInstance:
         emitter_plotsize : int, optional
             Size of emitter markers. Default is 1.
         """
-        zlims = [0, 1]
         if labelnames == "All":
             for labs in self.labelnames:
                 lab_plotparams = self._get_label_plotting_params(labs)
@@ -1230,26 +1316,24 @@ class LabeledInstance:
                         axis_object,
                         format_coordinates(self.emitters[labs], **lab_plotparams),
                     )
-                    zlims[0] = np.min(self.emitters[labs])
-                    zlims[1] = np.max(self.emitters[labs])
+                    #if zlim is None:
+                    #    zlim = [np.min(self.emitters[labs]), np.max(self.emitters[labs])]
                 if with_sources:
                     if source_plotsize is not None:
                         source_plotsize = source_plotsize
                     else:
                         source_plotsize = 1
                     if self.structural_integrity_target_normals is not None:
+                        #add_ax_scatter(
+                        #    axis_object,
+                        #    format_coordinates(
+                        #        self.structural_integrity_target_normals["coordinates"]
+                        #    ),
+                        #)
                         add_ax_scatter(
                             axis_object,
                             format_coordinates(
-                                self.structural_integrity_target_normals["coordinates"]
-                            ),
-                        )
-                        add_ax_scatter(
-                            axis_object,
-                            format_coordinates(
-                                self._get_source_coords_normals(labs)[
-                                    "coordinates"
-                                ],
+                                self.structural_integrity_target_normals["coordinates"],
                                 plotcolour=source_plotcolour,
                                 plotsize=source_plotsize,
                                 plotmarker=source_plotmarker,
@@ -1281,8 +1365,9 @@ class LabeledInstance:
                         )
 
                 # add_ax_scatter(ax, format_coordinates(self.emitters[labs]))
+        ref = self.get_ref_point()
+        margin = self.radial_hindance * 0.6
         if reference_point:
-            ref = self.get_ref_point()
             print(f"Reference point at {ref}")
             axis_object.scatter(
                 ref[0], ref[1], ref[2], c="k", label="ref", s=20, marker="x"
@@ -1295,11 +1380,31 @@ class LabeledInstance:
         axis_object.view_init(
             elev=view_init[0], azim=view_init[1], roll=view_init[2]
         )
+        if xlim is not None:
+            axis_object.set_xlim(xlim[0], xlim[1])
+        else:
+            axis_object.set_xlim(
+                ref[0] - margin,
+                ref[0] + margin
+            )
+        if ylim is not None:
+            axis_object.set_ylim(ylim[0], ylim[1])
+        else:
+            axis_object.set_ylim(
+                ref[1] - margin,
+                ref[1] + margin
+            )
+        if zlim is not None:
+            axis_object.set_zlim(zlim[0], zlim[1])
+        else:
+            axis_object.set_zlim(
+                ref[2] - margin,
+                ref[2] + margin
+            )
         if axesoff:
             axis_object.set_axis_off()
         else:
             fontsize = 5
-            axis_object.set_zlim(zlims[0], zlims[1])
             # axis_object.set_zticks(np.arange(-200, 200, 200))
             axis_object.set_xlabel("X (Angstroms)", size=fontsize)
             axis_object.set_ylabel("Y (Angstroms)", size=fontsize)

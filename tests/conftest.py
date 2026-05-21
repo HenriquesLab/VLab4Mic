@@ -43,6 +43,7 @@ def experiment_7r5k_base():
         virtual_sample_template=virtual_sample,
         multimodal=modalities,
         run_simulation=False,
+        clear_experiment=True,
     )
     return exp7r5k
 

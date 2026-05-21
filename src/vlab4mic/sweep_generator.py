@@ -20,7 +20,7 @@ from .analysis.metrics import structural_similarity, pearson_correlation
 
 class sweep_generator:
     # sweep parameters
-    experiment = ExperimentParametrisation()
+    experiment = None
     structures = [
         "1XI5",
     ]
@@ -61,8 +61,12 @@ class sweep_generator:
     # saving
     #output_directory: str = None
 
-    def __init__(self):
+    def __init__(self, random_seed: int = None):
         # parameter dictionary
+        if random_seed is not None:
+            self.experiment = ExperimentParametrisation(random_seed=random_seed)
+        else:
+            self.experiment = ExperimentParametrisation()
         self.params_by_group = {}
         self.params_by_group["probe"] = {}
         self.params_by_group["virtual_sample"] = {}
@@ -111,6 +115,7 @@ class sweep_generator:
             "pearson": pearson_correlation
         }
         self.metrics = {}
+        
         print("vLab4mic sweep generator initialised")
 
     def set_number_of_repetitions(self, repeats: int = 3):
@@ -1430,7 +1435,8 @@ def run_parameter_sweep(
     custom_metrics: list[callable] = None,
     default_metrics =  ["ssim", "pearson"],
     #custom_metric_name: str = None,
-    plot_parameters=None
+    plot_parameters=None,
+    random_seed: int = None
     # Add more as needed for your sweep
 ):
     """
@@ -1521,7 +1527,7 @@ def run_parameter_sweep(
     - All major simulation and analysis steps are automated.
     - For advanced usage, see the sweep_generator class and related documentation.
     """
-    sweep_gen = sweep_generator()
+    sweep_gen = sweep_generator(random_seed = random_seed)
     if clear_experiment:
         sweep_gen.experiment.clear_experiment()
     sweep_gen.select_structures(structures=structures)

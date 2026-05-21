@@ -353,7 +353,7 @@ def local_maxima_positions(img, min_distance=1, threshold=None, background=None,
     xy = peak_local_max(img_pre, min_distance=min_distance, threshold_abs=threshold, **kwargs)
     return xy, img_pre
 
-def pixel_positions_to_relative(indices, image_sizes, pixelsize):
+def pixel_positions_to_relative(indices, image_sizes, pixelsize, elevation_img, normalise_elevation=True):
     """
     Convert pixel indices to relative positions in the image.
 
@@ -372,7 +372,18 @@ def pixel_positions_to_relative(indices, image_sizes, pixelsize):
         List of relative positions (x, y, z=0).
     """
     image_relative_positions=[(np.array(p)*pixelsize)/image_sizes for p in indices]
-    xyz_relative = [ np.append(xypos, 0)  for xypos in image_relative_positions]
+    if elevation_img is not None:
+        xyz_relative = []
+        if normalise_elevation:
+            elevation_img_norm = elevation_img/elevation_img.max()
+            for xypos, z_index in zip(image_relative_positions, indices):
+                print(f"xy: {xypos},z_index: {z_index}, z: {elevation_img_norm[z_index[0], z_index[1]]}")
+                xyz_relative.append(np.append(xypos, elevation_img_norm[z_index[0], z_index[1]]))
+        else:
+            for xypos, z_index in zip(image_relative_positions, indices):
+                xyz_relative.append(np.append(xypos, elevation_img[z_index[0], z_index[1]]))
+    else:
+        xyz_relative = [ np.append(xypos, 0)  for xypos in image_relative_positions]
     return xyz_relative
 
 def get_circles(img,

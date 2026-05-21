@@ -1,4 +1,5 @@
 from vlab4mic import workflows
+from vlab4mic.experiments import image_vsample
 import pytest
 import copy
 
@@ -19,7 +20,15 @@ def test_load_structure(structure_id, configuration_directory):
 # test user-input file
 
 
-def test_structure_normals(experiment_7r5k_base):
-    structure = copy.deepcopy(experiment_7r5k_base.structure)
-    structure.assign_normals2targets()
-    structure.show_target_labels(with_normals=True, show_axis=True)
+def test_structure_normals():
+    images, noiseless, testexperiment = image_vsample(run_simulation=False)
+    testexperiment.structure.assign_normals2targets()
+    #structure.show_target_labels(with_normals=True, show_axis=True)
+
+
+def test_symmetry_parsing():
+    images, noiseless, experiment = image_vsample(
+        run_simulation=False,
+        clear_experiment=True,
+    )
+    assert experiment.structure.assymetric_defined == True

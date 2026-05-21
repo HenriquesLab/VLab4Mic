@@ -1,5 +1,6 @@
 import numpy as np
 import copy
+from scipy.spatial.transform import Rotation as R  
 
 # # Rodrigues Rotation
 def rotate_point(point, axis, angle):
@@ -114,7 +115,7 @@ def decorate_epitopes_normals(normals_ft_epitopes, labeling_entity, dol:int = No
         # model degree of labelling
         if dol is not None:
             int_dol = np.random.poisson(lam=dol)
-            print(f"DOL = {int_dol}")
+            #print(f"DOL = {int_dol}")
             max_emitters = len(new_points)
             if int_dol != 0:
                 if int_dol > max_emitters - 2 :
@@ -192,3 +193,35 @@ def planar_rotation(points, points_reference, unitary_vector_of_rotation, theta)
         rotated_at_origin, np.array([0, 0, 0]), points_reference
     )
     return rotated
+  
+def apply_euler_rotation(vector, phi=0, theta=0, psi=0, order = "zyx", reset_orientation=False, **kwargs):
+    """
+    Rotations are extrinsic.
+
+    
+    theta: rotation around x axis in degrees
+    phi: rotation around z axis in degrees
+    psi: rotation around y axis in degrees
+    """
+    combined_R = R.from_euler(order, [phi,theta, psi], degrees=True)
+    new_vector = combined_R.apply(vector)
+    return new_vector
+
+
+def generate_localisations_with_noise(array3d, loc_precision_xy_nm, loc_precision_z_nm, av_loc_per_emitter=1, z_pos=0):
+    locs_i_x_list = []
+    locs_i_y_list = []
+    locs_i_z_list = []
+    for emitter in range(array3d.shape[0]):
+        n_locs = np.random.poisson(lam=av_loc_per_emitter)
+        locs_i_x = np.random.normal(loc=array3d[emitter][0], scale=loc_precision_xy_nm, size=n_locs)
+        locs_i_y = np.random.normal(loc=array3d[emitter][1], scale=loc_precision_xy_nm, size=n_locs)
+        locs_i_z = np.random.normal(loc=array3d[emitter][2], scale=loc_precision_z_nm, size=n_locs)
+        locs_i_x_list.extend(locs_i_x.tolist())
+        locs_i_y_list.extend(locs_i_y.tolist())
+        locs_i_z_list.extend(locs_i_z.tolist())
+    noisy_locs = np.zeros(shape=(len(locs_i_x_list), 3))
+    noisy_locs[:,0] = locs_i_x_list
+    noisy_locs[:,1] = locs_i_y_list
+    noisy_locs[:,2] = locs_i_z_list
+    return noisy_locs

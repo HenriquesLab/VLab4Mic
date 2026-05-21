@@ -8,7 +8,7 @@ from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import tifffile as tif
 import io
 import pandas as pd
-np.random.seed(44)
+random_seed=44
 sim_vs_exp = dict() 
 
 def mimic_experimental_image(experiment, experimental_image, halfpatch, centerx, centery, as_int=True, **kwargs):
@@ -35,7 +35,7 @@ def read_image_from_url(url):
     # Check that request succeeded
     return tif.imread(io.BytesIO(resp.content))
 
-def render_from_localisations(localisations, crop_size_nm = 3000, centerx = None, centery = None,precision_nm=None):
+def render_from_localisations(localisations, crop_size_nm = 3000, centerx = None, centery = None,precision_nm=None, random_seed=None, pixelsize=10, voxelsize=5):
     if precision_nm is None:
         precision_nm = np.mean(localisations.locprecnm)
     minx = np.min(localisations.xnm)
@@ -72,7 +72,8 @@ def render_from_localisations(localisations, crop_size_nm = 3000, centerx = None
     normalised_y = normalised_y / normalised_y.max()
     sample, experiment = generate_virtual_sample(
         structure=None,
-        particle_positions=(normalised_x, normalised_y)
+        particle_positions=(normalised_x, normalised_y),
+        random_seed=random_seed
     )
     experiment.clear_structure()
     experiment.remove_probes()
@@ -83,8 +84,9 @@ def render_from_localisations(localisations, crop_size_nm = 3000, centerx = None
         sample_dimensions=(crop_size_nm, crop_size_nm, 100),
         particle_positions=list_of_positions
     )
+    experiment.add_modality("SMLM", modality_template="SMLM")
     experiment.build(modules=["coordinate_field", "imager",])
-    experiment.update_modality(modality_name="SMLM",lateral_resolution_nm = precision_nm)
+    experiment.update_modality(modality_name="SMLM",lateral_resolution_nm = precision_nm, simulate_localistations=False, pixelsize_nm=pixelsize, psf_voxel_nm=voxelsize)
     experiment.set_modality_acq(modality_name="SMLM", exp_time=0.01)
     #images = {}
     images, noiseless = experiment.run_simulation(modality="SMLM")
@@ -110,18 +112,23 @@ smlm_experimental_locs = localisations_all[localisations_all.numberInGroup == 1]
 
 # parameters
 structure = "7R5K"
-probe_template = "NPC_Nup96_Cterminal_direct"
+probe_template = "GFP_w_nanobody"
 modalities = ["Widefield", "Confocal", "AiryScan","STED", "SMLM"]
 # Run simulation
 # Prepare experiment object
 _1, _2, my_experiment = experiments.image_vsample(
     structure=structure,
     probe_template=probe_template,
-    labelling_efficiency=1,
+    probe_DoL=2,
+    labelling_efficiency=0.4,
+    probe_target_type="Sequence",
+    probe_target_value="ELAVGSL", # Nup96 C-terminal
     multimodal=modalities,
     random_rotation=True,
     clear_experiment=True,
     run_simulation=False,
+    random_rotations=True,
+    random_seed=random_seed
 )
 FOV_nm = 1500
 widefield_pixelsize = 100
@@ -249,8 +256,13 @@ list_of_positions, rendered_smlm, smlm_experiment = render_from_localisations(
     crop_size_nm = FOV_nm,
     centery = yrange*0.6,
     centerx = xrange*0.5,
-    precision_nm=loc_prec
+    precision_nm=loc_prec,
+    pixelsize=smlm_pixelsize,
+    voxelsize=smlm_pixelsize
     )
+#my_experiment.set_virtualsample_params(
+#    random_rotations=True,
+#)
 SMLM_experimental_img_patch, relative_positions = mimic_experimental_image(
     experiment=my_experiment,
     experimental_image=rendered_smlm["SMLM"]["ch0"][0],
@@ -263,7 +275,14 @@ my_experiment.imager.modalities["SMLM"]["detector"]["noise_model"]["binomial"]["
 my_experiment.imager.modalities["SMLM"]["detector"]["noise_model"]["baselevel"]["bl"] = 1
 my_experiment.imager.modalities["SMLM"]["detector"]["noise_model"]["gaussian"]["sigma"] = 0
 # Run simulation
-my_experiment.update_modality(modality_name="SMLM", lateral_resolution_nm = loc_prec)
+my_experiment.update_modality(modality_name="SMLM",
+                              lateral_resolution_nm = loc_prec,
+                              pixelsize_nm=smlm_pixelsize,
+                              psf_voxel_nm=smlm_pixelsize,
+                              axial_precision=2,
+                              simulate_localistations=False,
+                              lateral_precision=2,
+                              nlocalisations=10)
 my_experiment.set_modality_acq(modality_name="SMLM", exp_time=0.01)
 smlm_images, noiselsess = my_experiment.run_simulation(modality="SMLM")
 sim_vs_exp["SMLM"] = (smlm_images["SMLM"]["ch0"][0], SMLM_experimental_img_patch)
@@ -292,7 +311,7 @@ for i, mod in enumerate(modalities):
     axs[0,i].imshow(sim_vs_exp[mod][1], cmap="grey")
     axs[0,i].tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
     axs[0,i].set_title(f"{mod}", fontsize=20)
-    axs[1,i].imshow(sim_vs_exp[mod][0], cmap="magma")
+    axs[1,i].imshow(sim_vs_exp[mod][0], cmap="grey")
     axs[1,i].tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
     scalebar = AnchoredSizeBar(axs[1,i].transData,
                            mods_scalebar[mod]["length_px"],
@@ -307,7 +326,7 @@ for i, mod in enumerate(modalities):
 axs[0,0].set_ylabel("Thevathasan, et al. 2019", fontsize=24)
 axs[1,0].set_ylabel("VLab4Mic simulation", fontsize=24)
 plt.tight_layout(h_pad=0, w_pad=3)
-
-filename = os.path.join(my_experiment.output_directory, 'vlab4mic_fig3F_url.png')
+name = my_experiment.date_as_string + 'vlab4mic_fig3F_url.png'
+filename = os.path.join(my_experiment.output_directory, name)
 fig.savefig(filename, dpi=300, bbox_inches='tight')
 plt.close()

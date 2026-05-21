@@ -68,6 +68,7 @@ class Field:
         self.random_placing = False
         self.random_orientations = False
         self.random_rotations = False
+        self.sample_initial_orientation = None
         self.rotation_angles = None
         # print(f'Working scale of the Field of View is {self.scale} meters')
 
@@ -143,7 +144,9 @@ class Field:
         if "sample_dimensions" in kwargs.keys():
             self._set_dimension_sizes(kwargs["sample_dimensions"])
             self.calculate_absolute_reference()
+        # positioning of particles in the field
         if "relative_positions" in kwargs.keys():
+            self.random_placing = False
             print("Using relative positons to initialise field")
             nmolecules = len(kwargs["relative_positions"])
             self.set_molecule_param("nMolecules", nmolecules)
@@ -176,16 +179,31 @@ class Field:
             point = self.get_molecule_param("absolute_positions")
             self.fluorophre_emitters = {fluo_name: point.reshape(1, 3)}
         self._set_fluo_plotting_params(fluo_name)
-        self.random_orientations = random_orientations
-        self.random_rotations = random_rotations
-        if "rotation_angles" in kwargs.keys():
-            self.rotation_angles = kwargs["rotation_angles"]
-        if "xy_orientations" in kwargs.keys():
-            self.xy_orientations = kwargs["xy_orientations"]
-        if "xz_orientations" in kwargs.keys():
-            self.xz_orientations = kwargs["xz_orientations"]
-        if "yz_orientations" in kwargs.keys():
-            self.yz_orientations = kwargs["yz_orientations"]
+        # Orientation of each particle 
+        if random_orientations:
+            self.random_orientations = True
+            if "sample_inital_orientation" in kwargs.keys():
+                self.sample_initial_orientation = kwargs["sample_inital_orientation"]
+            if "xy_orientations" in kwargs.keys():
+                self.xy_orientations = kwargs["xy_orientations"]
+            if "xz_orientations" in kwargs.keys():
+                self.xz_orientations = kwargs["xz_orientations"]
+            if "yz_orientations" in kwargs.keys():
+                self.yz_orientations = kwargs["yz_orientations"]
+        else:
+            self.random_orientations = False
+            if "orientation_per_particle" in kwargs.keys():
+                self.set_molecule_param("orientation_per_particle", kwargs["orientation_per_particle"])
+        # rotation within plane of each particle 
+        if random_rotations:
+            self.random_rotations = True
+            if "rotation_angles" in kwargs.keys():
+                self.rotation_angles = kwargs["rotation_angles"]
+        else:
+            self.random_rotations = False
+            if "rotation_per_particle" in kwargs.keys():
+                self.set_molecule_param("rotation_per_particle", kwargs["rotation_per_particle"])
+        # global axial offset 
         if "axial_offset" in kwargs.keys():
             self.axial_offset = kwargs["axial_offset"]
 
@@ -257,7 +275,20 @@ class Field:
         value : Any
             Value to set.
         """
-        self.molecules_params[parameter] = value
+        if parameter == "orientation_per_particle":
+            # check if the length of the list has the same size as number of particles
+            if len(value) == self.molecules_params["nMolecules"]:
+                self.molecules_params["orientations"] = value
+            else:
+                print("Number of values provided does not equal the number of existing particles")
+        if parameter == "rotation_per_particle":
+            # check if the length of the list has the same size as number of particles
+            if len(value) == self.molecules_params["nMolecules"]:
+                self.molecules_params["rotations"] = value
+            else:
+                print("Number of values provided does not equal the number of existing particles")
+        else:
+            self.molecules_params[parameter] = value
 
     def set_molecules_params(
         self,
@@ -535,6 +566,8 @@ class Field:
         for r in range(reps):
             molecules.append(copy.deepcopy(particle_copy))
         self.molecules = molecules
+        if self.sample_initial_orientation is not None:
+            self.generate_global_orientation(self.sample_initial_orientation)
         if self.random_orientations:
             self.generate_random_orientations()
         if self.random_rotations:
@@ -739,6 +772,7 @@ class Field:
         axis_object=None,
         zoom_in=None,
         emitters_plotsize=None,
+        initial_pos_plotsize = 1,
         **kwargs,
     ):
         """
@@ -788,7 +822,8 @@ class Field:
                 add_ax_scatter(
                     ax,
                     format_coordinates(
-                        np.array(self.molecules_params["absolute_positions"])
+                        np.array(self.molecules_params["absolute_positions"]),
+                        plotsize=initial_pos_plotsize
                     ),
                 )
         if len(self.fluorophre_emitters) == 0:
@@ -948,7 +983,7 @@ def create_min_field(
 
 
 def gen_positions_from_image(
-    img, mode="mask", pixelsize=None, min_distance=None, **kwargs
+    img, mode="mask", pixelsize=None, min_distance=None, elevation_img=None, normalise_elevation=True, **kwargs
 ):
     """
     Generate relative positions from an image using either a mask or local maxima.
@@ -1010,6 +1045,6 @@ def gen_positions_from_image(
             **kwargs
         )
     xyz_relative = metrics.pixel_positions_to_relative(
-        pixel_positions, image_sizes=image_physical_size, pixelsize=pixelsize
+        pixel_positions, image_sizes=image_physical_size, pixelsize=pixelsize, elevation_img=elevation_img, normalise_elevation=normalise_elevation 
     )
     return xyz_relative, image_physical_size

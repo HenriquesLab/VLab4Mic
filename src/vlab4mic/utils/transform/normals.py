@@ -15,6 +15,11 @@ def normals_by_scaling(epitope_locs, scale=0.95):
     return normals
     # return normals_ft_epitopes
 
+def global_normal_direction(epitope_locs, normal_vector = np.array([0,0,1])):
+    normals = np.zeros((len(epitope_locs), 3))
+    for i in range(len(epitope_locs)):
+        normals[i, :] = normal_vector
+    return normals
 
 def coordinates_scaling(
     epitope_array, scaling_factor
@@ -53,7 +58,7 @@ def add_wobble(pivot, direction, cone_angle_deg=30, length=1):
     # Convert the cone angle from degrees to radians
     cone_angle_rad = np.radians(cone_angle_deg)
 
-    # Sample azimuthal angle niformly
+    # Sample azimuthal angle uniformly
     phi = np.random.uniform(0, 2 * np.pi)
 
     # The cone defines a boundary for theta angles to choose from

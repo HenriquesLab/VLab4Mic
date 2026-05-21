@@ -67,11 +67,12 @@ def binomial_epitope_sampling(epitopes, p=1, normals=None, min_distance=0.0):
     ids_selected = [x for x in available_epitopes_id if np.random.rand() < p]
     #ids_selected = np.random.binomial(available_epitopes_id, p)
     subset_epitopes = epitopes[ids_selected, :]
+    n_epitopes_ = len(ids_selected)
     if normals is None:
-        return subset_epitopes
+        return subset_epitopes, n_epitopes_,  None
     else:
         subset_normals = normals[ids_selected, :]
-        return subset_epitopes, subset_normals
+        return subset_epitopes, n_epitopes_, subset_normals
 
 def get_random_pixels(binary_image, num_pixels=3, min_distance=2):
     # Find indices of all positive pixels (value = 1)
