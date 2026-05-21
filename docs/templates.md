@@ -67,3 +67,15 @@ Pre-configured probes tuned to particular structures.
 | **STED** | Stimulated emission depletion | 20 × 20 × 20 | 15 |
 | **SMLM** | Single-molecule localisation (effective image model) | 8 × 8 × 8 | 5 |
 | **Reference** | Idealised diffraction-limited reference | 5 × 5 × 5 | 5 |
+
+### Thevenaz 2016 Variants
+
+Modality configurations tuned to the parameters reported in [Thevenaz *et al.* 2016](https://doi.org/10.1364/OPTICA.3.000557), for use in article figure reproductions.
+
+| Modality | Description | PSF shape XYZ (nm) | Pixel size (nm) |
+| --- | --- | --- | --- |
+| **Widefield_Thev2016** | Widefield — Thevenaz 2016 parameters | 94 × 94 × 331 | 100 |
+| **Confocal_Thev2016** | Confocal — Thevenaz 2016 parameters | 94 × 94 × 331 | 70 |
+| **AiryScan_Thev2016** | AiryScan — Thevenaz 2016 parameters | 61 × 61 × 230 | 40 |
+| **STED_Thev2016** | STED — Thevenaz 2016 parameters | 15 × 15 × 20 | 15 |
+| **STORM_Thev2016** | STORM/SMLM — Thevenaz 2016 parameters | 8 × 8 × 8 | 5 |

@@ -49,6 +49,8 @@ images, noiseless, experiment = image_vsample(
     rotation_angles=None,
     multimodal=modalities,
     STED={"exp_time": 0.01},       # Modality-specific parameters
+    expansion_factor=1,            # Scale factor for structure coordinates
+    random_seed=42,                # Set for reproducibility
     run_simulation=True,
     clear_experiment=True,
 )
@@ -70,6 +72,22 @@ images, noiseless, experiment = image_vsample(
 ```
 
 See the [Templates](templates.md) page for the full list of available probes.
+
+### Indirect Labelling (Primary + Secondary Probe)
+
+For indirect labelling, pass `primary_probe` and `secondary_probe` instead of a single `probe_template`:
+
+```python
+from vlab4mic.experiments import image_vsample
+
+images, noiseless, experiment = image_vsample(
+    structure="3J3Y",
+    primary_probe="HIV_capsid_p24_direct",
+    secondary_probe="anti-p24_primary_antibody_HIV",
+    multimodal=["SMLM"],
+    run_simulation=True,
+)
+```
 
 ### Displaying Simulation Results
 
@@ -125,6 +143,7 @@ sweep_gen = run_parameter_sweep(
     save_sweep_images=True,
     save_analysis_results=True,
     run_analysis=True,
+    random_seed=42,                              # Reproducible sweep
 )
 ```
 
