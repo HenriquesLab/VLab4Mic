@@ -1,6 +1,6 @@
 # Getting Started
 
-VLab4Mic is compatible with **Python 3.9, 3.10, 3.11, and 3.12** on macOS, Windows, and Linux.
+VLab4Mic is compatible with **Python 3.10, 3.11, and 3.12** on macOS, Windows, and Linux.
 
 ---
 
