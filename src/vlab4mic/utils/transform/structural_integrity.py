@@ -40,10 +40,10 @@ def ids2delete2(xmer_id, tree, neigh, upbound):
 
 def xmer_ids_remove(xmer0_id, tree, percentageoff, neighbors, upbound):
     totalpoints = tree.data.shape[0]
-    # print("total emitters", totalpoints)
+    print("total emitters", totalpoints)
     total2remove = np.floor(totalpoints * percentageoff)
     # total2remove = np.random.poisson(np.floor(totalpoints*percentageoff))
-    # print("removing: ", total2remove)
+    print("removing: ", total2remove)
     removed = list([xmer0_id])
     id_query = xmer0_id
     max_iter = 100000
@@ -174,7 +174,7 @@ def xmersubset_byclustering(
     total_number_epitopes = epitopes_coords.shape[0]
     n_epitopes_to_keep = np.floor(total_number_epitopes * (1-percentageoff))
     lower_bound = np.floor(n_epitopes_to_keep - (total_number_epitopes*0.05))
-    upper_bound = np.floor(n_epitopes_to_keep + (total_number_epitopes*0.05))
+    upper_bound = np.ceil(n_epitopes_to_keep + (total_number_epitopes*0.05))
     expected_number_reached = False
     i = 0
     epitopes_ids = None
@@ -207,6 +207,7 @@ def xmersubset_byclustering(
             label_p_epitope, ids_validated
         )  # this function retrieves false
         # for each time a value ids_validated appears in label_p_epitope
+        #print(f"Sum of epitopes: {sum(epitopes_ids)}, lowerbound: {lower_bound}, upper_bound: {upper_bound}")
         if sum(epitopes_ids) >= lower_bound and sum(epitopes_ids) <= upper_bound:
             expected_number_reached = True
             break
