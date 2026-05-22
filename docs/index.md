@@ -14,6 +14,8 @@ Simulate fluorescence microscopy experiments — build virtual samples, apply fl
 [Get Started](getting-started.md){ .md-button .md-button--primary }
 [View on GitHub](https://github.com/HenriquesLab/VLab4Mic){ .md-button }
 
+
+![VLab4Mic Tutorial](img/Tutorial1.gif)
 </div>
 
 ---
