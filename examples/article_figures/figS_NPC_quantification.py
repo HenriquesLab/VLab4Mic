@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import matplotlib.font_manager as fm
+random_seed= 24
 
 # parameters for simulation
 structure = "7R5K"
@@ -35,9 +36,10 @@ _1, _2, experiment = experiments.image_vsample(
     probe_target_type=probe_target_type,
     probe_target_value=probe_target_value,
     multimodal=modalities,
-    STED_Thev2016={"exp_time": 0.0004},
+    STED_Thev2016={"exp_time": 0.0002},
     clear_experiment=True,
     run_simulation=False,
+    random_seed=random_seed
 )
 
 # Get a crop of the experimental image to reduce the field of view
@@ -64,6 +66,7 @@ experiment.use_image_for_positioning(
     min_distance=min_distance)
 
 # Run simulation
+experiment.set_modality_acq(modality_name="STED_Thev2016", exp_time=0.0002)
 images, noiselsess = experiment.run_simulation()
 
 # Analyse images: fit circles
@@ -82,7 +85,7 @@ if images["STED_Thev2016"]["ch0"][0].min() < 0:
 #### Simulated Data
 HCparams = dict(dp=1, minDist=maxRadius_round, 
         param1=10, param2=7, minRadius=minRadius_round, maxRadius=maxRadius_round)
-circles_sim, img_blurred_sim, c_params_sim = metrics.get_circles(images["STED_Thev2016"][0].astype(np.uint8), **HCparams)
+circles_sim, img_blurred_sim, c_params_sim = metrics.get_circles(images["STED_Thev2016"]["ch0"][0].astype(np.uint8), **HCparams)
 radii_simulated= []
 for (x, y, r) in circles_sim[0]:
     radii_simulated.append((r*pixelsize))
@@ -110,10 +113,17 @@ df = pd.DataFrame({
 sns.histplot(data=df, x="value", hue="Condition", binrange=[45,70], bins=15, kde=True, ax=axs[2])
 plt.xlabel("Radius of circle fit (nm)")
 
+length_nm = 1000
+nm = 1e-09
+pixelsize = (experiment.imaging_modalities["STED_Thev2016"]["detector"]["scale"] / nm) * experiment.imaging_modalities["STED_Thev2016"]["detector"]["pixelsize"]
+pixelsize = np.ceil(pixelsize)
+length_px = length_nm / pixelsize
+hight_px = length_px / 10
+
 
 fontprops = fm.FontProperties(size=20)
 scalebar = AnchoredSizeBar(axs[1].transData,
-                           67, '1 µm', 'lower right', 
+                           length_px, '1 µm', 'lower right', 
                            pad=2,
                            color='white',
                            frameon=False,
@@ -128,6 +138,7 @@ axs[1].set_yticks([])
 plt.tight_layout()
 
 # save figure
-filename = os.path.join(experiment.output_directory, 'NPC_quantification_STED.png')
+name = experiment.date_as_string + 'NPC_quantification_STED.png'
+filename = os.path.join(experiment.output_directory, name)
 fig.savefig(filename, dpi=300, bbox_inches='tight')
 plt.close()
