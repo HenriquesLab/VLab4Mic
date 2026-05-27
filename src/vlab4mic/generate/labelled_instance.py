@@ -999,6 +999,7 @@ class LabeledInstance:
         atoms_plotsize=1,
         atoms_plotalpha=1,
         use_dol=False,
+        exact_dol= None,
         axis_object=None,
         **kwargs,
     ):
@@ -1052,20 +1053,25 @@ class LabeledInstance:
         )
         if dol is not None and use_dol:
             list_reoriented_points = []
-            int_dol = np.random.poisson(lam=dol)
             max_emitters = centered_emitters.shape[0]
-            if int_dol != 0:
-                if int_dol > max_emitters:
-                    # use max value
-                    pass
-                else:
-                    emitter_indices = np.arange(max_emitters)
-                    selected_emitters = np.random.choice(
-                        emitter_indices, size=int_dol, replace=False
-                    )
-                    for se in selected_emitters:
-                        list_reoriented_points.append(centered_emitters[se])
-                    centered_emitters = np.array(list_reoriented_points)
+            emitter_indices = np.arange(max_emitters)
+            if exact_dol is not None:
+                int_dol = dol
+                selected_emitters = [emitter_indices[x] for x in exact_dol]
+                #selected_emitters = emitter_indices[exact_dol]
+            else:
+                int_dol = np.random.poisson(lam=dol)
+                if int_dol != 0:
+                    if int_dol > max_emitters:
+                        # use max value
+                        selected_emitters = emitter_indices
+                    else:
+                        selected_emitters = np.random.choice(
+                            emitter_indices, size=int_dol, replace=False
+                        )
+            for se in selected_emitters:
+                list_reoriented_points.append(centered_emitters[se])
+            centered_emitters = np.array(list_reoriented_points)
         probe_axis = total_coordinates[0:2, :]
         
         centered_axis, translation_vector2 = transform_displace_set(
