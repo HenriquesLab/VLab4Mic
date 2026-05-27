@@ -33,10 +33,10 @@ target_colour="#984ea3"
 target_marker= "o"
 plotting_parameters = dict(
     Nanobody = {
-        "emitter_plotsize": 200,
+        "emitter_plotsize": 300,
         "emitter_plotcolour": target_colour,
         "emitter_plotmarker": target_marker,
-        "atoms_plotsize":50,
+        "atoms_plotsize":70,
         "atoms_fraction":1,
         "atoms_plotalpha" : 0.1,
         "central_axis_length": 100,
@@ -49,10 +49,10 @@ plotting_parameters = dict(
         "zlims":[-20, 20],
     },
     Antibody = {
-        "emitter_plotsize": 100,
+        "emitter_plotsize": 200,
         "emitter_plotcolour": target_colour,
         "emitter_plotmarker": target_marker,
-        "atoms_plotsize" : 50,
+        "atoms_plotsize" : 70,
         "atoms_fraction":1,
         "atoms_plotalpha" : 0.01,
         "central_axis_length" :100,
@@ -65,10 +65,10 @@ plotting_parameters = dict(
         "zlims":[-50, 50],
     },
     GFP = {
-        "emitter_plotsize" : 200,
+        "emitter_plotsize" : 300,
         "emitter_plotcolour": target_colour,
         "emitter_plotmarker": target_marker,
-        "atoms_plotsize" : 50,
+        "atoms_plotsize" : 70,
         "atoms_fraction":1,
         "atoms_plotalpha" : 0.1,
         "central_axis_length" : 100,
@@ -81,10 +81,10 @@ plotting_parameters = dict(
         "zlims":[-20, 20],
     },
     GFP_w_nanobody = {
-        "emitter_plotsize" : 200,
+        "emitter_plotsize" : 300,
         "emitter_plotcolour": target_colour,
         "emitter_plotmarker": target_marker,
-        "atoms_plotsize" : 50,
+        "atoms_plotsize" : 70,
         "atoms_fraction":1,
         "atoms_plotalpha" : 0.03,
         "central_axis_length" : 100,
