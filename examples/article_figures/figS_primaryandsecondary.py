@@ -59,7 +59,7 @@ image_outputs2, image_outputs_noiseless2, experiment2 = image_vsample(
 emitter_plotsize = 1
 zoom = 0.5
 target_colour="#01579D"
-labelled_figure = plt.figure(figsize=[10,10])
+labelled_figure = plt.figure(figsize=[10,15])
 ### Primary 
 ax1 = labelled_figure.add_subplot(3, 2, 1, projection="3d")
 experiment1.particle.gen_axis_plot(
@@ -67,7 +67,7 @@ experiment1.particle.gen_axis_plot(
     axis_object=ax1,
     target_colour=target_colour,
     source_plotsize=2, 
-    emitter_plotsize=5, 
+    emitter_plotsize=10, 
     source_plotalpha=1,
     xlim=[-200,800],
     ylim=[0,1200],
@@ -99,7 +99,7 @@ experiment2.particle.gen_axis_plot(
     axis_object=ax3,
     target_colour=target_colour,
     source_plotsize=2,
-    emitter_plotsize=5, 
+    emitter_plotsize=10, 
     source_plotalpha=1,
     xlim=[-200,800],
     ylim=[0,1200],
@@ -128,7 +128,7 @@ experiment2.particle.gen_axis_plot(
     axis_object=ax5,
     target_colour=target_colour,
     source_plotsize=2,
-    emitter_plotsize=5,
+    emitter_plotsize=10,
     source_plotalpha=1,
     xlim=[-200,800],
     ylim=[0,1200],
