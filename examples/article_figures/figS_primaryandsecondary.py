@@ -42,18 +42,6 @@ secondary_antibody = dict(
     probe_target_value = "Primary-HIV",
     probe_DoL=4,
 )
-
-image_outputs2, image_outputs_noiseless2, experiment2 = image_vsample(
-    structure = "3J3Y",
-    primary_probe = primary,
-    secondary_probe = secondary_nanobody,
-    multimodal=modalities,
-    clear_experiment=True,
-    run_simulation=True,
-    random_seed=random_seed
-)
-
-
 ## create a plot 
 
 emitter_plotsize = 1
@@ -71,7 +59,8 @@ experiment1.particle.gen_axis_plot(
     source_plotalpha=1,
     xlim=[-200,800],
     ylim=[0,1200],
-    zlim=[0,700])
+    zlim=[0,700],
+    view_init=[90,0,0])
 ax2 = labelled_figure.add_subplot(3, 2, 2)
 capsid_primary_smlm = metrics.zoom_img(image_outputs1["SMLM"]["ch0"][0], zoom_in=zoom)
 ax2.imshow(capsid_primary_smlm, cmap="grey")
@@ -93,8 +82,14 @@ scalebar1 = AnchoredSizeBar(ax2.transData,
 ax2.add_artist(scalebar1)
 
 ### Primary and secondary nanobody
+experiment1.remove_probes()
+experiment1.clear_labelled_structure()
+experiment1.add_probe(as_primary=True, **primary)
+experiment1.add_probe(as_primary=False, **secondary_nanobody)
+experiment1.build(modules=["particle", "coordinate_field", "imager"])
+image_outputs2, noiseless2 = experiment1.run_simulation()
 ax3 = labelled_figure.add_subplot(3, 2, 3, projection="3d", sharex=ax1, sharey=ax1)
-experiment2.particle.gen_axis_plot(
+experiment1.particle.gen_axis_plot(
     with_sources=True,
     axis_object=ax3,
     target_colour=target_colour,
@@ -103,7 +98,8 @@ experiment2.particle.gen_axis_plot(
     source_plotalpha=1,
     xlim=[-200,800],
     ylim=[0,1200],
-    zlim=[0,700])
+    zlim=[0,700],
+    view_init=[90,0,0])
 ax4 = labelled_figure.add_subplot(3, 2, 4)
 capsid_primary_secondary_smlm = metrics.zoom_img(image_outputs2["SMLM"]["ch0"][0], zoom_in=zoom)
 ax4.imshow(capsid_primary_secondary_smlm, cmap="grey")
@@ -116,14 +112,14 @@ scalebar2 = AnchoredSizeBar(ax4.transData,
                            size_vertical=2)
 ax4.add_artist(scalebar2)
 ### Primary and secondary antibody
-experiment2.remove_probes()
-experiment2.clear_labelled_structure()
-experiment2.add_probe(as_primary=True, **primary)
-experiment2.add_probe(as_primary=False, **secondary_antibody)
-experiment2.build(modules=["particle", "coordinate_field", "imager"])
-image_outputs3, noiseless3 = experiment2.run_simulation()
+experiment1.remove_probes()
+experiment1.clear_labelled_structure()
+experiment1.add_probe(as_primary=True, **primary)
+experiment1.add_probe(as_primary=False, **secondary_antibody)
+experiment1.build(modules=["particle", "coordinate_field", "imager"])
+image_outputs3, noiseless3 = experiment1.run_simulation()
 ax5 = labelled_figure.add_subplot(3, 2, 5, projection="3d")
-experiment2.particle.gen_axis_plot(
+experiment1.particle.gen_axis_plot(
     with_sources=True,
     axis_object=ax5,
     target_colour=target_colour,
@@ -132,7 +128,8 @@ experiment2.particle.gen_axis_plot(
     source_plotalpha=1,
     xlim=[-200,800],
     ylim=[0,1200],
-    zlim=[0,700])
+    zlim=[0,700],
+    view_init=[90,0,0])
 ax6 = labelled_figure.add_subplot(3, 2, 6)
 capsid_primary_secondary_smlm_2 = metrics.zoom_img(image_outputs3["SMLM"]["ch0"][0], zoom_in=zoom)
 ax6.imshow(capsid_primary_secondary_smlm_2, cmap="grey")
