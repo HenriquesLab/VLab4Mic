@@ -14,6 +14,9 @@ def test_createlabel_from_config(configuration_directory):
     label_object, label_params = labels.construct_label(
         label_config_dictionary=probe_params, lab_eff=labelling_efficiency
     )
+    assert label_object is not None
+    assert label_params["labelling_efficiency"] == labelling_efficiency
+    assert label_params["label_name"] == "NPC_Nup96_Cterminal_direct"
 
 
 def test_probe_model(configuration_directory):

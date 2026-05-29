@@ -8,6 +8,9 @@ import numpy as np
 
 def test_empty_particle():
     particle = lp.LabeledInstance()
+    assert particle.labels == {}
+    assert particle.secondary == {}
+    assert particle.sequential_labelling is False
 
 # test with source and label params from fixture
 
