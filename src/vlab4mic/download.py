@@ -92,16 +92,16 @@ def download_file(url: str, fname: str, chunk_size: int = 1024) -> None:
             bar.update(size)
 
 
-def verify_structure(structureid: str, structure_dir: str) -> None:
+def verify_structure(structureid: str, structure_dir: str) -> Path:
     """
-    Checks if .cif exist alreadly. Otherwise, download it.
-    Downloads PDB *.cif files for the suggested structures in the given path.
+    Checks if the structure's .cif already exists; otherwise downloads it.
 
     Args:
-        data_path: The path to the data directory. Defaults to "data".
+        structureid: The PDB/RCSB ID of the structure (e.g. "7R5K").
+        structure_dir: Directory in which the .cif is stored / downloaded to.
 
     Returns:
-        None
+        Path to the (existing or freshly downloaded) .cif file.
     """
 
     # get CIF path

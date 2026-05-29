@@ -1,4 +1,4 @@
-.PHONY: help install lint format pytest mypy mypy-types docs download-structures
+.PHONY: help install install-editable install-all install-editable-all lint format pytest mypy mypy-types docs download-structures package
 
 help:
 	@echo "Available commands:"
