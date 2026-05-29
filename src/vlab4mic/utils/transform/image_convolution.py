@@ -78,9 +78,11 @@ def convolve_opencl(input, kernel):
     ky = ky / np.sum(ky) if np.sum(ky) > 0 else ky
     kx = kx / np.sum(kx) if np.sum(kx) > 0 else kx
 
-    # Apply separable 1D convolutions
-    intermediate = convolve1D_opencl(input, ky, axis=0)
-    intermediate = convolve1D_opencl(intermediate, kx, axis=1)
+    # Apply separable 1D convolutions: each extracted line varies along one
+    # axis (kx along axis 0, ky along axis 1, kz along axis 2) and must be
+    # convolved along that same axis.
+    intermediate = convolve1D_opencl(input, kx, axis=0)
+    intermediate = convolve1D_opencl(intermediate, ky, axis=1)
     output = convolve1D_opencl(intermediate, kz, axis=2)
     return output
 
@@ -259,7 +261,6 @@ def frame_by_volume_convolution(
         return intensity_voxel
     if np.sum(photon_vector) > 0:
         convolved_intensity = convolve3D(intensity_voxel, kernel3D)
-        convolved_intensity = convolve3D_new(intensity_voxel, kernel3D)
     else:
         # there's no need to calculate the convolution if there are no photons
         convolved_intensity = intensity_voxel
