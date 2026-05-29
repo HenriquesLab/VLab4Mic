@@ -50,14 +50,8 @@ class sweep_generator:
     acquisition_outputs = None
     acquisition_outputs_masks = None
     acquisition_outputs_parameters = None
-    # analysis
-    analysis = {}
-    # analysis["measurements"] = None
-    # analysis["inputs"] = None
-    # analysis["extended_dataframe"] = None
-    analysis["unsorted"] = {}
-    analysis["dataframes"] = None
-    analysis["plots"] = {}
+    # analysis: initialised per-instance in __init__ (see below) so results
+    # are not shared across sweep_generator instances.
     # saving
     #output_directory: str = None
 
@@ -67,6 +61,10 @@ class sweep_generator:
             self.experiment = ExperimentParametrisation(random_seed=random_seed)
         else:
             self.experiment = ExperimentParametrisation()
+        self.analysis = {}
+        self.analysis["unsorted"] = {}
+        self.analysis["dataframes"] = None
+        self.analysis["plots"] = {}
         self.params_by_group = {}
         self.params_by_group["probe"] = {}
         self.params_by_group["virtual_sample"] = {}
@@ -322,6 +320,7 @@ class sweep_generator:
             reference_probe = list(self.probes)[0]
         else:
             reference_probe = None
+        reference_sample_params = {}
         if use_experiment_vsample:
             reference_sample_params = copy.copy(self.experiment.virtualsample_params)
         self.set_reference_parameters(
@@ -1134,10 +1133,11 @@ class sweep_generator:
         """
         if data is None:
             data = self.analysis["dataframes"]
-        if x_param is None and len(self.parameters_with_set_values) > 0:
-            x_param = self.parameters_with_set_values[0]
-        else:
-            x_param = "labelling_efficiency"
+        if x_param is None:
+            if len(self.parameters_with_set_values) > 0:
+                x_param = self.parameters_with_set_values[0]
+            else:
+                x_param = "labelling_efficiency"
         if metric_name is None:
             metric_name = list(self.metrics.keys())[0]
         if style is None and len(self.parameters_with_set_values) > 1:
