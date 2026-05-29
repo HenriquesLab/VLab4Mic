@@ -57,7 +57,7 @@ Follow the nexts steps to set up VLab4Mic and use jupyter notebooks locally.
 
 ### Step 1️⃣: Create and activate a New Environment
 
-VLab4Mic is compatible with **Python 3.9, 3.10, 3.11, and 3.12** on macOS, Windows, and Linux.
+VLab4Mic is compatible with **Python 3.10, 3.11, 3.12, and 3.13** on macOS, Windows, and Linux.
 
 > 💡 **We strongly recommend** creating a new virtual environment to use VLab4Mic.  
 > You can use either Conda ([Miniconda installation](https://docs.conda.io/en/latest/miniconda.html)) or Python's built-in `venv` module.
@@ -148,7 +148,7 @@ Follow the following steps to set up VLab4Mic.
 
 ### Step 1️⃣: Create and activate a New Environment
 
-VLab4Mic is compatible with **Python 3.9, 3.10, 3.11, and 3.12** on macOS, Windows, and Linux.
+VLab4Mic is compatible with **Python 3.10, 3.11, 3.12, and 3.13** on macOS, Windows, and Linux.
 
 > 💡 **We strongly recommend** creating a new virtual environment to use VLab4Mic.  
 > You can use either Conda ([Miniconda installation](https://docs.conda.io/en/latest/miniconda.html)) or Python's built-in `venv` module.
@@ -315,7 +315,7 @@ from vlab4mic.experiments import image_vsample
 
 images, noiseless, experiment = image_vsample(
     structure="7R5K",  # PDB ID code for a Nuclear Pore complex
-    probe_templates=["NPC_Nup96_Cterminal_direct",],  # Pre-set probe for 7R5K
+    probe_template="NPC_Nup96_Cterminal_direct",  # Pre-set probe for 7R5K
     run_simulation=True,
     clear_experiment=True,
 )
@@ -554,8 +554,9 @@ Indirect probes include an atomic model for the probe itself, as is the case for
 
 | Modality name | Description | PSF shape X,Y,Z (nm) | Image pixelsize (nm) | Notes |
 | --- | --- | --- | --- | --- |
-| **Widefield** | Widefield microscope | 94,94,331 | 100 | |
-| **Confocal** | Confocal microscope | 94,94,331 | 70 | |
+| **Widefield** | Widefield microscope | 130,130,400 | 100 | |
+| **Confocal** | Confocal microscope | 100,100,300 | 70 | |
+| **AiryScan** | AiryScan microscope | 61,61,230 | 40 | |
 | **STED** | STED microscope | 20,20,20 | 15 | |
-| **SMLM** | SMLM image model | 8,8,8 | 5 | Emulates effective image |
+| **SMLM** | SMLM image model | 8,8,8 | 2 | Emulates effective image |
 | **Reference** | Idealised microscope | 5,5,5 | 5 | |
