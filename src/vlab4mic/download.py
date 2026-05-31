@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Optional
 
 import requests
 import yaml
@@ -26,7 +27,7 @@ headers = {
 }
 
 
-def download_suggested_structures(data_path: str = None) -> None:
+def download_suggested_structures(data_path: Optional[str] = None) -> None:
     """
     Downloads PDB *.cif files for the suggested structures in the given path.
 
