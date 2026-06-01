@@ -10,7 +10,7 @@ def test_gen_virtual_sample():
 
 
 def test_image_output_shape():
-    images,images_noiseless, experiment = experiments.image_vsample()
+    images, images_noiseless, experiment = experiments.image_vsample()
     for modality in images.keys():
         assert type(images[modality]) is dict
         assert len(images[modality]["ch0"].shape) == 3
@@ -40,7 +40,7 @@ structure_list = [
 
 @pytest.mark.parametrize("structure", structure_list)
 def test_image_sample_structures(structure):
-    images,images_noiseless, experiment = experiments.image_vsample(
+    images, images_noiseless, experiment = experiments.image_vsample(
         structure=structure,
         labelling_efficiency=0.01,
     )
@@ -50,7 +50,9 @@ def test_image_sample_structures(structure):
 
 def test_multimodal_imaging():
     modalities = ["Widefield", "Confocal", "SMLM", "STED"]
-    images,images_noiseless, experiment = experiments.image_vsample(multimodal=modalities)
+    images, images_noiseless, experiment = experiments.image_vsample(
+        multimodal=modalities
+    )
     modalityname = list(images.keys())[0]
     assert len(images[modalityname]["ch0"].shape) == 3
     assert len(list(images.keys())) == len(modalities)
@@ -59,7 +61,7 @@ def test_multimodal_imaging():
 def test_download_structure():
     structure9I0K = "9I0K"
     modalities = ["Widefield", "Confocal", "SMLM", "STED"]
-    images,images_noiseless, experiment = experiments.image_vsample(
+    images, images_noiseless, experiment = experiments.image_vsample(
         structure=structure9I0K, multimodal=modalities
     )
     modalityname = list(images.keys())[0]
@@ -68,27 +70,33 @@ def test_download_structure():
 
 
 def test_vsample_function():
-    axial_offset = [0,100]
-    yz_orientations = [20,40,60,]
+    axial_offset = [0, 100]
+    yz_orientations = [
+        20,
+        40,
+        60,
+    ]
     sample, experiment = experiments.generate_virtual_sample(
         random_orientations=True,
         random_placing=True,
         random_rotations=True,
-        rotation_angles=[0,20,30],
+        rotation_angles=[0, 20, 30],
         yz_orientations=yz_orientations,
         axial_offset=axial_offset,
         probe_DoL=5,
         number_of_particles=10,
-        clear_experiment=True
+        clear_experiment=True,
     )
     z_pos = experiment.coordinate_field.molecules[0].params["ref_point"][2]
     axis = experiment.coordinate_field.molecules[0].axis["direction"]
-    original_axis = experiment.coordinate_field.molecules[0].axis_reset["direction"]
+    original_axis = experiment.coordinate_field.molecules[0].axis_reset[
+        "direction"
+    ]
     assert z_pos in axial_offset
     original_norm = original_axis / np.linalg.norm(original_axis)
     new_norm = axis / np.linalg.norm(axis)
     dot_product = np.dot(original_norm, new_norm)
-    radians=np.arccos(np.clip(dot_product, -1.0, 1.0))
+    radians = np.arccos(np.clip(dot_product, -1.0, 1.0))
     degree = math.degrees(radians)
     found = False
     for i in yz_orientations:
@@ -104,7 +112,9 @@ def test_vsample_function():
 def test_generate_virtual_sample_probe_secondary_epitope_applied():
     """Regression test: probe_seconday_epitope passed to generate_virtual_sample
     must reach add_probe and be stored as epitope_target_info (issue #3)."""
-    secondary_epitope = {"target": {"type": "Sequence", "value": "TESTEPITOPE"}}
+    secondary_epitope = {
+        "target": {"type": "Sequence", "value": "TESTEPITOPE"}
+    }
     _vsample, experiment = experiments.generate_virtual_sample(
         probe_seconday_epitope=secondary_epitope,
     )
@@ -116,10 +126,10 @@ def test_generate_virtual_sample_probe_secondary_epitope_applied():
 def test_add_probe_secondary_epitope_correct_spelling():
     """Regression test: add_probe must accept the correctly-spelled
     probe_secondary_epitope parameter (issue #4)."""
-    from vlab4mic.experiments import Experiment
-
-    experiment = Experiment()
-    secondary_epitope = {"target": {"type": "Sequence", "value": "TESTEPITOPE2"}}
+    experiment = experiments.ExperimentParametrisation()
+    secondary_epitope = {
+        "target": {"type": "Sequence", "value": "TESTEPITOPE2"}
+    }
     experiment.add_probe(
         probe_template="NHS_ester",
         probe_secondary_epitope=secondary_epitope,
