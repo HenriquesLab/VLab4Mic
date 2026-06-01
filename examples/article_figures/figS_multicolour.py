@@ -74,15 +74,18 @@ images, noisless_images, my_experiment = image_vsample(
     multimodal=modalities,
     SMLM={"exp_time":1, 
           "channels":["ch0","ch1","ch2"], 
-          "lateral_resolution_nm":10, # PSF sigma
+          "lateral_resolution_nm":2, # PSF sigma
           "pixelsize_nm":2, # each pixel in the final image represents 2nm
           "psf_voxel_nm":1, # sampling rate for PSF model
           "depth_of_field_nm":200},
     sample_dimensions=[500,500,100],
     expansion_factor=5,
-    run_simulation=True,
+    run_simulation=False,
     clear_experiment=True,
 )
+my_experiment.update_modality(modality_name="SMLM", simulate_localistations=False)
+images, noisless_images = my_experiment.run_simulation()
+
 # prepare output image for multichannel plot
 zoom_factor = 0.8 # focus on the center of the image
 modalitiy_name = modalities[0]
