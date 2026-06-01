@@ -16,7 +16,10 @@ readme = { file = "README.md", content-type = "text/markdown" }
 license = { text = "MIT" }
 requires-python = ">=3.10"
 classifiers = [
+    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent"
 ]
@@ -35,7 +38,8 @@ dependencies = [
     "scikit-learn>=1.5.0",
     "pandas>=2.2.3",
     "seaborn>=0.13.2",
-    "opencv-python>=4.11"
+    "opencv-python>=4.11",
+    "ipython>=8.0"
 ]
 
 [project.optional-dependencies]

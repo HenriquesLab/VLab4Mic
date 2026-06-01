@@ -35,7 +35,7 @@ jobs:
           path: ./docs/*
 
   deploy_doc:
-    needs: build_doc
+    needs: build_package
     # only run if main branch
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
