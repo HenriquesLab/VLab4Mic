@@ -28,6 +28,10 @@ on:
 
 jobs:
   test_on_ubuntu_container:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     runs-on: [self-hosted, Ubuntu, Docker]
     steps:
       - uses: actions/checkout@v4
@@ -35,11 +39,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
-          python-version: |
-            3.10
-            3.11
-            3.12
-            3.13
+          python-version: ${{ matrix.python-version }}
       - name: Run Pytest
         run: |
           make install-all
