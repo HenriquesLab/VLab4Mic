@@ -79,7 +79,7 @@ The default way to recognise contributions is via the [contributors](https://git
 
 ## **Code of Conduct**
 
-Please note that this project is follows a [Contributor Code of Conduct](https://www.contributor-covenant.org/version/2/1/code_of_conduct/). By participating in this project you agree to abide by its terms.
+Please note that this project is follows a [Contributor Code of Conduct](https://www.contributor-covenant.org/version/3/0/code_of_conduct/). By participating in this project you agree to abide by its terms.
 
 ## **Communication**
 

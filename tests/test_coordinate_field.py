@@ -16,7 +16,7 @@ def test_create_minimal_field():
     test_field = field.create_min_field(
         number_of_particles=number_of_particles
     )
-    test_field.molecules_params["nMolecules"] == number_of_particles
+    assert test_field.molecules_params["nMolecules"] == number_of_particles
     test_field.change_number_of_molecules(25)
     #test_field.show_field()
     test_field.expand_isotropically(factor=2)
@@ -91,5 +91,11 @@ def test_parameter_per_particle():
         orientation_per_particle=orientation_per_particle,
         clear_experiment=True,
     )
-    assert myexperiment.coordinate_field.molecules[0].axis["direction"] == orientation_per_particle[0]
-    assert myexperiment.coordinate_field.molecules[1].axis["direction"] == orientation_per_particle[1]
+    assert np.array_equal(
+        myexperiment.coordinate_field.molecules[0].axis["direction"],
+        orientation_per_particle[0],
+    )
+    assert np.array_equal(
+        myexperiment.coordinate_field.molecules[1].axis["direction"],
+        orientation_per_particle[1],
+    )
