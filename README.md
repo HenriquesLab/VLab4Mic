@@ -6,6 +6,7 @@
 [![PyPI](https://img.shields.io/pypi/v/vlab4mic.svg?color=green)](https://pypi.org/project/vlab4mic)
 [![Python Version](https://img.shields.io/pypi/pyversions/vlab4mic.svg?color=green)](https://python.org)
 [![Downloads](https://img.shields.io/pypi/dm/vlab4mic)](https://pypi.org/project/vlab4mic)
+[![Documentation](https://img.shields.io/badge/docs-vlab4mic.henriqueslab.org-blue)](https://vlab4mic.henriqueslab.org/)
 [![License](https://img.shields.io/github/license/HenriquesLab/vlab4mic?color=Green)](https://github.com/HenriquesLab/vlab4mic/blob/main/LICENSE.txt)
 [![Tests](https://github.com/HenriquesLab/vlab4mic/actions/workflows/package_build_test_oncall.yml/badge.svg)](https://github.com/HenriquesLab/vlab4mic/actions/workflows/package_build_test_oncall.yml)
 [![Coverage](https://img.shields.io/codecov/c/github/HenriquesLab/vlab4mic.svg?branch=main)](https://img.shields.io/codecov/c/github/HenriquesLab/vlab4mic?branch=main)
