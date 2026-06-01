@@ -1,0 +1,44 @@
+name: Notebooks - Colab smoke test
+# Executes the codeless notebooks the same way Google Colab does
+# (pip install from the package index) so a release can't silently
+# break the Colab/Jupyter entry points without CI catching it.
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "notebooks/**"
+      - "src/**"
+      - "pyproject.toml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "notebooks/**"
+      - "src/**"
+      - "pyproject.toml"
+  workflow_dispatch:
+
+jobs:
+  run-notebooks:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install package and notebook dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # vlab4mic from the checkout under test; vlab4micjupyter + nbmake from PyPI,
+          # mirroring the `pip install vlab4mic vlab4micjupyter` the notebooks run on Colab.
+          pip install .
+          pip install vlab4micjupyter nbmake ipykernel
+      - name: Execute notebooks
+        # The widget cells only instantiate the UI (no button callbacks fire),
+        # so this is a fast import/initialisation smoke test, not a full simulation.
+        run: |
+          pytest --nbmake --nbmake-kernel=python3 --nbmake-timeout=300 notebooks/
