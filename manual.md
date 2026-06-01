@@ -29,6 +29,14 @@ The following table lists our notebooks tailored to use VLab4Mic in Google Colab
 | **Main Interface** | Create virtual samples and simulate image acquisition with multiple imaging modalities | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/VLab4Mic/blob/main/notebooks/VLab4Mic_main.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/VLab4Mic/blob/main/notebooks/VLab4Mic_main.ipynb) |
 | **Parameter Sweeps** | Generate and analyze simulations over parameter ranges for optimization | [![Jupyter Notebook](https://img.shields.io/badge/jupyter-blue.svg?style=flat&logo=jupyter&logoColor=white)](https://github.com/HenriquesLab/VLab4Mic/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) | [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/HenriquesLab/VLab4Mic/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) |
 
+## Video Tutorials
+
+| Tutorial | Video |
+| --- | --- |
+| Tutorial 1 | [![Watch Tutorial 1](https://img.youtube.com/vi/YkbJg9YjsTY/hqdefault.jpg)](https://youtu.be/YkbJg9YjsTY) |
+| Tutorial 2 | [![Watch Tutorial 2](https://img.youtube.com/vi/HLtcZQz92EU/hqdefault.jpg)](https://youtu.be/HLtcZQz92EU) |
+| Tutorial 3 | [![Watch Tutorial 3](https://img.youtube.com/vi/Sk4gfXF-R-Q/hqdefault.jpg)](https://youtu.be/Sk4gfXF-R-Q) |
+
 ## Option 1: 📚 Use Jupyter Notebooks in Google Colab
 Google Colab is an online service that provides computing resources to run Jupyter Notebooks without prior set up. This means that you don't need to install VLab4Mic in your computer, nor create virtual environments for it.  
 

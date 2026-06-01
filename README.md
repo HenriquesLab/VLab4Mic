@@ -65,6 +65,14 @@ The easiest way to start.
 | **Main Interface** | Create virtual samples & simulate imaging | [Notebook](https://github.com/HenriquesLab/VLab4Mic/blob/main/notebooks/VLab4Mic_main.ipynb) | [Open in Colab](https://githubtocolab.com/HenriquesLab/VLab4Mic/blob/main/notebooks/VLab4Mic_main.ipynb) |
 | **Parameter Sweeps** | Configure & run simulation sweeps | [Notebook](https://github.com/HenriquesLab/VLab4Mic/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) | [Open in Colab](https://githubtocolab.com/HenriquesLab/VLab4Mic/blob/main/notebooks/VLab4Mic_parameter_sweeps.ipynb) |
 
+### Video Tutorials
+
+| Tutorial | Video |
+|----------|-------|
+| Tutorial 1 | [![Watch Tutorial 1](https://img.youtube.com/vi/YkbJg9YjsTY/hqdefault.jpg)](https://youtu.be/YkbJg9YjsTY) |
+| Tutorial 2 | [![Watch Tutorial 2](https://img.youtube.com/vi/HLtcZQz92EU/hqdefault.jpg)](https://youtu.be/HLtcZQz92EU) |
+| Tutorial 3 | [![Watch Tutorial 3](https://img.youtube.com/vi/Sk4gfXF-R-Q/hqdefault.jpg)](https://youtu.be/Sk4gfXF-R-Q) |
+
 ### If the Colab link fails:
 1. Click the **Jupyter** badge (opens the raw notebook)  
 2. Download the `.ipynb` file  
@@ -182,5 +190,4 @@ See: https://github.com/HenriquesLab/VLab4Mic/blob/main/CONTRIBUTING.md
 # Support
 - Discussions: https://github.com/HenriquesLab/VLab4Mic/discussions  
 - Issues: https://github.com/HenriquesLab/VLab4Mic/issues  
-
 
