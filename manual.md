@@ -217,7 +217,7 @@ We also provide probe templates tailored for specific structures, such as direct
 ```python
 from vlab4mic.experiments import image_vsample
 
-images, noiseless, experiment = image_vsample(
+npc_images, npc_noiseless, npc_experiment = image_vsample(
     structure="7R5K",  # PDB ID code for a Nuclear Pore complex
     probe_template="NPC_Nup96_Cterminal_direct",  # Pre-set probe for 7R5K
     run_simulation=True,
@@ -235,7 +235,7 @@ nmods = len(modalities)
 fig, axs = plt.subplots(1, nmods)
 nframe = 0
 for i, mod in enumerate(modalities):
-    axs[i].imshow(images[mod][nframe], cmap="magma")
+    axs[i].imshow(images[mod]["ch0"][nframe], cmap="magma")
     axs[i].set_title(mod)
 ```
 
