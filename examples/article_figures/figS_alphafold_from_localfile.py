@@ -7,32 +7,40 @@ np.random.seed(44)
 
 structure = "PATH/TO/YOUR/LOCAL/MODEL/AF-P00520-F1-model_v6.cif"
 
+instructions = (
+    "## Instructions to obtain a custom structure for this example:\n"
+    "# 1. Go to AlphaFold Protein Structure Database:\n"
+    "#    https://alphafold.ebi.ac.uk/\n"
+    "# 2. Search for your protein of interest using its UniProt ID\n"
+    "#    for instance: https://alphafold.ebi.ac.uk/entry/AF-P00520-F1\n"
+    "#    (For this example, we used AF-P00520-F1-v6)\n"
+    "# 3. Download the CIF (mmCIF) file of the predicted structure,\n"
+    "# 4. Set 'structure' to the path of the downloaded CIF file.\n"
+    "# Example:\n"
+    "#    structure = 'PATH/TO/YOUR/LOCAL/MODEL/AF-P00520-F1-model_v6.cif'\n"
+    "# 5. Run the python script with the new structure path."
+)
+
 # Check if the structure file exists
 if not os.path.isfile(structure):
     raise FileNotFoundError(
-        f"Structure file not found at: {structure}\n\n"
-        "## Instructions to obtain a custom structure for this example:\n"
-        "# 1. Go to AlphaFold Protein Structure Database:\n"
-        "#    https://alphafold.ebi.ac.uk/\n"
-        "# 2. Search for your protein of interest using its UniProt ID\n"
-        "#    for instance: https://alphafold.ebi.ac.uk/entry/AF-P00520-F1\n"
-        "#    (For this example, we used AF-P00520-F1-v6)\n"
-        "# 3. Download the CIF (mmCIF) file of the predicted structure,\n"
-        "# 4. Set 'structure' to the path of the downloaded CIF file.\n"
-        "# Example:\n"
-        "#    structure = 'PATH/TO/YOUR/LOCAL/MODEL/AF-P00520-F1-model_v6.cif'\n"
-        "# 5. Run the python script with the new structure path."
+        f"Structure file not found at: {structure}\n\n{instructions}"
     )
 
 modalities = ["STED", "SMLM",]
 # Run simulation
-images , noiseless_,  experiment = experiments.image_vsample(
-    structure=structure,
-    structure_is_path=True,
-    clear_experiment=True,
-    multimodal=modalities,
-    run_simulation=True
-)
+try:
+    images , noiseless_,  experiment = experiments.image_vsample(
+        structure=structure,
+        structure_is_path=True,
+        clear_experiment=True,
+        multimodal=modalities,
+        run_simulation=True
+    )
+except Exception as e:
+    raise RuntimeError(
+        f"Failed to run image_vsample simulation: {e}\n\n{instructions}"
+    )
 
 # expand sample for better visualization
 experiment.coordinate_field.expand_isotropically(factor=10.0)
