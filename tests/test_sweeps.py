@@ -66,3 +66,30 @@ def test_custom_metric():
     results = sweep_gen.analysis["dataframes"]
     assert "mean_value" in results.columns
     assert results["mean_value"].notna().any()
+
+
+def test_probe_secondary_epitope_sweep_parameter_reaches_add_probe():
+    sweep_gen = sweep_generator.sweep_generator()
+    secondary_epitope = {
+        "target": {
+            "type": "Sequence",
+            "value": "SENTINEL_EPITOPE",
+        }
+    }
+
+    sweep_gen.set_sweep_parameters(
+        probe_seconday_epitope=[secondary_epitope]
+    )
+    sweep_gen.create_parameters_iterables()
+
+    probe_parameters = sweep_gen.probe_parameters[0]
+    assert probe_parameters == {
+        "probe_secondary_epitope": secondary_epitope
+    }
+
+    sweep_gen.experiment.add_probe(
+        probe_template="NHS_ester", **probe_parameters
+    )
+
+    configured_probe = sweep_gen.experiment.probe_parameters["NHS_ester"]
+    assert configured_probe.get("epitope_target_info") == secondary_epitope
