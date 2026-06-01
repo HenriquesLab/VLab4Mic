@@ -1,9 +1,12 @@
 import os
 from pathlib import Path
+from typing import Optional
 
 import requests
 import yaml
 from tqdm import tqdm
+
+import vlab4mic
 
 headers = {
     "User-Agent": (
@@ -24,21 +27,26 @@ headers = {
 }
 
 
-def download_suggested_structures(data_path: str = "data") -> None:
+def download_suggested_structures(data_path: Optional[str] = None) -> None:
     """
     Downloads PDB *.cif files for the suggested structures in the given path.
 
     Args:
-        data_path: The path to the data directory. Defaults to "data".
+        data_path: The path to the data directory containing a ``structures``
+            subfolder. Defaults to the installed package configs directory
+            (``vlab4mic/configs``), so the command works out of the box.
 
     Returns:
         None
     """
 
+    if data_path is None:
+        data_path = os.path.join(os.path.dirname(vlab4mic.__file__), "configs")
+
     structures_path = Path(data_path) / "structures"
 
     for filename in structures_path.glob("*.yaml"):
-        if filename.stem == "_template":
+        if filename.stem.startswith("_template"):
             continue
 
         cifs_filename = filename.with_suffix(".cif")
@@ -46,8 +54,8 @@ def download_suggested_structures(data_path: str = "data") -> None:
         with open(filename, "r") as f:
             data = yaml.load(f, Loader=yaml.FullLoader)
 
-        id = data["id"]
-        title = data["title"]
+        id = data["model"]["ID"]
+        title = data["model"]["title"]
 
         if cifs_filename.exists():
             print(f"{title} - [{cifs_filename}] already exists. Skipping...")

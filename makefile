@@ -12,7 +12,7 @@ help:
 	@echo "  mypy                       Run type-checking using mypy"
 	@echo "  mypy-types                 Install missing types using mypy"
 	@echo "  docs                       Generate documentation using pdoc"
-	@echo "  download-structures        Run supramolsim.download:download_suggested_structures"
+	@echo "  download-structures        Run vlab4mic.download:download_suggested_structures"
 	@echo "  package                    Builds python package"
 
 install:
