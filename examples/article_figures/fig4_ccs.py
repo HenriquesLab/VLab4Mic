@@ -3,10 +3,55 @@ import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import os
+import urllib.request
+import tempfile
+from pathlib import Path
+
+
+def download_cif_file(url: str, timeout: int = 30) -> str:
+    """
+    Download a CIF file from a URL and save it to a temporary directory.
+    
+    Parameters
+    ----------
+    url : str
+        The URL of the CIF file to download.
+    timeout : int, optional
+        Timeout for the download in seconds (default: 30).
+    
+    Returns
+    -------
+    str
+        Full path to the downloaded file.
+    
+    Raises
+    ------
+    Exception
+        If the download fails (connection error, HTTP error, etc.).
+    """
+    temp_dir = tempfile.gettempdir()
+    filename = Path(url).name or "structure.cif"
+    filepath = os.path.join(temp_dir, filename)
+    
+    try:
+        print(f"Downloading {url}...")
+        with urllib.request.urlopen(url, timeout=timeout) as response:
+            with open(filepath, 'wb') as out_file:
+                out_file.write(response.read())
+        print(f"Downloaded to: {filepath}")
+        return filepath
+    except Exception as e:
+        raise RuntimeError(f"Failed to download CIF file from {url}: {str(e)}") from e
+
+
 ########################## 
 random_seed = 24
-dome_model = "YOUR/PATH/TO/CIF"
-flat_model = "YOUR/PATH/TO/CIF"
+dome_url = "https://zenodo.org/records/20377070/files/Dome_model.cif"
+flat_url = "https://zenodo.org/records/20377070/files/Flat_lattice_model.cif"
+
+# Download the CIF files
+dome_model = download_cif_file(dome_url)
+flat_model = download_cif_file(flat_url)
 primary = dict(
     probe_template = "Antibody",
     probe_name="custom",
