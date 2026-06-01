@@ -4,24 +4,25 @@ import matplotlib.pyplot as plt
 from vlab4mic import experiments
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 np.random.seed(44)
-## Instructions to obtain a custom structure:
-# 1. Go to AlphaFold Protein Structure Database:
-#    https://alphafold.ebi.ac.uk/
-# 2. Search for your protein of interest using its UniProt ID
-#    for instance: https://alphafold.ebi.ac.uk/entry/AF-P00520-F1
-#    (For this example, we used AF-P00520-F1-v6)
-# 3. Download the CIF (mmCIF) file of the predicted structure,
-# 4. Set "structure" to the path of the downloaded CIF file.
-# Example:
-#    structure = "PATH/TO/YOUR/LOCAL/MODEL/AF-P00520-F1-model_v6.cif"
-# 5. Run the python script with the new structure path.
 
 structure = "PATH/TO/YOUR/LOCAL/MODEL/AF-P00520-F1-model_v6.cif"
-try:
-    filename_name = structure.split(sep=os.sep)[-1]
-    structure_name = filename_name.split(sep=".")[0]
-except:
-    structure_name = "Alphafold Model"
+
+# Check if the structure file exists
+if not os.path.isfile(structure):
+    raise FileNotFoundError(
+        f"Structure file not found at: {structure}\n\n"
+        "## Instructions to obtain a custom structure for this example:\n"
+        "# 1. Go to AlphaFold Protein Structure Database:\n"
+        "#    https://alphafold.ebi.ac.uk/\n"
+        "# 2. Search for your protein of interest using its UniProt ID\n"
+        "#    for instance: https://alphafold.ebi.ac.uk/entry/AF-P00520-F1\n"
+        "#    (For this example, we used AF-P00520-F1-v6)\n"
+        "# 3. Download the CIF (mmCIF) file of the predicted structure,\n"
+        "# 4. Set 'structure' to the path of the downloaded CIF file.\n"
+        "# Example:\n"
+        "#    structure = 'PATH/TO/YOUR/LOCAL/MODEL/AF-P00520-F1-model_v6.cif'\n"
+        "# 5. Run the python script with the new structure path."
+    )
 
 modalities = ["STED", "SMLM",]
 # Run simulation
