@@ -40,5 +40,10 @@ jobs:
       - name: Execute notebooks
         # The widget cells only instantiate the UI (no button callbacks fire),
         # so this is a fast import/initialisation smoke test, not a full simulation.
+        # A normal run finishes in ~75s, but the notebooks do some network I/O
+        # (package install, structure fetch), so a single cell can spike on a slow
+        # runner. The 300s per-cell limit was occasionally tripped on one matrix
+        # leg (a flaky timeout, not a regression); 600s gives ~8x headroom over a
+        # normal cell while still catching a genuinely hung or broken notebook.
         run: |
-          pytest --nbmake --nbmake-kernel=python3 --nbmake-timeout=300 notebooks/
+          pytest --nbmake --nbmake-kernel=python3 --nbmake-timeout=600 notebooks/

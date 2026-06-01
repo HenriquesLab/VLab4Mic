@@ -7,9 +7,9 @@ name = "vlab4mic"
 version = "0.1.0"
 description = "VLab4Mic: A virtual laboratory for microscopy simulation and validation"
 authors = [
-    { name = "Damián Martinez", email = "jdmartinezigc@gmail.com" },
-    { name = "Bruno Saraiva", email = "bruno.msaraiva2@gmail.com" },
-    { name = "Mario del Rosario", email = "mario.delrosario@itqb.unl.pt" },
+    { name = "Damián Martínez", email = "jdmartinezigc@gmail.com" },
+    { name = "Bruno M. Saraiva", email = "bruno.msaraiva2@gmail.com" },
+    { name = "Mario Del Rosario", email = "mario.delrosario@itqb.unl.pt" },
     { name = "Ricardo Henriques", email = "ricardo@henriqueslab.org" }
 ]
 readme = { file = "README.md", content-type = "text/markdown" }
