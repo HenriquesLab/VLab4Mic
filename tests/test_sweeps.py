@@ -60,3 +60,9 @@ def test_custom_metric():
         run_analysis=True,
         custom_metrics=[mean_value,],
     )
+
+    # the custom metric must actually be registered and computed, not ignored
+    assert "mean_value" in sweep_gen.metrics
+    results = sweep_gen.analysis["dataframes"]
+    assert "mean_value" in results.columns
+    assert results["mean_value"].notna().any()

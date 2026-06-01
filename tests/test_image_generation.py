@@ -52,6 +52,10 @@ def test_imager_optional_methods():
     testexperiment.imager.set_roi_position(x=0.1, y=0.2)
     testexperiment.imager.set_roi_sizes(x=2, y=2)
     testexperiment.imager.recenter_roi()
+    # verify the setters actually took effect on the imager's ROI params
+    assert testexperiment.imager.roi_params["dimension_sizes"] == [2, 2, 1]
+    # recenter_roi resets the reference point back to the field centre
+    assert testexperiment.imager.roi_params["reference_point"] == [0.5, 0.5]
 
 
 def test_smlm_with_locs():

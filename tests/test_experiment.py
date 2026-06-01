@@ -18,6 +18,8 @@ def test_image_output_shape():
 
 def test_build_virtual_microscope():
     vmicroscope, experiment = experiments.build_virtual_microscope()
+    assert vmicroscope.get_absolute_reference_point().shape == (1, 3)
+    assert len(experiment.imager.modalities) > 0
 
 
 def test_build_vmicroscope_multimodal():
