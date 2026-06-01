@@ -7,87 +7,114 @@ from scipy.stats import pearsonr
 import cv2
 import copy
 
+
 def match_image_sizes(
-        reference_image = None, 
-        reference_image_pixelsize_nm = None,
-        reference_image_mask = None,
-        simulated_image = None,
-        simulated_image_pixelsize_nm = None,
-        simulated_image_mask = None
-        ):
-        union_mask = None
-        if reference_image_pixelsize_nm and simulated_image_pixelsize_nm:
-            reference_interpolated, simulated_image_interpolated = resize_images_interpolation(
-                img1=reference_image,
-                img2=simulated_image,
+    reference_image=None,
+    reference_image_pixelsize_nm=None,
+    reference_image_mask=None,
+    simulated_image=None,
+    simulated_image_pixelsize_nm=None,
+    simulated_image_mask=None,
+):
+    if not reference_image_pixelsize_nm or not simulated_image_pixelsize_nm:
+        raise ValueError(
+            "Both 'reference_image_pixelsize_nm' and 'simulated_image_pixelsize_nm' must be "
+            "provided to match image sizes. Please supply 'ref_pixelsize' when loading the "
+            "reference image."
+        )
+    union_mask = None
+    reference_interpolated, simulated_image_interpolated = (
+        resize_images_interpolation(
+            img1=reference_image,
+            img2=simulated_image,
+            px_size_im1=reference_image_pixelsize_nm,
+            px_size_im2=simulated_image_pixelsize_nm,
+        )
+    )
+    if reference_image_mask is not None and simulated_image_mask is not None:
+        reference_mask_interpolated, simulated_image_mask_interpolated = (
+            resize_images_interpolation(
+                img1=reference_image_mask,
+                img2=simulated_image_mask,
                 px_size_im1=reference_image_pixelsize_nm,
                 px_size_im2=simulated_image_pixelsize_nm,
+                interpolation_order=0,  # becauese they are masks
             )
-            if reference_image_mask is not None and simulated_image_mask is not None:
-                reference_mask_interpolated, simulated_image_mask_interpolated = resize_images_interpolation(
-                    img1=reference_image_mask,
-                    img2=simulated_image_mask,
-                    px_size_im1=reference_image_pixelsize_nm,
-                    px_size_im2=simulated_image_pixelsize_nm,
-                    interpolation_order=0 # becauese they are masks
-                )
-                union_mask = np.logical_or(
-                    reference_mask_interpolated,
-                    simulated_image_mask_interpolated)
-                #masks_interpolated["reference_mask"] = reference_mask_interpolated
-                #masks_interpolated["query_mask"] = simulated_image_mask_interpolated
-                #masks_interpolated["union_mask"] = union_mask
-        return reference_interpolated, simulated_image_interpolated, union_mask
+        )
+        union_mask = np.logical_or(
+            reference_mask_interpolated, simulated_image_mask_interpolated
+        )
+        # masks_interpolated["reference_mask"] = reference_mask_interpolated
+        # masks_interpolated["query_mask"] = simulated_image_mask_interpolated
+        # masks_interpolated["union_mask"] = union_mask
+    return reference_interpolated, simulated_image_interpolated, union_mask
 
 
 def structural_similarity(
-        reference_image = None, 
-        reference_image_pixelsize_nm = None,
-        reference_image_mask = None,
-        simulated_image = None,
-        simulated_image_pixelsize_nm = None,
-        simulated_image_mask = None
+    reference_image=None,
+    reference_image_pixelsize_nm=None,
+    reference_image_mask=None,
+    simulated_image=None,
+    simulated_image_pixelsize_nm=None,
+    simulated_image_mask=None,
 ):
-    reference_interpolated, simulated_image_interpolated, union_mask = match_image_sizes(
-        reference_image = reference_image, 
-        reference_image_pixelsize_nm = reference_image_pixelsize_nm,
-        reference_image_mask = reference_image_mask,
-        simulated_image = simulated_image,
-        simulated_image_pixelsize_nm = simulated_image_pixelsize_nm,
-        simulated_image_mask = simulated_image_mask
+    reference_interpolated, simulated_image_interpolated, union_mask = (
+        match_image_sizes(
+            reference_image=reference_image,
+            reference_image_pixelsize_nm=reference_image_pixelsize_nm,
+            reference_image_mask=reference_image_mask,
+            simulated_image=simulated_image,
+            simulated_image_pixelsize_nm=simulated_image_pixelsize_nm,
+            simulated_image_mask=simulated_image_mask,
+        )
     )
     similarity = ssim(
         reference_interpolated[union_mask],
         simulated_image_interpolated[union_mask],
-        data_range=simulated_image_interpolated[union_mask].max() - simulated_image_interpolated[union_mask].min()
+        data_range=simulated_image_interpolated[union_mask].max()
+        - simulated_image_interpolated[union_mask].min(),
     )
     return similarity
 
 
 def pearson_correlation(
-        reference_image = None, 
-        reference_image_pixelsize_nm = None,
-        reference_image_mask = None,
-        simulated_image = None,
-        simulated_image_pixelsize_nm = None,
-        simulated_image_mask = None
+    reference_image=None,
+    reference_image_pixelsize_nm=None,
+    reference_image_mask=None,
+    simulated_image=None,
+    simulated_image_pixelsize_nm=None,
+    simulated_image_mask=None,
 ):
-    reference_interpolated, simulated_image_interpolated, union_mask = match_image_sizes(
-        reference_image = reference_image, 
-        reference_image_pixelsize_nm = reference_image_pixelsize_nm,
-        reference_image_mask = reference_image_mask,
-        simulated_image = simulated_image,
-        simulated_image_pixelsize_nm = simulated_image_pixelsize_nm,
-        simulated_image_mask = simulated_image_mask
+    reference_interpolated, simulated_image_interpolated, union_mask = (
+        match_image_sizes(
+            reference_image=reference_image,
+            reference_image_pixelsize_nm=reference_image_pixelsize_nm,
+            reference_image_mask=reference_image_mask,
+            simulated_image=simulated_image,
+            simulated_image_pixelsize_nm=simulated_image_pixelsize_nm,
+            simulated_image_mask=simulated_image_mask,
+        )
     )
     pearson_correlation, pval = pearsonr(
         reference_interpolated[union_mask].flatten(),
-        simulated_image_interpolated[union_mask].flatten()
+        simulated_image_interpolated[union_mask].flatten(),
     )
     return pearson_correlation
 
 
-def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, ref_mask = None, query_mask = None, custom_metrics = None, **kwargs):
+def img_compare(
+    ref,
+    query,
+    metric=[
+        "ssim",
+    ],
+    force_match=False,
+    zoom_in=0,
+    ref_mask=None,
+    query_mask=None,
+    custom_metrics=None,
+    **kwargs,
+):
     """
     Compare two images using specified similarity metrics.
 
@@ -120,58 +147,64 @@ def img_compare(ref, query, metric=["ssim",], force_match=False, zoom_in=0, ref_
     ref_pixelsize = None
     query_pixelsize = None
     if force_match:
-        if 'ref_pixelsize' in kwargs and 'modality_pixelsize' in kwargs:
-            ref_pixelsize = copy.copy(kwargs['ref_pixelsize'])
-            query_pixelsize = copy.copy(kwargs['modality_pixelsize'])
+        if "ref_pixelsize" in kwargs and "modality_pixelsize" in kwargs:
+            ref_pixelsize = copy.copy(kwargs["ref_pixelsize"])
+            query_pixelsize = copy.copy(kwargs["modality_pixelsize"])
             ref, query = resize_images_interpolation(
                 img1=ref,
                 img2=query,
-                px_size_im1=kwargs['ref_pixelsize'],
-                px_size_im2=kwargs['modality_pixelsize'],
-                zoom_in=zoom_in
+                px_size_im1=kwargs["ref_pixelsize"],
+                px_size_im2=kwargs["modality_pixelsize"],
+                zoom_in=zoom_in,
             )
             masks_used = dict()
             if ref_mask is not None and query_mask is not None:
-                ref_mask_interpolated, query_mask_interpolated = resize_images_interpolation(
-                    img1=ref_mask,
-                    img2=query_mask,
-                    px_size_im1=kwargs['ref_pixelsize'],
-                    px_size_im2=kwargs['modality_pixelsize'],
-                    zoom_in=zoom_in,
-                    interpolation_order=0 # becauese they are masks
+                ref_mask_interpolated, query_mask_interpolated = (
+                    resize_images_interpolation(
+                        img1=ref_mask,
+                        img2=query_mask,
+                        px_size_im1=kwargs["ref_pixelsize"],
+                        px_size_im2=kwargs["modality_pixelsize"],
+                        zoom_in=zoom_in,
+                        interpolation_order=0,  # becauese they are masks
+                    )
                 )
                 union_mask = np.logical_or(
-                    ref_mask_interpolated,
-                    query_mask_interpolated)
+                    ref_mask_interpolated, query_mask_interpolated
+                )
                 masks_used["reference_mask"] = ref_mask_interpolated
                 masks_used["query_mask"] = query_mask
                 masks_used["union_mask"] = union_mask
         else:
             ref, query = resize_images_interpolation(
-                img1=ref,
-                img2=query,
-                zoom_in=zoom_in
+                img1=ref, img2=query, zoom_in=zoom_in
             )
     similarity_vector = []
     for method in metric:
         if method == "ssim":
-            similarity = ssim(ref[union_mask], query[union_mask], data_range=query[union_mask].max() - query[union_mask].min())
+            similarity = ssim(
+                ref[union_mask],
+                query[union_mask],
+                data_range=query[union_mask].max() - query[union_mask].min(),
+            )
             similarity_vector.append(similarity)
         elif method == "pearson":
-            similarity, pval = pearsonr(ref[union_mask].flatten(), query[union_mask].flatten())
+            similarity, pval = pearsonr(
+                ref[union_mask].flatten(), query[union_mask].flatten()
+            )
             similarity_vector.append(similarity)
         elif method in custom_metrics.keys():
             custom_measurement = custom_metrics[method](
-                reference_image = reference_image,
-                reference_image_pixelsize_nm = ref_pixelsize,
-                simulated_image = query_image,
-                simulated_image_pixelsize_nm = query_pixelsize,
-                image_mask = union_mask,
-                resized_reference_image = ref,
-                resized_simulated_image = query,
-                **kwargs
-            )  
-            #custom_measurement = metric_calculator.run_metric()
+                reference_image=reference_image,
+                reference_image_pixelsize_nm=ref_pixelsize,
+                simulated_image=query_image,
+                simulated_image_pixelsize_nm=query_pixelsize,
+                image_mask=union_mask,
+                resized_reference_image=ref,
+                resized_simulated_image=query,
+                **kwargs,
+            )
+            # custom_measurement = metric_calculator.run_metric()
             if isinstance(custom_measurement, float):
                 similarity_vector.append(custom_measurement)
             else:
@@ -268,6 +301,7 @@ def resize_images_interpolation(
 
     return _padding(img1, resized_img2, zoom_in)
 
+
 def zoom_img(img, zoom_in=0, **kwargs):
     """
     Crop the center of the image by a zoom factor.
@@ -294,7 +328,10 @@ def zoom_img(img, zoom_in=0, **kwargs):
         center_x = int(imshape[0] / 2)
         center_y = int(imshape[1] / 2)
         half_patch = int(patchsize / 2)
-        img = img[center_y-half_patch:center_y+half_patch, center_x-half_patch:center_x+half_patch]
+        img = img[
+            center_y - half_patch : center_y + half_patch,
+            center_x - half_patch : center_x + half_patch,
+        ]
     return img
 
 
@@ -324,7 +361,10 @@ def image_preprocess(img, background=None, sigma=None, **kwargs):
         img = gaussian_filter(img, sigma=sigma)
     return img
 
-def local_maxima_positions(img, min_distance=1, threshold=None, background=None, sigma=None, **kwargs):
+
+def local_maxima_positions(
+    img, min_distance=1, threshold=None, background=None, sigma=None, **kwargs
+):
     """
     Find local maxima positions in an image.
 
@@ -350,10 +390,15 @@ def local_maxima_positions(img, min_distance=1, threshold=None, background=None,
         img = np.mean(img, axis=-1)
     # remove background as offset value
     img_pre = image_preprocess(img, background, sigma)
-    xy = peak_local_max(img_pre, min_distance=min_distance, threshold_abs=threshold, **kwargs)
+    xy = peak_local_max(
+        img_pre, min_distance=min_distance, threshold_abs=threshold, **kwargs
+    )
     return xy, img_pre
 
-def pixel_positions_to_relative(indices, image_sizes, pixelsize, elevation_img, normalise_elevation=True):
+
+def pixel_positions_to_relative(
+    indices, image_sizes, pixelsize, elevation_img, normalise_elevation=True
+):
     """
     Convert pixel indices to relative positions in the image.
 
@@ -371,30 +416,45 @@ def pixel_positions_to_relative(indices, image_sizes, pixelsize, elevation_img, 
     xyz_relative : list of numpy.ndarray
         List of relative positions (x, y, z=0).
     """
-    image_relative_positions=[(np.array(p)*pixelsize)/image_sizes for p in indices]
+    image_relative_positions = [
+        (np.array(p) * pixelsize) / image_sizes for p in indices
+    ]
     if elevation_img is not None:
         xyz_relative = []
         if normalise_elevation:
-            elevation_img_norm = elevation_img/elevation_img.max()
+            elevation_img_norm = elevation_img / elevation_img.max()
             for xypos, z_index in zip(image_relative_positions, indices):
-                print(f"xy: {xypos},z_index: {z_index}, z: {elevation_img_norm[z_index[0], z_index[1]]}")
-                xyz_relative.append(np.append(xypos, elevation_img_norm[z_index[0], z_index[1]]))
+                print(
+                    f"xy: {xypos},z_index: {z_index}, z: {elevation_img_norm[z_index[0], z_index[1]]}"
+                )
+                xyz_relative.append(
+                    np.append(
+                        xypos, elevation_img_norm[z_index[0], z_index[1]]
+                    )
+                )
         else:
             for xypos, z_index in zip(image_relative_positions, indices):
-                xyz_relative.append(np.append(xypos, elevation_img[z_index[0], z_index[1]]))
+                xyz_relative.append(
+                    np.append(xypos, elevation_img[z_index[0], z_index[1]])
+                )
     else:
-        xyz_relative = [ np.append(xypos, 0)  for xypos in image_relative_positions]
+        xyz_relative = [
+            np.append(xypos, 0) for xypos in image_relative_positions
+        ]
     return xyz_relative
 
-def get_circles(img,
-                blur_px=1,
-                dp=0.1,
-                minDist=3, 
-                param1=1,
-                param2=12,
-                minRadius=3,
-                maxRadius=7,
-                **kwargs):
+
+def get_circles(
+    img,
+    blur_px=1,
+    dp=0.1,
+    minDist=3,
+    param1=1,
+    param2=12,
+    minRadius=3,
+    maxRadius=7,
+    **kwargs,
+):
     """
     Detect circles in an image using the Hough Circle Transform.
 
@@ -433,28 +493,28 @@ def get_circles(img,
         gray_blurred += -gray_blurred.min()
     if gray_blurred.dtype != np.uint8:
         if gray_blurred.dtype in [np.float32, np.float64]:
-            #gray_blurred = np.uint8(gray_blurred * 255)
-            gray_blurred = np.uint8(gray_blurred/gray_blurred.max() * 255)
+            # gray_blurred = np.uint8(gray_blurred * 255)
+            gray_blurred = np.uint8(gray_blurred / gray_blurred.max() * 255)
         else:
-            #gray_blurred = gray_blurred.astype(np.uint8)
-            gray_blurred = (gray_blurred/256).astype('uint8')
+            # gray_blurred = gray_blurred.astype(np.uint8)
+            gray_blurred = (gray_blurred / 256).astype("uint8")
     if blur_px:
         gray_blurred = cv2.blur(gray_blurred, (blur_px, blur_px), 0)
-    else: 
+    else:
         gray_blurred = gray_blurred
     circles = cv2.HoughCircles(
         gray_blurred,
         cv2.HOUGH_GRADIENT,
         dp=dp,
-        minDist=minDist, 
+        minDist=minDist,
         param1=param1,
         param2=param2,
         minRadius=minRadius,
         maxRadius=maxRadius,
     )
-    cirlce_params=dict(
+    cirlce_params = dict(
         dp=dp,
-        minDist=minDist, 
+        minDist=minDist,
         param1=param1,
         param2=param2,
         minRadius=minRadius,
