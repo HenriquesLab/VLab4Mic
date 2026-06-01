@@ -5,7 +5,7 @@ PSF:
     X:
     Y:
     Z:
-  voxel_size:
+  voxelsize:  # in nanometers
 detector:
   FOV_size: # in nanometers
     X:
