@@ -66,7 +66,7 @@ def load_structure(structure_id: str = None, config_dir=None, structure_path=Non
                 template = os.path.join(structure_dir, "_template_.yaml")
                 structure_params = load_yaml(template)
             # get CIF path
-            cif_file = verify_structure(structure_id, structure_dir)
+            cif_file = verify_structure(structure_id)
             # build structure
             title = ""
             if "title" in structure_params["model"]:

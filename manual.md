@@ -69,6 +69,11 @@ Run the following command to install VLab4Mic with the necessary libraries to su
 pip install vlab4mic "vlab4micjupyter[local]"
 ```
 
+On first use, VLab4Mic may download required PDB/CIF structure files. These
+runtime files are stored in your user folder at `~/.vlab4mic/structures`, not in
+the installed Python package directory. Set `VLAB4MIC_STRUCTURE_DIR` to use a
+different cache location.
+
 ### Step 2️⃣: Launch Jupyter Lab
 
 Run the next command to launch Jupyter Lab.
@@ -113,6 +118,10 @@ pip install vlab4mic
 ```bash
 pip install vlab4mic "vlab4micjupyter[local]"
 ```
+
+Structure YAML templates are included with the package. Downloaded PDB/CIF files
+are cached at `~/.vlab4mic/structures` by default; set
+`VLAB4MIC_STRUCTURE_DIR` if you need a shared or custom cache directory.
 
 ### Step 2️⃣: Start using VLab4Mic!
 

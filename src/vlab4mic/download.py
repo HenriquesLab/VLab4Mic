@@ -27,14 +27,26 @@ headers = {
 }
 
 
-def download_suggested_structures(data_path: Optional[str] = None) -> None:
+def get_structure_download_dir() -> Path:
+    """Return the directory used for downloaded structure CIF files."""
+    default_dir = Path.home() / ".vlab4mic" / "structures"
+    return Path(os.environ.get("VLAB4MIC_STRUCTURE_DIR", default_dir))
+
+
+def download_suggested_structures(
+    data_path: Optional[str] = None,
+    download_dir: Optional[str] = None,
+) -> None:
     """
     Downloads PDB *.cif files for the suggested structures in the given path.
 
     Args:
         data_path: The path to the data directory containing a ``structures``
-            subfolder. Defaults to the installed package configs directory
-            (``vlab4mic/configs``), so the command works out of the box.
+            subfolder with YAML configuration files. Defaults to the installed
+            package configs directory (``vlab4mic/configs``).
+        download_dir: Directory where downloaded ``.cif`` files are written.
+            Defaults to ``VLAB4MIC_STRUCTURE_DIR`` when set, otherwise
+            ``~/.vlab4mic/structures``.
 
     Returns:
         None
@@ -44,18 +56,21 @@ def download_suggested_structures(data_path: Optional[str] = None) -> None:
         data_path = os.path.join(os.path.dirname(vlab4mic.__file__), "configs")
 
     structures_path = Path(data_path) / "structures"
+    cifs_path = (
+        Path(download_dir) if download_dir is not None else get_structure_download_dir()
+    )
+    cifs_path.mkdir(parents=True, exist_ok=True)
 
     for filename in structures_path.glob("*.yaml"):
         if filename.stem.startswith("_template"):
             continue
-
-        cifs_filename = filename.with_suffix(".cif")
 
         with open(filename, "r") as f:
             data = yaml.load(f, Loader=yaml.FullLoader)
 
         id = data["model"]["ID"]
         title = data["model"]["title"]
+        cifs_filename = cifs_path / f"{id}.cif"
 
         if cifs_filename.exists():
             print(f"{title} - [{cifs_filename}] already exists. Skipping...")
@@ -63,7 +78,7 @@ def download_suggested_structures(data_path: Optional[str] = None) -> None:
 
         print(f"Downloading {title} - [{cifs_filename}]...")
         url = f"https://files.rcsb.org/download/{id}.cif"
-        download_file(url, filename.with_suffix(".cif"))
+        download_file(url, cifs_filename)
 
 
 def download_file(url: str, fname: str, chunk_size: int = 1024) -> None:
@@ -77,6 +92,8 @@ def download_file(url: str, fname: str, chunk_size: int = 1024) -> None:
     Returns:
         None
     """
+    fname = Path(fname)
+    fname.parent.mkdir(parents=True, exist_ok=True)
     resp = requests.get(url, stream=True, headers=headers)
     total = int(resp.headers.get("content-length", 0))
 
@@ -100,22 +117,25 @@ def download_file(url: str, fname: str, chunk_size: int = 1024) -> None:
             bar.update(size)
 
 
-def verify_structure(structureid: str, structure_dir: str) -> Path:
+def verify_structure(structureid: str, structure_dir: Optional[str] = None) -> Path:
     """
     Checks if the structure's .cif already exists; otherwise downloads it.
 
     Args:
         structureid: The PDB/RCSB ID of the structure (e.g. "7R5K").
         structure_dir: Directory in which the .cif is stored / downloaded to.
+            Defaults to ``VLAB4MIC_STRUCTURE_DIR`` when set, otherwise
+            ``~/.vlab4mic/structures``.
 
     Returns:
         Path to the (existing or freshly downloaded) .cif file.
     """
 
     # get CIF path
-    cif_name = structureid + ".cif"
-    cif_file = os.path.join(structure_dir, cif_name)
-    cif_file_path = Path(cif_file)
+    if structure_dir is None:
+        structure_dir = get_structure_download_dir()
+    cif_file_path = Path(structure_dir) / f"{structureid}.cif"
+    cif_file_path.parent.mkdir(parents=True, exist_ok=True)
     if cif_file_path.exists():
         print(f"{structureid} already exists. Skipping...")
         return cif_file_path

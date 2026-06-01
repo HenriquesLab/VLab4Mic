@@ -23,6 +23,9 @@ Preprint submission release.
 
 ### Fixed
 - Fixed the `download-structures` command so it works from an installed package context.
+- Fixed structure downloads so CIF files are cached in user storage
+  (`~/.vlab4mic/structures`, or `VLAB4MIC_STRUCTURE_DIR`) instead of the
+  installed package directory.
 - Fixed CI and packaging issues, including the missing `IPython` runtime dependency.
 - Fixed runtime correctness bugs in workflows and sweep generation.
 - Fixed Colab notebook problems around Google Drive setup, broken links, and notebook framing.

@@ -96,6 +96,10 @@ conda activate MYENV
 pip install vlab4mic "vlab4micjupyter[local]"
 ```
 
+VLab4Mic downloads required PDB/CIF structure files on first use and stores them
+in your user folder at `~/.vlab4mic/structures`. To use a different location,
+set `VLAB4MIC_STRUCTURE_DIR` before running VLab4Mic.
+
 ---
 
 ### 3️⃣ Launch Jupyter Lab
@@ -178,6 +182,5 @@ See: https://github.com/HenriquesLab/VLab4Mic/blob/main/CONTRIBUTING.md
 # Support
 - Discussions: https://github.com/HenriquesLab/VLab4Mic/discussions  
 - Issues: https://github.com/HenriquesLab/VLab4Mic/issues  
-
 
 

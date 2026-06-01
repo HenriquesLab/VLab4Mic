@@ -2,6 +2,7 @@ from vlab4mic.generate import labels
 from vlab4mic.workflows import probe_model
 from vlab4mic.utils.io.yaml_functions import load_yaml
 import os
+import pytest
 
 
 def test_createlabel_from_config(configuration_directory):
@@ -19,6 +20,7 @@ def test_createlabel_from_config(configuration_directory):
     assert label_params["label_name"] == "NPC_Nup96_Cterminal_direct"
 
 
+@pytest.mark.network
 def test_probe_model(configuration_directory):
     label_file = "Antibody" + ".yaml"
     local_path_congfig = os.path.join(
