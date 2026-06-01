@@ -1,5 +1,7 @@
 # VLab4Mic: A Virtual Laboratory for Microscopy
 
+For full documentation, visit the website: https://vlab4mic.henriqueslab.org/
+
 ## What to expect from this manual
 
 This manual covers minimal steps required for running imaging simulations and parameteres sweeps with VLab4Mic, either by using our codeless notebooks or using it as a python package.
