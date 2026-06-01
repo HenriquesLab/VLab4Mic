@@ -617,15 +617,12 @@ class Imager:
         convolution_type = "3Dvolume"
         return psf_stack, convolution_type
 
-    def _load_PSF_from_file(self, path: str, transpose, unitary, **kwargs):
-        # print("loading PSF stack from file")
-        psf_stack = load_psf(path, transpose, unitary)
-        if unitary:
-            convolution_type = "3Dvolume"
-        else:
-            # convolution_type = "2Dlookup"
-            convolution_type = "2Dlookup_optim"
-        return psf_stack, convolution_type
+    def _load_PSF_from_file(self, path: str, transpose=None, unitary=None, **kwargs):
+        raise NotImplementedError(
+            "Loading a PSF from file is not yet implemented. "
+            "Set 'source: generate' in your modality configuration to use "
+            "an analytically generated PSF instead."
+        )
 
     # Imaging methods
     def generate_imaging(
