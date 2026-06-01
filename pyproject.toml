@@ -80,5 +80,5 @@ download-structures = "vlab4mic.download:download_suggested_structures"
 [project.urls]
 Homepage = "https://github.com/HenriquesLab/VLab4Mic"
 Repository = "https://github.com/HenriquesLab/VLab4Mic"
-Documentation = "https://github.com/HenriquesLab/VLab4Mic/wiki"
+Documentation = "https://vlab4mic.henriqueslab.org/"
 Issues = "https://github.com/HenriquesLab/VLab4Mic/issues"
