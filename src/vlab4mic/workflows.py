@@ -370,7 +370,9 @@ def create_imaging_system(
                 image_generator.set_imaging_modality(**mod_params[mod])
                 modality_parameters.append(mod_params[mod])
             else:
-                modality = compile_modality_parameters(mod, config_dir, fluo_emission)
+                modality, _mod_config = compile_modality_parameters(
+                    mod, config_dir, fluo_emission
+                )
                 modality_parameters.append(modality)
                 image_generator.set_imaging_modality(**modality)
         return image_generator, modality_parameters
