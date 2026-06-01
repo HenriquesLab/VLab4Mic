@@ -180,10 +180,10 @@ class Imager:
         field_emitters: dict,
         field_scale: float,
         plotting_params: dict,
-        reference_point = None,
-        field_sizes = None,
-        particle_positions = None,
-        particle_size = None,
+        reference_point=None,
+        field_sizes=None,
+        particle_positions=None,
+        particle_size=None,
         **kwargs,
     ):
         """
@@ -205,7 +205,9 @@ class Imager:
             Additional keyword arguments.
         """
         if field_scale == self.get_roi_params("scale"):
-            print("FOV scale and current scale are the same. No scaling performed")
+            print(
+                "FOV scale and current scale are the same. No scaling performed"
+            )
             scaling_factor = 1
         else:
             scaling_factor = field_scale / self.get_roi_params("scale")
@@ -215,23 +217,26 @@ class Imager:
         )
         self.field["reference_point"] = reference_point * scaling_factor
         self.recenter_roi()
+        self.set_focus(self.field["reference_point"][2])
         for fluoname, emitters in field_emitters.items():
             self.emitters_by_fluorophore[fluoname] = emitters * scaling_factor
         self.plotting_params = plotting_params
         self.particle_positions = particle_positions * scaling_factor
         if particle_size is not None:
             self.particle_size = particle_size * scaling_factor
-        else: 
+        else:
             self.particle_size = 0
 
     def recenter_roi(self):
         """
-        Recenter the ROI based on the field's reference point.
+        Recenter the ROI laterally based on the field's reference point.
+
+        Only the XY reference point is updated; the focus plane (Z) is left
+        unchanged so that a prior ``set_focus()`` call is not silently undone.
         """
         field_xyz = self.field["reference_point"]
         # print(field_xyz)
         self.set_roi_position(field_xyz[0], field_xyz[1])
-        self.set_focus(field_xyz[2])
 
     # fluorophore parameters
     def set_fluorophores_from_file(self, fluo_params: str):
@@ -287,7 +292,9 @@ class Imager:
 
     # self.set_3state_blinking_params()
 
-    def set_fluorophore_photons_per_second(self, fluorophore_name, photon_yield):
+    def set_fluorophore_photons_per_second(
+        self, fluorophore_name, photon_yield
+    ):
         """
         Set the photon yield for a fluorophore.
 
@@ -298,7 +305,9 @@ class Imager:
         photon_yield : int
             Number of photons per second.
         """
-        self.fluorophore_params[fluorophore_name]["photons_per_second"] = photon_yield
+        self.fluorophore_params[fluorophore_name][
+            "photons_per_second"
+        ] = photon_yield
 
     def set_3state_blinking_params(
         self,
@@ -337,7 +346,9 @@ class Imager:
             initial_state=initial_state,
             photons_per_blink=photons_per_blink,
         )
-        self.fluorophore_params[fluorophore_name]["blinking"] = dict(blink_dictionary)
+        self.fluorophore_params[fluorophore_name]["blinking"] = dict(
+            blink_dictionary
+        )
 
     # modality module
     def set_imaging_modality_from_file(self, modality_file: str):
@@ -393,20 +404,32 @@ class Imager:
             self._set_emitter_params(modality, **emitters)
         else:
             self._set_emitter_params(modality)
-        
-    def _set_emitter_params(self, modality:str, lateral_precision = None, axial_precision = None, nlocalisations = None):
+
+    def _set_emitter_params(
+        self,
+        modality: str,
+        lateral_precision=None,
+        axial_precision=None,
+        nlocalisations=None,
+    ):
         self.modalities[modality]["emitters"] = dict()
         if lateral_precision is not None:
-            self.modalities[modality]["emitters"]["lateral_precision"] = lateral_precision
-        else: 
+            self.modalities[modality]["emitters"][
+                "lateral_precision"
+            ] = lateral_precision
+        else:
             self.modalities[modality]["emitters"]["lateral_precision"] = None
         if axial_precision is not None:
-            self.modalities[modality]["emitters"]["axial_precision"] = axial_precision
-        else: 
+            self.modalities[modality]["emitters"][
+                "axial_precision"
+            ] = axial_precision
+        else:
             self.modalities[modality]["emitters"]["axial_precision"] = None
         if nlocalisations is not None:
-            self.modalities[modality]["emitters"]["nlocalisations"] = nlocalisations
-        else: 
+            self.modalities[modality]["emitters"][
+                "nlocalisations"
+            ] = nlocalisations
+        else:
             self.modalities[modality]["emitters"]["nlocalisations"] = None
 
     def _create_modality(self, modality: str):
@@ -414,7 +437,9 @@ class Imager:
             filters=None, detector=None, psf=None, emission=None, emitters=None
         )
 
-    def _set_modality_channels(self, modality, fluorophores_in_channel, prints=False):
+    def _set_modality_channels(
+        self, modality, fluorophores_in_channel, prints=False
+    ):
         if fluorophores_in_channel is None:
             if prints:
                 print("Creating channel for each fluorophore")
@@ -435,10 +460,16 @@ class Imager:
             self.modalities[modality]["filters"] = fluorophores_in_channel
 
     def _set_modality_psf(
-        self, modality: str, stack_source: str = "generate", prints=False, **kwargs
+        self,
+        modality: str,
+        stack_source: str = "generate",
+        prints=False,
+        **kwargs,
     ):
         if stack_source == "generate":
-            psf_stack, convolution_type = self._generate_analytical_PSF_stack(**kwargs, prints=prints)
+            psf_stack, convolution_type = self._generate_analytical_PSF_stack(
+                **kwargs, prints=prints
+            )
             focus_plane = int((psf_stack.shape)[2] / 2)
             # print(f"focus plane: {focus_plane}")
         else:
@@ -514,7 +545,9 @@ class Imager:
         for mod in self.modalities.keys():
             # print(f"adjusting imsize for {mod}")
             mode_pixelsize = self.modalities[mod]["detector"]["pixelsize"]
-            modality_imsize = self._calculate_imsize_from_ROIranges(mode_pixelsize)
+            modality_imsize = self._calculate_imsize_from_ROIranges(
+                mode_pixelsize
+            )
             # print(f"image_size calculated: {modality_imsize} ")
             self._set_image_size(mod, modality_imsize)
 
@@ -545,7 +578,9 @@ class Imager:
         params : dict
             Parameters for the noise type.
         """
-        self.modalities[modality]["detector"]["noise_model"][noise_type] = params
+        self.modalities[modality]["detector"]["noise_model"][
+            noise_type
+        ] = params
         # print(f"Noise model set as: {noise_type} with params {params}")
 
     def _gen_default_noise_model(self):
@@ -596,7 +631,9 @@ class Imager:
     def generate_imaging(
         self,
         modality=None,
-        channels: list = ["ch0",],
+        channels: list = [
+            "ch0",
+        ],
         nframes=1,
         nbeads=0,
         save=False,
@@ -618,7 +655,9 @@ class Imager:
         if modality is None:
             modality = list(self.modalities.keys())[0]
         # get fluorophores to simulate
-        print(f"Simulating imaging from modality: {modality} in channel {channels}")
+        print(
+            f"Simulating imaging from modality: {modality} in channel {channels}"
+        )
         output_per_channel = dict()
         output_per_channel_noiseless = dict()
         beads_per_channel = dict()
@@ -632,8 +671,14 @@ class Imager:
                 fluonames = list(self.modalities[modality]["filters"][ch])
                 # prepare a dictionary that contains the emitters per channel defined
                 output_per_fluoname = dict()
-                writing_notes = self.identifier + "_" + str(modality) + "_" + str(ch) + "_"
-                for fluo in fluonames:  # a channel could capture multiple fluorophores
+                writing_notes = (
+                    self.identifier + "_" + str(modality) + "_" + str(ch) + "_"
+                )
+                for (
+                    fluo
+                ) in (
+                    fluonames
+                ):  # a channel could capture multiple fluorophores
                     # print(fluo)
                     writing_notes_fluo = writing_notes + str(fluo)
                     if masks:
@@ -649,29 +694,50 @@ class Imager:
                                 [0, 0, 0],
                             ]
                         )
-                        photons_frames = np.repeat(0, nframes).reshape((1, nframes))
+                        photons_frames = np.repeat(0, nframes).reshape(
+                            (1, nframes)
+                        )
                         emission_notes = "None"
                         print(f"photons should be zero: {photons_frames}")
-                        field_data, psf_data = self._homogenise_scales4convolution_modality(
-                            modality, emitters, photons_frames
+                        field_data, psf_data = (
+                            self._homogenise_scales4convolution_modality(
+                                modality, emitters, photons_frames
+                            )
                         )
 
                     else:
                         no_emitters = False
                         # adjust the absolute XY positions to the ROI dimentions
-                        emitters[:, 0] = emitters[:, 0] - self.roi_params["ranges"][0][0]
-                        emitters[:, 1] = emitters[:, 1] - self.roi_params["ranges"][1][0]
-                        photons_frames, emission_notes = self.calculate_photons_per_frame(
-                            modality, fluo, n_emitters, nframes, exp_time
+                        emitters[:, 0] = (
+                            emitters[:, 0] - self.roi_params["ranges"][0][0]
                         )
-                        field_data, psf_data = self._homogenise_scales4convolution_modality(
-                            modality, emitters, photons_frames
+                        emitters[:, 1] = (
+                            emitters[:, 1] - self.roi_params["ranges"][1][0]
+                        )
+                        photons_frames, emission_notes = (
+                            self.calculate_photons_per_frame(
+                                modality, fluo, n_emitters, nframes, exp_time
+                            )
+                        )
+                        field_data, psf_data = (
+                            self._homogenise_scales4convolution_modality(
+                                modality, emitters, photons_frames
+                            )
                         )
                         # check for parameters for localisaiton generation
-                        loc_precision_xy_nm = self.modalities[modality]["emitters"]["lateral_precision"]
-                        loc_precision_z_nm = self.modalities[modality]["emitters"]["axial_precision"]
-                        av_loc_per_emitter = self.modalities[modality]["emitters"]["nlocalisations"]
-                        if loc_precision_xy_nm is not None and av_loc_per_emitter is not None:
+                        loc_precision_xy_nm = self.modalities[modality][
+                            "emitters"
+                        ]["lateral_precision"]
+                        loc_precision_z_nm = self.modalities[modality][
+                            "emitters"
+                        ]["axial_precision"]
+                        av_loc_per_emitter = self.modalities[modality][
+                            "emitters"
+                        ]["nlocalisations"]
+                        if (
+                            loc_precision_xy_nm is not None
+                            and av_loc_per_emitter is not None
+                        ):
                             localisations = points_transforms.generate_localisations_with_noise(
                                 array3d=field_data["field_coordinates"],
                                 loc_precision_xy_nm=loc_precision_xy_nm,
@@ -680,8 +746,15 @@ class Imager:
                             )
                             if localisations.shape[0] > 0:
                                 n_emitters = localisations.shape[0]
-                                photons_frames, emission_notes = self.calculate_photons_per_frame(
-                                    modality, fluo, n_emitters, nframes, exp_time, equal=100
+                                photons_frames, emission_notes = (
+                                    self.calculate_photons_per_frame(
+                                        modality,
+                                        fluo,
+                                        n_emitters,
+                                        nframes,
+                                        exp_time,
+                                        equal=100,
+                                    )
                                 )
                                 field_data["field_coordinates"] = localisations
                                 field_data["photons_frames"] = photons_frames
@@ -693,61 +766,72 @@ class Imager:
                                         [0, 0, 0],
                                     ]
                                 )
-                                photons_frames = np.repeat(0, nframes).reshape((1, nframes))
-                                field_data, psf_data = self._homogenise_scales4convolution_modality(
-                                    modality, emitters, photons_frames
+                                photons_frames = np.repeat(0, nframes).reshape(
+                                    (1, nframes)
                                 )
-                                
+                                field_data, psf_data = (
+                                    self._homogenise_scales4convolution_modality(
+                                        modality, emitters, photons_frames
+                                    )
+                                )
+
                     # write emitter positions after being placed in the FOV
                     gt_notes = writing_notes_fluo + "_usedForImaging"
                     emitters_to_export = field_data["field_coordinates"]
                     if save:
                         self.write_ground_truth_positions(
-                            emitters_to_export, "x [nm],y [nm],z [nm]", gt_notes, no_emitters
+                            emitters_to_export,
+                            "x [nm],y [nm],z [nm]",
+                            gt_notes,
+                            no_emitters,
                         )
                     if "convolution_type" in kwargs.keys():
                         convolution_type = kwargs["convolution_type"]
                     elif masks:
                         convolution_type = "mask"
                     else:
-                        convolution_type = self.modalities[modality]["psf"]["convolution_type"]
+                        convolution_type = self.modalities[modality]["psf"][
+                            "convolution_type"
+                        ]
                     psf_size = psf_data["psf_array"].shape
                     print(f"size of psf is: {psf_size}")
                     simparams = dict(
                         field_data=field_data,
                         psf_data=psf_data,
                         nbeads=nbeads,
-                        photons_per_bead=self.fluorophore_params[fluo]["blinking"][
-                            "photons_per_blink"
+                        photons_per_bead=self.fluorophore_params[fluo][
+                            "blinking"
+                        ]["photons_per_blink"],
+                        psf_projection_depth=self.modalities[modality]["psf"][
+                            "depth"
                         ],
-                        psf_projection_depth=self.modalities[modality]["psf"]["depth"],
                     )
                     if convolution_type == "direct":
                         pass
                     elif convolution_type == "mask":
                         images = conv.generate_frames_volume_convolution(
-                                **field_data,
-                                **psf_data,
-                                asframes=True,
-                                as_mask=True,
-                            )
+                            **field_data,
+                            **psf_data,
+                            asframes=True,
+                            as_mask=True,
+                        )
                         beads = None
                         noise = False
                     elif convolution_type == "raw_volume":
-                            images = conv.generate_frames_volume_convolution(
-                                **field_data,
-                                **psf_data,
-                                asframes=False,
-                            )
-                            beads = None
+                        images = conv.generate_frames_volume_convolution(
+                            **field_data,
+                            **psf_data,
+                            asframes=False,
+                        )
+                        beads = None
                     elif convolution_type == "raw_volume_activation":
-                            images = conv.generate_frames_volume_convolution(
-                                **field_data,
-                                **psf_data,
-                                asframes=False,
-                                activation_only=True
-                            )
-                            beads = None
+                        images = conv.generate_frames_volume_convolution(
+                            **field_data,
+                            **psf_data,
+                            asframes=False,
+                            activation_only=True,
+                        )
+                        beads = None
                     else:
                         images, beads = self.images_by_convolutions(
                             convolution_type, **simparams
@@ -756,28 +840,44 @@ class Imager:
                     # print(f"max and min only photons: {np.max(images)}, {np.min(images)}")
                     # Beta implementation to save images before detection
                     if save:
-                        self._save_timeseries_with_beads(images, beads, writing_notes_fluo)
+                        self._save_timeseries_with_beads(
+                            images, beads, writing_notes_fluo
+                        )
 
                     # wrap up the images from a single fluorophore in the channel
-                    output_per_fluoname[fluo] = dict(images=images, beads=beads)
-                if convolution_type not in ["raw_volume", "raw_volume_activation"]:
-                    timeseries_noiseless, beadstack_noiseless = self._add_fluorophore_signals(output_per_fluoname)
+                    output_per_fluoname[fluo] = dict(
+                        images=images, beads=beads
+                    )
+                if convolution_type not in [
+                    "raw_volume",
+                    "raw_volume_activation",
+                ]:
+                    timeseries_noiseless, beadstack_noiseless = (
+                        self._add_fluorophore_signals(output_per_fluoname)
+                    )
                     # # # Up to here only the photon information on arrival
                     timeseries_noise = None
                     beadstack_noise = None
                     if noise:
                         print("Adding noise")
                         timeseries_noise = np.zeros(
-                            shape = timeseries_noiseless.shape,
-                            dtype=np.float32)
-                        timeseries_noise = self._crop_negative(timeseries_noiseless)
+                            shape=timeseries_noiseless.shape, dtype=np.float32
+                        )
+                        timeseries_noise = self._crop_negative(
+                            timeseries_noiseless
+                        )
                         # print(np.max(timeseries), np.min(timeseries))
-                        timeseries_noise = self.add_detector_noise(modality, timeseries_noise)
+                        timeseries_noise = self.add_detector_noise(
+                            modality, timeseries_noise
+                        )
                         if beadstack_noiseless is not None:
                             beadstack_noise = np.zeros(
                                 shape=beadstack_noiseless.shape,
-                                dtype=np.float32)
-                            beadstack_noise = self.add_detector_noise(modality, beadstack_noiseless)
+                                dtype=np.float32,
+                            )
+                            beadstack_noise = self.add_detector_noise(
+                                modality, beadstack_noiseless
+                            )
                         else:
                             beadstack_noise = None
                     else:
@@ -785,16 +885,22 @@ class Imager:
                         beadstack_noise = copy.deepcopy(beadstack_noiseless)
                     if save:
                         # gt_positions = self.generate_ground_truth_positions(groundtruth_emitters)
-                        timeseries_noise = self._crop_negative(timeseries_noise)
+                        timeseries_noise = self._crop_negative(
+                            timeseries_noise
+                        )
                         beadstack_noise = self._crop_negative(beadstack_noise)
                         writing_notes_fluo = writing_notes_fluo + "_withNoise_"
 
-                        self._save_timeseries_with_beads(timeseries_noise, beadstack_noise, writing_notes_fluo)
+                        self._save_timeseries_with_beads(
+                            timeseries_noise,
+                            beadstack_noise,
+                            writing_notes_fluo,
+                        )
                     output_per_channel[ch] = timeseries_noise
                     output_per_channel_noiseless[ch] = timeseries_noiseless
                     beads_per_channel[ch] = beadstack_noise
                     beads_per_channel_noiseless[ch] = beadstack_noiseless
-                    #return timeseries_noise, beadstack_noise, timeseries_noiseless, beadstack_noiseless
+                    # return timeseries_noise, beadstack_noise, timeseries_noiseless, beadstack_noiseless
                 else:
                     ch = convolution_type
                     images_noiseless = None
@@ -803,22 +909,39 @@ class Imager:
                     output_per_channel_noiseless[ch] = images_noiseless
                     beads_per_channel[ch] = beads
                     beads_per_channel_noiseless[ch] = beadstack_noiseless
-                    #return images, beads, images_noiseless, beadstack_noiseless
-        return (output_per_channel, beads_per_channel, output_per_channel_noiseless, beads_per_channel_noiseless)
+                    # return images, beads, images_noiseless, beadstack_noiseless
+        return (
+            output_per_channel,
+            beads_per_channel,
+            output_per_channel_noiseless,
+            beads_per_channel_noiseless,
+        )
 
-    def generate_modality_mask(self, modality=None, channel = "ch0"):
+    def generate_modality_mask(self, modality=None, channel="ch0"):
         _1, _2, vsample_binay_positions, _3 = self.generate_imaging(
-            modality=modality, 
-            masks="mask")
-        particle_positions = np.argwhere(vsample_binay_positions[channel][0] > 0)
+            modality=modality, masks="mask"
+        )
+        particle_positions = np.argwhere(
+            vsample_binay_positions[channel][0] > 0
+        )
         if particle_positions.shape[0] > 0:
-            psf_lateral_resolution = self.modalities[modality]["psf"]["std_devs"][0]
-            pixelsize_detection = self.modalities[modality]["detector"]["pixelsize"] * 1000
+            psf_lateral_resolution = self.modalities[modality]["psf"][
+                "std_devs"
+            ][0]
+            pixelsize_detection = (
+                self.modalities[modality]["detector"]["pixelsize"] * 1000
+            )
             particle_size = self.particle_size * 100
             particle_and_width = (psf_lateral_resolution + particle_size) * 10
-            modality_psf_width_px = int(np.ceil(particle_and_width/pixelsize_detection))
-            print(f"width: {modality_psf_width_px}, p_size: {particle_and_width}, psf_lateral_resolution: {psf_lateral_resolution}, {pixelsize_detection}")
-            mask_with_psf = np.zeros(shape=vsample_binay_positions[channel][0].shape)
+            modality_psf_width_px = int(
+                np.ceil(particle_and_width / pixelsize_detection)
+            )
+            print(
+                f"width: {modality_psf_width_px}, p_size: {particle_and_width}, psf_lateral_resolution: {psf_lateral_resolution}, {pixelsize_detection}"
+            )
+            mask_with_psf = np.zeros(
+                shape=vsample_binay_positions[channel][0].shape
+            )
             max_x, max_y = vsample_binay_positions[channel][0].shape
             for i in range(particle_positions.shape[0]):
                 x, y = particle_positions[i]
@@ -831,10 +954,12 @@ class Imager:
                 low_y = np.floor(y - modality_psf_width_px)
                 if low_y < 0:
                     low_y = 0
-                high_y = np.ceil(y +  modality_psf_width_px)
+                high_y = np.ceil(y + modality_psf_width_px)
                 if high_x > max_y:
                     high_x = max_y
-                mask_with_psf[int(low_x):int(high_x), int(low_y):int(high_y)] = 1
+                mask_with_psf[
+                    int(low_x) : int(high_x), int(low_y) : int(high_y)
+                ] = 1
             return mask_with_psf
         else:
             return np.zeros(shape=vsample_binay_positions[channel][0].shape)
@@ -876,13 +1001,17 @@ class Imager:
         shp_ims = output_per_fluoname[fluorophores[0]]["images"].shape
         timeseries = np.zeros((shp_ims))
         for fl in fluorophores:
-            both_images = np.array([timeseries, output_per_fluoname[fl]["images"]])
+            both_images = np.array(
+                [timeseries, output_per_fluoname[fl]["images"]]
+            )
             timeseries = np.sum(both_images, axis=0)
         if output_per_fluoname[fluorophores[0]]["beads"] is not None:
             shp_bds = output_per_fluoname[fluorophores[0]]["beads"].shape
             beadstack = np.zeros((shp_bds))
             for fl in fluorophores:
-                both_beads = np.array([beadstack, output_per_fluoname[fl]["beads"]])
+                both_beads = np.array(
+                    [beadstack, output_per_fluoname[fl]["beads"]]
+                )
                 beadstack = np.sum(both_beads, axis=0)
         else:
             beadstack = None
@@ -911,7 +1040,9 @@ class Imager:
         noise_order = self.modalities[modality]["detector"]["noise_order"]
         for noise_type in noise_order:
             # print(noise_type)
-            stack = add_image_noise(noise_type, stack, **noise_params[noise_type])
+            stack = add_image_noise(
+                noise_type, stack, **noise_params[noise_type]
+            )
             # includes the processes from collecting the photons, multiplying
             # and all possible source of noise
             # plus the ADU conversion factor
@@ -925,7 +1056,9 @@ class Imager:
         stack[stack > saturation] == saturation
         return stack
 
-    def _save_timeseries_with_beads(self, timeseries_stack, beads_stack, notes):
+    def _save_timeseries_with_beads(
+        self, timeseries_stack, beads_stack, notes
+    ):
         notes_images = notes + "_timeseries_photons"
         self.write_tiff_stack(timeseries_stack, notes_images)
         if beads_stack is not None:
@@ -943,8 +1076,8 @@ class Imager:
     ):
         if convolution_type == "2Dlookup":
             # generate convolutions plane by plane then collapse
-            downsampled_images, upsampled_images = conv.generate_frames_projection_conv(
-                **field_data, **psf_data
+            downsampled_images, upsampled_images = (
+                conv.generate_frames_projection_conv(**field_data, **psf_data)
             )
             # print("GENERATING BEADS")
             if nbeads >= 1:
@@ -984,12 +1117,14 @@ class Imager:
                 psf_projection_depth=psf_projection_depth,
             )
             if nbeads >= 1:
-                downsampled_beads = conv.generate_beads_frames_volume_convolution(
-                    **field_data,
-                    **psf_data,
-                    nbeads=nbeads,
-                    bead_photons=photons_per_bead,
-                    asframes=True,
+                downsampled_beads = (
+                    conv.generate_beads_frames_volume_convolution(
+                        **field_data,
+                        **psf_data,
+                        nbeads=nbeads,
+                        bead_photons=photons_per_bead,
+                        asframes=True,
+                    )
                 )
             else:
                 downsampled_beads = None
@@ -1030,7 +1165,14 @@ class Imager:
         return copy.copy(emitters_in_ROI)
 
     def calculate_photons_per_frame(
-        self, modality, fluo, n_emitters, nframes, exp_time=1, equal=None, **kwargs
+        self,
+        modality,
+        fluo,
+        n_emitters,
+        nframes,
+        exp_time=1,
+        equal=None,
+        **kwargs,
     ):
         """
         Calculate the number of photons per frame for emitters.
@@ -1070,21 +1212,27 @@ class Imager:
                     nframes, n_emitters, **kinetics
                 )
                 emission_notes = dictionary2string(kinetics)
-            else: #if emission == "constant":
+            else:  # if emission == "constant":
                 if equal is not None:
-                    photons_per_second = equal,
+                    photons_per_second = (equal,)
                     exp_time = 1
                 else:
-                    photons_per_second = self.fluorophore_params[fluo]["photons_per_second"]
+                    photons_per_second = self.fluorophore_params[fluo][
+                        "photons_per_second"
+                    ]
                 photons_per_frame = exp_time * photons_per_second
-                print(f"Average number of photons per frame: {photons_per_frame}")
+                print(
+                    f"Average number of photons per frame: {photons_per_frame}"
+                )
                 photon_frames = self._generate_constant_emission_modality(
                     nframes, n_emitters, photons_per_frame
                 )
                 emission_notes = "constant_emission_"
         return photon_frames, emission_notes
 
-    def _generate_photons_blinking_modality(self, nframes, nemitters, **kwargs):
+    def _generate_photons_blinking_modality(
+        self, nframes, nemitters, **kwargs
+    ):
         """
         kwargs is intended to hold the kinetic parameters and
         photon budget from the emitter species
@@ -1223,7 +1371,7 @@ class Imager:
         reference_pt=False,
         axesoff=False,
         emitters_plotsize=None,
-        return_fig = False
+        return_fig=False,
     ):
         """
         Visualize the emitter field and ROI in 3D.
@@ -1260,7 +1408,8 @@ class Imager:
         # print(f"dimension ranges in XY pane: {xrang, yrang}")
         # print(f"position of focus {z_focus}")
         xx, yy = np.meshgrid(
-            range(int(xrang[0]), int(xrang[1])), range(int(yrang[0]), int(yrang[1]))
+            range(int(xrang[0]), int(xrang[1])),
+            range(int(yrang[0]), int(yrang[1])),
         )
         zz = yy * 0 + (z_focus * factor)
         fig = plt.figure()
@@ -1278,17 +1427,21 @@ class Imager:
                     self.plotting_params[fname]["plotsize"] = emitters_plotsize
                 add_ax_scatter(
                     ax,
-                    format_coordinates(coords * factor, **self.plotting_params[fname]),
+                    format_coordinates(
+                        coords * factor, **self.plotting_params[fname]
+                    ),
                 )
         ax.set_box_aspect(
-            [ub - lb for lb, ub in (getattr(ax, f"get_{a}lim")() for a in "xyz")]
+            [
+                ub - lb
+                for lb, ub in (getattr(ax, f"get_{a}lim")() for a in "xyz")
+            ]
         )
         ax.view_init(elev=view_init[0], azim=view_init[1], roll=view_init[2])
         if axesoff:
             ax.set_axis_off()
         if return_fig:
             return fig
-
 
     def get_modality_psf_stack(self, modality: str):
         """
