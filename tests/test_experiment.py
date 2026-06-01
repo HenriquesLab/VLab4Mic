@@ -99,3 +99,30 @@ def test_vsample_function():
     axis2 = experiment.coordinate_field.molecules[0].axis["direction"]
     axis_diff = axis2 - original_axis
     assert np.linalg.norm(axis_diff) < 0.00001
+
+
+def test_generate_virtual_sample_probe_secondary_epitope_applied():
+    """Regression test: probe_seconday_epitope passed to generate_virtual_sample
+    must reach add_probe and be stored as epitope_target_info (issue #3)."""
+    secondary_epitope = {"target": {"type": "Sequence", "value": "TESTEPITOPE"}}
+    _vsample, experiment = experiments.generate_virtual_sample(
+        probe_seconday_epitope=secondary_epitope,
+    )
+    probe_name = list(experiment.probe_parameters.keys())[0]
+    configured_probe = experiment.probe_parameters[probe_name]
+    assert configured_probe.get("epitope_target_info") == secondary_epitope
+
+
+def test_add_probe_secondary_epitope_correct_spelling():
+    """Regression test: add_probe must accept the correctly-spelled
+    probe_secondary_epitope parameter (issue #4)."""
+    from vlab4mic.experiments import Experiment
+
+    experiment = Experiment()
+    secondary_epitope = {"target": {"type": "Sequence", "value": "TESTEPITOPE2"}}
+    experiment.add_probe(
+        probe_template="NHS_ester",
+        probe_secondary_epitope=secondary_epitope,
+    )
+    configured_probe = experiment.probe_parameters["NHS_ester"]
+    assert configured_probe.get("epitope_target_info") == secondary_epitope
