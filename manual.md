@@ -57,7 +57,9 @@ To use a notebook locally, you need to install VLab4Mic. Here's summary of the s
 
 Follow the steps below to set up VLab4Mic and use Jupyter notebooks locally.
 
-> 💡 We recommend installing VLab4Mic in a dedicated virtual environment to avoid dependency conflicts. You can create one with Python's built-in `venv`, pyenv, or Conda; activate it before running the install command below.
+> � **Python version:** VLab4Mic requires **Python 3.10 or later** (3.10, 3.11, 3.12, and 3.13 are tested and supported).
+
+> �💡 We recommend installing VLab4Mic in a dedicated virtual environment to avoid dependency conflicts. You can create one with Python's built-in `venv`, pyenv, or Conda; activate it before running the install command below.
 
 ### Step 1️⃣: Install VLab4Mic
 
