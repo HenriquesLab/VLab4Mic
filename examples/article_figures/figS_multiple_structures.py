@@ -107,7 +107,7 @@ x0,x1 = figx*0.08, figx*0.59
 y0,y1 = figy*0.64, figy*0.82
 
 bbox = Bbox([[x0,y0],[x1,y1]])
-filename_ = experiment1.date_as_string + 'vlab4mic_fig2_E.png'
+filename_ = experiment1.date_as_string + 'figS_multiple_structures_labelled.png'
 filename1 = os.path.join(experiment1.output_directory, filename_)
 fig.savefig(filename1, dpi=300, bbox_inches=bbox)
 
@@ -152,6 +152,6 @@ y0,y1 = figy*0.6, figy*0.89
 
 bbox = Bbox([[x0,y0],[x1,y1]])
 
-filename = experiment1.date_as_string + 'figS_multiple_structures_labelled.png'
+filename = experiment1.date_as_string + 'figS_multiple_structures_labelled_image_simulations.png'
 filename2 = os.path.join(experiment1.output_directory, filename)
 fig.savefig(filename2,dpi=300, bbox_inches=bbox)
