@@ -6,6 +6,26 @@ import pytest
 import os
 
 
+def pytest_addoption(parser):
+    parser.addoption(
+        "--no-network",
+        action="store_true",
+        default=False,
+        help="Skip all tests marked with @pytest.mark.network (for offline / sandboxed environments).",
+    )
+
+
+def pytest_collection_modifyitems(config, items):
+    if config.getoption("--no-network"):
+        skip = pytest.mark.skip(
+            reason="requires network access to download .cif files (--no-network)"
+        )
+        for item in items:
+            if "network" in item.keywords:
+                item.add_marker(skip)
+
+
+
 @pytest.fixture(scope="module")
 def configuration_directory():
     pck_dir = os.path.dirname(os.path.abspath(vlab4mic.__file__))

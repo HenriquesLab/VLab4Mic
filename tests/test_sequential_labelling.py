@@ -2,6 +2,8 @@ import pytest
 from vlab4mic import workflows, experiments
 from vlab4mic.utils import data_format
 
+pytestmark = pytest.mark.network
+
 
 def test_primary_secondary_fromExperiment():
     sample, test_experiment = experiments.generate_virtual_sample(

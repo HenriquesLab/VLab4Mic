@@ -3,6 +3,8 @@ import pytest
 import numpy as np
 from vlab4mic import workflows
 
+pytestmark = pytest.mark.network
+
 structural_integrity_values = np.linspace(0, 1, 3)
 
 

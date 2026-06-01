@@ -4,11 +4,13 @@ import numpy as np
 import math
 
 
+@pytest.mark.network
 def test_gen_virtual_sample():
     vsample, testexperiment = experiments.generate_virtual_sample()
     assert len(vsample["reference_point"]) == 3
 
 
+@pytest.mark.network
 def test_image_output_shape():
     images, images_noiseless, experiment = experiments.image_vsample()
     for modality in images.keys():
@@ -38,6 +40,7 @@ structure_list = [
 ]
 
 
+@pytest.mark.network
 @pytest.mark.parametrize("structure", structure_list)
 def test_image_sample_structures(structure):
     images, images_noiseless, experiment = experiments.image_vsample(
@@ -48,6 +51,7 @@ def test_image_sample_structures(structure):
     assert len(images[modalityname]["ch0"].shape) == 3
 
 
+@pytest.mark.network
 def test_multimodal_imaging():
     modalities = ["Widefield", "Confocal", "SMLM", "STED"]
     images, images_noiseless, experiment = experiments.image_vsample(
@@ -58,6 +62,7 @@ def test_multimodal_imaging():
     assert len(list(images.keys())) == len(modalities)
 
 
+@pytest.mark.network
 def test_download_structure():
     structure9I0K = "9I0K"
     modalities = ["Widefield", "Confocal", "SMLM", "STED"]
@@ -69,6 +74,7 @@ def test_download_structure():
     assert len(list(images.keys())) == len(modalities)
 
 
+@pytest.mark.network
 def test_vsample_function():
     axial_offset = [0, 100]
     yz_orientations = [
@@ -109,6 +115,7 @@ def test_vsample_function():
     assert np.linalg.norm(axis_diff) < 0.00001
 
 
+@pytest.mark.network
 def test_generate_virtual_sample_probe_secondary_epitope_applied():
     """Regression test: probe_secondary_epitope passed to generate_virtual_sample
     must reach add_probe and be stored as epitope_target_info."""

@@ -4,6 +4,7 @@ import pytest
 import copy
 
 
+@pytest.mark.network
 def test_run_parameter_sweep():
     sweep_gen_test = sweep_generator.run_parameter_sweep(
         structures=[
@@ -45,6 +46,7 @@ def test_run_parameter_sweep():
     assert total_combinations == vsamples_unique_ids
 
 
+@pytest.mark.network
 def test_custom_metric():
 
     def mean_value(

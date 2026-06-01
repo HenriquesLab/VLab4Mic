@@ -9,6 +9,7 @@ def test_simple_imaging_system():
     assert imager.get_absolute_reference_point().shape == (1, 3)
 
 
+@pytest.mark.network
 def test_get_raw_volume():
     images, noisless, testexperiment = experiments.image_vsample(
         multimodal=[
@@ -31,6 +32,7 @@ def test_multi_imaging_system():
     assert imager.get_absolute_reference_point().shape == (1, 3)
 
 
+@pytest.mark.network
 def test_image_from_field(configuration_directory, gt_structural_model_field):
     configuration_path = configuration_directory
     selected_mods = [
@@ -48,6 +50,7 @@ def test_image_from_field(configuration_directory, gt_structural_model_field):
     )
 
 
+@pytest.mark.network
 def test_imager_optional_methods():
     images, noisless, testexperiment = experiments.image_vsample(
         multimodal=[
@@ -68,6 +71,7 @@ def test_imager_optional_methods():
     assert testexperiment.imager.roi_params["focus_plane"] == 0.23
 
 
+@pytest.mark.network
 def test_smlm_with_locs():
     images, noisless, testexperiment = experiments.image_vsample(
         multimodal=[

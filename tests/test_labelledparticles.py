@@ -27,6 +27,7 @@ generic_labels = [
 ]
 
 
+@pytest.mark.network
 def test_add_probe_with_peptide_motif():
     vsample, testexp = experiments.generate_virtual_sample()
     testexp.remove_probes()

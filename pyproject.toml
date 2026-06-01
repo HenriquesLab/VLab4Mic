@@ -78,6 +78,11 @@ omit = [
 [project.scripts]
 download-structures = "vlab4mic.download:download_suggested_structures"
 
+[tool.pytest.ini_options]
+markers = [
+    "network: marks tests that require network access to download structure files (skip with --no-network)",
+]
+
 [project.urls]
 Homepage = "https://github.com/HenriquesLab/VLab4Mic"
 Repository = "https://github.com/HenriquesLab/VLab4Mic"

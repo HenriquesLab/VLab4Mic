@@ -8,6 +8,7 @@ structure_list = [
 ]
 
 
+@pytest.mark.network
 @pytest.mark.parametrize("structure_id", structure_list)
 def test_load_structure(structure_id, configuration_directory):
     configuration_path = configuration_directory
@@ -20,12 +21,14 @@ def test_load_structure(structure_id, configuration_directory):
 # test user-input file
 
 
+@pytest.mark.network
 def test_structure_normals():
     images, noiseless, testexperiment = image_vsample(run_simulation=False)
     testexperiment.structure.assign_normals2targets()
     #structure.show_target_labels(with_normals=True, show_axis=True)
 
 
+@pytest.mark.network
 def test_symmetry_parsing():
     images, noiseless, experiment = image_vsample(
         run_simulation=False,
