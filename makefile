@@ -1,4 +1,4 @@
-.PHONY: help install install-editable install-all install-editable-all lint format pytest mypy mypy-types docs download-structures package
+.PHONY: help install install-editable install-all install-editable-all lint format pytest mypy mypy-types download-structures package
 
 help:
 	@echo "Available commands:"
@@ -11,7 +11,6 @@ help:
 	@echo "  pytest                     Run tests using pytest"
 	@echo "  mypy                       Run type-checking using mypy"
 	@echo "  mypy-types                 Install missing types using mypy"
-	@echo "  docs                       Generate documentation using pdoc"
 	@echo "  download-structures        Run vlab4mic.download:download_suggested_structures"
 	@echo "  package                    Builds python package"
 
@@ -41,10 +40,6 @@ mypy:
 
 mypy-types:
 	mypy --install-types
-
-docs:
-	rm -rf docs
-	pdoc src/vlab4mic -o docs
 
 download-structures:
 	download-structures
