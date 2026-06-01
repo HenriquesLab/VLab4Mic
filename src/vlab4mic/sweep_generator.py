@@ -15,7 +15,7 @@ import tifffile as tiff
 from pandas.api.types import is_numeric_dtype
 from .analysis.metrics import structural_similarity, pearson_correlation
 
-#output_dir = Path.home() / "vlab4mic_outputs"
+# output_dir = Path.home() / "vlab4mic_outputs"
 
 
 class sweep_generator:
@@ -53,12 +53,14 @@ class sweep_generator:
     # analysis: initialised per-instance in __init__ (see below) so results
     # are not shared across sweep_generator instances.
     # saving
-    #output_directory: str = None
+    # output_directory: str = None
 
     def __init__(self, random_seed: int = None):
         # parameter dictionary
         if random_seed is not None:
-            self.experiment = ExperimentParametrisation(random_seed=random_seed)
+            self.experiment = ExperimentParametrisation(
+                random_seed=random_seed
+            )
         else:
             self.experiment = ExperimentParametrisation()
         self.analysis = {}
@@ -110,10 +112,10 @@ class sweep_generator:
         self.reference_parameters_unsorted = dict()
         self.default_metrics = {
             "ssim": structural_similarity,
-            "pearson": pearson_correlation
+            "pearson": pearson_correlation,
         }
         self.metrics = {}
-        
+
         print("vLab4mic sweep generator initialised")
 
     def set_number_of_repetitions(self, repeats: int = 3):
@@ -210,7 +212,7 @@ class sweep_generator:
         """
         self.create_parameters_iterables()
         if self.use_experiment_structure:
-                       (
+            (
                 self.experiment,
                 self.virtual_samples,
                 self.virtual_samples_parameters,
@@ -222,9 +224,9 @@ class sweep_generator:
                 particle_structural_integrity=self.structural_integrity_parameters,
                 virtual_samples=self.vsample_parameters,
                 repetitions=self.sweep_repetitions,
-                use_experiment_structure=True
+                use_experiment_structure=True,
             )
-        else: 
+        else:
             (
                 self.experiment,
                 self.virtual_samples,
@@ -257,7 +259,7 @@ class sweep_generator:
             self.acquisition_outputs,
             self.acquisition_outputs_parameters,
             mod_pixelsizes,
-            self.acquisition_outputs_masks
+            self.acquisition_outputs_masks,
         ) = sweep.sweep_modalities_updatemod(
             experiment=self.experiment,
             vsample_outputs=self.virtual_samples,
@@ -300,11 +302,15 @@ class sweep_generator:
         if reference_probe_parameters is not None:
             self.reference_probe_parameters = reference_probe_parameters
         if "relative_positions" in kwargs.keys():
-            self.reference_parameters_unsorted["particle_positions"] = kwargs.pop("relative_positions")
+            self.reference_parameters_unsorted["particle_positions"] = (
+                kwargs.pop("relative_positions")
+            )
         for key, value in kwargs.items():
             self.reference_parameters_unsorted[key] = value
 
-    def generate_reference_sample(self, use_experiment_probe=True, use_experiment_vsample=True):
+    def generate_reference_sample(
+        self, use_experiment_probe=True, use_experiment_vsample=True
+    ):
         """
         Generate the reference virtual sample and its parameters.
 
@@ -314,7 +320,7 @@ class sweep_generator:
         """
         if self.use_experiment_structure:
             structure_is_path = True
-        else: 
+        else:
             structure_is_path = False
         if use_experiment_probe:
             reference_probe = list(self.probes)[0]
@@ -322,19 +328,21 @@ class sweep_generator:
             reference_probe = None
         reference_sample_params = {}
         if use_experiment_vsample:
-            reference_sample_params = copy.copy(self.experiment.virtualsample_params)
+            reference_sample_params = copy.copy(
+                self.experiment.virtualsample_params
+            )
         self.set_reference_parameters(
             reference_structure=self.reference_structure,
             reference_probe=reference_probe,
-            **reference_sample_params
-            )
+            **reference_sample_params,
+        )
         self.reference_virtual_sample, self.reference_virtual_sample_params = (
             sweep.generate_global_reference_sample(
                 structure=self.reference_structure,
                 probe=self.reference_probe,
                 probe_parameters=self.reference_probe_parameters,
                 structure_is_path=structure_is_path,
-                **self.reference_parameters_unsorted
+                **self.reference_parameters_unsorted,
             )
         )
 
@@ -357,15 +365,21 @@ class sweep_generator:
                 self.generate_reference_sample()
             else:
                 self.generate_reference_sample()
-        self.reference_image, self.reference_image_parameters, self.reference_image_mask = (
-            sweep.generate_global_reference_modality(
-                reference_vsample=self.reference_virtual_sample,
-                reference_vsample_params=self.reference_virtual_sample_params,
-            )
+        (
+            self.reference_image,
+            self.reference_image_parameters,
+            self.reference_image_mask,
+        ) = sweep.generate_global_reference_modality(
+            reference_vsample=self.reference_virtual_sample,
+            reference_vsample_params=self.reference_virtual_sample_params,
         )
 
     def load_reference_image(
-        self, ref_image_path=None, ref_pixelsize=None, ref_image_mask_path = None, override=True
+        self,
+        ref_image_path=None,
+        ref_pixelsize=None,
+        ref_image_mask_path=None,
+        override=True,
     ):
         """
         Load a reference image from a specified path.
@@ -388,7 +402,6 @@ class sweep_generator:
             self.reference_image = ref_image
             self.reference_image_parameters = reference_parameters
             self.reference_image_mask = ref_image_mask
-            
 
     # previews
     def preview_image_output_by_ID(
@@ -403,7 +416,7 @@ class sweep_generator:
         replica_number=0,
         frame=0,
         return_image=False,
-        cmap="Grays_r"
+        cmap="Grays_r",
     ):
         """
         Preview or return the first acquisition output image.
@@ -520,7 +533,7 @@ class sweep_generator:
                             ]
                             == "int_slider"
                         ):
-                            #step = np.ceil((values[1] - values[0]) / values[2])
+                            # step = np.ceil((values[1] - values[0]) / values[2])
                             self.params_by_group[param_group][param_name] = (
                                 np.arange(
                                     start=values[0],
@@ -530,7 +543,7 @@ class sweep_generator:
                                 )
                             )
                         else:
-                            num = int((values[1]-values[0]) / values[2]) + 1
+                            num = int((values[1] - values[0]) / values[2]) + 1
                             param_iterables = np.linspace(
                                 values[0], values[1], num
                             )
@@ -542,54 +555,56 @@ class sweep_generator:
             print(f"{param_group} is not a valid parameter group")
 
     def set_sweep_parameters(
-            self,
-            # probe
-            probe_target_type = None,
-            probe_target_value = None,
-            probe_target_option= None,
-            probe_model = None,
-            probe_fluorophore = None,
-            probe_paratope = None,
-            probe_conjugation_target_info=None,
-            probe_seconday_epitope=None,
-            peptide_motif: dict = None,
-            probe_distance_to_epitope= None,
-            probe_steric_hindrance= None,
-            probe_DoL = None,
-            probe_wobble_theta = None,
-            labelling_efficiency = None,
-            # structural_integrity
-            structural_integrity=None,
-            structural_integrity_small_cluster=None,
-            structural_integrity_large_cluster=None,
-            # vsample
-            sample_dimensions = None,
-            particle_positions = None,
-            particle_orientations = None,
-            rotation_angles = None,
-            minimal_distance = None,
-            # modality params
-            pixelsize_nm = None,
-            lateral_resolution_nm = None,
-            axial_resolution_nm = None,
-            psf_voxel_nm = None,
-            depth_of_field_nm = None,
-            # imaging 
-            exp_time=None,
-            **kwargs
+        self,
+        # probe
+        probe_target_type=None,
+        probe_target_value=None,
+        probe_target_option=None,
+        probe_model=None,
+        probe_fluorophore=None,
+        probe_paratope=None,
+        probe_conjugation_target_info=None,
+        probe_secondary_epitope=None,
+        peptide_motif: dict = None,
+        probe_distance_to_epitope=None,
+        probe_steric_hindrance=None,
+        probe_DoL=None,
+        probe_wobble_theta=None,
+        labelling_efficiency=None,
+        # structural_integrity
+        structural_integrity=None,
+        structural_integrity_small_cluster=None,
+        structural_integrity_large_cluster=None,
+        # vsample
+        sample_dimensions=None,
+        particle_positions=None,
+        particle_orientations=None,
+        rotation_angles=None,
+        minimal_distance=None,
+        # modality params
+        pixelsize_nm=None,
+        lateral_resolution_nm=None,
+        axial_resolution_nm=None,
+        psf_voxel_nm=None,
+        depth_of_field_nm=None,
+        # imaging
+        exp_time=None,
+        **kwargs,
     ):
         if probe_distance_to_epitope is not None:
             self.set_parameter_values(
-                "probe", "probe_distance_to_epitope", values=probe_distance_to_epitope
+                "probe",
+                "probe_distance_to_epitope",
+                values=probe_distance_to_epitope,
             )
         if probe_steric_hindrance is not None:
             self.set_parameter_values(
-                "probe", "probe_steric_hindrance", values=probe_steric_hindrance
+                "probe",
+                "probe_steric_hindrance",
+                values=probe_steric_hindrance,
             )
         if probe_DoL is not None:
-            self.set_parameter_values(
-                "probe", "probe_DoL", values=probe_DoL
-            )
+            self.set_parameter_values("probe", "probe_DoL", values=probe_DoL)
         if probe_wobble_theta is not None:
             self.set_parameter_values(
                 "probe", "probe_wobble_theta", values=probe_wobble_theta
@@ -624,24 +639,34 @@ class sweep_generator:
             )
         if probe_conjugation_target_info is not None:
             self.set_parameter_values(
-                "probe", "probe_conjugation_target_info", values=probe_conjugation_target_info
+                "probe",
+                "probe_conjugation_target_info",
+                values=probe_conjugation_target_info,
             )
-        if probe_seconday_epitope is not None:
+        if probe_secondary_epitope is not None:
             self.set_parameter_values(
-                "probe", "probe_secondary_epitope", values=probe_seconday_epitope
+                "probe",
+                "probe_secondary_epitope",
+                values=probe_secondary_epitope,
             )
 
         if structural_integrity is not None:
             self.set_parameter_values(
-                "particle_structural_integrity", "structural_integrity", values=structural_integrity
+                "particle_structural_integrity",
+                "structural_integrity",
+                values=structural_integrity,
             )
         if structural_integrity_small_cluster is not None:
             self.set_parameter_values(
-                "particle_structural_integrity", "structural_integrity_small_cluster", values=structural_integrity_small_cluster
+                "particle_structural_integrity",
+                "structural_integrity_small_cluster",
+                values=structural_integrity_small_cluster,
             )
         if structural_integrity_large_cluster is not None:
             self.set_parameter_values(
-                "particle_structural_integrity", "structural_integrity_large_cluster", values=structural_integrity_large_cluster
+                "particle_structural_integrity",
+                "structural_integrity_large_cluster",
+                values=structural_integrity_large_cluster,
             )
         if sample_dimensions is not None:
             self.set_parameter_values(
@@ -649,11 +674,15 @@ class sweep_generator:
             )
         if particle_positions is not None:
             self.set_parameter_values(
-                "virtual_sample", "particle_positions", values=particle_positions
+                "virtual_sample",
+                "particle_positions",
+                values=particle_positions,
             )
         if particle_orientations is not None:
             self.set_parameter_values(
-                "virtual_sample", "particle_orientations", values=particle_orientations
+                "virtual_sample",
+                "particle_orientations",
+                values=particle_orientations,
             )
         if rotation_angles is not None:
             self.set_parameter_values(
@@ -669,7 +698,9 @@ class sweep_generator:
             )
         if lateral_resolution_nm is not None:
             self.set_parameter_values(
-                "modality", "lateral_resolution_nm", values=lateral_resolution_nm
+                "modality",
+                "lateral_resolution_nm",
+                values=lateral_resolution_nm,
             )
         if axial_resolution_nm is not None:
             self.set_parameter_values(
@@ -685,7 +716,6 @@ class sweep_generator:
             )
         if peptide_motif is not None:
             pass
-        
 
     def clear_sweep_parameters(self):
         """
@@ -752,7 +782,7 @@ class sweep_generator:
         -------
         None
         """
-        #if metrics_list is not None and type(metrics_list) == list:
+        # if metrics_list is not None and type(metrics_list) == list:
         #    self.analysis_parameters["metrics_list"] = metrics_list
         if zoom_in is not None:
             self.analysis_parameters["zoom_in"] = zoom_in
@@ -789,9 +819,9 @@ class sweep_generator:
         -------
         None
         """
-        self.plot_parameters["general"]["na_as_zero"] = na_as_zero   
+        self.plot_parameters["general"]["na_as_zero"] = na_as_zero
 
-    def use_default_metrics(self, metrics = ["ssim", "pearson"]):
+    def use_default_metrics(self, metrics=["ssim", "pearson"]):
         if metrics is not None:
             for metric_name in metrics:
                 self.metrics[metric_name] = self.default_metrics[metric_name]
@@ -840,7 +870,7 @@ class sweep_generator:
             reference_image = self.reference_image
             reference_image_mask = self.reference_image_mask
         if len(self.metrics.keys()) == 0:
-            self.use_default_metrics() 
+            self.use_default_metrics()
         print("Running analysis...")
         measurement_vectors, inputs, metric = (
             sweep.analyse_sweep_single_reference(
@@ -869,8 +899,10 @@ class sweep_generator:
                         return_figure=True,
                         metric_name=metric_name,
                         filter_dictionary=None,
-                        na_as_zero=self.plot_parameters["general"]["na_as_zero"],
-                        **self.plot_parameters[metric_name][plot_type]
+                        na_as_zero=self.plot_parameters["general"][
+                            "na_as_zero"
+                        ],
+                        **self.plot_parameters[metric_name][plot_type],
                     )
             print("Analysis plots generated.")
         if save:
@@ -933,7 +965,7 @@ class sweep_generator:
         decimals: int = None,
         return_figure=True,
         filter_dictionary=None,
-        na_as_zero = True,
+        na_as_zero=True,
         **kwargs,
     ):
         """
@@ -976,9 +1008,9 @@ class sweep_generator:
                 return_figure=return_figure,
                 decimals=decimals,
                 filter_dictionary=filter_dictionary,
-                na_as_zero = na_as_zero,
+                na_as_zero=na_as_zero,
                 **plot_params,
-                **kwargs
+                **kwargs,
             )
             self.analysis["plots"][plot_type][metric_name] = metric_plot
         elif plot_type == "lineplots":
@@ -988,9 +1020,9 @@ class sweep_generator:
                 decimals=decimals,
                 return_figure=return_figure,
                 filter_dictionary=filter_dictionary,
-                na_as_zero = na_as_zero,
+                na_as_zero=na_as_zero,
                 **plot_params,
-                **kwargs
+                **kwargs,
             )
             self.analysis["plots"][plot_type][metric_name] = metric_plot
 
@@ -1005,7 +1037,7 @@ class sweep_generator:
         filter_dictionary=None,
         annotations=False,
         palette=None,
-        na_as_zero = False,
+        na_as_zero=False,
         **kwargs,
     ):
         """
@@ -1041,7 +1073,7 @@ class sweep_generator:
         if param2 is None:
             param_names_set = self.parameters_with_set_values
             if len(param_names_set) >= 2:
-                param2=self.parameters_with_set_values[1]
+                param2 = self.parameters_with_set_values[1]
             else:
                 param2 = "probe_n"
         analysis_resut_df = self.get_analysis_output(keyname="dataframes")
@@ -1052,7 +1084,7 @@ class sweep_generator:
             df[param2] = df[param2].round(3)
         pre_filter_dt = True
         if filter_dictionary is not None:
-             pre_filter_dt = True
+            pre_filter_dt = True
         df_categories, titles = sweep.pivot_dataframes_byCategory(
             dataframe=df,
             category_name=category,
@@ -1061,13 +1093,15 @@ class sweep_generator:
             metric_name=metric_name,
             pre_filter_dt=pre_filter_dt,
             filter_dictionary=filter_dictionary,
-            **kwargs
+            **kwargs,
         )
         conditions = list(df_categories.keys())
         nconditions = len(conditions)
         if palette is None:
-            cmap_palette = sns.diverging_palette(20, 200, s=80, l=50, as_cmap=True)
-        else: 
+            cmap_palette = sns.diverging_palette(
+                20, 200, s=80, l=50, as_cmap=True
+            )
+        else:
             cmap_palette = palette
         plot = _plots.sns_heatmap_pivots(
             df_categories,
@@ -1075,10 +1109,10 @@ class sweep_generator:
             annotations=annotations,
             return_figure=return_figure,
             metric_name=metric_name,
-            conditions_cmaps=[cmap_palette]*nconditions,
+            conditions_cmaps=[cmap_palette] * nconditions,
             decimals=decimals,
-            na_as_zero = na_as_zero,
-            **kwargs
+            na_as_zero=na_as_zero,
+            **kwargs,
         )
         return plot
 
@@ -1096,7 +1130,7 @@ class sweep_generator:
         decimals="%.4f",
         return_figure=True,
         filter_dictionary=None,
-        na_as_zero = False,
+        na_as_zero=False,
         **kwargs,
     ):
         """
@@ -1158,7 +1192,7 @@ class sweep_generator:
             estimator=estimator,
             errorbar=errorbar,
             ax=axes,
-            **kwargs
+            **kwargs,
         )
         axes.yaxis.set_major_formatter(FormatStrFormatter(decimals))
         axes.xaxis.set_major_formatter(FormatStrFormatter(decimals))
@@ -1212,9 +1246,7 @@ class sweep_generator:
                 files_indir = os.listdir(output_directory)
                 if df_name in files_indir:
                     count = 1
-                    df_name = (
-                        output_name + "_dataframe_" + str(count) + ".csv"
-                    )
+                    df_name = output_name + "_dataframe_" + str(count) + ".csv"
                     while df_name in files_indir:
                         count += 1
                         df_name = (
@@ -1262,7 +1294,9 @@ class sweep_generator:
                             os.path.join(output_directory, figure_name)
                         )
 
-    def save_images(self, output_name=None, output_directory=None, floats_as=float):
+    def save_images(
+        self, output_name=None, output_directory=None, floats_as=float
+    ):
         """
         Save simulated acquisition images and the reference image to disk in TIFF format.
 
@@ -1298,11 +1332,11 @@ class sweep_generator:
                 count = 1
                 foldername = "simulated_images_" + dt_string + "_" + str(count)
                 while foldername in filesindir:
-                    count+=1
-                    foldername = "simulated_images_" + dt_string + "_" + str(count)
-            output_directory = os.path.join(
-                self.output_directory, foldername
-            )
+                    count += 1
+                    foldername = (
+                        "simulated_images_" + dt_string + "_" + str(count)
+                    )
+            output_directory = os.path.join(self.output_directory, foldername)
             if not os.path.exists(output_directory):
                 os.makedirs(output_directory)
         for (
@@ -1323,12 +1357,14 @@ class sweep_generator:
                     if type(parameter) is dict:
                         for parameter_name in parameter.keys():
                             if type(parameter[parameter_name]) is np.float64:
-                                parameter[parameter_name] = floats_as(parameter[parameter_name])
+                                parameter[parameter_name] = floats_as(
+                                    parameter[parameter_name]
+                                )
             save_yaml(
                 data=copy_of_params,
                 name="acquisition_parameters",
                 output_directory=output_directory,
-            )            
+            )
         else:
             save_yaml(
                 data=self.acquisition_outputs_parameters,
@@ -1339,10 +1375,16 @@ class sweep_generator:
             # save reference image
             name_ref = param_combination_id + ".tiff"
             dir_name_ref = os.path.join(output_directory, name_ref)
-            #name_ref = output_directory + "reference.tiff"
+            # name_ref = output_directory + "reference.tiff"
             tiff.imwrite(dir_name_ref, self.reference_image)
 
-    def add_custom_analysis_metrics(self, custom_metrics: list[callable] = None, heatmap_params={"cmaps_range": "each"}, lineplots_params=None, **kwargs):
+    def add_custom_analysis_metrics(
+        self,
+        custom_metrics: list[callable] = None,
+        heatmap_params={"cmaps_range": "each"},
+        lineplots_params=None,
+        **kwargs,
+    ):
         """
         Add a custom analysis metric function to the sweep generator.
 
@@ -1369,7 +1411,7 @@ class sweep_generator:
         for m in range(len(custom_metrics)):
             metric_name = custom_metrics[m].__name__
             if metric_name not in current_metrics:
-                #self.analysis_parameters["metrics_list"].append(metric_name)
+                # self.analysis_parameters["metrics_list"].append(metric_name)
                 self.plot_parameters[metric_name] = dict()
             # change plot parameters to different method
             if heatmap_params is not None:
@@ -1377,11 +1419,12 @@ class sweep_generator:
             else:
                 self.plot_parameters[metric_name]["heatmaps"] = {}
             if lineplots_params is not None:
-                self.plot_parameters[metric_name]["lineplots"] = lineplots_params
+                self.plot_parameters[metric_name][
+                    "lineplots"
+                ] = lineplots_params
             else:
                 self.plot_parameters[metric_name]["lineplots"] = {}
             self.metrics[metric_name] = custom_metrics[m]
-        
 
 
 def run_parameter_sweep(
@@ -1397,46 +1440,46 @@ def run_parameter_sweep(
     return_generator: bool = False,
     number_of_particles: int = 1,
     particle_positions: int = None,
-    reference_structure = None,
-    reference_probe = None,
+    reference_structure=None,
+    reference_probe=None,
     reference_parameters: dict = None,
     clear_experiment=True,
     run_analysis=True,
     # parameters to sweep
-    probe_target_type = None,
-    probe_target_value = None,
-    probe_target_option = None,
-    probe_model = None,
-    probe_fluorophore = None,
-    probe_paratope = None,
-    probe_conjugation_target_info = None,
-    probe_seconday_epitope = None,
+    probe_target_type=None,
+    probe_target_value=None,
+    probe_target_option=None,
+    probe_model=None,
+    probe_fluorophore=None,
+    probe_paratope=None,
+    probe_conjugation_target_info=None,
+    probe_secondary_epitope=None,
     peptide_motif: dict = None,
-    probe_distance_to_epitope = None,
-    probe_steric_hindrance = None,
-    probe_DoL = None,
-    probe_wobble_theta = None,
-    labelling_efficiency = None,
-    structural_integrity = None,
-    structural_integrity_small_cluster = None,
-    structural_integrity_large_cluster = None,
-    sample_dimensions = None,
-    particle_orientations = None,
-    rotation_angles = None,
-    minimal_distance = None,
-    pixelsize_nm = None,
-    lateral_resolution_nm = None,
-    axial_resolution_nm = None,
-    psf_voxel_nm = None,
-    depth_of_field_nm = None,
-    exp_time = None,
+    probe_distance_to_epitope=None,
+    probe_steric_hindrance=None,
+    probe_DoL=None,
+    probe_wobble_theta=None,
+    labelling_efficiency=None,
+    structural_integrity=None,
+    structural_integrity_small_cluster=None,
+    structural_integrity_large_cluster=None,
+    sample_dimensions=None,
+    particle_orientations=None,
+    rotation_angles=None,
+    minimal_distance=None,
+    pixelsize_nm=None,
+    lateral_resolution_nm=None,
+    axial_resolution_nm=None,
+    psf_voxel_nm=None,
+    depth_of_field_nm=None,
+    exp_time=None,
     # for plot generation
-    na_as_zero = True,
+    na_as_zero=True,
     custom_metrics: list[callable] = None,
-    default_metrics =  ["ssim", "pearson"],
-    #custom_metric_name: str = None,
+    default_metrics=["ssim", "pearson"],
+    # custom_metric_name: str = None,
     plot_parameters=None,
-    random_seed: int = None
+    random_seed: int = None,
     # Add more as needed for your sweep
 ):
     """
@@ -1494,7 +1537,7 @@ def run_parameter_sweep(
         - probe_fluorophore
         - probe_paratope
         - probe_conjugation_target_info
-        - probe_seconday_epitope
+        - probe_secondary_epitope
         - peptide_motif
         - probe_distance_to_epitope
         - probe_steric_hindrance
@@ -1527,7 +1570,7 @@ def run_parameter_sweep(
     - All major simulation and analysis steps are automated.
     - For advanced usage, see the sweep_generator class and related documentation.
     """
-    sweep_gen = sweep_generator(random_seed = random_seed)
+    sweep_gen = sweep_generator(random_seed=random_seed)
     if clear_experiment:
         sweep_gen.experiment.clear_experiment()
     sweep_gen.select_structures(structures=structures)
@@ -1540,11 +1583,11 @@ def run_parameter_sweep(
         # set those positions
         sweep_gen.experiment.set_virtualsample_params(
             particle_positions=particle_positions
-            )
+        )
     else:
         sweep_gen.experiment.set_virtualsample_params(
             number_of_particles=number_of_particles
-            )
+        )
 
     sweep_gen.set_sweep_parameters(
         probe_target_type=probe_target_type,
@@ -1554,7 +1597,7 @@ def run_parameter_sweep(
         probe_fluorophore=probe_fluorophore,
         probe_paratope=probe_paratope,
         probe_conjugation_target_info=probe_conjugation_target_info,
-        probe_seconday_epitope=probe_seconday_epitope,
+        probe_secondary_epitope=probe_secondary_epitope,
         peptide_motif=peptide_motif,
         probe_distance_to_epitope=probe_distance_to_epitope,
         probe_steric_hindrance=probe_steric_hindrance,
@@ -1581,29 +1624,25 @@ def run_parameter_sweep(
     sweep_gen.set_reference_parameters(
         reference_structure=reference_structure,
         reference_probe=reference_probe,
-        **reference_parameters)
+        **reference_parameters,
+    )
     sweep_gen.set_na_as_zero_in_plots(na_as_zero=na_as_zero)
-    sweep_gen.use_default_metrics(metrics=default_metrics)         
+    sweep_gen.use_default_metrics(metrics=default_metrics)
     if custom_metrics is not None:
-        sweep_gen.add_custom_analysis_metrics(
-            custom_metrics=custom_metrics
-            )
+        sweep_gen.add_custom_analysis_metrics(custom_metrics=custom_metrics)
     if plot_parameters is not None:
         for plot_type, parameters in plot_parameters.items():
-            sweep_gen.set_plot_parameters(
-                plot_type=plot_type,
-                **parameters)
+            sweep_gen.set_plot_parameters(plot_type=plot_type, **parameters)
 
     if run_analysis:
         sweep_gen.run_analysis(
-            save=save_analysis_results, 
+            save=save_analysis_results,
             plots=analysis_plots,
-            output_name=output_name
-            )
+            output_name=output_name,
+        )
         if save_sweep_images:
             sweep_gen.save_images(
-                output_name=output_name, 
-                output_directory=output_directory
+                output_name=output_name, output_directory=output_directory
             )
     if return_generator:
         return sweep_gen

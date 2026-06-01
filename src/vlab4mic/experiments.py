@@ -968,7 +968,7 @@ class ExperimentParametrisation:
         probe_paratope: str = None,
         probe_conjugation_target_info=None,
         probe_DoL: float = None,
-        probe_seconday_epitope=None,
+        probe_secondary_epitope=None,
         probe_wobble_theta: float = None,
         labelling_efficiency: float = 1.0,
         as_primary=False,
@@ -1007,7 +1007,7 @@ class ExperimentParametrisation:
             Information about the conjugation target.
         :param probe_DoL : float, optional
             Efficiency of the probe conjugation.
-        :param probe_seconday_epitope : Any, optional
+        :param probe_secondary_epitope : Any, optional
             Information about a secondary epitope target.
         :param probe_wobbling : bool, optional
             Whether to enable probe wobbling. Default is False.
@@ -1053,7 +1053,7 @@ class ExperimentParametrisation:
                         f"Using {probe_target_option} as epitope on {probe_target_value}"
                     )
                     self.probe_parameters[probe_target_value][
-                        "probe_seconday_epitope"
+                        "probe_secondary_epitope"
                     ] = probe_target_option
         elif (
             probe_configuration["target"]["type"] is None
@@ -1105,8 +1105,8 @@ class ExperimentParametrisation:
             )
         else:
             print("Add_probe: Using default probe DoL from template")
-        if probe_seconday_epitope is not None:
-            probe_configuration["epitope_target_info"] = probe_seconday_epitope
+        if probe_secondary_epitope is not None:
+            probe_configuration["epitope_target_info"] = probe_secondary_epitope
         if probe_wobble_theta is not None:
             probe_configuration["enable_wobble"] = True
             probe_configuration["wobble_theta"] = probe_wobble_theta
@@ -1459,7 +1459,7 @@ def generate_virtual_sample(
     probe_paratope: str = None,
     probe_conjugation_target_info=None,
     probe_DoL: float = None,
-    probe_seconday_epitope=None,
+    probe_secondary_epitope=None,
     probe_wobble_theta=None,
     labelling_efficiency: float = 1.0,
     structural_integrity_small_cluster: float = None,
@@ -1519,7 +1519,7 @@ def generate_virtual_sample(
         Information about the probe conjugation target.
     :param probe_DoL : float, optional
         Efficiency of conjugation of emitters.
-    :param probe_seconday_epitope : str, optional
+    :param probe_secondary_epitope : str, optional
         Sequence within probe model to be used as epitope for a secondary.
     :param probe_wobbling : bool, optional
         Enable probe wobbling. Default is False.
@@ -1634,8 +1634,8 @@ def generate_virtual_sample(
                 probe_configuration["probe_DoL"] = (
                     probe_DoL
                 )
-            if probe_seconday_epitope is not None:
-                probe_configuration["probe_epitope_target_info"] = probe_seconday_epitope
+            if probe_secondary_epitope is not None:
+                probe_configuration["probe_secondary_epitope"] = probe_secondary_epitope
             if probe_wobble_theta is not None:
                 probe_configuration["probe_wobble_theta"] = probe_wobble_theta
             myexperiment.add_probe(**probe_configuration)
@@ -1746,7 +1746,7 @@ def image_vsample(
     probe_paratope: str = None,
     probe_conjugation_target_info = None,
     probe_DoL: float = None,
-    probe_seconday_epitope = None,
+    probe_secondary_epitope = None,
     probe_wobble_theta = None,
     labelling_efficiency: float = 1.0,
     structural_integrity_small_cluster: float = None,
@@ -1823,7 +1823,7 @@ def image_vsample(
         Information about the probe conjugation target.
     :param probe_DoL : float, optional
         Efficiency of conjugation of emitters.
-    :param probe_seconday_epitope : str, optional
+    :param probe_secondary_epitope : str, optional
         Sequence within probe model to be used as epitope for a secondary.
     :param probe_wobble_theta : any, optional
         Enable probe wobbling.
@@ -1886,7 +1886,7 @@ def image_vsample(
             probe_paratope=probe_paratope,
             probe_conjugation_target_info=probe_conjugation_target_info,
             probe_DoL=probe_DoL,
-            probe_seconday_epitope=probe_seconday_epitope,
+            probe_secondary_epitope=probe_secondary_epitope,
             probe_wobble_theta=probe_wobble_theta,
             labelling_efficiency=labelling_efficiency,
             structural_integrity_small_cluster=structural_integrity_small_cluster,

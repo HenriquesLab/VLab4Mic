@@ -110,13 +110,13 @@ def test_vsample_function():
 
 
 def test_generate_virtual_sample_probe_secondary_epitope_applied():
-    """Regression test: probe_seconday_epitope passed to generate_virtual_sample
-    must reach add_probe and be stored as epitope_target_info (issue #3)."""
+    """Regression test: probe_secondary_epitope passed to generate_virtual_sample
+    must reach add_probe and be stored as epitope_target_info."""
     secondary_epitope = {
         "target": {"type": "Sequence", "value": "TESTEPITOPE"}
     }
     _vsample, experiment = experiments.generate_virtual_sample(
-        probe_seconday_epitope=secondary_epitope,
+        probe_secondary_epitope=secondary_epitope,
     )
     probe_name = list(experiment.probe_parameters.keys())[0]
     configured_probe = experiment.probe_parameters[probe_name]

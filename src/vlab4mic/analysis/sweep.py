@@ -92,8 +92,8 @@ def sweep_vasmples(
     vsample_outputs = dict()
     if "relative_positions" in experiment.virtualsample_params.keys():
         relative_positions = copy.deepcopy(
-                experiment.virtualsample_params["relative_positions"]
-                )
+            experiment.virtualsample_params["relative_positions"]
+        )
         relative_positions_exist = True
     else:
         relative_positions_exist = False
@@ -101,7 +101,11 @@ def sweep_vasmples(
 
     for struct in structures:
         if use_experiment_structure:
-            experiment.build(modules=["structure",])
+            experiment.build(
+                modules=[
+                    "structure",
+                ]
+            )
         else:
             experiment.structure_id = struct
             experiment._build_structure()
@@ -122,12 +126,20 @@ def sweep_vasmples(
                     p_param_copy = copy.deepcopy(p_param)
                     p_param_copy["fluorophore_id"] = default_fluorophore
                     experiment.add_probe(probe_template=probe, **p_param_copy)
-                for structural_integrity_n, structural_integrity_pars in particle_structural_integrity.items():
-                    particle_structural_integrity_copy = copy.deepcopy(structural_integrity_pars)
+                for (
+                    structural_integrity_n,
+                    structural_integrity_pars,
+                ) in particle_structural_integrity.items():
+                    particle_structural_integrity_copy = copy.deepcopy(
+                        structural_integrity_pars
+                    )
                     structural_integrity_small_cluster = None
                     structural_integrity_large_cluster = None
                     structural_integrity = None
-                    for d_key, d_val in particle_structural_integrity_copy.items():
+                    for (
+                        d_key,
+                        d_val,
+                    ) in particle_structural_integrity_copy.items():
                         if d_key == "structural_integrity_small_cluster":
                             structural_integrity_small_cluster = d_val
                         if d_key == "structural_integrity_large_cluster":
@@ -137,7 +149,7 @@ def sweep_vasmples(
                     experiment.set_structural_integrity(
                         structural_integrity=structural_integrity,
                         structural_integrity_small_cluster=structural_integrity_small_cluster,
-                        structural_integrity_large_cluster=structural_integrity_large_cluster
+                        structural_integrity_large_cluster=structural_integrity_large_cluster,
                     )
                     print(experiment.probe_parameters)
                     experiment._build_particle(keep=True)
@@ -153,17 +165,21 @@ def sweep_vasmples(
                     for vsample_n, vsample_pars in virtual_samples.items():
                         _exported_field = None
                         # combination += str(vsample_n)
-                        #experiment.set_virtualsample_params(update_mode=True, **vsample_pars)
+                        # experiment.set_virtualsample_params(update_mode=True, **vsample_pars)
                         # _exported_field = experiment._build_coordinate_field(
                         #    keep=False, use_self_particle=True, **vsample_pars
                         # )
                         for rep in range(repetitions):
-                            if relative_positions_exist and relative_positions is not None: # keep the same positions
+                            if (
+                                relative_positions_exist
+                                and relative_positions is not None
+                            ):  # keep the same positions
                                 experiment.clear_virtual_sample()
                                 experiment.set_virtualsample_params(
                                     update_mode=True,
-                                    particle_positions = relative_positions,
-                                    **vsample_pars)
+                                    particle_positions=relative_positions,
+                                    **vsample_pars,
+                                )
                                 experiment.build(
                                     modules=["coordinate_field"],
                                     use_self_particle=True,
@@ -171,15 +187,17 @@ def sweep_vasmples(
                             else:
                                 experiment.clear_virtual_sample()
                                 experiment.set_virtualsample_params(
-                                    update_mode=True,
-                                    **vsample_pars)
+                                    update_mode=True, **vsample_pars
+                                )
                                 experiment.build(
                                     modules=["coordinate_field"],
                                     use_self_particle=True,
                                 )
                                 relative_positions = copy.deepcopy(
-                                    experiment.coordinate_field.molecules_params["relative_positions"]
-                                    )
+                                    experiment.coordinate_field.molecules_params[
+                                        "relative_positions"
+                                    ]
+                                )
                                 relative_positions_exist = True
                             _exported_field = (
                                 experiment.coordinate_field.export_field()
@@ -303,11 +321,17 @@ def sweep_modalities_updatemod(
                 mod_n = 0
                 for modality_name in experiment.selected_mods.keys():
                     for mod_pars_number, mod_pars in modality_params.items():
-                        print(f"Modality: {modality_name}, params set: {mod_pars} ")
+                        print(
+                            f"Modality: {modality_name}, params set: {mod_pars} "
+                        )
                         experiment.update_modality(modality_name, **mod_pars)
                         # calculate virtual sample mask per modality
-                        vsample_mask_per_mod = experiment.imager.generate_modality_mask(modality=modality_name)
-                        #mod_threshold = 1  # needs to be modality specific
+                        vsample_mask_per_mod = (
+                            experiment.imager.generate_modality_mask(
+                                modality=modality_name
+                            )
+                        )
+                        # mod_threshold = 1  # needs to be modality specific
                         for (
                             mod_acq_number,
                             acq_pars,
@@ -316,18 +340,32 @@ def sweep_modalities_updatemod(
                                 # expects to have 'channels' key with one channel at least
                                 if "channels" not in acq_pars.keys():
                                     channel = "ch0"
-                                    acq_pars = {"channels": [channel,]}
+                                    acq_pars = {
+                                        "channels": [
+                                            channel,
+                                        ]
+                                    }
                                 experiment.set_modality_acq(
-                                        modality_name=modality_name, **acq_pars
-                                    )
+                                    modality_name=modality_name, **acq_pars
+                                )
                             else:
                                 channel = "ch0"
                                 experiment.set_modality_acq(
-                                    modality_name=modality_name, channels = [channel,]
+                                    modality_name=modality_name,
+                                    channels=[
+                                        channel,
+                                    ],
                                 )
-                                acq_pars = {"channels": [channel,]}
+                                acq_pars = {
+                                    "channels": [
+                                        channel,
+                                    ]
+                                }
                             # iteration_name = combination
-                            modality_timeseries, modality_timeseries_noiseless = experiment.run_simulation(
+                            (
+                                modality_timeseries,
+                                modality_timeseries_noiseless,
+                            ) = experiment.run_simulation(
                                 name="", save=False, modality=modality_name
                             )
                             mod_comb = (
@@ -359,11 +397,9 @@ def sweep_modalities_updatemod(
                             mod_outputs[mod_comb].append(
                                 modality_timeseries[modality_name][channel]
                             )
-                            #mask = modality_timeseries[modality_name][0] > mod_threshold
+                            # mask = modality_timeseries[modality_name][0] > mod_threshold
                             mask = vsample_mask_per_mod > 0
-                            mod_outputs_masks[mod_comb].append(
-                                mask
-                            )
+                            mod_outputs_masks[mod_comb].append(mask)
                             mod_parameters = None
                     mod_n += 1
     return experiment, mod_outputs, mod_params, pixelsizes, mod_outputs_masks
@@ -376,7 +412,7 @@ def generate_global_reference_sample(
     probe_parameters=None,
     virtual_sample=None,
     structure_is_path=False,
-    **kwargs
+    **kwargs,
 ):
     """
     Generate a global reference virtual sample.
@@ -446,7 +482,7 @@ def generate_global_reference_modality(
     reference_vsample_params=None,
     modality=None,
     modality_acquisition=None,
-    mod_threshold = None
+    mod_threshold=None,
 ):
     """
     Generate a global reference image for a given virtual sample and modality.
@@ -496,7 +532,9 @@ def generate_global_reference_modality(
         modality,
         modality_acquisition,
     ]
-    reference_output, reference_output_noiseless = experiment.run_simulation(name="", save=False)
+    reference_output, reference_output_noiseless = experiment.run_simulation(
+        name="", save=False
+    )
     imager_scale = experiment.imager.roi_params["scale"]
     scalefactor = np.ceil(
         imager_scale / 1e-9
@@ -505,10 +543,16 @@ def generate_global_reference_modality(
         experiment.imager.modalities[modality]["detector"]["pixelsize"]
         * scalefactor
     )
-    #if mod_threshold is None:
+    # if mod_threshold is None:
     #    mod_threshold = 1
-    reference_output_mask = experiment.imager.generate_modality_mask(modality="Reference")
-    return reference_output[modality]["ch0"], reference_parameters, reference_output_mask
+    reference_output_mask = experiment.imager.generate_modality_mask(
+        modality="Reference"
+    )
+    return (
+        reference_output[modality]["ch0"],
+        reference_parameters,
+        reference_output_mask,
+    )
 
 
 def analyse_sweep_single_reference(
@@ -520,7 +564,7 @@ def analyse_sweep_single_reference(
     reference_params,
     zoom_in=0,
     metrics: dict = None,
-    #custom_metrics = None,
+    # custom_metrics = None,
     **kwargs,
 ):
     """
@@ -560,24 +604,29 @@ def analyse_sweep_single_reference(
         rep_number = 0
         mod_name = img_params[params_id][5]  # 5th item corresponds to Modality
         modality_pixelsize = img_params[params_id][6]["pixelsize"]
-        for img_r, img_mask in zip(img_outputs[params_id], img_outputs_masks[params_id]):
+        for img_r, img_mask in zip(
+            img_outputs[params_id], img_outputs_masks[params_id]
+        ):
             im1 = img_r[0]
-            #im1_mask = img_mask
-            #im_ref = reference_image
+            # im1_mask = img_mask
+            # im_ref = reference_image
             similarity_vector = []
             metrics_names_list = []
             for metric_name, metric in metrics.items():
-                #metrics_names_list.append(metric_name)
-                similarity_vector.append(metric(
-                        reference_image = reference_image, 
-                        reference_image_pixelsize_nm = reference_params["ref_pixelsize"],
-                        reference_image_mask = reference_image_mask,
-                        simulated_image = im1,
-                        simulated_image_pixelsize_nm = modality_pixelsize,
-                        simulated_image_mask = img_mask,
+                # metrics_names_list.append(metric_name)
+                similarity_vector.append(
+                    metric(
+                        reference_image=reference_image,
+                        reference_image_pixelsize_nm=reference_params[
+                            "ref_pixelsize"
+                        ],
+                        reference_image_mask=reference_image_mask,
+                        simulated_image=im1,
+                        simulated_image_pixelsize_nm=modality_pixelsize,
+                        simulated_image_mask=img_mask,
                     )
                 )
-                #rep_measurement, ref_used, qry_used, masks_used = metrics.img_compare(
+                # rep_measurement, ref_used, qry_used, masks_used = metrics.img_compare(
                 #    ref = im_ref,
                 #    ref_mask=reference_image_mask,
                 #    query=im1,
@@ -587,12 +636,14 @@ def analyse_sweep_single_reference(
                 #    force_match=True,
                 #    zoom_in=zoom_in,
                 #    metrics = metrics
-                #)
+                # )
             # each image as its ID, a replica number and the metrics associated to it
-            replicaID_repN_metrics = list([params_id, rep_number]) + list([*similarity_vector])
+            replicaID_repN_metrics = list([params_id, rep_number]) + list(
+                [*similarity_vector]
+            )
             measurement_vectors.append(replicaID_repN_metrics)
-                # for methods that require image resizing
-                #inputs[params_id][rep_number] = [qry_used, im1, ref_used, masks_used]
+            # for methods that require image resizing
+            # inputs[params_id][rep_number] = [qry_used, im1, ref_used, masks_used]
             rep_number += 1
     return measurement_vectors, inputs, metrics_names_list
 
@@ -684,10 +735,14 @@ def measurements_dataframe(
         for column_name in structural_integrity_param_names:
             tmp_df2[column_name] = []
         for i in range(nrows):
-            structural_integrity_par_comb_id = int(data_frame.iloc[i]["structural_integrity_n"])
+            structural_integrity_par_comb_id = int(
+                data_frame.iloc[i]["structural_integrity_n"]
+            )
             for column_name in structural_integrity_param_names:
                 tmp_df2[column_name].append(
-                    p_structural_integrity[structural_integrity_par_comb_id][column_name]
+                    p_structural_integrity[structural_integrity_par_comb_id][
+                        column_name
+                    ]
                 )
         tmp2 = pd.DataFrame(tmp_df2)
         df_combined = df_combined.join(tmp2)
@@ -772,7 +827,14 @@ def create_param_combinations(**kwargs):
 
 
 def pivot_dataframes_byCategory(
-    dataframe, category_name, param1, param2, metric_name, pre_filter_dt=False, filter_dictionary:dict = None, **kwargs
+    dataframe,
+    category_name,
+    param1,
+    param2,
+    metric_name,
+    pre_filter_dt=False,
+    filter_dictionary: dict = None,
+    **kwargs,
 ):
     """
     Pivot a DataFrame by category and two parameters, summarizing a metric.
@@ -803,8 +865,10 @@ def pivot_dataframes_byCategory(
     dataframe_copy = copy.deepcopy(dataframe)
     if pre_filter_dt and filter_dictionary is not None:
         for parameter_name, parameter_value in filter_dictionary.items():
-            dataframe_copy = dataframe_copy[dataframe_copy[parameter_name] == parameter_value]
-        #print(dataframe_copy)
+            dataframe_copy = dataframe_copy[
+                dataframe_copy[parameter_name] == parameter_value
+            ]
+        # print(dataframe_copy)
     for category, group in dataframe_copy.groupby(category_name):
         summarised_group = None
         summarised_group = (
@@ -840,7 +904,7 @@ def probe_parameters_sweep(
     probe_paratope: str = None,
     probe_conjugation_target_info=None,
     probe_DoL: list[float] = None,
-    probe_seconday_epitope=None,
+    probe_secondary_epitope=None,
     probe_wobbling=None,
     labelling_efficiency: list[float] = None,
 ):
@@ -857,7 +921,7 @@ def probe_parameters_sweep(
     probe_paratope : str, optional
     probe_conjugation_target_info : any, optional
     probe_DoL : list of float, optional
-    probe_seconday_epitope : any, optional
+    probe_secondary_epitope : any, optional
     probe_wobbling : any, optional
     labelling_efficiency : list of float, optional
 
