@@ -2,7 +2,7 @@
 name: Bug report
 about: Create a report to help us improve
 title: ''
-labels: ''
+labels: bug
 assignees: ''
 
 ---
@@ -11,28 +11,35 @@ assignees: ''
 A clear and concise description of what the bug is.
 
 **To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+Minimal code snippet or steps to reproduce the behaviour:
+```python
+# paste your code here
+```
+
+If the bug occurs in a notebook (Jupyter or Google Colab), please also include:
+- The cell number where the error occurs
+- The full cell contents at that point, e.g.:
+```python
+# Cell 5
+experiment = Experiment(...)
+experiment.run()
+```
+- Any relevant output or widget state from preceding cells that may affect the result
 
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+**Actual behavior / error message**
+Paste the full traceback or error message if applicable.
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
+**Screenshots or example images**
+If applicable, add screenshots or example output images to help explain your problem.
 
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
+**Environment (please complete the following information):**
+ - OS: [e.g. Ubuntu 22.04, macOS 14, Windows 11]
+ - Python version: [e.g. 3.10]
+ - VLab4Mic version: [e.g. 0.2.1 — run `import vlab4mic; print(vlab4mic.__version__)`]
+ - How you are running VLab4Mic: [e.g. Jupyter Notebook, Google Colab, Python script]
 
 **Additional context**
-Add any other context about the problem here.
+Add any other context about the problem here (e.g. microscopy modality, structure files used, parameter settings).
