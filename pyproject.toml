@@ -28,8 +28,6 @@ dependencies = [
     "matplotlib>=3.9.0",
     "scipy>=1.13.1",
     "biopython>=1.83",
-    "plotly>=5.22.0",
-    "trimesh>=4.4.0",
     "pyyaml>=6.0.1",
     "tifffile>=2024.5.22",
     "tqdm>=4.66.4",
@@ -43,7 +41,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-all = ["vlab4mic[dev,test]"]
+all = ["vlab4mic[dev,test,notebooks]"]
+notebooks = [
+    "vlab4micjupyter"
+]
 dev = [
     "pre-commit>=3.7.0",
     "ruff>=0.4.3",
