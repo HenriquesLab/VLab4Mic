@@ -1623,7 +1623,7 @@ def generate_virtual_sample(
             if labelling_efficiency is not None:
                 probe_configuration["labelling_efficiency"] = labelling_efficiency
             if probe_model is not None:
-                probe_configuration["probe_model_ID"] = probe_model
+                probe_configuration["probe_model"] = probe_model
             if probe_paratope is not None:
                 probe_configuration["probe_paratope"] = probe_paratope
             if probe_conjugation_target_info is not None:
