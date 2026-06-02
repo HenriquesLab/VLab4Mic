@@ -3,12 +3,26 @@ import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import os
-import urllib.request
 import tempfile
+import time
 from pathlib import Path
+from urllib.parse import unquote, urlparse
+
+import requests
 
 
-def download_cif_file(url: str, timeout: int = 30) -> str:
+DOWNLOAD_HEADERS = {
+    "User-Agent": "VLab4Mic/0.1 fig4_ccs downloader",
+    "Accept": "application/octet-stream,*/*",
+}
+
+
+def download_cif_file(
+    url: str,
+    timeout: tuple[int, int] = (10, 120),
+    retries: int = 4,
+    chunk_size: int = 1024 * 1024,
+) -> str:
     """
     Download a CIF file from a URL and save it to a temporary directory.
     
@@ -16,8 +30,12 @@ def download_cif_file(url: str, timeout: int = 30) -> str:
     ----------
     url : str
         The URL of the CIF file to download.
-    timeout : int, optional
-        Timeout for the download in seconds (default: 30).
+    timeout : tuple[int, int], optional
+        Connect and read timeout in seconds (default: (10, 120)).
+    retries : int, optional
+        Number of download attempts before failing (default: 4).
+    chunk_size : int, optional
+        Bytes read at a time while streaming the response (default: 1 MiB).
     
     Returns
     -------
@@ -29,19 +47,84 @@ def download_cif_file(url: str, timeout: int = 30) -> str:
     Exception
         If the download fails (connection error, HTTP error, etc.).
     """
-    temp_dir = tempfile.gettempdir()
-    filename = Path(url).name or "structure.cif"
-    filepath = os.path.join(temp_dir, filename)
-    
+    cache_dir = Path(tempfile.gettempdir()) / "vlab4mic_fig4_ccs"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+
+    filename = Path(unquote(urlparse(url).path)).name or "structure.cif"
+    filepath = cache_dir / filename
+    partial_path = filepath.with_suffix(filepath.suffix + ".part")
+
+    expected_size = None
     try:
-        print(f"Downloading {url}...")
-        with urllib.request.urlopen(url, timeout=timeout) as response:
-            with open(filepath, 'wb') as out_file:
-                out_file.write(response.read())
-        print(f"Downloaded to: {filepath}")
-        return filepath
-    except Exception as e:
-        raise RuntimeError(f"Failed to download CIF file from {url}: {str(e)}") from e
+        response = requests.head(
+            url,
+            headers=DOWNLOAD_HEADERS,
+            allow_redirects=True,
+            timeout=timeout,
+        )
+        response.raise_for_status()
+        expected_size = int(response.headers.get("content-length", 0)) or None
+    except requests.RequestException as exc:
+        print(f"Could not check remote file size for {url}: {exc}")
+
+    if filepath.exists() and filepath.stat().st_size > 0:
+        if expected_size is None or filepath.stat().st_size == expected_size:
+            print(f"Using cached CIF file: {filepath}")
+            return str(filepath)
+        print(
+            f"Cached file is incomplete ({filepath.stat().st_size} of "
+            f"{expected_size} bytes). Downloading again..."
+        )
+
+    last_error = None
+    for attempt in range(1, retries + 1):
+        try:
+            print(f"Downloading {url} (attempt {attempt}/{retries})...")
+            with requests.get(
+                url,
+                headers=DOWNLOAD_HEADERS,
+                stream=True,
+                timeout=timeout,
+            ) as response:
+                if response.status_code == 429:
+                    retry_after = response.headers.get("Retry-After")
+                    raise RuntimeError(
+                        "Zenodo rate limit reached"
+                        + (f"; retry after {retry_after} seconds" if retry_after else "")
+                    )
+                if response.status_code == 403:
+                    raise RuntimeError("Zenodo returned HTTP 403; this may be an IP block")
+
+                response.raise_for_status()
+                total_size = int(response.headers.get("content-length", 0)) or expected_size
+                bytes_written = 0
+
+                with open(partial_path, "wb") as out_file:
+                    for chunk in response.iter_content(chunk_size=chunk_size):
+                        if not chunk:
+                            continue
+                        out_file.write(chunk)
+                        bytes_written += len(chunk)
+
+                if total_size is not None and bytes_written != total_size:
+                    raise RuntimeError(
+                        f"incomplete download: got {bytes_written} of {total_size} bytes"
+                    )
+
+                os.replace(partial_path, filepath)
+                print(f"Downloaded to: {filepath}")
+                return str(filepath)
+
+        except (requests.RequestException, RuntimeError) as exc:
+            last_error = exc
+            if partial_path.exists():
+                partial_path.unlink()
+            if attempt < retries:
+                sleep_seconds = 2 ** (attempt - 1)
+                print(f"Download failed: {exc}. Retrying in {sleep_seconds}s...")
+                time.sleep(sleep_seconds)
+
+    raise RuntimeError(f"Failed to download CIF file from {url}: {last_error}")
 
 
 ########################## 
