@@ -67,9 +67,16 @@ Follow the steps below to set up VLab4Mic and use Jupyter notebooks locally.
 
 > � **Python version:** VLab4Mic requires **Python 3.10 or later** (3.10, 3.11, 3.12, and 3.13 are tested and supported).
 
-> �💡 We recommend installing VLab4Mic in a dedicated virtual environment to avoid dependency conflicts. You can create one with Python's built-in `venv`, pyenv, or Conda; activate it before running the install command below.
+> �💡 We recommend installing VLab4Mic in a dedicated virtual environment to avoid dependency conflicts. The examples below use Python's built-in `venv`; pyenv or Conda can also be used as alternatives.
 
-### Step 1️⃣: Install VLab4Mic
+### Step 1️⃣: Create and Activate a Virtual Environment
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+### Step 2️⃣: Install VLab4Mic
 
 Run the following command to install VLab4Mic with the necessary libraries to support Jupyter notebooks:
 
@@ -82,7 +89,7 @@ runtime files are stored in your user folder at `~/.vlab4mic/structures`, not in
 the installed Python package directory. Set `VLAB4MIC_STRUCTURE_DIR` to use a
 different cache location.
 
-### Step 2️⃣: Launch Jupyter Lab
+### Step 3️⃣: Launch Jupyter Lab
 
 Run the next command to launch Jupyter Lab.
 
@@ -91,12 +98,12 @@ jupyter lab
 ```
 This will open Jupyter Lab in your web browser.
 
-### Step 3️⃣: Download and Open Notebooks
+### Step 4️⃣: Download and Open Notebooks
 
 Download the notebooks from our [repository here](https://github.com/HenriquesLab/VLab4Mic/tree/main/notebooks), or refer to the table above.  
 Once downloaded, use the Jupyter Lab interface to find and open the notebook.
 
-### Step 4️⃣: Start Experimenting!
+### Step 5️⃣: Start Experimenting!
 
 Follow the instructions in each notebook.  
 For questions, refer to our [documentation](https://github.com/HenriquesLab/VLab4Mic/wiki) or [create an issue](https://github.com/HenriquesLab/VLab4Mic/issues).
@@ -111,9 +118,16 @@ Here's a summary of the steps to follow for using VLab4Mic as a Python library:
 - Install VLab4Mic in your virtual environment
 - Start using VLab4Mic!
 
-> 💡 We recommend installing VLab4Mic in a dedicated virtual environment to avoid dependency conflicts. You can create one with Python's built-in `venv`, pyenv, or Conda; activate it before running the install command below.
+> 💡 We recommend installing VLab4Mic in a dedicated virtual environment to avoid dependency conflicts. The examples below use Python's built-in `venv`; pyenv or Conda can also be used as alternatives.
 
-### Step 1️⃣: Install VLab4Mic
+### Step 1️⃣: Create and Activate a Virtual Environment
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+### Step 2️⃣: Install VLab4Mic
 
 **For Python scripts only:**
 

@@ -83,18 +83,20 @@ The easiest way to start.
 # 🔵 Option 2 — Local Installation (Beginner-Friendly)
 
 ### 1️⃣ Create a virtual environment  
-You may use Conda or similar.
+We recommend using Python's built-in `venv`. Conda or a similar environment
+manager can also be used if you prefer.
 
-#### Using Conda:
-Run the following command (replace `MYENV` with your desired environment name):
+#### Using venv:
+Run the following command to create a local `.venv` environment:
 
 ```bash
-conda create --name MYENV python=3.11
+python3 -m venv .venv
 ```
 
 Then activate it:
+
 ```bash
-conda activate MYENV
+source .venv/bin/activate
 ```
 
 ---
