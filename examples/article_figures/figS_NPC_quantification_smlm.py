@@ -81,7 +81,7 @@ def render_from_localisations(localisations, crop_size_nm = 3000, centerx = None
     return list_of_positions, images, experiment
 
 FOV_nm = 4000
-smlm_pixelsize = 5
+smlm_pixelsize = 10
 list_of_positions, rendered_smlm, smlm_experiment = render_from_localisations(
     smlm_experimental_locs,
     crop_size_nm = FOV_nm,
@@ -118,7 +118,7 @@ _1, _2, experiment = experiments.image_vsample(
 experimental_img = np.array(rendered_smlm["SMLM"]["ch0"][0], dtype=int)
 background = 0
 sigma = 5
-min_distance = 20*smlm_pixelsize
+min_distance = 10*smlm_pixelsize
 threshold = 0.01
 
 # Use experimental image for positioning
@@ -152,13 +152,13 @@ if images["SMLM"]["ch0"][0].min() < 0:
     images["SMLM"]["ch0"][0] += -images["SMLM"]["ch0"][0].min()
 
 #### Simulated Data
-circles_sim, img_blurred_sim, c_params_sim = metrics.get_circles(images["SMLM"]["ch0"][0].astype(np.uint8), **HCparams)
+circles_sim, img_blurred_sim, c_params_sim = metrics.get_circles(blur_px=1, img=images["SMLM"]["ch0"][0].astype(np.uint8), **HCparams)
 radii_simulated= []
 for (x, y, r) in circles_sim[0]:
     radii_simulated.append((r*smlm_pixelsize))
 
 #### Experimental Data
-circles_exp, img_blurred_exp, c_params_exp = metrics.get_circles(experimental_img.astype(np.uint8), **HCparams)
+circles_exp, img_blurred_exp, c_params_exp = metrics.get_circles(blur_px=1, img=experimental_img, **HCparams)
 radii_experimental = []
 for (x, y, r) in circles_exp[0]:
     radii_experimental.append((r*smlm_pixelsize))
@@ -178,7 +178,7 @@ df = pd.DataFrame({
     'value': np.concatenate([radii_experimental, radii_simulated]),
     'Condition': ['Experimental'] * len(radii_experimental) + ['Simulated'] * len(radii_simulated)
 })
-sns.histplot(data=df, x="value", hue="Condition", binrange=[45,70], bins=15, kde=True, ax=axs[2])
+sns.histplot(data=df, x="value", hue="Condition", binrange=[40,70], bins=15, kde=True, ax=axs[2], common_norm=True)
 plt.xlabel("Radius of circle fit (nm)")
 
 length_nm = 1000
