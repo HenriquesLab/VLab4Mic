@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import matplotlib.font_manager as fm
-
+random_seed = 24
 # parameters for simulation
 structure = "7R5K"
 probe_template = "GFP_w_nanobody"
@@ -47,6 +47,7 @@ _1, _2, experiment = experiments.image_vsample(
     STED={"exp_time": 0.0004},
     clear_experiment=True,
     run_simulation=False,
+    random_seed=random_seed
 )
 
 # Use experimental image for positioning
@@ -71,7 +72,7 @@ experiment.update_modality(
     pixelsize_nm=15)
 experiment.set_modality_acq(
     modality_name="STED",
-    exp_time=0.0002)
+    exp_time=0.0004)
 experiment.imager.modalities["STED"]["detector"]["noise_model"]["binomial"]["p"] = 0.7
 images, noiselsess = experiment.run_simulation()
 
