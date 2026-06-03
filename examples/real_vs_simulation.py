@@ -72,6 +72,7 @@ experiment.update_modality(
 experiment.set_modality_acq(
     modality_name="STED",
     exp_time=0.0002)
+experiment.imager.modalities["STED"]["detector"]["noise_model"]["binomial"]["p"] = 0.7
 images, noiselsess = experiment.run_simulation()
 
 # Plot experimental vs simulated image
