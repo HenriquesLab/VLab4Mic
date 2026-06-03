@@ -78,7 +78,6 @@ experiment.set_modality_acq(
     modality_name="STED",
     exp_time=0.0002)
 experiment.imager.modalities["STED"]["detector"]["noise_model"]["binomial"]["p"] = 0.7
-print(experiment.imager.modalities["STED"])
 images, noiselsess = experiment.run_simulation()
 
 # Analyse images: fit circles
