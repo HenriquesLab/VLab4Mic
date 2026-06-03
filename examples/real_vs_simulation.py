@@ -65,7 +65,7 @@ experiment.use_image_for_positioning(
 experiment.update_modality(
     modality_name="STED",
     lateral_resolution_nm=15,
-    axial_resolution_nm=15,
+    axial_resolution_nm=20,
     psf_voxel_nm=5,
     depth_of_field_nm=100,
     pixelsize_nm=15)
