@@ -121,7 +121,7 @@ class Field:
         self.set_molecules_params(**molecules)
 
     def create_minimal_field(
-        self, nmolecules=1, random_placing=False, random_orientations=False, random_rotations=False, **kwargs
+        self, nmolecules=1, random_placing=False, random_orientations=False, random_rotations=False, random_seed=None, **kwargs
     ):
         """
         Create a minimal field with a specified number of molecules and placement options.
@@ -163,7 +163,7 @@ class Field:
             # if no list was passed, then we will use the default nmolecules parameter
             # having more than one particle necesarily use random placing
             self.random_placing = True
-            self.generate_random_positions()
+            self.generate_random_positions(random_seed=random_seed)
             self._gen_abs_from_rel_positions()
             self.fluorophre_emitters = {
                 fluo_name: self.get_molecule_param("absolute_positions")
@@ -174,7 +174,7 @@ class Field:
             self.set_molecule_param("nMolecules", 1)
             if random_placing:
                 self.random_placing = True
-                self.generate_random_positions()
+                self.generate_random_positions(random_seed=random_seed)
             self._gen_abs_from_rel_positions()
             point = self.get_molecule_param("absolute_positions")
             self.fluorophre_emitters = {fluo_name: point.reshape(1, 3)}
@@ -944,6 +944,7 @@ def create_min_field(
     random_orientations=False,
     random_rotations=False,
     prints=False,
+    random_seed=None,
     **kwargs,
 ):
     """
@@ -978,6 +979,7 @@ def create_min_field(
         random_placing=random_placing,
         random_orientations=random_orientations,
         random_rotations=random_rotations,
+        random_seed=random_seed,
         **kwargs,
     )
     return coordinates_field
