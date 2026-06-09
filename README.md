@@ -3,6 +3,7 @@
 
 <img src="src/logo/logo.png" align="right" width="180" style="margin-left: 20px;"/>
 
+[![Preprint](https://img.shields.io/badge/Preprint-bioRxiv-red)](https://www.biorxiv.org/content/10.64898/2026.06.02.729521v1)
 [![PyPI](https://img.shields.io/pypi/v/vlab4mic.svg?color=green)](https://pypi.org/project/vlab4mic)
 [![Python Version](https://img.shields.io/pypi/pyversions/vlab4mic.svg?color=green)](https://python.org)
 [![Downloads](https://img.shields.io/pypi/dm/vlab4mic)](https://pypi.org/project/vlab4mic)
@@ -192,4 +193,23 @@ See: https://github.com/HenriquesLab/VLab4Mic/blob/main/CONTRIBUTING.md
 # Support
 - Discussions: https://github.com/HenriquesLab/VLab4Mic/discussions  
 - Issues: https://github.com/HenriquesLab/VLab4Mic/issues  
+
+---
+
+# Citation
+
+If you use VLab4Mic in your research, please cite:
+
+```bibtex
+@article{martinez_2026_vlab4mic,
+  title={VLab4Mic: prediction of structural resolvability in super-resolution microscopy},
+  author={Mart{\'i}nez, Dami{\'a}n and Saraiva, Bruno M. and Shakespeare, Tayla and
+          Bates, Mark and Owen, Dylan M. and Leterrier, Christophe and
+          Del Rosario, Mario and Henriques, Ricardo},
+  year={2026},
+  journal={bioRxiv},
+  doi={10.64898/2026.06.02.729521},
+  url={https://www.biorxiv.org/content/10.64898/2026.06.02.729521v1}
+}
+```
 
