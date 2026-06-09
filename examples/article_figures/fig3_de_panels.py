@@ -46,6 +46,6 @@ title = "Labelling efficiency: " + str(parameters[2]["labelling_efficiency"]) + 
 axs[3].set_title(title)
 
 
-filename = os.path.join(sweep_gen.output_directory, 'vlab4mic_fig3B.png')
+filename = os.path.join(sweep_gen.output_directory, 'vlab4mic_fig3E.png')
 fig.savefig(filename, dpi=300, bbox_inches='tight')
 plt.close()

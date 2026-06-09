@@ -617,7 +617,7 @@ class ExperimentParametrisation:
         if use_self_particle and self.generators_status("particle"):
             print("creating field from existing particle")
             exported_field, fieldobject = field_from_particle(
-                self.particle, **self.virtualsample_params, **kwargs
+                self.particle, **self.virtualsample_params, random_seed=self.random_seed, **kwargs
             )
             self.virtualsample_params["minimal_distance"] = (
                 fieldobject.molecules_params["minimal_distance"]
@@ -631,7 +631,7 @@ class ExperimentParametrisation:
         else:
             # create minimal field
             fieldobject = coordinates_field.create_min_field(
-                **self.virtualsample_params, **kwargs
+                **self.virtualsample_params, random_seed=self.random_seed, **kwargs
             )
             exported_field = fieldobject.export_field()
             if keep:

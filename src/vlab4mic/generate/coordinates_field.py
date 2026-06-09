@@ -121,7 +121,7 @@ class Field:
         self.set_molecules_params(**molecules)
 
     def create_minimal_field(
-        self, nmolecules=1, random_placing=False, random_orientations=False, random_rotations=False, **kwargs
+        self, nmolecules=1, random_placing=False, random_orientations=False, random_rotations=False, random_seed=None, **kwargs
     ):
         """
         Create a minimal field with a specified number of molecules and placement options.
@@ -163,7 +163,7 @@ class Field:
             # if no list was passed, then we will use the default nmolecules parameter
             # having more than one particle necesarily use random placing
             self.random_placing = True
-            self.generate_random_positions()
+            self.generate_random_positions(random_seed=random_seed)
             self._gen_abs_from_rel_positions()
             self.fluorophre_emitters = {
                 fluo_name: self.get_molecule_param("absolute_positions")
@@ -174,7 +174,7 @@ class Field:
             self.set_molecule_param("nMolecules", 1)
             if random_placing:
                 self.random_placing = True
-                self.generate_random_positions()
+                self.generate_random_positions(random_seed=random_seed)
             self._gen_abs_from_rel_positions()
             point = self.get_molecule_param("absolute_positions")
             self.fluorophre_emitters = {fluo_name: point.reshape(1, 3)}
@@ -296,6 +296,7 @@ class Field:
         random_positions,
         random_orientations,
         random_rotations,
+        random_seed=None,
         **kwargs,
     ):
         """
@@ -317,11 +318,11 @@ class Field:
         # self.change_number_of_molecules(nMolecules)
         self.set_molecule_param("nMolecules", nMolecules)
         if random_positions:
-            self.generate_random_positions()
+            self.generate_random_positions(random_seed=random_seed)
         if random_orientations:
-            self.generate_random_orientations()
+            self.generate_random_orientations(random_seed=random_seed)
         if random_rotations:
-            self.initialise_random_rotations()
+            self.initialise_random_rotations(random_seed=random_seed)
         for key, value in kwargs.items():
             self.molecules_params[key] = value
 
@@ -337,7 +338,7 @@ class Field:
             print(key, ": ", val)
 
     # methods to prime molecule positions, orientations...
-    def generate_random_positions(self):
+    def generate_random_positions(self, random_seed=None):
         """
         Generate random positions for molecules within the field, optionally enforcing a minimal distance.
         """
@@ -359,15 +360,15 @@ class Field:
             self.molecules_params["relative_positions"] = rand
             self._gen_abs_from_rel_positions()
 
-    def randomise_axial_position(self):
-        rng = np.random.default_rng()
+    def randomise_axial_position(self, random_seed=None):
+        rng = np.random.default_rng(seed=random_seed)
         nmolecules = self.get_molecule_param("nMolecules")
         axial_offsets = rng.choice(self.axial_offset, nmolecules, replace=True)
         for i, zpos in enumerate(axial_offsets):
             self.molecules_params["absolute_positions"][i][2] = zpos + self.z_offset
 
 
-    def generate_random_orientations(self):
+    def generate_random_orientations(self, random_seed=None):
         """
         Generate random orientations for all molecules in the field.
         """
@@ -375,7 +376,7 @@ class Field:
         norientations = self.get_molecule_param("nMolecules")
         orientations = []
         unconstrained = True
-        rng = np.random.default_rng()
+        rng = np.random.default_rng(seed=random_seed)
         xy_orientation_changes = np.zeros((norientations,))
         if self.xy_orientations is not None:
             xy_orientation_changes =  rng.choice(self.xy_orientations, norientations, replace=True)
@@ -403,12 +404,12 @@ class Field:
             self.set_molecule_param("orientations_planewise", orientations_planewise)
             self.set_molecule_param("orientations", None)
 
-    def initialise_random_rotations(self, rotation_angles: list = None):
+    def initialise_random_rotations(self, rotation_angles: list = None, random_seed=None):
         """
         Generate random rotations around central axis for all molecules in the field.
         """
         nrotations = self.get_molecule_param("nMolecules")
-        rng = np.random.default_rng()
+        rng = np.random.default_rng(seed=random_seed)
         if self.rotation_angles is None:
             print("random unconstrained rotations")
             rotations = rng.integers(360, size=nrotations) 
@@ -531,7 +532,7 @@ class Field:
         return self.fluoparams
 
     # working with macromolecules
-    def create_molecules_from_InstanceObject(self, InstancePrototype: LabeledInstance):
+    def create_molecules_from_InstanceObject(self, InstancePrototype: LabeledInstance, random_seed=None):
         """
         Create molecules in the field from a prototype instance.
 
@@ -550,7 +551,7 @@ class Field:
             self._set_molecule_minimal_distance(dist=particle_copy.radial_hindance)
         #self._set_molecule_minimal_distance(dist=min_distance)
         if self.random_placing:
-            self.generate_random_positions()
+            self.generate_random_positions(random_seed=random_seed)
         self._gen_abs_from_rel_positions()
         # due to constraints, the actual number of particles might not be reps
         nmolecules = len(self.molecules_params["absolute_positions"])
@@ -569,9 +570,9 @@ class Field:
         if self.sample_initial_orientation is not None:
             self.generate_global_orientation(self.sample_initial_orientation)
         if self.random_orientations:
-            self.generate_random_orientations()
+            self.generate_random_orientations(random_seed=random_seed)
         if self.random_rotations:
-            self.initialise_random_rotations()
+            self.initialise_random_rotations(random_seed=random_seed)
             # self.relabel_molecules()
         self.relabel_molecules()
 
@@ -943,6 +944,7 @@ def create_min_field(
     random_orientations=False,
     random_rotations=False,
     prints=False,
+    random_seed=None,
     **kwargs,
 ):
     """
@@ -977,6 +979,7 @@ def create_min_field(
         random_placing=random_placing,
         random_orientations=random_orientations,
         random_rotations=random_rotations,
+        random_seed=random_seed,
         **kwargs,
     )
     return coordinates_field

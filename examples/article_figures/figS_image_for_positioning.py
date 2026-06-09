@@ -45,8 +45,8 @@ fig.savefig(filename, dpi=300, bbox_inches='tight')
 plt.close()
 
 
-
-img_mask = np.random.rand(100,100)
+rng_ = np.random.default_rng(seed=random_seed)
+img_mask = rng_.random([100,100])
 p = 0.99
 img_mask[img_mask >= p] = 1
 img_mask[img_mask < p] = 0

@@ -114,6 +114,7 @@ my_experiment.particle.show_probe(
     central_axis=False,
     use_dol=True,
     axis_object = ax,
+    random_seed=seed
     )
 
 filename = my_experiment.date_as_string + 'vlab4mic_hiv_antibody.png'
