@@ -1001,6 +1001,7 @@ class LabeledInstance:
         use_dol=False,
         exact_dol= None,
         axis_object=None,
+        random_seed=None, 
         **kwargs,
     ):
         """
@@ -1052,6 +1053,7 @@ class LabeledInstance:
             probe_emitters, center, np.array([0, 0, 0])
         )
         if dol is not None and use_dol:
+            rng_ = np.random.default_rng(seed=random_seed) 
             list_reoriented_points = []
             max_emitters = centered_emitters.shape[0]
             emitter_indices = np.arange(max_emitters)
@@ -1060,13 +1062,13 @@ class LabeledInstance:
                 selected_emitters = [emitter_indices[x] for x in exact_dol]
                 #selected_emitters = emitter_indices[exact_dol]
             else:
-                int_dol = np.random.poisson(lam=dol)
+                int_dol = rng_.poisson(lam=dol)
                 if int_dol != 0:
                     if int_dol > max_emitters:
                         # use max value
                         selected_emitters = emitter_indices
                     else:
-                        selected_emitters = np.random.choice(
+                        selected_emitters = rng_.choice(
                             emitter_indices, size=int_dol, replace=False
                         )
             for se in selected_emitters:
