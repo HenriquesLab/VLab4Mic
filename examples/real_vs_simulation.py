@@ -7,13 +7,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import matplotlib.font_manager as fm
-
+random_seed = 24
 # parameters for simulation
 structure = "7R5K"
 probe_template = "GFP_w_nanobody"
 probe_target_type = "Sequence"
 probe_target_value = "ELAVGSL" # Sequence in the C-terminal of Nup96
-modalities = ["STED_Thev2016", ]
+modalities = ["STED", ]
 
 # fetch experimental image from URL 
 STED_example = "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/S-BIAD0-99/S-BIAD8/Files/Library/Gallery%20Fig%201/STED/GFP_Gallery-STED_181026_1.tif"
@@ -44,9 +44,10 @@ _1, _2, experiment = experiments.image_vsample(
     probe_target_type=probe_target_type,
     probe_target_value=probe_target_value,
     multimodal=modalities,
-    STED_Thev2016={"exp_time": 0.0004},
+    STED={"exp_time": 0.0004},
     clear_experiment=True,
     run_simulation=False,
+    random_seed=random_seed
 )
 
 # Use experimental image for positioning
@@ -60,6 +61,19 @@ experiment.use_image_for_positioning(
     min_distance=min_distance)
 
 # Run simulation
+## Modality parameter of pixelsize_nm is set to match Thevathasan et al. 2019.
+## All other parameters are estimations to emulate Thevathasan et al. 2019 STED modality
+experiment.update_modality(
+    modality_name="STED",
+    lateral_resolution_nm=15,
+    axial_resolution_nm=20,
+    psf_voxel_nm=5,
+    depth_of_field_nm=100,
+    pixelsize_nm=15)
+experiment.set_modality_acq(
+    modality_name="STED",
+    exp_time=0.0004)
+experiment.imager.modalities["STED"]["detector"]["noise_model"]["binomial"]["p"] = 0.7
 images, noiselsess = experiment.run_simulation()
 
 # Plot experimental vs simulated image
@@ -70,7 +84,7 @@ plt.rcParams['figure.figsize'] = [20, 10]
 fig, axs = plt.subplots(1, 2)
 axs[0].imshow(experimental_img_processed, cmap="grey")
 axs[0].set_title("Modified from Thevathasan et al. 2019. Nature Methods.")
-axs[1].imshow(images["STED_Thev2016"]["ch0"][0], cmap="grey")
+axs[1].imshow(images["STED"]["ch0"][0], cmap="grey")
 axs[1].set_title("VLab4Mic simulated image")
 
 fontprops = fm.FontProperties(size=20)
