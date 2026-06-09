@@ -46,8 +46,9 @@ This README is written to be friendly for beginners while maintaining the techni
 | Option | Skills Needed | Best For |
 |-------|----------------|----------|
 | **1. Google Colab** | None | Beginners, teaching, quick experiments |
-| **2. Local Jupyter Notebooks** | Basic installation | Smooth widget-based use |
-| **3. Python Scripts** | Comfortable with code | Full flexibility & automation |
+| **2. LabConstrictor Desktop App** | None | One-click install, no Python required |
+| **3. Local Jupyter Notebooks** | Basic installation | Smooth widget-based use |
+| **4. Python Scripts** | Comfortable with code | Full flexibility & automation |
 
 ---
 
@@ -81,7 +82,24 @@ The easiest way to start.
 
 ---
 
-# 🔵 Option 2 — Local Installation (Beginner-Friendly)
+# � Option 2 — LabConstrictor Desktop App (No Python Required)
+
+The easiest way to run VLab4Mic **locally** — no Python, no conda, no terminal.
+
+✔ One-click installer (Windows & macOS)  
+✔ No Python or environment setup  
+✔ Notebooks bundled and ready to run  
+✔ Automatic version checks  
+
+### 👉 Download and install:
+Follow the installation instructions at:  
+https://github.com/HenriquesLab/LabConstrictor-VLab4Mic/blob/main/.tools/docs/download_executable.md
+
+Powered by [LabConstrictor](https://github.com/CellMigrationLab/LabConstrictor) — a CI/CD-based pipeline that packages Jupyter notebooks into installable desktop applications ([Hidalgo-Cenalmor et al., 2026](https://arxiv.org/abs/2603.10704)).
+
+---
+
+# 🔵 Option 3 — Local Installation (Beginner-Friendly)
 
 ### 1️⃣ Create a virtual environment  
 We recommend using Python's built-in `venv`. Conda or a similar environment
@@ -126,7 +144,7 @@ https://github.com/HenriquesLab/VLab4Mic/tree/main/notebooks
 
 ---
 
-# 🔴 Option 3 — Use VLab4Mic as a Python Library (Advanced)
+# 🔴 Option 4 — Use VLab4Mic as a Python Library (Advanced)
 
 Example script:
 
