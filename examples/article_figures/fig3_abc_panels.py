@@ -101,7 +101,7 @@ ax.set_title("SMLM")
 ax.set_xticklabels([])
 ax.set_yticklabels([])
 
-filename = myexperiment2.date_as_string + 'vlab4mic_fig3_panelA.png'
+filename = myexperiment2.date_as_string + 'vlab4mic_fig3_panelB.png'
 filename2 = os.path.join(myexperiment2.output_directory, filename)
 fig.savefig(filename2,dpi=300, bbox_inches='tight')
 plt.close()
@@ -153,7 +153,7 @@ myexperiment2.build(modules=["particle",])
 myexperiment2.particle.gen_axis_plot(axis_object=ax4, with_sources=False, source_plotsize=0, source_plotmarker="o", view_init=[90,0,0],
                                      xlim=[0,1000], ylim=[0,1000], zlim=[0,600], emitter_plotsize=1)
 
-filename = myexperiment2.date_as_string + 'vlab4mic_fig3_panelB.png'
+filename = myexperiment2.date_as_string + 'vlab4mic_fig3_panel_AC.png'
 filename2 = os.path.join(myexperiment2.output_directory, filename)
 fig2.savefig(filename2,dpi=300, bbox_inches='tight')
 plt.close()
