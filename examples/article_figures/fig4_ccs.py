@@ -129,8 +129,8 @@ def download_cif_file(
 
 ########################## 
 random_seed = 24
-dome_url = "https://zenodo.org/records/20377070/files/Dome_model.cif"
-flat_url = "https://zenodo.org/records/20377070/files/Flat_lattice_model.cif"
+dome_url = "https://zenodo.org/records/20719843/files/Dome_model_v2.0.cif"
+flat_url = "https://zenodo.org/records/20719843/files/Flat_lattice_model_v2.0.cif"
 
 # Download the CIF files
 dome_model = download_cif_file(dome_url)
