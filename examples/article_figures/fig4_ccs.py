@@ -139,7 +139,7 @@ primary = dict(
     probe_template = "Antibody",
     probe_name="custom",
     probe_target_type = "Sequence",
-    probe_target_value = "NNRIA",
+    probe_target_value = "ATETQ",
     probe_distante_to_epitope = 0,
     probe_DoL=4,  
 )
