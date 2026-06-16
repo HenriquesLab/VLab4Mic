@@ -301,10 +301,10 @@ def field_from_particle(
         print("Creating field from parameter files")
         # coordinates_field.init_from_file(field_config)
         ## if not file, use as dictionary
-        coordinates_field = create_min_field(**field_config, **kwargs)
+        coordinates_field = create_min_field(**field_config, random_seed=random_seed, **kwargs)
         # coordinates_field.init_from_file(field_config)
     else:
-        coordinates_field = create_min_field(**kwargs)
+        coordinates_field = create_min_field(**kwargs, random_seed=random_seed,)
     coordinates_field.create_molecules_from_InstanceObject(particle, random_seed=random_seed)
     coordinates_field.construct_static_field()
     return coordinates_field.export_field(), coordinates_field
