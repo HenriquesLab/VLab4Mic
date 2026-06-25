@@ -1,0 +1,34 @@
+label_name: Halo-tag
+target:
+  type:
+  value:
+known_targets:
+  - Mock
+model:
+  ID: 5UXZ
+  format: CIF
+  database: RCSB
+binding:
+  efficiency: 1
+  orientation: [0,0,1]
+  wobble_range:
+    theta:
+    phi:
+  distance:
+    to_target: 10
+    between_targets: estimate
+  paratope: IGTGFP
+conjugation_sites:
+  target:
+    type: Atom_residue
+    value:
+      atoms: 
+      - C2
+      residues: 
+      - 8PM
+  DoL:
+epitope: # for secondary
+  target:
+    type: 
+    value: 
+  normals:
