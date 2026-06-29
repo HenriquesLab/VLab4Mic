@@ -125,6 +125,8 @@ source .venv/bin/activate
 pip install vlab4mic "vlab4micjupyter[local]"
 ```
 
+Installation time depends on your hardware and internet connection, but should take around 3 minutes.
+
 VLab4Mic downloads required PDB/CIF structure files on first use and stores them
 in your user folder at `~/.vlab4mic/structures`. To use a different location,
 set `VLAB4MIC_STRUCTURE_DIR` before running VLab4Mic.
@@ -172,6 +174,9 @@ plt.show()
 ```
 
 For more examples see `/examples`.
+
+When running example scripts, total runtime depends on your hardware and internet connection, but should take around 5 minutes.
+
 
 ---
 

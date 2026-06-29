@@ -78,6 +78,8 @@ source .venv/bin/activate
 
 ### Step 2️⃣: Install VLab4Mic
 
+Installation time depends on your hardware and internet connection, but should take around 3 minutes.
+
 Run the following command to install VLab4Mic with the necessary libraries to support Jupyter notebooks:
 
 ```bash
