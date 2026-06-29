@@ -129,8 +129,8 @@ def download_cif_file(
 
 ########################## 
 random_seed = 24
-dome_url = "https://zenodo.org/records/20377070/files/Dome_model.cif"
-flat_url = "https://zenodo.org/records/20377070/files/Flat_lattice_model.cif"
+dome_url = "https://zenodo.org/records/20719843/files/Dome_model_v2.0.cif"
+flat_url = "https://zenodo.org/records/20719843/files/Flat_lattice_model_v2.0.cif"
 
 # Download the CIF files
 dome_model = download_cif_file(dome_url)
@@ -139,7 +139,7 @@ primary = dict(
     probe_template = "Antibody",
     probe_name="custom",
     probe_target_type = "Sequence",
-    probe_target_value = "NNRIA",
+    probe_target_value = "ATETQ",
     probe_distante_to_epitope = 0,
     probe_DoL=4,  
 )
