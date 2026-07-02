@@ -6,6 +6,16 @@ build-backend = "setuptools.build_meta"
 name = "vlab4mic"
 version = "0.1.1"
 description = "VLab4Mic: A virtual laboratory for microscopy simulation and validation"
+keywords = [
+    "microscopy",
+    "simulation",
+    "super-resolution",
+    "SMLM",
+    "STED",
+    "fluorescence",
+    "labeling",
+    "structural-biology"
+]
 authors = [
     { name = "Damián Martínez", email = "jdmartinezigc@gmail.com" },
     { name = "Bruno M. Saraiva", email = "bruno.msaraiva2@gmail.com" },

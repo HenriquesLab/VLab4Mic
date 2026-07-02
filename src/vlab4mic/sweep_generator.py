@@ -591,6 +591,16 @@ class sweep_generator:
         exp_time=None,
         **kwargs,
     ):
+        # Snapshot the parameters the user actually provided so we can report
+        # back which ones will be swept and which were accepted but ignored.
+        _provided = {
+            name: value
+            for name, value in locals().items()
+            if name not in ("self", "kwargs") and value is not None
+        }
+        _provided.update(
+            {name: value for name, value in kwargs.items() if value is not None}
+        )
         if probe_distance_to_epitope is not None:
             self.set_parameter_values(
                 "probe",
@@ -714,8 +724,18 @@ class sweep_generator:
             self.set_parameter_values(
                 "modality", "depth_of_field_nm", values=depth_of_field_nm
             )
-        if peptide_motif is not None:
-            pass
+        # Parameters accepted by the signature (or via kwargs) that are not yet
+        # wired into the sweep. They are silently discarded otherwise, so warn.
+        _not_applied = {"peptide_motif", "minimal_distance"} | set(kwargs)
+        applied = sorted(name for name in _provided if name not in _not_applied)
+        ignored = sorted(name for name in _provided if name in _not_applied)
+        if applied:
+            print(f"Parameters set for sweep: {', '.join(applied)}")
+        if ignored:
+            print(
+                "WARNING: the following parameters were provided but are not "
+                f"applied during the sweep and will be ignored: {', '.join(ignored)}"
+            )
 
     def clear_sweep_parameters(self):
         """
