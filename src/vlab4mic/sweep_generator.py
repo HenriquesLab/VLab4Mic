@@ -587,6 +587,9 @@ class sweep_generator:
         sample_dimensions=None,
         particle_positions=None,
         particle_orientations=None,
+        xy_orientations = None,
+        xz_orientations = None,
+        yz_orientations = None,
         rotation_angles=None,
         minimal_distance=None,
         # modality params
@@ -692,6 +695,29 @@ class sweep_generator:
                 "particle_orientations",
                 values=particle_orientations,
             )
+        random_orientations = False
+        if xy_orientations is not None:
+            self.set_parameter_values(
+                "virtual_sample",
+                "xy_orientations",
+                values=xy_orientations,
+            )
+            random_orientations = True
+        if xz_orientations is not None:
+            self.set_parameter_values(
+                "virtual_sample",
+                "xz_orientations",
+                values=xz_orientations,
+            )
+            random_orientations = True
+        if yz_orientations is not None:
+            self.set_parameter_values(
+                "virtual_sample",
+                "yz_orientations",
+                values=yz_orientations,
+            )
+            random_orientations = True
+        self.enable_random_orientations = random_orientations
         if rotation_angles is not None:
             self.set_parameter_values(
                 "virtual_sample", "rotation_angles", values=rotation_angles
@@ -762,6 +788,10 @@ class sweep_generator:
         self.structural_integrity_parameters = sweep.create_param_combinations(
             **self.params_by_group["particle_structural_integrity"]
         )
+        if self.enable_random_orientations:
+            self.params_by_group["virtual_sample"]["random_orientations"] = [True,]
+        else:
+            self.params_by_group["virtual_sample"]["random_orientations"] = [False,]
         self.vsample_parameters = sweep.create_param_combinations(
             **self.params_by_group["virtual_sample"]
         )
@@ -1488,6 +1518,9 @@ def run_parameter_sweep(
     structural_integrity_large_cluster=None,
     sample_dimensions=None,
     particle_orientations=None,
+    xy_orientations = None,
+    xz_orientations = None,
+    yz_orientations = None,
     rotation_angles=None,
     minimal_distance=None,
     pixelsize_nm=None,
@@ -1641,6 +1674,9 @@ def run_parameter_sweep(
         sample_dimensions=sample_dimensions,
         particle_positions=particle_positions,
         particle_orientations=particle_orientations,
+        xy_orientations = xy_orientations,
+        xz_orientations = xz_orientations,
+        yz_orientations = yz_orientations,
         rotation_angles=rotation_angles,
         minimal_distance=minimal_distance,
         pixelsize_nm=pixelsize_nm,
