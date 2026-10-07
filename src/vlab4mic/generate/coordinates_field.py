@@ -372,6 +372,23 @@ class Field:
     def generate_random_orientations(self, random_seed=None):
         """
         Generate random orientations for all molecules in the field.
+
+        If none of xy_orientations, xz_orientations and yz_orientations is
+        set, each molecule gets an axis drawn uniformly on the sphere
+        (stored in the "orientations" molecule parameter). Otherwise, each
+        molecule draws one angle, in degrees, from each of the lists that
+        are set (0 for the others), and the (xy, xz, yz) angles are stored
+        in the "orientations_planewise" molecule parameter, to be applied by
+        reorient_molecules.
+
+        Parameters
+        ----------
+        random_seed : int, optional
+            Seed for the plane-wise angle draws. Default is None.
+
+        Returns
+        -------
+        None
         """
         # give new orientation
         norientations = self.get_molecule_param("nMolecules")

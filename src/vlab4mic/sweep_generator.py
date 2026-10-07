@@ -246,6 +246,13 @@ class sweep_generator:
         """
         Generate image simulation acquisition for all virtual samples generated with generate_virtual_samples.
 
+        Virtual samples are generated first if they do not exist yet.
+
+        Parameters
+        ----------
+        :param capture_outputs: bool, optional
+            Hide the printed output of virtual sample generation. Defaults to True.
+
         Returns
         -------
         None
@@ -382,7 +389,34 @@ class sweep_generator:
         self, ref_image_path=None, ref_pixelsize=None, ref_image_mask_path = None, override=True, reference_image=None, reference_image_mask=None, **kwargs
     ):
         """
-        Load a reference image from a specified path.
+        Load a reference image, from an array or a TIFF file.
+
+        The reference image is what each simulated image is compared to in
+        run_analysis. An array takes precedence over a path.
+
+        Parameters
+        ----------
+        :param ref_image_path: str, optional
+            Path to a TIFF file with the reference image.
+        :param ref_pixelsize: float, optional
+            Pixel size of the reference image, in nm.
+        :param ref_image_mask_path: str, optional
+            Path to a TIFF file with a mask of the pixels to analyse
+            (positive pixels are used).
+        :param override: bool, optional
+            Replace the current reference image. Defaults to True. Set to
+            False if no image or path is given.
+        :param reference_image: numpy.ndarray, optional
+            Reference image (a copy is stored).
+        :param reference_image_mask: numpy.ndarray, optional
+            Boolean mask of the pixels to analyse. If no mask is given, all
+            pixels are used.
+        :param **kwargs:
+            Not used.
+
+        Returns
+        -------
+        None
         """
         reference_parameters = {}
         reference_parameters["Vector"] = None
@@ -513,8 +547,13 @@ class sweep_generator:
         :param param_name: str
             Name of parameter to use for sweep.
         :param values: None, tuple, or list, optional
-            Parameter values to use. If tuple, interpreted as (start, stop, num) for linspace.
-            If list, used directly. If None, defaults are generated.
+            Parameter values to use. If list, used directly. If tuple,
+            interpreted as (start, stop, step): numeric parameters use
+            np.linspace(start, stop, int((stop - start) / step) + 1), so stop
+            is included; integer parameters (int_slider in
+            parameter_settings.yaml) use np.arange(start, stop, step), so stop
+            is excluded. Tuples are ignored for parameters without an entry
+            in parameter_settings.yaml. If None, the parameter is not set.
 
         Returns
         -------
@@ -602,6 +641,78 @@ class sweep_generator:
         exp_time=None,
         **kwargs,
     ):
+        """
+        Set the values of the parameters to sweep.
+
+        Each argument sets the values of one parameter in its group (probe,
+        particle_structural_integrity, virtual_sample, modality or
+        acquisition) through set_parameter_values. Prints the parameters set
+        for the sweep, and a warning for the ones that were provided but are
+        not applied (peptide_motif, minimal_distance and any extra keyword
+        argument).
+
+        For each of these parameters, pass a list of values to sweep over, or a
+        tuple (start, stop, step). For numeric parameters, a tuple gives
+        np.linspace(start, stop, int((stop - start) / step) + 1), so stop is
+        included; for integer parameters (int_slider in parameter_settings.yaml)
+        it gives np.arange(start, stop, step), so stop is excluded. Tuples are
+        ignored for parameters without an entry in parameter_settings.yaml.
+        For a single value, pass a list with one element.
+        If a parameter is None, it is not swept and its default value is used.
+
+        Parameters
+        ----------
+        :param probe_target_type, probe_target_value, probe_target_option: optional
+            Target of the probe (e.g. "Sequence" and the sequence).
+        :param probe_model, probe_fluorophore, probe_paratope, probe_conjugation_target_info, probe_secondary_epitope: optional
+            Probe structure, fluorophore and binding sites.
+        :param peptide_motif: dict, optional
+            Peptide motif to target. Not applied in sweeps yet (a warning
+            is printed).
+        :param probe_distance_to_epitope: optional
+            Distance between the probe and its epitope.
+        :param probe_steric_hindrance: optional
+            Minimum distance between bound probes (steric hindrance).
+        :param probe_DoL: optional
+            Mean degree of labelling (fluorophores per probe).
+        :param probe_wobble_theta: optional
+            Maximum angle of probe wobble around the normal, in degrees.
+        :param labelling_efficiency: optional
+            Probability that a probe binds each epitope, between 0 and 1.
+        :param structural_integrity, structural_integrity_small_cluster, structural_integrity_large_cluster: optional
+            Fraction of the structure kept, and the two cluster distances of
+            the structural integrity model.
+        :param sample_dimensions: optional
+            Size of the virtual sample, [x, y, z] in nm.
+        :param particle_positions: optional
+            Particle positions in the virtual sample.
+        :param particle_orientations: optional
+            Particle orientations in the virtual sample.
+        :param xy_orientations, xz_orientations, yz_orientations: optional
+            Rotation angles, in degrees, from which each particle draws its
+            rotation in the xy, xz and yz planes. Setting any of them
+            enables random orientations for the sweep.
+        :param rotation_angles: optional
+            Rotation angles of particles around their axis, in degrees.
+        :param minimal_distance: optional
+            Not applied in sweeps yet (a warning is printed).
+        :param pixelsize_nm: optional
+            Pixel size of the image, in nm.
+        :param lateral_resolution_nm, axial_resolution_nm: optional
+            Lateral and axial standard deviations of the PSF, in nm.
+        :param psf_voxel_nm: optional
+            Voxel size of the PSF, in nm.
+        :param depth_of_field_nm: optional
+            Depth of field, in nm.
+        :param exp_time: optional
+            Exposure time per frame, in seconds.
+        :param **kwargs:
+            Not applied (a warning is printed).
+
+        Returns
+        -------
+        None
+        """
         # Snapshot the parameters the user actually provided so we can report
         # back which ones will be swept and which were accepted but ignored.
         _provided = {
@@ -880,6 +991,20 @@ class sweep_generator:
         self.plot_parameters["general"]["na_as_zero"] = na_as_zero
 
     def use_default_metrics(self, metrics=["ssim", "pearson"]):
+        """
+        Select default metrics to compute in run_analysis.
+
+        Parameters
+        ----------
+        :param metrics: list of str, optional
+            Names of default metrics: "ssim" (structural similarity) and
+            "pearson" (Pearson correlation). Defaults to both. If None, no
+            default metric is added.
+
+        Returns
+        -------
+        None
+        """
         if metrics is not None:
             for metric_name in metrics:
                 self.metrics[metric_name] = self.default_metrics[metric_name]
@@ -911,6 +1036,9 @@ class sweep_generator:
             Generate heatmaps and lineplots from the results dataframe. Defaults to False.
         :param save_images: bool, optional
             Whether to save images. Defaults to True.
+        :param capture_outputs: bool, optional
+            Hide the printed output of virtual sample generation, if the
+            acquisitions have not been generated yet. Defaults to True.
         :param **kwargs: Additional keyword arguments.
 
         Returns
@@ -1449,11 +1577,17 @@ class sweep_generator:
 
         Parameters
         ----------
-        :param metric_function: callable
-            A function that takes two numpy arrays (reference image and query image)
-            and returns a float representing the calculated metric.
-        :param metric_name: str
-            The name of the custom metric to be added.
+        :param custom_metrics: list of callable
+            Metric functions. Each is named after its __name__ in the
+            results and plots, and must have the signature given in Notes.
+        :param heatmap_params: dict, optional
+            Heatmap plot parameters for these metrics.
+            Defaults to {"cmaps_range": "each"}.
+        :param lineplots_params: dict, optional
+            Line plot parameters for these metrics. Defaults to None (no
+            specific parameters).
+        :param **kwargs:
+            Not used.
 
         Returns
         -------
@@ -1486,6 +1620,28 @@ class sweep_generator:
             self.metrics[metric_name] = custom_metrics[m]
         
     def virtual_sample_from_image(self, image, as_int=True, **kwargs):
+        """
+        Position the particles of the virtual sample from an image.
+
+        Calls ExperimentParametrisation.use_image_for_positioning with the
+        image minimum as background, which sets the particle positions and
+        the sample size from the image.
+
+        Parameters
+        ----------
+        :param image: numpy.ndarray
+            2D image used to position particles.
+        :param as_int: bool, optional
+            Convert the image to integers first. Defaults to True.
+        :param **kwargs:
+            Passed to use_image_for_positioning, e.g. pixelsize (nm), mode
+            ("mask" or "localmaxima") and npositions (number of particles in
+            "mask" mode, default 1). Do not pass background.
+
+        Returns
+        -------
+        None
+        """
         if as_int:
             experimental_image_int = np.array(image, dtype=int)
         else:
@@ -1600,14 +1756,25 @@ def run_parameter_sweep(
         Probe configuration for the reference sample.
     :param reference_parameters: dict, optional
         Additional parameters for the reference sample.
+    :param reference_image: numpy.ndarray, optional
+        Image to use as reference instead of a simulated one. Used only if
+        reference_image_parameters is also given.
+    :param reference_image_parameters: dict, optional
+        Passed to sweep_generator.load_reference_image, e.g.
+        {"ref_pixelsize": 100} (nm) and reference_image_mask.
     :param clear_experiment: bool, optional
         Whether to clear the experiment before running. Default is True.
     :param run_analysis: bool, optional
         Whether to run analysis after simulation. Default is True.
-    For the following parameters, pass a list of the values to sweep over,
-    alternatively, pass a tuple of (min, max, nsteps) to generate linearly spaced values.
+    For each of these parameters, pass a list of values to sweep over, or a
+    tuple (start, stop, step). For numeric parameters, a tuple gives
+    np.linspace(start, stop, int((stop - start) / step) + 1), so stop is
+    included; for integer parameters (int_slider in parameter_settings.yaml)
+    it gives np.arange(start, stop, step), so stop is excluded. Tuples are
+    ignored for parameters without an entry in parameter_settings.yaml.
     For a single value, pass a list with one element.
-    If a parameter is None, it will not be swept and will use default values
+    If a parameter is None, it is not swept and its default value is used.
+    See sweep_generator.set_sweep_parameters for their meaning and units.
         - probe_target_type
         - probe_target_value
         - probe_target_option
@@ -1627,6 +1794,7 @@ def run_parameter_sweep(
         - structural_integrity_large_cluster
         - sample_dimensions
         - particle_orientations
+        - xy_orientations, xz_orientations, yz_orientations
         - rotation_angles
         - minimal_distance
         - pixelsize_nm
@@ -1635,6 +1803,29 @@ def run_parameter_sweep(
         - psf_voxel_nm
         - depth_of_field_nm
         - exp_time
+    :param na_as_zero: bool, optional
+        Show missing metric values as zero in plots. Default is True.
+    :param custom_metrics: list of callable, optional
+        Additional metrics; see sweep_generator.add_custom_analysis_metrics.
+    :param default_metrics: list of str, optional
+        Default metrics to compute. Default is ["ssim", "pearson"].
+    :param plot_parameters: dict, optional
+        Plot settings as {plot_type: {parameter: value}}, passed to
+        sweep_generator.set_plot_parameters, e.g.
+        {"heatmaps": {"param1": "labelling_efficiency",
+        "param2": "structural_integrity"}}.
+    :param random_seed: int, optional
+        Seed for reproducible sweeps.
+    :param image4vsample: numpy.ndarray, optional
+        Image used to position particles in the virtual samples (see
+        sweep_generator.virtual_sample_from_image). Used only if
+        image4vsample_parameters is also given; takes precedence over
+        particle_positions and number_of_particles.
+    :param image4vsample_parameters: dict, optional
+        Passed to sweep_generator.virtual_sample_from_image, e.g.
+        {"pixelsize": 100, "mode": "mask", "npositions": 3}.
+    :param capture_outputs: bool, optional
+        Hide the printed output of virtual sample generation. Default is True.
 
     Returns
     -------
