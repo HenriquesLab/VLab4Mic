@@ -2,6 +2,7 @@ from vlab4mic import workflows, experiments
 from vlab4mic.utils import data_format
 import pytest
 import copy
+import numpy as np
 
 
 def test_simple_imaging_system():
@@ -111,3 +112,42 @@ def test_smlm_with_locs():
         testexperiment.imager.modalities["SMLM"]["emitters"]["nlocalisations"]
         is None
     )
+
+
+def _imager_with_emitters(emitters):
+    imager, _ = experiments.build_virtual_microscope()
+    imager.emitters_by_fluorophore = {"test_fluo": emitters}
+    return imager
+
+
+def _roi_centre(imager):
+    return np.array(imager.get_roi_params("ranges")).mean(axis=1)
+
+
+def test_emitters_in_ROI_keeps_single_emitter_inside():
+    imager = _imager_with_emitters([])
+    imager.emitters_by_fluorophore["test_fluo"] = [_roi_centre(imager).tolist()]
+    assert imager.get_emitters_in_ROI("test_fluo").shape == (1, 3)
+
+
+def test_emitters_in_ROI_drops_single_emitter_outside():
+    imager = _imager_with_emitters([])
+    outside = _roi_centre(imager) + 1e5
+    imager.emitters_by_fluorophore["test_fluo"] = [outside.tolist()]
+    assert imager.get_emitters_in_ROI("test_fluo").shape == (0, 3)
+
+
+def test_emitters_in_ROI_filters_several_emitters():
+    imager = _imager_with_emitters([])
+    centre = _roi_centre(imager)
+    imager.emitters_by_fluorophore["test_fluo"] = [
+        centre.tolist(),
+        (centre + 1e5).tolist(),
+        centre.tolist(),
+    ]
+    assert imager.get_emitters_in_ROI("test_fluo").shape == (2, 3)
+
+
+def test_emitters_in_ROI_handles_no_emitters():
+    imager = _imager_with_emitters([])
+    assert imager.get_emitters_in_ROI("test_fluo").shape == (0, 3)
