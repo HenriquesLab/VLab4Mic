@@ -1,4 +1,11 @@
 import numpy as np
+from scipy.sparse import csr_matrix
+from scipy.sparse.csgraph import (
+    breadth_first_order,
+    connected_components,
+    minimum_spanning_tree,
+)
+from scipy.spatial import cKDTree
 from .points_transforms import rotate_point
 
 
@@ -14,6 +21,82 @@ def normals_by_scaling(epitope_locs, scale=0.95):
     # normals_ft_epitopes = [normals, epitope_locs]
     return normals
     # return normals_ft_epitopes
+
+def normals_by_local_plane(
+    epitope_locs, n_neighbours=10, reference_vector=None, flatness_tolerance=0.2
+):
+    """
+    Estimate surface normals from a plane fitted around each epitope.
+
+    For each epitope, the normal is the direction of least variance of its
+    n_neighbours nearest epitopes (itself included). Unlike
+    normals_by_scaling, this gives the surface normal on flat and
+    non-convex surfaces as well as on convex ones.
+
+    Normals are oriented consistently across the surface by propagating the
+    side along a minimum spanning tree of neighbouring epitopes (Hoppe et
+    al., 1992). In each connected patch, the side is set at the epitope whose
+    normal is most aligned with the direction from the centroid of all
+    epitopes, so normals point away from it. If no epitope in the patch is
+    aligned better than flatness_tolerance (|cos|), as on a flat surface,
+    normals point to the same side as reference_vector.
+
+    :param epitope_locs: (np.array) Nx3 epitope coordinates.
+    :param n_neighbours: (int) Number of nearest epitopes used to fit each plane.
+    :param reference_vector: (np.array) Side to point to on flat surfaces.
+        Default is [0, 0, 1].
+    :param flatness_tolerance: (float) Threshold on |cos| below which
+        reference_vector decides the side.
+
+    :return: (np.array) Nx3 unit normals.
+    """
+    locs = np.asarray(epitope_locs, dtype=float)
+    n_epitopes = locs.shape[0]
+    if reference_vector is None:
+        reference_vector = np.array([0, 0, 1])
+    reference_vector = np.asarray(reference_vector, dtype=float)
+    reference_vector = reference_vector / np.linalg.norm(reference_vector)
+    if n_epitopes < 3:
+        # not enough points to fit a plane
+        return np.tile(reference_vector, (n_epitopes, 1))
+    k = min(n_neighbours, n_epitopes)
+    _, neighbour_ids = cKDTree(locs).query(locs, k=k)
+    neighbourhoods = locs[neighbour_ids]
+    centred = neighbourhoods - neighbourhoods.mean(axis=1, keepdims=True)
+    covariances = np.einsum("nki,nkj->nij", centred, centred)
+    # eigenvalues come in ascending order: first eigenvector is the normal
+    _, eigenvectors = np.linalg.eigh(covariances)
+    normals = eigenvectors[:, :, 0]
+    # direction from the centroid, used to decide the side of each patch
+    outward = locs - locs.mean(axis=0)
+    outward_norm = np.linalg.norm(outward, axis=1)
+    outward_norm[outward_norm == 0] = 1
+    cos_outward = np.einsum("ni,ni->n", normals, outward) / outward_norm
+    # graph of neighbouring epitopes, weighted so that the spanning tree
+    # follows pairs with nearly parallel normals
+    rows = np.repeat(np.arange(n_epitopes), k - 1)
+    cols = neighbour_ids[:, 1:].ravel()
+    weights = 1 - np.abs(np.einsum("ni,ni->n", normals[rows], normals[cols]))
+    # zero weights would be read as missing edges
+    graph = csr_matrix((weights + 1e-9, (rows, cols)), shape=(n_epitopes,) * 2)
+    tree = minimum_spanning_tree(graph.maximum(graph.T))
+    tree = tree + tree.T
+    n_patches, patch_ids = connected_components(tree, directed=False)
+    for patch in range(n_patches):
+        members = np.flatnonzero(patch_ids == patch)
+        seed = members[np.argmax(np.abs(cos_outward[members]))]
+        if abs(cos_outward[seed]) >= flatness_tolerance:
+            flip = cos_outward[seed] < 0
+        else:
+            flip = normals[seed] @ reference_vector < 0
+        if flip:
+            normals[seed] *= -1
+        order, predecessors = breadth_first_order(tree, seed, directed=False)
+        for node in order[1:]:
+            if normals[node] @ normals[predecessors[node]] < 0:
+                normals[node] *= -1
+    return normals
+
 
 def global_normal_direction(epitope_locs, normal_vector = np.array([0,0,1])):
     normals = np.zeros((len(epitope_locs), 3))

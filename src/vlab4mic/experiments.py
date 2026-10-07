@@ -1415,9 +1415,20 @@ class ExperimentParametrisation:
         new_orientation_point = self.structure.axis["pivot"] + reference_rotated
         self.structure.set_axis_from_point(new_orientation_point)
     
-    def set_structure_normal_params(self, mode = "scaling", normal_vector = None):
+    def set_structure_normal_params(self, mode = "scaling", normal_vector = None, n_neighbours = 10):
+        """
+        Set how normals are assigned to the targets of the structure.
+
+        :param mode: "scaling", "local_plane", "global" or "structure_axis".
+            See MolecularStructure.assign_normals2targets.
+        :param normal_vector: vector used by "global" mode, and side the
+            normals point to on flat surfaces in "local_plane" mode.
+        :param n_neighbours: number of nearest target sites used to fit
+            each plane in "local_plane" mode.
+        """
         self.structure.normals_params["mode"] = mode
         self.structure.normals_params["normal_vector"] = normal_vector
+        self.structure.normals_params["n_neighbours"] = n_neighbours
     
     def set_structural_integrity(
             self,
