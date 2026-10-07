@@ -52,3 +52,37 @@ def test_set_sweep_parameters_silent_when_empty(capsys):
     out = capsys.readouterr().out
     assert "Parameters set for sweep:" not in out
     assert "WARNING" not in out
+
+
+def test_parameter_iterables_without_set_sweep_parameters():
+    """Regression: enable_random_orientations was only defined inside
+    set_sweep_parameters, so building the iterables directly raised
+    AttributeError."""
+    g = sweep_generator.sweep_generator()
+    g.create_parameters_iterables()
+    assert "random_orientations" not in g.params_by_group["virtual_sample"]
+
+
+def test_random_orientations_not_forced_without_plane_orientations():
+    """Without plane-wise orientations, the sweep must not override a
+    random_orientations value set by the user."""
+    g = sweep_generator.sweep_generator()
+    g.set_parameter_values(
+        "virtual_sample", "random_orientations", values=[True, False]
+    )
+    g.set_sweep_parameters(labelling_efficiency=[0.5, 1])
+    g.create_parameters_iterables()
+    assert g.params_by_group["virtual_sample"]["random_orientations"] == [
+        True,
+        False,
+    ]
+
+
+def test_plane_orientations_enable_random_orientations():
+    g = sweep_generator.sweep_generator()
+    g.set_sweep_parameters(xy_orientations=[0, 90])
+    # a later call without plane orientations keeps them enabled
+    g.set_sweep_parameters(labelling_efficiency=[0.5, 1])
+    g.create_parameters_iterables()
+    assert g.params_by_group["virtual_sample"]["random_orientations"] == [True]
+    assert "xy_orientations" in g.params_by_group["virtual_sample"]
