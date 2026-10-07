@@ -789,6 +789,19 @@ class sweep_generator:
         """
         Create iterables for all parameter groups based on set values.
 
+        Builds the combinations of values to sweep for each parameter group
+        (probe, particle_structural_integrity, virtual_sample, acquisition
+        and modality) and stores them in probe_parameters,
+        structural_integrity_parameters, vsample_parameters,
+        acquisition_parameters and modality_parameters. If no parameter
+        has been set in any group, labelling_efficiency is swept over
+        [0.5, 1].
+
+        If plane-wise orientations (xy, xz or yz) have been set,
+        random_orientations is set to [True] so that they are applied.
+        Otherwise random_orientations is left as set by the user or the
+        experiment.
+
         Returns
         -------
         None
