@@ -1155,13 +1155,17 @@ class Imager:
         else:
             points = self._get_emitters_by_fluorophorename(fluoname)
         # print(ranges, points)
-        rangesT = np.array(ranges).T
-        roi_corners = [rangesT[0].tolist(), rangesT[1].tolist()]
-        logical = [inCube(X, roi_corners) for X in points]
-        emitters_in_ROI = points[logical, :]
-        # up to here the points are only the ones contined
-        # in the ROI, but we still need to offset the coordinates
-        return copy.copy(emitters_in_ROI)
+        n_emitters = points.shape[0]
+        if n_emitters > 1:
+            rangesT = np.array(ranges).T
+            roi_corners = [rangesT[0].tolist(), rangesT[1].tolist()]
+            logical = [inCube(X, roi_corners) for X in points]
+            emitters_in_ROI = points[logical, :]
+            # up to here the points are only the ones contined
+            # in the ROI, but we still need to offset the coordinates
+            return copy.copy(emitters_in_ROI)
+        else:
+            return points
 
     def calculate_photons_per_frame(
         self,

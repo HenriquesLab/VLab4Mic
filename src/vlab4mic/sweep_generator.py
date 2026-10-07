@@ -211,6 +211,7 @@ class sweep_generator:
         None
         """
         self.create_parameters_iterables()
+        print("Generating virtual samples.... this might take some minutes")
         if self.use_experiment_structure:
             (
                 self.experiment,
@@ -241,7 +242,7 @@ class sweep_generator:
                 repetitions=self.sweep_repetitions,
             )
 
-    def generate_acquisitions(self):
+    def generate_acquisitions(self, capture_outputs=True):
         """
         Generate image simulation acquisition for all virtual samples generated with generate_virtual_samples.
 
@@ -250,9 +251,12 @@ class sweep_generator:
         None
         """
         # generate virtual samples
-        with io.capture_output() as captured:
-            if self.virtual_samples is None:
-                self.generate_virtual_samples()
+        if self.virtual_samples is None:
+                if capture_outputs:
+                    with io.capture_output() as captured:
+                        self.generate_virtual_samples()
+                else:
+                    self.generate_virtual_samples()
         # acquisition of virtual samples
         (
             self.experiment,
@@ -375,11 +379,7 @@ class sweep_generator:
         )
 
     def load_reference_image(
-        self,
-        ref_image_path=None,
-        ref_pixelsize=None,
-        ref_image_mask_path=None,
-        override=True,
+        self, ref_image_path=None, ref_pixelsize=None, ref_image_mask_path = None, override=True, reference_image=None, reference_image_mask=None, **kwargs
     ):
         """
         Load a reference image from a specified path.
@@ -388,8 +388,16 @@ class sweep_generator:
         reference_parameters["Vector"] = None
         ref_pixelsize
         reference_parameters["ref_pixelsize"] = ref_pixelsize
-        ref_image = tiff.imread(ref_image_path)
-        if ref_image_mask_path is not None:
+        if reference_image is not None:
+            ref_image = reference_image.copy()
+        elif ref_image_path is not None:
+            ref_image = tiff.imread(ref_image_path)
+        else:
+            override = False
+            ref_image = None  
+        if reference_image_mask is not None:
+            ref_image_mask = reference_image_mask
+        elif ref_image_mask_path is not None:
             image_mask = tiff.imread(ref_image_mask_path)
             ref_image_mask = image_mask > 0
         else:
@@ -579,6 +587,9 @@ class sweep_generator:
         sample_dimensions=None,
         particle_positions=None,
         particle_orientations=None,
+        xy_orientations = None,
+        xz_orientations = None,
+        yz_orientations = None,
         rotation_angles=None,
         minimal_distance=None,
         # modality params
@@ -694,6 +705,29 @@ class sweep_generator:
                 "particle_orientations",
                 values=particle_orientations,
             )
+        random_orientations = False
+        if xy_orientations is not None:
+            self.set_parameter_values(
+                "virtual_sample",
+                "xy_orientations",
+                values=xy_orientations,
+            )
+            random_orientations = True
+        if xz_orientations is not None:
+            self.set_parameter_values(
+                "virtual_sample",
+                "xz_orientations",
+                values=xz_orientations,
+            )
+            random_orientations = True
+        if yz_orientations is not None:
+            self.set_parameter_values(
+                "virtual_sample",
+                "yz_orientations",
+                values=yz_orientations,
+            )
+            random_orientations = True
+        self.enable_random_orientations = random_orientations
         if rotation_angles is not None:
             self.set_parameter_values(
                 "virtual_sample", "rotation_angles", values=rotation_angles
@@ -774,6 +808,10 @@ class sweep_generator:
         self.structural_integrity_parameters = sweep.create_param_combinations(
             **self.params_by_group["particle_structural_integrity"]
         )
+        if self.enable_random_orientations:
+            self.params_by_group["virtual_sample"]["random_orientations"] = [True,]
+        else:
+            self.params_by_group["virtual_sample"]["random_orientations"] = [False,]
         self.vsample_parameters = sweep.create_param_combinations(
             **self.params_by_group["virtual_sample"]
         )
@@ -853,6 +891,7 @@ class sweep_generator:
         output_directory=None,
         plots=False,
         save_images=True,
+        capture_outputs=True,
         **kwargs,
     ):
         """
@@ -879,7 +918,7 @@ class sweep_generator:
         None
         """
         if self.acquisition_outputs is None:
-            self.generate_acquisitions()
+            self.generate_acquisitions(capture_outputs=capture_outputs)
         if self.reference_image is None:
             self.generate_reference_image()
         if len(self.reference_image.shape) == 3:
@@ -1445,7 +1484,19 @@ class sweep_generator:
             else:
                 self.plot_parameters[metric_name]["lineplots"] = {}
             self.metrics[metric_name] = custom_metrics[m]
-
+        
+    def virtual_sample_from_image(self, image, as_int=True, **kwargs):
+        if as_int:
+            experimental_image_int = np.array(image, dtype=int)
+        else:
+            experimental_image_int = image
+        print("Using image to position particles in virtual sample")
+        self.experiment.use_image_for_positioning(
+            img=experimental_image_int,
+            background=experimental_image_int.min(),
+            **kwargs
+        )
+        print(f"Virtual sample parameterised to: {self.experiment.virtualsample_params}")
 
 def run_parameter_sweep(
     structures: list[str] = None,
@@ -1463,6 +1514,8 @@ def run_parameter_sweep(
     reference_structure=None,
     reference_probe=None,
     reference_parameters: dict = None,
+    reference_image= None,
+    reference_image_parameters = None,
     clear_experiment=True,
     run_analysis=True,
     # parameters to sweep
@@ -1485,6 +1538,9 @@ def run_parameter_sweep(
     structural_integrity_large_cluster=None,
     sample_dimensions=None,
     particle_orientations=None,
+    xy_orientations = None,
+    xz_orientations = None,
+    yz_orientations = None,
     rotation_angles=None,
     minimal_distance=None,
     pixelsize_nm=None,
@@ -1496,11 +1552,13 @@ def run_parameter_sweep(
     # for plot generation
     na_as_zero=True,
     custom_metrics: list[callable] = None,
-    default_metrics=["ssim", "pearson"],
-    # custom_metric_name: str = None,
+    default_metrics =  ["ssim", "pearson"],
     plot_parameters=None,
     random_seed: int = None,
-    # Add more as needed for your sweep
+    # Parameterise vsample from image
+    image4vsample = None,
+    image4vsample_parameters = None,
+    capture_outputs=True
 ):
     """
     Run a parameter sweep for virtual microscopy simulations and analysis.
@@ -1599,7 +1657,13 @@ def run_parameter_sweep(
     sweep_gen.set_output_directory(output_directory=output_directory)
     sweep_gen.set_number_of_repetitions(sweep_repetitions)
     # number of particles across sweep
-    if particle_positions is not None:
+    if image4vsample is not None and image4vsample_parameters is not None:
+        # use image to parameterise virtual sample
+        sweep_gen.virtual_sample_from_image(
+            image=image4vsample,
+            **image4vsample_parameters
+        )   
+    elif particle_positions is not None:
         # set those positions
         sweep_gen.experiment.set_virtualsample_params(
             particle_positions=particle_positions
@@ -1630,6 +1694,9 @@ def run_parameter_sweep(
         sample_dimensions=sample_dimensions,
         particle_positions=particle_positions,
         particle_orientations=particle_orientations,
+        xy_orientations = xy_orientations,
+        xz_orientations = xz_orientations,
+        yz_orientations = yz_orientations,
         rotation_angles=rotation_angles,
         minimal_distance=minimal_distance,
         pixelsize_nm=pixelsize_nm,
@@ -1639,6 +1706,11 @@ def run_parameter_sweep(
         depth_of_field_nm=depth_of_field_nm,
         exp_time=exp_time,
     )
+    if reference_image is not None and reference_image_parameters is not None:
+        sweep_gen.load_reference_image(
+            reference_image=reference_image,
+            **reference_image_parameters
+        )
     if reference_parameters is None:
         reference_parameters = dict()
     sweep_gen.set_reference_parameters(
@@ -1659,7 +1731,8 @@ def run_parameter_sweep(
             save=save_analysis_results,
             plots=analysis_plots,
             output_name=output_name,
-        )
+            capture_outputs=capture_outputs
+            )
         if save_sweep_images:
             sweep_gen.save_images(
                 output_name=output_name, output_directory=output_directory
