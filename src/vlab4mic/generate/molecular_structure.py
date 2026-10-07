@@ -1064,6 +1064,20 @@ class MolecularReplicates(MolecularStructureParser):
                 self.label_targets[target_name]["normals"] = normals
 
     def _compute_target_normals(self, coordinates):
+        """
+        Compute normals for target sites with the method in normals_params.
+
+        Parameters
+        ----------
+        coordinates : numpy.ndarray
+            Nx3 array of target site coordinates.
+
+        Returns
+        -------
+        numpy.ndarray or None
+            Nx3 array of normals, or None if normals_params["mode"] is not
+            a known mode (the existing normals are then kept).
+        """
         mode = self.normals_params["mode"]
         if mode == "scaling":
             return normals_by_scaling(coordinates)

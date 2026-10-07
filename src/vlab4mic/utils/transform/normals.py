@@ -10,6 +10,27 @@ from .points_transforms import rotate_point
 
 
 def normals_by_scaling(epitope_locs, scale=0.95):
+    """
+    Estimate normals as the direction from the centroid of the epitopes.
+
+    Each normal is the displacement of an epitope when the set of epitopes
+    is shrunk by scale about its centroid, so it points away from the
+    centroid with length (1 - scale) times the distance to it. This is the
+    surface normal only for convex shapes centred on the centroid (e.g. a
+    sphere); on flat or elongated surfaces use normals_by_local_plane.
+
+    Parameters
+    ----------
+    epitope_locs : numpy.ndarray
+        Nx3 array of epitope coordinates.
+    scale : float, optional
+        Shrinking factor, between 0 and 1. Default is 0.95.
+
+    Returns
+    -------
+    numpy.ndarray
+        Nx3 array of normals (not unit length).
+    """
     scaled_epitopes_locs = coordinates_scaling(epitope_locs, scale)
     # calculate the normals of the epitopes
     # note that this approach will work for convex shapes
@@ -41,14 +62,31 @@ def normals_by_local_plane(
     aligned better than flatness_tolerance (|cos|), as on a flat surface,
     normals point to the same side as reference_vector.
 
-    :param epitope_locs: (np.array) Nx3 epitope coordinates.
-    :param n_neighbours: (int) Number of nearest epitopes used to fit each plane.
-    :param reference_vector: (np.array) Side to point to on flat surfaces.
-        Default is [0, 0, 1].
-    :param flatness_tolerance: (float) Threshold on |cos| below which
-        reference_vector decides the side.
+    Parameters
+    ----------
+    epitope_locs : numpy.ndarray
+        Nx3 array of epitope coordinates.
+    n_neighbours : int, optional
+        Number of nearest epitopes (including itself) used to fit the plane
+        at each epitope. Default is 10. Too few neighbours fail on epitopes
+        that come in small clusters.
+    reference_vector : numpy.ndarray, optional
+        Side normals point to on flat surfaces. Default is [0, 0, 1].
+    flatness_tolerance : float, optional
+        Threshold on |cos| between a normal and the direction from the
+        centroid, below which reference_vector decides the side. Default
+        is 0.2.
 
-    :return: (np.array) Nx3 unit normals.
+    Returns
+    -------
+    numpy.ndarray
+        Nx3 array of unit normals. With fewer than 3 epitopes, every normal
+        is reference_vector (normalised).
+
+    References
+    ----------
+    Hoppe, H. et al. Surface reconstruction from unorganized points.
+    SIGGRAPH Comput. Graph. 26, 71-78 (1992).
     """
     locs = np.asarray(epitope_locs, dtype=float)
     n_epitopes = locs.shape[0]
@@ -99,6 +137,22 @@ def normals_by_local_plane(
 
 
 def global_normal_direction(epitope_locs, normal_vector = np.array([0,0,1])):
+    """
+    Assign the same normal to every epitope.
+
+    Parameters
+    ----------
+    epitope_locs : numpy.ndarray
+        Nx3 array of epitope coordinates (only its length is used).
+    normal_vector : numpy.ndarray, optional
+        Normal assigned to every epitope, used as given (not normalised).
+        Default is [0, 0, 1].
+
+    Returns
+    -------
+    numpy.ndarray
+        Nx3 array with normal_vector in every row.
+    """
     normals = np.zeros((len(epitope_locs), 3))
     for i in range(len(epitope_locs)):
         normals[i, :] = normal_vector
@@ -107,6 +161,22 @@ def global_normal_direction(epitope_locs, normal_vector = np.array([0,0,1])):
 def coordinates_scaling(
     epitope_array, scaling_factor
 ):  ## formerly named epitopes_scaling
+    """
+    Scale coordinates about their centroid.
+
+    Parameters
+    ----------
+    epitope_array : numpy.ndarray
+        Nx3 array of coordinates.
+    scaling_factor : float
+        Scaling factor; values below 1 shrink the set towards its centroid.
+
+    Returns
+    -------
+    numpy.ndarray
+        Nx3 array of scaled coordinates, with the same centroid as the
+        input.
+    """
     # epitope_array is a numpy array epitope locations
     # first get the centroid of the epitope array
     # (this input can be the averale location of the atoms in the epitopes)
