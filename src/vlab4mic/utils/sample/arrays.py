@@ -8,10 +8,28 @@ def sample_spherical_normalised(npoints, ndim=3):
 
 
 def boolean_epitope_selection(epitopes, selected_epitopes, new_epitope, min_distance):
-    # epitopes is the numpy array containing epitopes coordinates
-    # selected epitopes is a list of indices of the selected epitopes
-    # min_distance is the minimum distance between the epitopes
-    # returns 1 if new_epitope is at least min_distance away from all selected epitopes
+    """
+    Check whether an epitope is free of steric hindrance.
+
+    Parameters
+    ----------
+    epitopes : numpy.ndarray
+        Nx3 array of epitope coordinates.
+    selected_epitopes : list of int
+        Indices (rows of epitopes) of the epitopes already bound.
+    new_epitope : int
+        Index of the epitope to check.
+    min_distance : float
+        Minimum distance between bound epitopes, in the units of epitopes.
+        0 disables the check.
+
+    Returns
+    -------
+    int
+        1 if new_epitope is at least min_distance away from every selected
+        epitope (or if min_distance is 0 or nothing is selected yet),
+        0 otherwise.
+    """
     if min_distance == 0 or len(selected_epitopes) == 0:
         return 1
     distances = np.linalg.norm(
@@ -29,7 +47,24 @@ def sample_epitopes_sterically(epitopes, min_distance, p=1):
     epitope that is already bound (steric hindrance). Epitopes that fail the
     efficiency trial stay unbound and do not block their neighbours.
 
-    Returns the indices of the bound epitopes.
+    Random draws use the global numpy random state, so results are
+    reproducible after np.random.seed.
+
+    Parameters
+    ----------
+    epitopes : numpy.ndarray
+        Nx3 array of epitope coordinates.
+    min_distance : float
+        Minimum distance between bound epitopes, in the units of epitopes.
+        0 or None disables steric hindrance.
+    p : float, optional
+        Probability that a probe binds each epitope (labelling efficiency),
+        between 0 and 1. Default is 1.
+
+    Returns
+    -------
+    list of int
+        Indices of the bound epitopes, in the random order they were bound.
     """
     n_epitopes = epitopes.shape[0]
     randomized_indices = np.random.permutation(n_epitopes)
@@ -59,6 +94,36 @@ def sample_array(array, fraction=1):
 
 
 def binomial_epitope_sampling(epitopes, p=1, normals=None, min_distance=0.0):
+    """
+    Sample the epitopes bound by a probe, with their normals.
+
+    Applies the labelling efficiency and steric hindrance model of
+    sample_epitopes_sterically and returns the bound epitopes.
+
+    Parameters
+    ----------
+    epitopes : numpy.ndarray
+        Nx3 array of epitope coordinates.
+    p : float, optional
+        Probability that a probe binds each epitope (labelling efficiency),
+        between 0 and 1. Default is 1.
+    normals : numpy.ndarray, optional
+        Nx3 array of normals, one per epitope. If given, the normals of the
+        bound epitopes are returned too.
+    min_distance : float, optional
+        Minimum distance between bound epitopes, in the units of epitopes.
+        Default is 0 (no steric hindrance).
+
+    Returns
+    -------
+    subset_epitopes : numpy.ndarray
+        Mx3 array with the coordinates of the M bound epitopes.
+    n_epitopes : int
+        Number of bound epitopes, M.
+    subset_normals : numpy.ndarray or None
+        Mx3 array with the normals of the bound epitopes, or None if
+        normals is None.
+    """
     ids_selected = sample_epitopes_sterically(
         epitopes=epitopes,
         min_distance=min_distance,
