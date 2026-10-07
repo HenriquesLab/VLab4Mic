@@ -111,29 +111,27 @@ def test_probe_secondary_epitope_sweep_parameter_reaches_add_probe():
 
 
 def test_sweep_based_on_image():
-
-    img_mask = np.random.rand(24, 24)
-    p = 0.9
-    img_mask[img_mask >= p] = 1
-    img_mask[img_mask < p] = 0
-    # image parameters
+    # small deterministic mask with three positive pixels
+    img_mask = np.zeros((8, 8))
+    img_mask[2, 2] = img_mask[5, 5] = img_mask[2, 6] = 1
+    pixelsize = 100  # in nm
     image_parameters = dict(
-        pixelsize = 100, # in nm
-        mode = "mask",
+        pixelsize=pixelsize,
+        mode="mask",
+        npositions=3,
     )
 
     sweep_gen = sweep_generator.run_parameter_sweep(
-        sweep_repetitions=3,
+        sweep_repetitions=1,
         # parameters for sweep
-        labelling_efficiency=(0, 1, 0.5),  # values between 0 and 1 with step of 0.5
+        labelling_efficiency=(0.5, 1, 0.5),
+        modalities=["Widefield"],
         # Image for virtual sample positioning
         image4vsample=img_mask,
         image4vsample_parameters=image_parameters,
         # reference image
         reference_image=img_mask,
-        reference_image_parameters={
-            "ref_pixelsize": image_parameters["pixelsize"]
-        },
+        reference_image_parameters={"ref_pixelsize": pixelsize},
         # output and analysis
         output_name="vlab_example_sweep",
         return_generator=True,
@@ -142,8 +140,19 @@ def test_sweep_based_on_image():
         save_analysis_results=False,
         run_analysis=True,
         capture_outputs=True,
-        plot_parameters={
-            "heatmaps": {"param1":"labelling_efficiency", "param2":"structural_integrity", "category":"lateral_resolution_nm"}
-        }
+        random_seed=1,
     )
-    
+
+    # one particle per positive pixel, sample sized to the image
+    positions = sweep_gen.experiment.virtualsample_params["relative_positions"]
+    assert np.shape(positions) == (3, 3)
+    assert sweep_gen.experiment.virtualsample_params["sample_dimensions"][:2] == [
+        img_mask.shape[0] * pixelsize,
+        img_mask.shape[1] * pixelsize,
+    ]
+    # the provided image is used as reference
+    np.testing.assert_array_equal(sweep_gen.reference_image, img_mask)
+    # one row per labelling efficiency value, with metrics computed
+    results = sweep_gen.analysis["dataframes"]
+    assert sorted(results["labelling_efficiency"].unique()) == [0.5, 1.0]
+    assert results[["ssim", "pearson"]].notna().all().all()
