@@ -752,7 +752,6 @@ class Imager:
                                         n_emitters,
                                         nframes,
                                         exp_time,
-                                        equal=100,
                                     )
                                 )
                                 field_data["field_coordinates"] = localisations
@@ -1174,7 +1173,6 @@ class Imager:
         n_emitters,
         nframes,
         exp_time=1,
-        equal=None,
         **kwargs,
     ):
         """
@@ -1216,13 +1214,9 @@ class Imager:
                 )
                 emission_notes = dictionary2string(kinetics)
             else:  # if emission == "constant":
-                if equal is not None:
-                    photons_per_second = (equal,)
-                    exp_time = 1
-                else:
-                    photons_per_second = self.fluorophore_params[fluo][
-                        "photons_per_second"
-                    ]
+                photons_per_second = self.fluorophore_params[fluo][
+                    "photons_per_second"
+                ]
                 photons_per_frame = exp_time * photons_per_second
                 print(
                     f"Average number of photons per frame: {photons_per_frame}"
