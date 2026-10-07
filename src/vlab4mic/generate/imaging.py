@@ -1136,15 +1136,23 @@ class Imager:
         """
         Get emitters of a given fluorophore that are within the ROI.
 
+        The ROI is the box defined by the "ranges" ROI parameter (minimum
+        and maximum per axis). Coordinates are returned as stored, without
+        offsetting them to the ROI origin.
+
         Parameters
         ----------
         fluoname : str
             Name of the fluorophore.
+        masks : bool, optional
+            If True, filter the particle positions instead of the emitters
+            of fluoname (used to create sample masks). Default is False.
 
         Returns
         -------
         numpy.ndarray
-            Array of emitter coordinates within the ROI.
+            Nx3 array of coordinates within the ROI. Empty (0x3) if there
+            are no emitters or none of them is within the ROI.
         """
         # get limits of ROI in xyz
         # to match the previous implementation
