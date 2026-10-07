@@ -414,15 +414,33 @@ class Imager:
         **kwargs,
     ):
         """
-        Set how emitters are turned into localisations.
+        Set how emitters are turned into localisations for a modality.
 
-        lateral_precision, axial_precision: standard deviation (nm) of the
-            localisation error, used when precision_model is "fixed".
-        nlocalisations: average number of localisations per emitter.
-        kwargs: precision_model ("fixed" or "photon_limited") and, for
-            "photon_limited", detection_psf_sigma_nm, camera_pixelsize_nm,
-            background_photons, excess_noise_factor and
-            axial_precision_ratio. See get_localisation_precision.
+        If lateral_precision (or a photon-limited precision model) and
+        nlocalisations are set, generate_imaging replaces each emitter by
+        localisations drawn around it. Otherwise emitters are imaged as
+        they are.
+
+        Parameters
+        ----------
+        modality : str
+            Name of the modality.
+        lateral_precision : float, optional
+            Lateral localisation precision (standard deviation), in nm.
+            Used when precision_model is "fixed".
+        axial_precision : float, optional
+            Axial localisation precision (standard deviation), in nm.
+            Used when precision_model is "fixed".
+        nlocalisations : float, optional
+            Mean number of localisations per emitter.
+        **kwargs
+            precision_model : str
+                "fixed" (default) or "photon_limited".
+            detection_psf_sigma_nm, camera_pixelsize_nm,
+            background_photons, excess_noise_factor,
+            axial_precision_ratio : float
+                Parameters of the "photon_limited" model. See
+                get_localisation_precision.
         """
         self.modalities[modality]["emitters"] = dict(kwargs)
         if lateral_precision is not None:
@@ -446,17 +464,41 @@ class Imager:
 
     def get_localisation_precision(self, modality, fluo, exp_time):
         """
-        Lateral and axial localisation precision (nm) for a modality.
+        Lateral and axial localisation precision for a modality.
 
         With precision_model "fixed" (default), returns the lateral_precision
         and axial_precision set for the modality.
 
         With precision_model "photon_limited", the lateral precision follows
-        from the photons per localisation (fluorophore photons_per_second
-        times exp_time) through photon_limited_lateral_precision, using
-        detection_psf_sigma_nm, camera_pixelsize_nm, background_photons and
-        excess_noise_factor. The axial precision is the lateral precision
-        times axial_precision_ratio.
+        from the mean photons per localisation (fluorophore
+        photons_per_second times exp_time) through
+        points_transforms.photon_limited_lateral_precision, using the
+        modality's detection_psf_sigma_nm, camera_pixelsize_nm,
+        background_photons (default 0) and excess_noise_factor (default 1).
+        The axial precision is the lateral precision times
+        axial_precision_ratio (default 1).
+
+        Parameters
+        ----------
+        modality : str
+            Name of the modality.
+        fluo : str
+            Name of the fluorophore.
+        exp_time : float
+            Exposure time per frame, in seconds.
+
+        Returns
+        -------
+        lateral : float or None
+            Lateral localisation precision (standard deviation), in nm.
+        axial : float or None
+            Axial localisation precision (standard deviation), in nm.
+
+        Raises
+        ------
+        ValueError
+            If precision_model is unknown, or if the photon-limited model
+            gets no photons (exp_time or photon rate of 0).
         """
         emitters = self.modalities[modality]["emitters"]
         model = emitters.get("precision_model") or "fixed"
@@ -699,10 +741,11 @@ class Imager:
         2. Draws the photons each emitter emits per frame, from the
            fluorophore photon rate and exp_time (see
            calculate_photons_per_frame).
-        3. For localisation-based modalities (lateral precision and number
-           of localisations set), replaces each emitter with localisations
-           drawn around it, and draws photons for each localisation the
-           same way.
+        3. For localisation-based modalities (precision and number of
+           localisations set), replaces each emitter with localisations
+           drawn around it, with the precision given by
+           get_localisation_precision, and draws photons for each
+           localisation the same way.
         4. Convolves the emitters or localisations with the modality PSF
            and adds the fluorophore signals of the channel.
         5. Adds detector noise if noise is True.

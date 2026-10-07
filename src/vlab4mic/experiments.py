@@ -313,8 +313,19 @@ class ExperimentParametrisation:
             The new axial resolution in nanometers. If provided, updates the axial standard deviation of the PSF.
         :param psf_voxel_nm : int, optional
             The new PSF voxel size in nanometers. If provided, updates the PSF voxel size for all axes.
+        :param depth_of_field_nm : int, optional
+            Depth of field in nanometers. Sets the PSF depth, in voxels of the current PSF voxel size.
         :param remove : bool, optional
             If True, removes the specified modality from the internal dictionaries. Default is False.
+        :param lateral_precision : float, optional
+            Lateral localisation precision (standard deviation) in nanometers, for localisation-based modalities.
+        :param axial_precision : float, optional
+            Axial localisation precision (standard deviation) in nanometers, for localisation-based modalities.
+        :param nlocalisations : float, optional
+            Mean number of localisations per emitter, for localisation-based modalities.
+        :param simulate_localistations : bool, optional
+            If False, emitters are imaged directly instead of as localisations: lateral_precision,
+            axial_precision and nlocalisations are set to None. Default is True.
         :param **kwargs
             Localisation precision model for localisation-based modalities:
             precision_model ("fixed" or "photon_limited"),
