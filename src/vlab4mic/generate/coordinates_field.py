@@ -353,9 +353,10 @@ class Field:
             self._random_pos_minimal_dist(npositions)
         else:
             print("Generating unconstrained random positions")
-            xrel = np.random.uniform(size=npositions)
-            yrel = np.random.uniform(size=npositions)
-            zrel = np.random.uniform(size=npositions)
+            rng_pos = np.random.default_rng(seed=random_seed)
+            xrel = rng_pos.uniform(size=npositions)
+            yrel = rng_pos.uniform(size=npositions)
+            zrel = rng_pos.uniform(size=npositions)
             rand = list(zip(xrel, yrel, zrel))
             self.molecules_params["relative_positions"] = rand
             self._gen_abs_from_rel_positions()
@@ -443,7 +444,7 @@ class Field:
             )
             self.molecules_params["minimal_distance"] = dist
 
-    def _random_pos_minimal_dist(self, n):
+    def _random_pos_minimal_dist(self, n, random_seed=None):
         # convert minimal distance in relative units
         selected_positions = []
         selected_relative = []
@@ -454,17 +455,18 @@ class Field:
         maxabs_posz = dimension_sizes[2]
         # print(f"Max values: {maxabs_posx},{maxabs_posy}, {maxabs_posz}")
         # sample the first point
-        x = np.random.uniform(0, maxabs_posx, size=1)
-        y = np.random.uniform(0, maxabs_posy, size=1)
-        z = np.random.uniform(0, maxabs_posz, size=1)
+        rng_pos = np.random.default_rng(seed=random_seed)
+        x = rng_pos.uniform(0, maxabs_posx, size=1)
+        y = rng_pos.uniform(0, maxabs_posy, size=1)
+        z = rng_pos.uniform(0, maxabs_posz, size=1)
         v0 = np.array([x, y, z]).reshape(-1)
         selected_positions.append(v0)
         flag = 0
         while len(selected_positions) < n and flag < 10000:
             flag = flag + 1
-            x = np.random.uniform(0, maxabs_posx, size=1)
-            y = np.random.uniform(0, maxabs_posy, size=1)
-            z = np.random.uniform(0, maxabs_posz, size=1)
+            x = rng_pos.uniform(0, maxabs_posx, size=1)
+            y = rng_pos.uniform(0, maxabs_posy, size=1)
+            z = rng_pos.uniform(0, maxabs_posz, size=1)
             new = np.array([x, y, z]).reshape(-1)
             is_available = 1
             for pos in range(len(selected_positions)):
