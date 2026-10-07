@@ -642,14 +642,58 @@ class Imager:
         **kwargs,
     ):
         """
-        Master function that generates image sequences depending on the modality
-        This function is responsible for
-            Preparing the coordinates according to ROI (DONE!)
-            Creating the Photons per frame matrix
-            Take focus plane, PSF and photon budgets
-            Feed these data into the Convolution method (or analytical)
-            Adds noise
-            Profit!
+        Simulate an image sequence of the virtual sample with a modality.
+
+        For each channel and each fluorophore it captures, this method:
+
+        1. Takes the emitters within the ROI.
+        2. Draws the photons each emitter emits per frame, from the
+           fluorophore photon rate and exp_time (see
+           calculate_photons_per_frame).
+        3. For localisation-based modalities (lateral precision and number
+           of localisations set), replaces each emitter with localisations
+           drawn around it, and draws photons for each localisation the
+           same way.
+        4. Convolves the emitters or localisations with the modality PSF
+           and adds the fluorophore signals of the channel.
+        5. Adds detector noise if noise is True.
+
+        Parameters
+        ----------
+        modality : str, optional
+            Name of the modality. Default is the first modality added.
+        channels : list of str, optional
+            Channels to simulate. Default is ["ch0"].
+        nframes : int, optional
+            Number of frames. Default is 1.
+        nbeads : int, optional
+            Number of beads to simulate alongside the sample. Default is 0.
+        save : bool, optional
+            Write the images and the emitter positions used to the writing
+            directory. Default is False.
+        noise : bool, optional
+            Add detector noise. Default is False.
+        exp_time : float, optional
+            Exposure time per frame, in seconds. Default is 0.001.
+        masks : bool or str, optional
+            If set, image the particle positions as a binary mask instead of
+            the emitters, without noise. Default is False.
+        **kwargs
+            convolution_type : str, optional
+                Overrides the modality convolution type. "raw_volume" and
+                "raw_volume_activation" return the 3D volume before
+                projection.
+
+        Returns
+        -------
+        output_per_channel : dict
+            Images per channel, with noise if noise is True.
+        beads_per_channel : dict
+            Bead images per channel (None if not simulated).
+        output_per_channel_noiseless : dict
+            Images per channel without noise.
+        beads_per_channel_noiseless : dict
+            Bead images per channel without noise.
         """
         if modality is None:
             modality = list(self.modalities.keys())[0]
@@ -1178,6 +1222,17 @@ class Imager:
         """
         Calculate the number of photons per frame for emitters.
 
+        The emission model is the one stored for the modality, taken from
+        the fluorophore configuration (emission type):
+
+        - "constant": each emitter emits a Poisson number of photons per
+          frame with mean photons_per_second (fluorophore) times exp_time.
+        - "blinking": each emitter switches between on and off states with
+          the fluorophore blinking kinetics, and emits a Poisson number of
+          photons with mean photons_per_blink in frames where it is on.
+          exp_time is not used in this model. See the note in
+          _generate_photons_blinking_modality.
+
         Parameters
         ----------
         modality : str
@@ -1189,9 +1244,9 @@ class Imager:
         nframes : int
             Number of frames.
         exp_time : float, optional
-            Exposure time per frame. Default is 1.
+            Exposure time per frame, in seconds. Default is 1.
         **kwargs
-            Additional keyword arguments.
+            Not used.
 
         Returns
         -------
@@ -1231,8 +1286,29 @@ class Imager:
         self, nframes, nemitters, **kwargs
     ):
         """
-        kwargs is intended to hold the kinetic parameters and
-        photon budget from the emitter species
+        Photons per frame for emitters with blinking kinetics.
+
+        Parameters
+        ----------
+        nframes : int
+            Number of frames.
+        nemitters : int
+            Number of emitters.
+        **kwargs
+            Blinking kinetics and photon budget of the fluorophore, passed
+            to blinking_2states_1bleach_bulk: initial_state, kon, koff,
+            kbleach, and photons_per_blink (mean photons per frame while on).
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of shape (nemitters, nframes) with photons per frame.
+
+        Notes
+        -----
+        The functions that simulate the blinking traces
+        (blinking_2states_1bleach_bulk and binary_trace) are not defined in
+        vlab4mic, so this model currently raises NameError.
         """
         # simulate blinking traces for the N emitters
         # kinetic parameters are in seconds
@@ -1247,6 +1323,32 @@ class Imager:
     def _generate_constant_emission_modality(
         self, nframes, nemitters, photons_per_second, exposure_time=1, **kwargs
     ):
+        """
+        Photons per frame for emitters with constant emission.
+
+        Photon counts are Poisson distributed with mean
+        photons_per_second * exposure_time. calculate_photons_per_frame
+        passes the mean photons per frame as photons_per_second, with the
+        default exposure_time of 1.
+
+        Parameters
+        ----------
+        nframes : int
+            Number of frames.
+        nemitters : int
+            Number of emitters.
+        photons_per_second : float
+            Mean photon emission rate.
+        exposure_time : float, optional
+            Exposure time per frame, in seconds. Default is 1.
+        **kwargs
+            Not used.
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of shape (nemitters, nframes) with photons per frame.
+        """
         exposure_photons = photons_per_second * exposure_time
         photons_frames = np.random.poisson(
             exposure_photons, nemitters * nframes
