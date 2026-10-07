@@ -411,8 +411,20 @@ class Imager:
         lateral_precision=None,
         axial_precision=None,
         nlocalisations=None,
+        **kwargs,
     ):
-        self.modalities[modality]["emitters"] = dict()
+        """
+        Set how emitters are turned into localisations.
+
+        lateral_precision, axial_precision: standard deviation (nm) of the
+            localisation error, used when precision_model is "fixed".
+        nlocalisations: average number of localisations per emitter.
+        kwargs: precision_model ("fixed" or "photon_limited") and, for
+            "photon_limited", detection_psf_sigma_nm, camera_pixelsize_nm,
+            background_photons, excess_noise_factor and
+            axial_precision_ratio. See get_localisation_precision.
+        """
+        self.modalities[modality]["emitters"] = dict(kwargs)
         if lateral_precision is not None:
             self.modalities[modality]["emitters"][
                 "lateral_precision"
@@ -431,6 +443,43 @@ class Imager:
             ] = nlocalisations
         else:
             self.modalities[modality]["emitters"]["nlocalisations"] = None
+
+    def get_localisation_precision(self, modality, fluo, exp_time):
+        """
+        Lateral and axial localisation precision (nm) for a modality.
+
+        With precision_model "fixed" (default), returns the lateral_precision
+        and axial_precision set for the modality.
+
+        With precision_model "photon_limited", the lateral precision follows
+        from the photons per localisation (fluorophore photons_per_second
+        times exp_time) through photon_limited_lateral_precision, using
+        detection_psf_sigma_nm, camera_pixelsize_nm, background_photons and
+        excess_noise_factor. The axial precision is the lateral precision
+        times axial_precision_ratio.
+        """
+        emitters = self.modalities[modality]["emitters"]
+        model = emitters.get("precision_model") or "fixed"
+        if model == "fixed":
+            return emitters["lateral_precision"], emitters["axial_precision"]
+        elif model == "photon_limited":
+            photons = (
+                self.fluorophore_params[fluo]["photons_per_second"] * exp_time
+            )
+            lateral = points_transforms.photon_limited_lateral_precision(
+                photons,
+                psf_sigma_nm=emitters["detection_psf_sigma_nm"],
+                pixelsize_nm=emitters["camera_pixelsize_nm"],
+                background_photons=emitters.get("background_photons", 0),
+                excess_noise_factor=emitters.get("excess_noise_factor", 1),
+            )
+            axial = lateral * emitters.get("axial_precision_ratio", 1)
+            return lateral, axial
+        else:
+            raise ValueError(
+                f"Unknown precision_model '{model}' for modality {modality}. "
+                "Use 'fixed' or 'photon_limited'."
+            )
 
     def _create_modality(self, modality: str):
         self.modalities[modality] = dict(
@@ -724,12 +773,11 @@ class Imager:
                             )
                         )
                         # check for parameters for localisaiton generation
-                        loc_precision_xy_nm = self.modalities[modality][
-                            "emitters"
-                        ]["lateral_precision"]
-                        loc_precision_z_nm = self.modalities[modality][
-                            "emitters"
-                        ]["axial_precision"]
+                        loc_precision_xy_nm, loc_precision_z_nm = (
+                            self.get_localisation_precision(
+                                modality, fluo, exp_time
+                            )
+                        )
                         av_loc_per_emitter = self.modalities[modality][
                             "emitters"
                         ]["nlocalisations"]

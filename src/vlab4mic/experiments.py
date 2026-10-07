@@ -315,6 +315,12 @@ class ExperimentParametrisation:
             The new PSF voxel size in nanometers. If provided, updates the PSF voxel size for all axes.
         :param remove : bool, optional
             If True, removes the specified modality from the internal dictionaries. Default is False.
+        :param **kwargs
+            Localisation precision model for localisation-based modalities:
+            precision_model ("fixed" or "photon_limited"),
+            detection_psf_sigma_nm, camera_pixelsize_nm, background_photons,
+            excess_noise_factor and axial_precision_ratio.
+            See Imager.get_localisation_precision.
 
         Notes
         -----
@@ -369,6 +375,17 @@ class ExperimentParametrisation:
                 ] = depth
                 changes = True
             if simulate_localistations:
+                for key in (
+                    "precision_model",
+                    "detection_psf_sigma_nm",
+                    "camera_pixelsize_nm",
+                    "background_photons",
+                    "excess_noise_factor",
+                    "axial_precision_ratio",
+                ):
+                    if kwargs.get(key) is not None:
+                        self.imaging_modalities[modality_name]["emitters"][key] = kwargs[key]
+                        changes = True
                 if lateral_precision is not None:
                     self.imaging_modalities[modality_name]["emitters"]["lateral_precision"] = lateral_precision
                     changes = True

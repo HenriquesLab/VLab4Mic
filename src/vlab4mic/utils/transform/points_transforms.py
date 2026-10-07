@@ -208,6 +208,35 @@ def apply_euler_rotation(vector, phi=0, theta=0, psi=0, order = "zyx", reset_ori
     return new_vector
 
 
+def photon_limited_lateral_precision(
+    photons, psf_sigma_nm, pixelsize_nm, background_photons=0, excess_noise_factor=1
+):
+    """
+    Lateral localisation precision of a single emitter (Mortensen et al.,
+    Nat. Methods 7, 377-381, 2010, eq. 6).
+
+    :param photons: (float) Photons detected from the emitter.
+    :param psf_sigma_nm: (float) Standard deviation of the detection PSF.
+    :param pixelsize_nm: (float) Camera pixel size in sample space.
+    :param background_photons: (float) Background photons per pixel.
+    :param excess_noise_factor: (float) Variance multiplier of the camera
+        (1 for sCMOS, 2 for EMCCD).
+
+    :return: (float) Standard deviation of the localisation error in nm.
+    """
+    if photons <= 0:
+        raise ValueError(
+            "Photon-limited precision needs a positive number of photons "
+            f"per localisation, got {photons}"
+        )
+    sigma_a2 = psf_sigma_nm**2 + pixelsize_nm**2 / 12
+    variance = (sigma_a2 / photons) * (
+        16 / 9
+        + 8 * np.pi * sigma_a2 * background_photons / (photons * pixelsize_nm**2)
+    )
+    return float(np.sqrt(excess_noise_factor * variance))
+
+
 def generate_localisations_with_noise(array3d, loc_precision_xy_nm, loc_precision_z_nm, av_loc_per_emitter=1, z_pos=0):
     locs_i_x_list = []
     locs_i_y_list = []
