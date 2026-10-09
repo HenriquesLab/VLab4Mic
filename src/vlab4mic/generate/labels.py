@@ -272,12 +272,13 @@ def construct_label(
     #    print("No DoL provided, using default value. ########################")
     if "epitope_target_info" in label_config_dictionary.keys():
         label_params["epitope"]["target"] = label_config_dictionary["epitope_target_info"]
-    if "wobble_theta" in label_params.keys():
+    # wobble: an explicit wobble_theta overrides the template value
+    # (binding.wobble_range.theta, in degrees); otherwise the template
+    # value is kept. None or 0 means no wobble.
+    if label_params.get("wobble_theta") is not None:
         label_params["binding"]["wobble_range"]["theta"] = label_params[
             "wobble_theta"
         ]
-    else:
-        label_params["binding"]["wobble_range"]["theta"] = None
     ######## information about target
     if target_info:
         # expect label_params to have empty values on target type and value

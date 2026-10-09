@@ -12,7 +12,7 @@ binding:
   efficiency: 1
   orientation:
   wobble_range:
-    theta: 30
+    theta: 10
     phi:
   distance:
     to_target: 20

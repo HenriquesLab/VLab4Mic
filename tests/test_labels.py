@@ -32,3 +32,26 @@ def test_probe_model(configuration_directory):
     )
     assert anchor.shape == (3,)
     assert ab_ref.shape == (3,)
+
+
+@pytest.mark.parametrize(
+    "template, expected",
+    [("Antibody", 10), ("Nanobody", 10), ("GFP_w_nanobody", 10), ("GFP", None)],
+)
+def test_template_wobble_is_used(configuration_directory, template, expected):
+    # regression: the template wobble was always replaced by None
+    probe_params = load_yaml(
+        os.path.join(configuration_directory, "probes", template + ".yaml")
+    )
+    _, label_params = labels.construct_label(label_config_dictionary=probe_params)
+    assert label_params["binding"]["wobble_range"]["theta"] == expected
+
+
+@pytest.mark.parametrize("override", [0, 25])
+def test_wobble_override(configuration_directory, override):
+    probe_params = load_yaml(
+        os.path.join(configuration_directory, "probes", "Antibody.yaml")
+    )
+    probe_params["wobble_theta"] = override
+    _, label_params = labels.construct_label(label_config_dictionary=probe_params)
+    assert label_params["binding"]["wobble_range"]["theta"] == override
