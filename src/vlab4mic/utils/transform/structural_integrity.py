@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from sklearn.cluster import DBSCAN
 from collections import Counter
@@ -29,10 +31,16 @@ def ids2delete2(xmer_id, tree, neigh, upbound):
         if np.isscalar(distances):
             distances = np.array([distances])
 
+    # neighbours beyond upbound are returned with infinite distance and an
+    # out-of-range index; keep only real neighbours
+    index_in_data = np.asarray(index_in_data)[np.isfinite(distances)]
     availabeids = index_in_data.shape[0]
+    if availabeids <= 1:
+        # no neighbour within upbound: remove only this subunit
+        return [xmer_id]
     todelete = np.random.choice(np.arange(1, availabeids))
     ids2remove = np.random.choice(index_in_data, todelete, replace=False)
-    xmers_removed = list(ids2remove)
+    xmers_removed = [int(i) for i in ids2remove]
     if xmer_id not in xmers_removed:
         xmers_removed.append(xmer_id)
     return xmers_removed  # is a list
@@ -85,6 +93,33 @@ def notin_logical_list(V, integers_to_check):
 def singlecluster_verification(
     xmer_centers, xmer_ids_all, ids_todelete, max_dist, min_samples
 ):
+    """
+    Complete a removal proposal so that the remaining subunits are connected.
+
+    The subunits left after removing ids_todelete are clustered with
+    DBSCAN (eps = max_dist). If they form several clusters, every cluster
+    other than the largest is also removed, so no floating fragments
+    remain.
+
+    Parameters
+    ----------
+    xmer_centers : numpy.ndarray
+        Coordinates of the subunit centres.
+    xmer_ids_all : numpy.ndarray
+        IDs of all subunits.
+    ids_todelete : list of int
+        IDs of the subunits proposed for removal.
+    max_dist : float
+        Distance below which remaining subunits are connected.
+    min_samples : int
+        DBSCAN min_samples.
+
+    Returns
+    -------
+    numpy.ndarray or None
+        IDs of all subunits to remove, or None if the proposal removes
+        every subunit.
+    """
     xmerids_logical = notin_logical_list(xmer_ids_all, ids_todelete)
     xmer_to_remain = xmer_ids_all[xmerids_logical]
     # up to here we are generating the complement list of xmer centers
@@ -98,20 +133,13 @@ def singlecluster_verification(
     disassembled_xmers_clusters = db_xmers.labels_
     nclusters_xmers = np.unique(disassembled_xmers_clusters).shape[0]
     if nclusters_xmers > 1:
-        # running this line will get us the indexes in the second clustering
-        # that are bigger than 0, which should be the ones "floating"
-        # because by default the bigger cluster is termed 0th
-        invalid_xmers_ids = [
-            i for i, x in enumerate(disassembled_xmers_clusters) if x > 0
-        ]
-        cleanup_ids2 = xmer_to_remain[
-            invalid_xmers_ids
-        ]  # from the indices we wanted to preserve we remove the ones invalid
-        final_logical = notin_logical_list(xmer_to_remain, cleanup_ids2)
-        valid_xmer_ids = xmer_to_remain[final_logical,]
-    else:
-        valid_xmer_ids = ids_todelete
-    return valid_xmer_ids
+        # keep the largest connected cluster; the other ones are floating
+        # fragments and are removed too
+        labels, counts = np.unique(disassembled_xmers_clusters, return_counts=True)
+        largest = labels[np.argmax(counts)]
+        floating = xmer_to_remain[disassembled_xmers_clusters != largest]
+        return np.unique(np.concatenate([np.asarray(ids_todelete), floating]))
+    return np.asarray(ids_todelete)
 
 
 def xmersubset_byclustering(
@@ -178,6 +206,8 @@ def xmersubset_byclustering(
     expected_number_reached = False
     i = 0
     epitopes_ids = None
+    best_ids = None
+    best_error = np.inf
     while i < 50: # maximum number of trials before returning empty selection
         # sample starting point each time if no fracture was specified
         if fracture == -24:
@@ -200,18 +230,26 @@ def xmersubset_byclustering(
         if ids_validated is None:
             i+=1
             continue
-        # ids_validated are the ids of the center of each xmer that we want to preserve
-        # we only need to then retrieve the appropriate indices of the epitopes themselves
-        # that correspond to these labels
-        epitopes_ids = notin_logical_list(
-            label_p_epitope, ids_validated
-        )  # this function retrieves false
-        # for each time a value ids_validated appears in label_p_epitope
-        #print(f"Sum of epitopes: {sum(epitopes_ids)}, lowerbound: {lower_bound}, upper_bound: {upper_bound}")
-        if sum(epitopes_ids) >= lower_bound and sum(epitopes_ids) <= upper_bound:
+        # ids_validated are the IDs of the subunits to remove; keep the
+        # epitopes of every other subunit
+        epitopes_ids = notin_logical_list(label_p_epitope, ids_validated)
+        n_kept = sum(epitopes_ids)
+        if abs(n_kept - n_epitopes_to_keep) < best_error:
+            best_error = abs(n_kept - n_epitopes_to_keep)
+            best_ids = epitopes_ids
+        if n_kept >= lower_bound and n_kept <= upper_bound:
             expected_number_reached = True
             break
-        i+=1     
+        i+=1
+    if not expected_number_reached and best_ids is not None:
+        warnings.warn(
+            "Structural integrity: no removal pattern within 5% of the "
+            f"requested fraction after 50 trials; using the closest one "
+            f"({sum(best_ids)} of {total_number_epitopes} epitopes kept, "
+            f"{int(n_epitopes_to_keep)} requested)."
+        )
+        epitopes_ids = best_ids
+        expected_number_reached = True
     if return_ids:
         if expected_number_reached:
             return epitopes_ids
