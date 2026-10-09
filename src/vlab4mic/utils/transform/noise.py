@@ -14,18 +14,42 @@ def add_gaussian_noise(imagestack, sigma):
     return noisy
 
 
+def stochastic_round(imagestack):
+    """
+    Round expected photon counts to integers without bias.
+
+    Each value x becomes floor(x) + 1 with probability x - floor(x), and
+    floor(x) otherwise, so the mean is kept (flooring would remove the
+    signal of dim pixels, such as PSF tails). Negative values become 0.
+    """
+    values = np.clip(np.asarray(imagestack, dtype=float), 0, None)
+    low = np.floor(values)
+    return (low + (np.random.random(values.shape) < (values - low))).astype(np.int64)
+
+
 def add_binomial_noise(imagestack, p=1.0):
-    # print(f"adding binomial noise: p = {p}")
-    # int_imagestack = np.floor(imagestack).astype("int64")
-    imagestack = np.floor(imagestack).astype(np.int32)
-    imstack_binom = np.random.binomial(imagestack, p)
+    """
+    Photon detection with quantum efficiency p.
+
+    Expected photon counts are rounded without bias (stochastic_round) and
+    each photon is detected with probability p.
+    """
+    imstack_binom = np.random.binomial(stochastic_round(imagestack), p)
     return imstack_binom
 
 
-def add_gamma_noise(imagestack, g=1.0):
-    # print(f"adding gamma noise: g = {g}")
-    amplified = np.random.gamma(imagestack, scale=g)
-    return amplified
+def add_gamma_noise(imagestack, g=1.0, em_gain=False):
+    """
+    Signal amplification with gain g.
+
+    With em_gain=True, the amplification is gamma distributed (shape =
+    number of electrons, scale = g), as in an EMCCD, which doubles the
+    variance (excess noise factor 2). Otherwise the gain is deterministic,
+    as in an sCMOS or CCD camera.
+    """
+    if em_gain:
+        return np.random.gamma(imagestack, scale=g)
+    return np.asarray(imagestack, dtype=float) * g
 
 
 def add_conversion_factor(imagestack, adu: int = 1):

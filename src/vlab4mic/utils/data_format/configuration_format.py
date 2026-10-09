@@ -44,7 +44,10 @@ def compile_modality_parameters(
         pixelsize=mod_pars["detector"]["pixelsize"] / factor_,
         noise_model=dict(
             binomial={"p": mod_pars["detector"]["noise"]["binomial"]},
-            gamma={"g": mod_pars["detector"]["noise"]["gain"]},
+            gamma={
+                "g": mod_pars["detector"]["noise"]["gain"],
+                "em_gain": bool(mod_pars["detector"]["noise"].get("em_gain", False)),
+            },
             baselevel={"bl": mod_pars["detector"]["noise"]["baselevel"]["mean"]},
             gaussian={
                 "sigma": mod_pars["detector"]["noise"]["gaussian"]["standard_dev"]

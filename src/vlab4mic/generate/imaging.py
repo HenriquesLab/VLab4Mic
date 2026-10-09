@@ -1147,11 +1147,10 @@ class Imager:
         if stack is None:
             return None
         else:
-            if np.min(stack) < 0:
-                # print("negative numbers found. Setting to zero")
-                offset = np.ones(np.shape(stack)) * (-np.min(stack))
-                stack = np.add(stack, offset)
-            return stack
+            # negative values (readout noise around a zero baseline) are
+            # clipped to zero, not shifted, so saved and returned images
+            # agree everywhere else
+            return np.clip(stack, 0, None)
 
     def _add_fluorophore_signals(self, output_per_fluoname: dict):
         """
@@ -1213,10 +1212,13 @@ class Imager:
         return stack
 
     def _adjust_to_pixel_depth(self, modality, stack):
-        bits = self.modalities[modality]["detector"]["bits_pixel"]
+        # clip to the range of the detector bit depth (no clipping if the
+        # bit depth is not set)
+        bits = self.modalities[modality]["detector"].get("bits_pixel")
+        if bits is None:
+            return stack
         saturation = (2**bits) - 1
-        stack[stack > saturation] == saturation
-        return stack
+        return np.clip(stack, None, saturation)
 
     def _save_timeseries_with_beads(
         self, timeseries_stack, beads_stack, notes

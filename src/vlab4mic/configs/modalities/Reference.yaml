@@ -19,6 +19,7 @@ detector:
       mean: 0
       standard_dev: 1
     gain: 10 
+    em_gain: false  # true: EMCCD gamma-distributed gain (excess noise factor 2)
     baselevel:
       mean: 0
       standard_dev: 1
