@@ -262,14 +262,55 @@ def particle_from_structure(
             else:
                 print("Label is direct")
             if label_params["binding"]["distance"]["between_targets"] == "estimate":
-                distances = pdist(label_params["coordinates"])
-                label_params["binding"]["distance"]["between_targets"] = np.max(distances)
+                label_params["binding"]["distance"]["between_targets"] = (
+                    estimate_probe_size(label_params)
+                )
             label_params_list.append(label_params)
         inst_builder = structure.create_instance_builder()
         particle = labinstance.create_particle(
             source_builder=inst_builder, label_params_list=label_params_list
         )
         return particle, label_params_list
+
+
+def estimate_probe_size(label_params):
+    """
+    Largest dimension of a probe, used as its steric exclusion distance.
+
+    The steric model treats each probe as a sphere of its largest
+    dimension: a probe is not placed on an epitope closer than this
+    distance to an epitope that already carries a probe.
+
+    Parameters
+    ----------
+    label_params : dict
+        Label parameters. If "structural_atoms" holds the atoms of the
+        probe model, the largest distance between any two atoms is used.
+        Otherwise (probes without an atomic model) the largest distance
+        between the points of the labelling entity (anchor, axis point and
+        emitters) is used.
+
+    Returns
+    -------
+    float
+        Largest dimension, in the units of the probe coordinates (Å).
+    """
+    atoms = label_params.get("structural_atoms")
+    if isinstance(atoms, dict):
+        atoms = atoms.get("coordinates")
+    if atoms is not None and len(atoms) > 3:
+        points = np.asarray(atoms, dtype=float)
+        try:
+            from scipy.spatial import ConvexHull
+
+            points = points[ConvexHull(points).vertices]
+        except Exception:
+            pass
+    else:
+        points = np.asarray(label_params["coordinates"], dtype=float)
+    if len(points) < 2:
+        return 0.0
+    return float(np.max(pdist(points)))
 
 
 def field_from_particle(
