@@ -350,6 +350,8 @@ class ExperimentParametrisation:
             If False, emitters are imaged directly instead of as localisations: lateral_precision,
             axial_precision and nlocalisations are set to None. Default is True.
         :param **kwargs
+            scanning (bool): point-scanning modality, for which exp_time is
+            the pixel dwell time (see Imager.get_photon_exposure).
             Localisation settings for localisation-based modalities:
             rendering_kernel_nm (standard deviation of the Gaussian used to
             render localisations; 0 renders a histogram),
@@ -420,6 +422,12 @@ class ExperimentParametrisation:
                     "depth"
                 ] = depth
                 changes = True
+            if kwargs.get("scanning") is not None:
+                # point-scanning: exp_time is the pixel dwell time
+                self.imaging_modalities[modality_name]["detector"]["scanning"] = bool(
+                    kwargs["scanning"]
+                )
+                changes = True
             if simulate_localistations:
                 for key in (
                     "rendering_kernel_nm",
@@ -472,7 +480,9 @@ class ExperimentParametrisation:
         :param modality_name : str
             The name of the imaging modality to configure.
         :param exp_time : float, optional
-            Exposure time for the acquisition in seconds. Default is 0.001.
+            Exposure time per frame in seconds. Default is 0.001. For
+            point-scanning modalities (detector scanning: true) it is the
+            pixel dwell time.
         :param noise : bool, optional
             Whether to include noise in the acquisition. Default is True.
         :param save : bool, optional

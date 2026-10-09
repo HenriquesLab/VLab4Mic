@@ -488,6 +488,41 @@ class Imager:
         else:
             self.modalities[modality]["emitters"]["nlocalisations"] = None
 
+    def get_photon_exposure(self, modality, exp_time):
+        """
+        Time each emitter emits towards the detector in one frame.
+
+        For camera-based modalities this is the exposure time. For
+        point-scanning modalities (detector "scanning": true), exp_time is
+        the pixel dwell time, and an emitter is excited while the beam
+        scans its PSF footprint, about 2 pi sx sy / pixel^2 pixels, where
+        sx, sy are the lateral PSF standard deviations; the emission time is
+        the dwell time times this number of pixels (at least one pixel).
+
+        Parameters
+        ----------
+        modality : str
+            Name of the modality.
+        exp_time : float
+            Exposure time per frame (camera) or pixel dwell time
+            (scanning), in seconds.
+
+        Returns
+        -------
+        float
+            Emission time per frame, in seconds.
+        """
+        detector = self.modalities[modality]["detector"]
+        if not detector.get("scanning", False):
+            return exp_time
+        psf = self.modalities[modality]["psf"]
+        sigma_x = psf["std_devs"][0] * psf["voxelsize"][0]
+        sigma_y = psf["std_devs"][1] * psf["voxelsize"][1]
+        # detector pixel size is stored in micrometres
+        pixel_nm = detector["pixelsize"] * 1000
+        footprint = max(1.0, 2 * np.pi * sigma_x * sigma_y / pixel_nm**2)
+        return exp_time * footprint
+
     def get_rendering_kernel(self, modality):
         """
         Lateral rendering kernel for localisations of a modality.
@@ -646,10 +681,14 @@ class Imager:
         bits_pixel=None,
         noise_model=None,
         noise_order=None,
+        scanning=False,
         **kwargs,
     ):
         """
         Set noise and image parameters.
+
+        scanning: if True, the modality is a point-scanning method and the
+        exposure time is the pixel dwell time (see get_photon_exposure).
         """
         # image_size_ROI = self.get_roi_params("dimension_sizes")[0:2]
         modality_imsize = self._calculate_imsize_from_ROIranges(pixelsize)
@@ -661,6 +700,7 @@ class Imager:
             bits_pixel=bits_pixel,
             noise_model=noise_model_0,
             noise_order=noise_order_0,
+            scanning=bool(scanning),
         )
         if noise_order is not None:
             self.set_noise_order(modality, noise_order)
@@ -1524,7 +1564,10 @@ class Imager:
                 photons_per_second = self.fluorophore_params[fluo][
                     "photons_per_second"
                 ]
-                photons_per_frame = exp_time * photons_per_second
+                photons_per_frame = (
+                    self.get_photon_exposure(modality, exp_time)
+                    * photons_per_second
+                )
                 print(
                     f"Average number of photons per frame: {photons_per_frame}"
                 )

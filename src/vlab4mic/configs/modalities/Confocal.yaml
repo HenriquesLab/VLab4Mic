@@ -9,6 +9,8 @@ PSF:
   voxelsize: 10
 depth: 1000  # in nanometers
 detector:
+  # true: point-scanning; exposure time is the pixel dwell time
+  scanning: false
   FOV_size: # in nanometers. Default unless changed 
     X: 1000
     Y: 1000

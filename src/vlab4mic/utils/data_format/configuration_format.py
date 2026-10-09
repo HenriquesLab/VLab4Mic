@@ -56,6 +56,7 @@ def compile_modality_parameters(
         ),
         noise_order=["binomial", "gamma", "baselevel", "gaussian", "conversion"],
         bits_pixel=32,
+        scanning=bool(mod_pars["detector"].get("scanning", False)),
     )
     if "emitters" in mod_pars.keys():
         emitters = mod_pars["emitters"]

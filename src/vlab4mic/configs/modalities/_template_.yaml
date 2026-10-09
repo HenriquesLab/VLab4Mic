@@ -7,6 +7,8 @@ PSF:
     Z:
   voxelsize:  # in nanometers
 detector:
+  # true: point-scanning; exposure time is the pixel dwell time
+  scanning: false
   FOV_size: # in nanometers
     X:
     Y:
