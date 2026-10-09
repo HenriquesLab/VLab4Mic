@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
 import math
+import os
 import copy
 import yaml
 from ..utils.io.yaml_functions import load_yaml
@@ -842,6 +843,10 @@ class Imager:
         )
         output_per_channel = dict()
         output_per_channel_noiseless = dict()
+        # positions used for this acquisition, per channel and fluorophore
+        if not hasattr(self, "last_positions"):
+            self.last_positions = dict()
+        self.last_positions[modality] = dict()
         beads_per_channel = dict()
         beads_per_channel_noiseless = dict()
         for ch in channels:
@@ -868,6 +873,13 @@ class Imager:
                     else:
                         emitters = self.get_emitters_in_ROI(fluo)
                     n_emitters = emitters.shape[0]
+                    positions_record = dict(
+                        emitters=np.empty((0, 3)),
+                        emitter_photons=np.empty(0),
+                        localisations=None,
+                        localisation_photons=None,
+                        localisation_uncertainty=None,
+                    )
                     if n_emitters < 1:
                         no_emitters = True
                         # if no emitter is in range, an image with noise should be generated
@@ -906,6 +918,13 @@ class Imager:
                                 modality, emitters, photons_frames
                             )
                         )
+                        # true emitter positions (nm, ROI origin) and photons
+                        positions_record["emitters"] = np.array(
+                            field_data["field_coordinates"], dtype=float
+                        )
+                        positions_record["emitter_photons"] = np.asarray(
+                            photons_frames
+                        ).sum(axis=1)
                         # check for parameters for localisaiton generation
                         loc_precision_xy_nm, loc_precision_z_nm = (
                             self.get_localisation_precision(
@@ -938,6 +957,15 @@ class Imager:
                                 )
                                 field_data["field_coordinates"] = localisations
                                 field_data["photons_frames"] = photons_frames
+                                positions_record["localisations"] = np.array(
+                                    localisations, dtype=float
+                                )
+                                positions_record["localisation_photons"] = (
+                                    np.asarray(photons_frames).sum(axis=1)
+                                )
+                                positions_record["localisation_uncertainty"] = (
+                                    loc_precision_xy_nm
+                                )
                                 # localisations already carry their error:
                                 # render them instead of convolving with the PSF
                                 psf_data = dict(psf_data)
@@ -962,15 +990,14 @@ class Imager:
                                     )
                                 )
 
-                    # write emitter positions after being placed in the FOV
-                    gt_notes = writing_notes_fluo + "_usedForImaging"
-                    emitters_to_export = field_data["field_coordinates"]
+                    # keep and optionally write the emitter (and localisation)
+                    # positions used for this image
+                    self.last_positions[modality].setdefault(ch, {})[fluo] = (
+                        positions_record
+                    )
                     if save:
-                        self.write_ground_truth_positions(
-                            emitters_to_export,
-                            "x [nm],y [nm],z [nm]",
-                            gt_notes,
-                            no_emitters,
+                        self.write_positions(
+                            positions_record, writing_notes_fluo
                         )
                     if "convolution_type" in kwargs.keys():
                         convolution_type = kwargs["convolution_type"]
@@ -1150,6 +1177,76 @@ class Imager:
             return mask_with_psf
         else:
             return np.zeros(shape=vsample_binay_positions[channel][0].shape)
+
+    def get_positions(self, modality=None):
+        """
+        Emitter and localisation positions of the last acquisition.
+
+        Parameters
+        ----------
+        modality : str, optional
+            Modality name. Default: all modalities imaged so far.
+
+        Returns
+        -------
+        dict
+            {modality: {channel: {fluorophore: record}}}, or the inner
+            dictionary for one modality. Each record has "emitters" (Nx3,
+            nm, ROI origin), "emitter_photons" (photons over all frames),
+            and, for localisation-based modalities, "localisations" (Mx3,
+            nm), "localisation_photons" and "localisation_uncertainty" (nm);
+            these are None otherwise.
+        """
+        positions = getattr(self, "last_positions", {})
+        if modality is None:
+            return positions
+        return positions.get(modality, {})
+
+    def write_positions(self, positions_record, notes):
+        """
+        Write emitter and localisation tables for one fluorophore.
+
+        Files are written to the writing directory as
+        <date>_<notes>_emitters.csv and, if localisations were simulated,
+        <date>_<notes>_localisations.csv, in ThunderSTORM-style CSV
+        (see utils.io.localisation_table).
+
+        Parameters
+        ----------
+        positions_record : dict
+            A record from get_positions.
+        notes : str
+            Text identifying the acquisition in the file names.
+
+        Returns
+        -------
+        list of str
+            Paths written.
+        """
+        from datetime import datetime
+
+        from ..utils.io.localisation_table import write_localisation_table
+
+        prefix = os.path.join(
+            self.writing_dir, datetime.now().strftime("%Y%m%d") + "_" + notes
+        )
+        written = [
+            write_localisation_table(
+                prefix + "_emitters.csv",
+                positions_record["emitters"],
+                photons=positions_record["emitter_photons"],
+            )
+        ]
+        if positions_record.get("localisations") is not None:
+            written.append(
+                write_localisation_table(
+                    prefix + "_localisations.csv",
+                    positions_record["localisations"],
+                    photons=positions_record["localisation_photons"],
+                    uncertainty=positions_record["localisation_uncertainty"],
+                )
+            )
+        return written
 
     def write_ground_truth_positions(
         self, emitters, header=None, notes="", no_emitters=False

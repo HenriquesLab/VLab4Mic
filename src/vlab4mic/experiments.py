@@ -935,6 +935,52 @@ class ExperimentParametrisation:
         self.clear_modalities()
         self.results = dict()
 
+    def export_positions(self, output_directory: str = None, modality: str = None, name: str = ""):
+        """
+        Write emitter and localisation tables of the last simulation.
+
+        For every modality, channel and fluorophore of the last
+        run_simulation, writes the true emitter positions and, for
+        localisation-based modalities (e.g. SMLM), the simulated
+        localisations, as ThunderSTORM-style CSV files (columns id, frame,
+        x [nm], y [nm], z [nm], intensity [photon], uncertainty [nm]).
+        Coordinates are in nm from the origin of the imaged field. These
+        tables are the hand-off to raw-frame or STED simulators and to
+        localisation analysis software.
+
+        Parameters
+        ----------
+        :param output_directory : str, optional
+            Directory to write to. Default: the experiment output directory.
+        :param modality : str, optional
+            Modality to export. Default: all modalities imaged.
+        :param name : str, optional
+            Text added to the file names.
+
+        Returns
+        -------
+        list of str
+            Paths of the files written.
+        """
+        if output_directory is None:
+            output_directory = self.output_directory
+        os.makedirs(output_directory, exist_ok=True)
+        previous_dir = getattr(self.imager, "writing_dir", None)
+        self.imager.set_writing_directory(output_directory)
+        written = []
+        try:
+            positions = self.imager.get_positions()
+            modalities = [modality] if modality is not None else list(positions.keys())
+            for mod in modalities:
+                for ch, per_fluo in positions.get(mod, {}).items():
+                    for fluo, record in per_fluo.items():
+                        notes = "_".join(x for x in [name, str(mod), str(ch), str(fluo)] if x)
+                        written.extend(self.imager.write_positions(record, notes))
+        finally:
+            if previous_dir is not None:
+                self.imager.set_writing_directory(previous_dir)
+        return written
+
     def run_simulation(
         self,
         name="vlab4mic_experiment",
