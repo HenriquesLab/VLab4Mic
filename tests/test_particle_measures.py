@@ -50,3 +50,19 @@ def test_resolved_sites():
     blurred = gaussian_filter(image, 8)
     assert count_resolved_sites(sharp, 1, 5) == 3
     assert count_resolved_sites(blurred, 1, 5) < 3
+
+
+def _triangle_localisations(precision, n=200, side=6.0, seed=0):
+    rng = np.random.default_rng(seed)
+    corners = side / np.sqrt(3) * np.array(
+        [[np.cos(a), np.sin(a)] for a in np.radians([90, 210, 330])]
+    )
+    return np.concatenate([c + rng.normal(0, precision, (n, 2)) for c in corners])
+
+
+@pytest.mark.parametrize("precision, expected", [(1, True), (1.5, True), (6.5, False), (10, False)])
+def test_sites_resolved_follows_precision(precision, expected):
+    from vlab4mic.analysis.particle_measures import sites_resolved
+
+    resolved, n_components = sites_resolved(_triangle_localisations(precision), 3)
+    assert resolved is expected

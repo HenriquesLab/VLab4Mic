@@ -170,3 +170,42 @@ def count_resolved_sites(image, pixelsize_nm, min_separation_nm, threshold_rel=0
         exclude_border=False,
     )
     return int(len(peaks))
+
+
+def sites_resolved(points, n_sites, random_state=0):
+    """
+    Whether n_sites labelled sites are resolved from their localisations.
+
+    Gaussian mixtures with 1 to n_sites spherical components are fitted to
+    the localisations (x, y), and the sites are resolved if the Bayesian
+    information criterion (BIC) selects n_sites components, i.e. the data
+    support n_sites separate spots rather than fewer, overlapping ones.
+
+    Parameters
+    ----------
+    points : numpy.ndarray
+        Nx2 or Nx3 localisation coordinates.
+    n_sites : int
+        Number of sites.
+    random_state : int, optional
+        Seed for the mixture fits.
+
+    Returns
+    -------
+    resolved : bool
+    n_components : int
+        Number of components selected by BIC.
+    """
+    from sklearn.mixture import GaussianMixture
+
+    xy = np.asarray(points, dtype=float)[:, :2]
+    if xy.shape[0] < 2 * n_sites:
+        return False, 0
+    bic = [
+        GaussianMixture(k, covariance_type="spherical", n_init=2, random_state=random_state)
+        .fit(xy)
+        .bic(xy)
+        for k in range(1, n_sites + 1)
+    ]
+    n_components = int(np.argmin(bic)) + 1
+    return n_components == n_sites, n_components
