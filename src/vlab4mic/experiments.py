@@ -1222,9 +1222,11 @@ class ExperimentParametrisation:
             self.fluorophore_parameters[fluorophoe_id] = dict()
             self.fluorophore_parameters[fluorophoe_id]["emission"] = dict()
             self.fluorophore_parameters[fluorophoe_id]["emission"]["type"] = "constant"
+            self.fluorophore_parameters[fluorophoe_id]["emission"]["photon_yield"] = 100000
+            self.fluorophore_parameters[fluorophoe_id]["emission"]["photobleaching_rate"] = 0.0
             self.fluorophore_parameters[fluorophoe_id]["blinking_rates"] = dict()
-            self.fluorophore_parameters[fluorophoe_id]["blinking_rates"]["kon"] = 0.99
-            self.fluorophore_parameters[fluorophoe_id]["blinking_rates"]["koff"] = 0.01
+            self.fluorophore_parameters[fluorophoe_id]["blinking_rates"]["kon"] = 0.01
+            self.fluorophore_parameters[fluorophoe_id]["blinking_rates"]["koff"] = 0.99
             self.fluorophore_parameters[fluorophoe_id]["blinking_rates"]["kbleach"] = 0.0
             self.fluorophore_parameters[fluorophoe_id]["blinking_rates"]["initial_state"] = 1
             self.fluorophore_parameters[fluorophoe_id]["blinking_rates"]["photons_per_blink"] = 1000
@@ -1232,6 +1234,35 @@ class ExperimentParametrisation:
             self.fluorophore_parameters[fluorophoe_id]["emission"] = copy.deepcopy(emission)
         if blinking_rates is not None:
             self.fluorophore_parameters[fluorophoe_id]["blinking_rates"] = blinking_rates
+
+    def set_photobleaching_rate(self, fluorophore_id: str, rate: float):
+        """
+        Set the photobleaching rate of a fluorophore.
+
+        Each emitter of the fluorophore stops emitting after an
+        exponentially distributed number of frames (mean 1/rate), so the
+        expected signal of a frame series decays as exp(-rate * frame), for
+        every imaging method.
+
+        Parameters
+        ----------
+        :param fluorophore_id : str
+            Fluorophore name (e.g. "AF647").
+        :param rate : float
+            Photobleaching rate per frame; 0 disables photobleaching.
+
+        Returns
+        -------
+        None
+        """
+        if fluorophore_id not in self.fluorophore_parameters:
+            self.add_fluorophore_parameters(fluorophore_id)
+        self.fluorophore_parameters[fluorophore_id]["emission"][
+            "photobleaching_rate"
+        ] = float(rate)
+        imager = getattr(self, "imager", None)
+        if imager is not None and fluorophore_id in imager.fluorophore_params:
+            imager.set_fluorophore_photobleaching_rate(fluorophore_id, rate)
 
     def set_virtualsample_params(
         self,

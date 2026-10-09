@@ -2,6 +2,7 @@ name: AlexaFluor647
 emission:
     type: constant
     photon_yield: 100000
+    photobleaching_rate: 0  # per frame; signal decays as exp(-rate * frame)
 blinking_rates:
   initial_state: 1
   kbleach: 0.0

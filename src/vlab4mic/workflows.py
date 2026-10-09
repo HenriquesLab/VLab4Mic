@@ -408,6 +408,7 @@ def create_imaging_system(
                 photon_yield=fluo_params["emission"]["photon_yield"],
                 emission=fluo_params["emission"]["type"],
                 blinking_rates=fluo_params["blinking_rates"],
+                photobleaching_rate=fluo_params["emission"].get("photobleaching_rate", 0),
             )
             fluo_emission[fluo] = fluo_params["emission"]["type"]
         modality_parameters = []

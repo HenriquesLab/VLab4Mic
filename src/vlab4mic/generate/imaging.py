@@ -273,7 +273,11 @@ class Imager:
         blinking_rates : dict
             Dictionary of blinking rate parameters.
         **kwargs
-            Additional keyword arguments.
+            photobleaching_rate : float, optional
+                Photobleaching rate per frame (see
+                _generate_constant_emission_modality). Default is 0.
+            plotcolour : str, optional
+                Colour for plots.
         """
         fluoname = identifier
         # print(fluo)
@@ -287,10 +291,31 @@ class Imager:
             emission=emission,
             blinking=dict(),
             plotcolour=fluo_color,
+            photobleaching_rate=float(kwargs.get("photobleaching_rate") or 0.0),
         )
         self.set_3state_blinking_params(fluoname, **blinking_rates)
 
     # self.set_3state_blinking_params()
+
+    def set_fluorophore_photobleaching_rate(self, fluorophore_name, rate):
+        """
+        Set the photobleaching rate of a fluorophore.
+
+        Parameters
+        ----------
+        fluorophore_name : str
+            Name of the fluorophore.
+        rate : float
+            Photobleaching rate per frame (k): each emitter survives an
+            exponentially distributed number of frames with mean 1/k, so the
+            expected signal in frame f is exp(-k f) of the first frame.
+            0 disables photobleaching.
+
+        Returns
+        -------
+        None
+        """
+        self.fluorophore_params[fluorophore_name]["photobleaching_rate"] = float(rate)
 
     def set_fluorophore_photons_per_second(
         self, fluorophore_name, photon_yield
@@ -369,7 +394,7 @@ class Imager:
         filters: dict,
         psf_params: dict,
         detector: dict,
-        emission="blinking",
+        emission="constant",
         modality: str = "modality1",
         emitters: dict = None,
         prints=False,
@@ -1359,11 +1384,10 @@ class Imager:
 
         - "constant": each emitter emits a Poisson number of photons per
           frame with mean photons_per_second (fluorophore) times exp_time.
-        - "blinking": each emitter switches between on and off states with
-          the fluorophore blinking kinetics, and emits a Poisson number of
-          photons with mean photons_per_blink in frames where it is on.
-          exp_time is not used in this model. See the note in
-          _generate_photons_blinking_modality.
+          With a photobleaching_rate k (fluorophore), each emitter stops
+          emitting after an exponentially distributed number of frames, so
+          the signal decays as exp(-k frame).
+        - "blinking": not available (raises NotImplementedError).
 
         Parameters
         ----------
@@ -1394,12 +1418,11 @@ class Imager:
         else:
             emission = self.modalities[modality]["emission"]
             if emission == "blinking":
-                kinetics = dict(self.fluorophore_params[fluo]["blinking"])
-                # print(nframes, n_emitters,kinetics)
-                photon_frames = self._generate_photons_blinking_modality(
-                    nframes, n_emitters, **kinetics
+                raise NotImplementedError(
+                    "The blinking emission model is not available; use "
+                    "constant emission (fluorophore emission type: constant), "
+                    "optionally with photobleaching_rate."
                 )
-                emission_notes = dictionary2string(kinetics)
             else:  # if emission == "constant":
                 photons_per_second = self.fluorophore_params[fluo][
                     "photons_per_second"
@@ -1409,7 +1432,12 @@ class Imager:
                     f"Average number of photons per frame: {photons_per_frame}"
                 )
                 photon_frames = self._generate_constant_emission_modality(
-                    nframes, n_emitters, photons_per_frame
+                    nframes,
+                    n_emitters,
+                    photons_per_frame,
+                    photobleaching_rate=self.fluorophore_params[fluo].get(
+                        "photobleaching_rate", 0.0
+                    ),
                 )
                 emission_notes = "constant_emission_"
         return photon_frames, emission_notes
@@ -1474,7 +1502,11 @@ class Imager:
         exposure_time : float, optional
             Exposure time per frame, in seconds. Default is 1.
         **kwargs
-            Not used.
+            photobleaching_rate : float, optional
+                Rate per frame k. Each emitter stops emitting after an
+                exponentially distributed number of frames (mean 1/k), so
+                the expected signal in frame f is exp(-k f) of the first
+                frame. Default 0 (no photobleaching).
 
         Returns
         -------
@@ -1485,6 +1517,16 @@ class Imager:
         photons_frames = np.random.poisson(
             exposure_photons, nemitters * nframes
         ).reshape(nemitters, nframes)
+        photobleaching_rate = kwargs.get("photobleaching_rate") or 0.0
+        if photobleaching_rate > 0:
+            # each emitter emits until it bleaches after an exponentially
+            # distributed number of frames, so the mean signal decays as
+            # exp(-rate * frame)
+            survival = np.random.exponential(
+                1.0 / photobleaching_rate, size=(nemitters, 1)
+            )
+            frames = np.arange(nframes)[None, :]
+            photons_frames = photons_frames * (frames < survival)
         return photons_frames
 
     def _homogenise_scales4convolution_modality(
