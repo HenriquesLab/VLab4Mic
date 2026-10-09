@@ -24,9 +24,19 @@ detector:
       standard_dev: 0
     ADU: 1
 emitters:
-  lateral_precision: 5
-  axial_precision: 5
+  lateral_precision: 5  # in nanometers, used when precision_model is fixed
+  axial_precision: 5  # in nanometers, used when precision_model is fixed
   nlocalisations: 5
+  # fixed: use lateral_precision and axial_precision
+  # photon_limited: derive the precision from the photons per localisation
+  # (fluorophore photons per second x exposure time), Mortensen et al. 2010
+  precision_model: fixed
+  # parameters for photon_limited
+  detection_psf_sigma_nm: 100  # ~0.21 x wavelength / NA
+  camera_pixelsize_nm: 100  # camera pixel size in sample space
+  background_photons: 10  # per camera pixel
+  excess_noise_factor: 1  # 1 for sCMOS, 2 for EMCCD
+  axial_precision_ratio: 2.5  # axial / lateral precision
   
     # no value is only poisson noise. Expected order of values
     # p (binomial), mean, standard deviation (gaussian), gain (gamma), mean, standard deviation (abaselevel), adu (conversion factor) 
