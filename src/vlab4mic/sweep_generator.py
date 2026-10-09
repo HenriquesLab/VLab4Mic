@@ -109,6 +109,8 @@ class sweep_generator:
         # to ensure all parameter groups (including particle_structural_integrity) are available
         self.param_settings = self.parameter_settings
         self.use_experiment_structure = False
+        # set to True when plane-wise orientations are swept
+        self.enable_random_orientations = False
         self.reference_parameters_unsorted = dict()
         self.default_metrics = {
             "ssim": structural_similarity,
@@ -705,7 +707,7 @@ class sweep_generator:
                 "particle_orientations",
                 values=particle_orientations,
             )
-        random_orientations = False
+        random_orientations = self.enable_random_orientations
         if xy_orientations is not None:
             self.set_parameter_values(
                 "virtual_sample",
@@ -787,6 +789,19 @@ class sweep_generator:
         """
         Create iterables for all parameter groups based on set values.
 
+        Builds the combinations of values to sweep for each parameter group
+        (probe, particle_structural_integrity, virtual_sample, acquisition
+        and modality) and stores them in probe_parameters,
+        structural_integrity_parameters, vsample_parameters,
+        acquisition_parameters and modality_parameters. If no parameter
+        has been set in any group, labelling_efficiency is swept over
+        [0.5, 1].
+
+        If plane-wise orientations (xy, xz or yz) have been set,
+        random_orientations is set to [True] so that they are applied.
+        Otherwise random_orientations is left as set by the user or the
+        experiment.
+
         Returns
         -------
         None
@@ -809,9 +824,8 @@ class sweep_generator:
             **self.params_by_group["particle_structural_integrity"]
         )
         if self.enable_random_orientations:
+            # plane-wise orientations only apply when orientations are randomised
             self.params_by_group["virtual_sample"]["random_orientations"] = [True,]
-        else:
-            self.params_by_group["virtual_sample"]["random_orientations"] = [False,]
         self.vsample_parameters = sweep.create_param_combinations(
             **self.params_by_group["virtual_sample"]
         )
