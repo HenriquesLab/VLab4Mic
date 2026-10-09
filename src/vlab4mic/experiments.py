@@ -935,6 +935,64 @@ class ExperimentParametrisation:
         self.clear_modalities()
         self.results = dict()
 
+    def run_replicates(
+        self,
+        n_replicates: int,
+        modality: str = "All",
+        export_directory: str = None,
+    ):
+        """
+        Simulate independent realisations of the virtual sample at fixed parameters.
+
+        Each realisation rebuilds the virtual sample from the current
+        particle and parameters, so it has its own random labelling
+        (labelling efficiency, steric exclusion, degree of labelling, wobble
+        and tilt), structural integrity, particle placement and orientation,
+        and its own photon and detector noise. With a random_seed, the
+        sequence of realisations is reproducible.
+
+        Parameters
+        ----------
+        :param n_replicates : int
+            Number of realisations.
+        :param modality : str, optional
+            Modality to image, or "All" (default) for every selected modality.
+        :param export_directory : str, optional
+            If given, the emitter and localisation tables of every
+            realisation are written there (see export_positions), with
+            names starting with rep000, rep001, ...
+
+        Returns
+        -------
+        list of dict
+            One dictionary per realisation with keys "replicate" (index),
+            "images" and "images_noiseless" ({modality: {channel: array}}),
+            "positions" (emitters and localisations, see
+            Imager.get_positions) and "field_emitters" (emitter coordinates
+            of the virtual sample per fluorophore).
+        """
+        results = []
+        for replicate in range(int(n_replicates)):
+            self.build(modules=["coordinate_field"], use_locals=True)
+            self.imager.import_field(**self.exported_coordinate_field)
+            images, images_noiseless = self.run_simulation(modality=modality)
+            results.append(
+                dict(
+                    replicate=replicate,
+                    images=images,
+                    images_noiseless=images_noiseless,
+                    positions=copy.deepcopy(self.imager.get_positions()),
+                    field_emitters=copy.deepcopy(
+                        self.exported_coordinate_field["field_emitters"]
+                    ),
+                )
+            )
+            if export_directory is not None:
+                self.export_positions(
+                    export_directory, name=f"rep{replicate:03d}"
+                )
+        return results
+
     def export_positions(self, output_directory: str = None, modality: str = None, name: str = ""):
         """
         Write emitter and localisation tables of the last simulation.
@@ -1934,6 +1992,42 @@ def build_virtual_microscope(
     else:
         experiment._build_imager()
     return experiment.imager, experiment
+
+
+def run_replicates(n_replicates: int = 10, modality: str = "All", export_directory: str = None, **kwargs):
+    """
+    Simulate independent realisations of one configuration.
+
+    Sets up the experiment as image_vsample does (same keyword arguments:
+    structure, probes, virtual sample, modalities, random_seed...) and
+    runs ExperimentParametrisation.run_replicates.
+
+    Parameters
+    ----------
+    :param n_replicates : int, optional
+        Number of realisations. Default is 10.
+    :param modality : str, optional
+        Modality to image, or "All" (default).
+    :param export_directory : str, optional
+        Directory to write the emitter and localisation tables of every
+        realisation.
+    :param **kwargs
+        Passed to image_vsample.
+
+    Returns
+    -------
+    results : list of dict
+        One dictionary per realisation (see
+        ExperimentParametrisation.run_replicates).
+    experiment : ExperimentParametrisation
+        The experiment, for further runs.
+    """
+    kwargs["run_simulation"] = False
+    _, _, experiment = image_vsample(**kwargs)
+    results = experiment.run_replicates(
+        n_replicates, modality=modality, export_directory=export_directory
+    )
+    return results, experiment
 
 
 def image_vsample(
