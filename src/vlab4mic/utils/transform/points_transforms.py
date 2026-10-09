@@ -208,7 +208,91 @@ def apply_euler_rotation(vector, phi=0, theta=0, psi=0, order = "zyx", reset_ori
     return new_vector
 
 
+def photon_limited_lateral_precision(
+    photons, psf_sigma_nm, pixelsize_nm, background_photons=0, excess_noise_factor=1
+):
+    """
+    Lateral localisation precision of a single emitter.
+
+    Implements eq. 6 of Mortensen et al. (2010) for least-squares Gaussian
+    fitting:
+
+        sigma^2 = F * (sa^2 / N) * (16/9 + 8 pi sa^2 b^2 / (N a^2)),
+        with sa^2 = s^2 + a^2 / 12
+
+    where N is photons, s is psf_sigma_nm, a is pixelsize_nm, b^2 is
+    background_photons and F is excess_noise_factor.
+
+    Parameters
+    ----------
+    photons : float
+        Photons detected from the emitter (N). Must be positive.
+    psf_sigma_nm : float
+        Standard deviation of the detection PSF, in nm (s).
+    pixelsize_nm : float
+        Camera pixel size in sample space, in nm (a).
+    background_photons : float, optional
+        Background photons per camera pixel (b^2). Default is 0.
+    excess_noise_factor : float, optional
+        Multiplier of the variance due to the camera: 1 for sCMOS, 2 for
+        EMCCD. Default is 1.
+
+    Returns
+    -------
+    float
+        Standard deviation of the lateral localisation error, in nm.
+
+    Raises
+    ------
+    ValueError
+        If photons is not positive.
+
+    References
+    ----------
+    Mortensen, K. I. et al. Optimized localization analysis for
+    single-molecule tracking and super-resolution microscopy. Nat. Methods
+    7, 377-381 (2010).
+    """
+    if photons <= 0:
+        raise ValueError(
+            "Photon-limited precision needs a positive number of photons "
+            f"per localisation, got {photons}"
+        )
+    sigma_a2 = psf_sigma_nm**2 + pixelsize_nm**2 / 12
+    variance = (sigma_a2 / photons) * (
+        16 / 9
+        + 8 * np.pi * sigma_a2 * background_photons / (photons * pixelsize_nm**2)
+    )
+    return float(np.sqrt(excess_noise_factor * variance))
+
+
 def generate_localisations_with_noise(array3d, loc_precision_xy_nm, loc_precision_z_nm, av_loc_per_emitter=1, z_pos=0):
+    """
+    Draw localisations around each emitter.
+
+    Each emitter gives a Poisson number of localisations with mean
+    av_loc_per_emitter. Each localisation is the emitter position plus
+    Gaussian noise with standard deviation loc_precision_xy_nm in x and y,
+    and loc_precision_z_nm in z.
+
+    Parameters
+    ----------
+    array3d : numpy.ndarray
+        Nx3 array of emitter coordinates, in nm.
+    loc_precision_xy_nm : float
+        Lateral localisation precision (standard deviation), in nm.
+    loc_precision_z_nm : float
+        Axial localisation precision (standard deviation), in nm.
+    av_loc_per_emitter : float, optional
+        Mean number of localisations per emitter. Default is 1.
+    z_pos : float, optional
+        Not used.
+
+    Returns
+    -------
+    numpy.ndarray
+        Mx3 array of localisation coordinates, in nm.
+    """
     locs_i_x_list = []
     locs_i_y_list = []
     locs_i_z_list = []
