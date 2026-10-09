@@ -3,8 +3,8 @@ scale: 1.0e-09
 PSF:
   source: generate
   resolution:  # in nanometers, as standard deviations
-    X: 61
-    Y: 61
+    X: 60
+    Y: 60
     Z: 230
   voxelsize: 10
 depth: 1000  # in nanometers

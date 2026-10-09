@@ -5,7 +5,7 @@ PSF:
   resolution:  # in nanometers, as standard deviations
     X: 20
     Y: 20
-    Z: 20
+    Z: 300  # 2D STED: depletion is lateral only, axial width is confocal-like
   voxelsize: 5
 depth: 100  # in nanometers
 detector:
