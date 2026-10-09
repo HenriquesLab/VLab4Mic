@@ -3,7 +3,7 @@ name: Test - Oncall
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "revisions_update"]
     paths:
       # only run if src or tests changes
       # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#onpushpull_requestpull_request_targetpathspaths-ignore
@@ -11,7 +11,7 @@ on:
       - "tests/**"
       - "pyproject.toml"
   pull_request:
-    branches: ["main"]
+    branches: ["main", "revisions_update"]
 
   # creates a button
   workflow_dispatch:
