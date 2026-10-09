@@ -33,11 +33,14 @@ def voxelate_points_withrange(coordinates, bin_pixelsize, ranges):
     bin_pixelsize is the voxel size of the data after binning
     """
 
-    binrange = [ranges[0], ranges[1], ranges[2]]
+    # voxels of exactly bin_pixelsize from the lower limit of each range;
+    # the grid is extended to cover the whole range when the range is not
+    # a whole number of voxels
     nbins = [
-        int(np.diff(ranges[0])[0] / bin_pixelsize),
-        int(np.diff(ranges[1])[0] / bin_pixelsize),
-        int(np.diff(ranges[2])[0] / bin_pixelsize),
+        int(np.ceil(np.diff(r)[0] / bin_pixelsize - 1e-9)) for r in ranges
+    ]
+    binrange = [
+        (r[0], r[0] + n * bin_pixelsize) for r, n in zip(ranges, nbins)
     ]
     hist3D, edges = np.histogramdd(coordinates, bins=nbins, range=binrange)
     return hist3D
@@ -176,7 +179,7 @@ def generate_frames_volume_convolution(
             ]  # extract the vector that corresponds to the current frame
             # calculate depth. This value considers the PSF dimenstions
             coordinates_scaled = field_coordinates
-            pixelsize_scaled = int(field_pixelsizeXY)
+            pixelsize_scaled = float(field_pixelsizeXY)
             zplane = field_zfocus
             depth = (
                 psf_array.shape[2] / 2
@@ -201,7 +204,7 @@ def generate_frames_volume_convolution(
 
         stack_zxy = np.array(cframes)
         currentpixelsizes = (psf_pixelsizeXY, psf_pixelsizeXY)
-        newpixelsizes = (int(field_pixelsizeXY), int(field_pixelsizeXY))
+        newpixelsizes = (float(field_pixelsizeXY), float(field_pixelsizeXY))
         binned_sequence = lateral_binning_stack(
             stack_zxy, currentpixelsizes, newpixelsizes, field_size
         )
@@ -215,7 +218,7 @@ def generate_frames_volume_convolution(
             ]  # extract the vector that corresponds to the current frame
             # calculate depth. This value considers the PSF dimenstions
             coordinates_scaled = field_coordinates
-            pixelsize_scaled = int(field_pixelsizeXY)
+            pixelsize_scaled = float(field_pixelsizeXY)
             zplane = field_zfocus
             depth = (
                 psf_array.shape[2] / 2
@@ -241,26 +244,48 @@ def generate_frames_volume_convolution(
 
 
 # keep
+def _overlap_matrix(n_in, size_in, n_out, size_out):
+    # W[o, i] is the fraction of input pixel i that falls in output pixel o
+    edges_in = np.arange(n_in + 1) * size_in
+    edges_out = np.arange(n_out + 1) * size_out
+    low = np.maximum(edges_out[:-1, None], edges_in[None, :-1])
+    high = np.minimum(edges_out[1:, None], edges_in[None, 1:])
+    return np.clip(high - low, 0, None) / size_in
+
+
 def lateral_binning_stack(stack, currentpixelsizes, newpixelsizes, field_size):
     """
-    stack is assumed to have the shape ZXY
+    Bin a stack of images to the detector pixel size, conserving intensity.
 
-    field_size is a touple that contains the absolute size of each dimension
+    Each output pixel receives the fraction of every input pixel that it
+    overlaps, so the detector pixel size does not need to be a multiple of
+    the input (PSF voxel) size, and both can be non-integer.
+
+    Parameters
+    ----------
+    stack : numpy.ndarray
+        Images with shape (frames, x, y), at currentpixelsizes.
+    currentpixelsizes : tuple of float
+        Pixel size of the input along x and y.
+    newpixelsizes : tuple of float
+        Detector pixel size along x and y.
+    field_size : tuple of int
+        Number of detector pixels along x and y.
+
+    Returns
+    -------
+    numpy.ndarray
+        Binned images with shape (frames, field_size[0], field_size[1]).
     """
     print("Binning image stack")
-    nframes = stack.shape[0]  ## Z in in the dimension 0
-    binned_images = np.zeros((nframes, field_size[0], field_size[0]))
-    blocks = np.floor_divide(
-        newpixelsizes,
-        currentpixelsizes,
-    )
-    for i in tqdm(range(int(nframes))):
-        binned_images[i] = skimage.measure.block_reduce(
-            stack[i],
-            block_size=(int(blocks[0]), int(blocks[1])),
-            func=np.sum,
-            func_kwargs={"dtype": np.float32},
-        )
+    stack = np.asarray(stack)
+    nframes = stack.shape[0]
+    nx, ny = int(field_size[0]), int(field_size[1])
+    weights_x = _overlap_matrix(stack.shape[1], currentpixelsizes[0], nx, newpixelsizes[0])
+    weights_y = _overlap_matrix(stack.shape[2], currentpixelsizes[1], ny, newpixelsizes[1])
+    binned_images = np.zeros((nframes, nx, ny))
+    for i in range(int(nframes)):
+        binned_images[i] = weights_x @ stack[i] @ weights_y.T
     return binned_images
 
 
@@ -315,7 +340,7 @@ def _prepare_data_4convolutions(
     n_emitters = np.shape(photons_frames)[0]
     # pixel dimensions for binning
     currentpixelsizes = (psf_pixelsizeXY, psf_pixelsizeXY)
-    newpixelsizes = (int(field_pixelsizeXY), int(field_pixelsizeXY))
+    newpixelsizes = (float(field_pixelsizeXY), float(field_pixelsizeXY))
     # limits to discretise
     ranges_xyz = [
         (0, field_size[0] * field_pixelsizeXY),

@@ -304,11 +304,11 @@ class ExperimentParametrisation:
     def update_modality(
         self,
         modality_name,
-        pixelsize_nm: int = None,
-        lateral_resolution_nm: int = None,
-        axial_resolution_nm: int = None,
-        psf_voxel_nm: int = None,
-        depth_of_field_nm: int = None,
+        pixelsize_nm: float = None,
+        lateral_resolution_nm: float = None,
+        axial_resolution_nm: float = None,
+        psf_voxel_nm: float = None,
+        depth_of_field_nm: float = None,
         remove=False,
         lateral_precision = None,
         axial_precision = None,
@@ -326,14 +326,16 @@ class ExperimentParametrisation:
         ----------
         :param modality_name : str
             The name of the imaging modality to update or remove.
-        :param pixelsize_nm : int, optional
+        :param pixelsize_nm : float, optional
             The new pixel size in nanometers. If provided, updates the detector pixel size.
+            It does not need to be a multiple of the PSF voxel size.
         :param lateral_resolution_nm : int, optional
             The new lateral resolution in nanometers. If provided, updates the lateral standard deviations of the PSF.
         :param axial_resolution_nm : int, optional
             The new axial resolution in nanometers. If provided, updates the axial standard deviation of the PSF.
-        :param psf_voxel_nm : int, optional
-            The new PSF voxel size in nanometers. If provided, updates the PSF voxel size for all axes.
+        :param psf_voxel_nm : float, optional
+            The new PSF voxel size in nanometers. If provided, updates the PSF voxel size for all axes,
+            keeping the physical PSF widths and depth of field.
         :param depth_of_field_nm : int, optional
             Depth of field in nanometers. Sets the PSF depth, in voxels of the current PSF voxel size.
         :param remove : bool, optional
@@ -366,9 +368,19 @@ class ExperimentParametrisation:
         else:
             changes = False
             if psf_voxel_nm is not None:
-                self.imaging_modalities[modality_name]["psf_params"][
-                    "voxelsize"
-                ] = [
+                psf_params = self.imaging_modalities[modality_name]["psf_params"]
+                old_voxel = psf_params["voxelsize"]
+                # PSF widths and depth are stored in voxels: convert them so
+                # the physical PSF and depth of field do not change
+                psf_params["std_devs"] = [
+                    sd * old / psf_voxel_nm
+                    for sd, old in zip(psf_params["std_devs"], old_voxel)
+                ]
+                if psf_params.get("depth") is not None:
+                    psf_params["depth"] = int(
+                        round(psf_params["depth"] * old_voxel[2] / psf_voxel_nm)
+                    )
+                psf_params["voxelsize"] = [
                     psf_voxel_nm,
                     psf_voxel_nm,
                     psf_voxel_nm,
