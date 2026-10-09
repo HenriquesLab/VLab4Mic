@@ -70,6 +70,11 @@ class Field:
         self.random_rotations = False
         self.sample_initial_orientation = None
         self.rotation_angles = None
+        # random number generator for positions, orientations, rotations
+        # and axial offsets. Seeded once per field (see set_random_seed) so
+        # that every draw in a field comes from one reproducible stream.
+        self.random_seed = None
+        self.rng = np.random.default_rng()
         # print(f'Working scale of the Field of View is {self.scale} meters')
 
     # methods to initialise field parameteres
@@ -120,6 +125,35 @@ class Field:
         # set molecules params
         self.set_molecules_params(**molecules)
 
+    def set_random_seed(self, random_seed=None):
+        """
+        Seed the random number generator of the field.
+
+        All random draws of the field (positions, axial offsets,
+        orientations and rotations) come from this generator, so a field
+        built with a given seed is reproducible, and draws for different
+        purposes are not correlated.
+
+        Parameters
+        ----------
+        random_seed : int, optional
+            Seed. If None, the generator is seeded from fresh entropy.
+
+        Returns
+        -------
+        None
+        """
+        self.random_seed = random_seed
+        self.rng = np.random.default_rng(seed=random_seed)
+
+    def _rng_for(self, random_seed=None):
+        # Methods accept random_seed for backwards compatibility. A seed
+        # different from the current one reseeds the field generator; the
+        # same seed keeps the stream going instead of restarting it.
+        if random_seed is not None and random_seed != self.random_seed:
+            self.set_random_seed(random_seed)
+        return self.rng
+
     def create_minimal_field(
         self, nmolecules=1, random_placing=False, random_orientations=False, random_rotations=False, random_seed=None, **kwargs
     ):
@@ -138,6 +172,8 @@ class Field:
             Additional parameters for field creation.
         """
         fluo_name = "AF647"
+        if random_seed is not None:
+            self.set_random_seed(random_seed)
         self.calculate_absolute_reference()
         if "minimal_distance" in kwargs.keys():
             self.molecules_params["minimal_distance"] = kwargs["minimal_distance"]
@@ -350,10 +386,10 @@ class Field:
             print(
                 f"distributing with minimal distance: {self.molecules_params['minimal_distance']}"
             )
-            self._random_pos_minimal_dist(npositions)
+            self._random_pos_minimal_dist(npositions, random_seed=random_seed)
         else:
             print("Generating unconstrained random positions")
-            rng_pos = np.random.default_rng(seed=random_seed)
+            rng_pos = self._rng_for(random_seed)
             xrel = rng_pos.uniform(size=npositions)
             yrel = rng_pos.uniform(size=npositions)
             zrel = rng_pos.uniform(size=npositions)
@@ -362,7 +398,20 @@ class Field:
             self._gen_abs_from_rel_positions()
 
     def randomise_axial_position(self, random_seed=None):
-        rng = np.random.default_rng(seed=random_seed)
+        """
+        Assign each molecule an axial position drawn from axial_offset.
+
+        Parameters
+        ----------
+        random_seed : int, optional
+            Seed for the field generator. If None, the field generator is
+            used as seeded (see set_random_seed).
+
+        Returns
+        -------
+        None
+        """
+        rng = self._rng_for(random_seed)
         nmolecules = self.get_molecule_param("nMolecules")
         axial_offsets = rng.choice(self.axial_offset, nmolecules, replace=True)
         for i, zpos in enumerate(axial_offsets):
@@ -394,7 +443,7 @@ class Field:
         norientations = self.get_molecule_param("nMolecules")
         orientations = []
         unconstrained = True
-        rng = np.random.default_rng(seed=random_seed)
+        rng = self._rng_for(random_seed)
         xy_orientation_changes = np.zeros((norientations,))
         if self.xy_orientations is not None:
             xy_orientation_changes =  rng.choice(self.xy_orientations, norientations, replace=True)
@@ -413,7 +462,7 @@ class Field:
             print("generating unconstrained randomised axis")
             # unconstrained randomisation
             for i in range(norientations):
-                orientations.append(np.array(sampl.sample_spherical_normalised(1, ndim=3)))
+                orientations.append(np.array(sampl.sample_spherical_normalised(1, ndim=3, rng=rng)))
             self.set_molecule_param("orientations", orientations)
         else:
             orientations_planewise = []
@@ -427,7 +476,7 @@ class Field:
         Generate random rotations around central axis for all molecules in the field.
         """
         nrotations = self.get_molecule_param("nMolecules")
-        rng = np.random.default_rng(seed=random_seed)
+        rng = self._rng_for(random_seed)
         if self.rotation_angles is None:
             print("random unconstrained rotations")
             rotations = rng.integers(360, size=nrotations) 
@@ -472,7 +521,7 @@ class Field:
         maxabs_posz = dimension_sizes[2]
         # print(f"Max values: {maxabs_posx},{maxabs_posy}, {maxabs_posz}")
         # sample the first point
-        rng_pos = np.random.default_rng(seed=random_seed)
+        rng_pos = self._rng_for(random_seed)
         x = rng_pos.uniform(0, maxabs_posx, size=1)
         y = rng_pos.uniform(0, maxabs_posy, size=1)
         z = rng_pos.uniform(0, maxabs_posz, size=1)

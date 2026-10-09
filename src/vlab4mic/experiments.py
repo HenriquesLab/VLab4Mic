@@ -181,8 +181,29 @@ class ExperimentParametrisation:
         self.modality_noise_images = dict()
         if self.random_seed is not None:
             np.random.seed(self.random_seed)
+        # generator of child seeds: every virtual sample built by this
+        # experiment gets its own seed, so repeated builds are independent
+        # realisations, and the whole sequence is reproducible from
+        # random_seed
+        self._seed_generator = None
         self.now = datetime.now()  # dd/mm/YY H:M:S
         self.date_as_string = self.now.strftime("%Y%m%d") + "_"
+
+    def _next_field_seed(self):
+        """
+        Seed for the next virtual sample build.
+
+        Returns
+        -------
+        int or None
+            A new seed drawn from the experiment seed generator, or None if
+            the experiment has no random_seed (fresh entropy is then used).
+        """
+        if self.random_seed is None:
+            return None
+        if getattr(self, "_seed_generator", None) is None:
+            self._seed_generator = np.random.default_rng(self.random_seed)
+        return int(self._seed_generator.integers(2**32))
 
     def select_structure(self, structure_id="1XI5", build=True, structure_path:str = None):
         """
@@ -645,7 +666,7 @@ class ExperimentParametrisation:
         if use_self_particle and self.generators_status("particle"):
             print("creating field from existing particle")
             exported_field, fieldobject = field_from_particle(
-                self.particle, **self.virtualsample_params, random_seed=self.random_seed, **kwargs
+                self.particle, **self.virtualsample_params, random_seed=self._next_field_seed(), **kwargs
             )
             self.virtualsample_params["minimal_distance"] = (
                 fieldobject.molecules_params["minimal_distance"]
@@ -659,7 +680,7 @@ class ExperimentParametrisation:
         else:
             # create minimal field
             fieldobject = coordinates_field.create_min_field(
-                **self.virtualsample_params, random_seed=self.random_seed, **kwargs
+                **self.virtualsample_params, random_seed=self._next_field_seed(), **kwargs
             )
             exported_field = fieldobject.export_field()
             if keep:

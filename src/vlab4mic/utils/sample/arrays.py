@@ -1,8 +1,28 @@
 import numpy as np
 
 
-def sample_spherical_normalised(npoints, ndim=3):
-    vec = np.random.randn(ndim, npoints)
+def sample_spherical_normalised(npoints, ndim=3, rng=None):
+    """
+    Draw unit vectors uniformly on the sphere.
+
+    Parameters
+    ----------
+    npoints : int
+        Number of vectors.
+    ndim : int, optional
+        Number of dimensions. Default is 3.
+    rng : numpy.random.Generator, optional
+        Generator to draw from. Default is the global numpy random state.
+
+    Returns
+    -------
+    numpy.ndarray
+        Flattened array of npoints unit vectors of length ndim.
+    """
+    if rng is None:
+        vec = np.random.randn(ndim, npoints)
+    else:
+        vec = rng.standard_normal((ndim, npoints))
     vec /= np.linalg.norm(vec, axis=0)
     return vec.reshape(-1)
 
