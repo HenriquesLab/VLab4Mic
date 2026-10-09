@@ -192,6 +192,38 @@ def coordinates_scaling(
     return naive_scaled_centered  # output is centered at the centroid of the input
 
 
+def tilt_direction(direction, tilt_deg, rng=None):
+    """
+    Tilt a direction by a fixed angle with a random azimuth.
+
+    Parameters
+    ----------
+    direction : numpy.ndarray
+        Direction to tilt (e.g. a surface normal); need not be unit length.
+    tilt_deg : float
+        Angle between the input and the output direction, in degrees.
+    rng : numpy.random.Generator, optional
+        Generator for the azimuth. Default is the global numpy random state.
+
+    Returns
+    -------
+    numpy.ndarray
+        Unit vector at tilt_deg from direction, with an azimuth drawn
+        uniformly in [0, 2 pi).
+    """
+    d = np.asarray(direction, dtype=float)
+    d = d / np.linalg.norm(d)
+    if not tilt_deg:
+        return d
+    helper = np.array([1.0, 0, 0]) if abs(d[0]) < 0.9 else np.array([0, 1.0, 0])
+    u = np.cross(d, helper)
+    u = u / np.linalg.norm(u)
+    v = np.cross(d, u)
+    phi = rng.uniform(0, 2 * np.pi) if rng is not None else np.random.uniform(0, 2 * np.pi)
+    t = np.radians(tilt_deg)
+    return np.cos(t) * d + np.sin(t) * (np.cos(phi) * u + np.sin(phi) * v)
+
+
 def add_wobble(pivot, direction, cone_angle_deg=30, length=1):
     """
     Adds a random wobble to the given vector within a cone defined by cone_angle_deg,

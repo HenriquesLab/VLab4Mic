@@ -279,6 +279,11 @@ def construct_label(
         label_params["binding"]["wobble_range"]["theta"] = label_params[
             "wobble_theta"
         ]
+    # tilt: mean angle (degrees) between the probe axis and the surface
+    # normal; an explicit tilt_theta overrides the template (binding.tilt)
+    if label_params.get("tilt_theta") is not None:
+        label_params["binding"]["tilt"] = label_params["tilt_theta"]
+    label_params["binding"].setdefault("tilt", None)
     ######## information about target
     if target_info:
         # expect label_params to have empty values on target type and value

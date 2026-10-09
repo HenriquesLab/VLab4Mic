@@ -1034,6 +1034,7 @@ class ExperimentParametrisation:
         probe_DoL: float = None,
         probe_secondary_epitope=None,
         probe_wobble_theta: float = None,
+        probe_tilt_theta: float = None,
         labelling_efficiency: float = 1.0,
         as_primary=False,
         peptide_motif: dict = None,
@@ -1073,8 +1074,15 @@ class ExperimentParametrisation:
             Efficiency of the probe conjugation.
         :param probe_secondary_epitope : Any, optional
             Information about a secondary epitope target.
-        :param probe_wobbling : bool, optional
-            Whether to enable probe wobbling. Default is False.
+        :param probe_wobble_theta : float, optional
+            Maximum wobble angle in degrees: the probe axis is drawn
+            uniformly within a cone of this half-angle around the (tilted)
+            normal. Overrides the template value (binding.wobble_range.theta);
+            0 disables wobble.
+        :param probe_tilt_theta : float, optional
+            Mean tilt in degrees between the probe axis and the surface
+            normal, with a random azimuth. Overrides the template value
+            (binding.tilt); 0 (default) places probes along the normal.
         :param labelling_efficiency : float, optional
             Efficiency of probe labelling. Default is 1.0.
         :param as_primary : bool, optional
@@ -1174,6 +1182,8 @@ class ExperimentParametrisation:
         if probe_wobble_theta is not None:
             probe_configuration["enable_wobble"] = True
             probe_configuration["wobble_theta"] = probe_wobble_theta
+        if probe_tilt_theta is not None:
+            probe_configuration["tilt_theta"] = probe_tilt_theta
         if as_primary:
             print("Adding probe as primary linker")
             probe_configuration["as_linker"] = True
@@ -1555,6 +1565,7 @@ def generate_virtual_sample(
     probe_DoL: float = None,
     probe_secondary_epitope=None,
     probe_wobble_theta=None,
+    probe_tilt_theta=None,
     labelling_efficiency: float = 1.0,
     structural_integrity_small_cluster: float = None,
     structural_integrity_large_cluster: float = None,
@@ -1615,8 +1626,10 @@ def generate_virtual_sample(
         Efficiency of conjugation of emitters.
     :param probe_secondary_epitope : str, optional
         Sequence within probe model to be used as epitope for a secondary.
-    :param probe_wobbling : bool, optional
-        Enable probe wobbling. Default is False.
+    :param probe_wobble_theta : float, optional
+        Maximum probe wobble angle in degrees (see add_probe).
+    :param probe_tilt_theta : float, optional
+        Mean probe tilt from the surface normal in degrees (see add_probe).
     :param labelling_efficiency : float, optional
         Labelling efficiency of probe. Default is 1.0.
     :param structural_integrity_small_cluster : float, optional
@@ -1732,6 +1745,8 @@ def generate_virtual_sample(
                 probe_configuration["probe_secondary_epitope"] = probe_secondary_epitope
             if probe_wobble_theta is not None:
                 probe_configuration["probe_wobble_theta"] = probe_wobble_theta
+            if probe_tilt_theta is not None:
+                probe_configuration["probe_tilt_theta"] = probe_tilt_theta
             myexperiment.add_probe(**probe_configuration)
     # load default configuration for virtual sample
     virtual_sample_template = os.path.join(
@@ -1842,6 +1857,7 @@ def image_vsample(
     probe_DoL: float = None,
     probe_secondary_epitope = None,
     probe_wobble_theta = None,
+    probe_tilt_theta = None,
     labelling_efficiency: float = 1.0,
     structural_integrity_small_cluster: float = None,
     structural_integrity_large_cluster: float = None,
@@ -1919,8 +1935,10 @@ def image_vsample(
         Efficiency of conjugation of emitters.
     :param probe_secondary_epitope : str, optional
         Sequence within probe model to be used as epitope for a secondary.
-    :param probe_wobble_theta : any, optional
-        Enable probe wobbling.
+    :param probe_wobble_theta : float, optional
+        Maximum probe wobble angle in degrees (see add_probe).
+    :param probe_tilt_theta : float, optional
+        Mean probe tilt from the surface normal in degrees (see add_probe).
     :param labelling_efficiency : float, optional
         Labelling efficiency of probe. Default is 1.0.
     :param structural_integrity_small_cluster : float, optional
@@ -1982,6 +2000,7 @@ def image_vsample(
             probe_DoL=probe_DoL,
             probe_secondary_epitope=probe_secondary_epitope,
             probe_wobble_theta=probe_wobble_theta,
+            probe_tilt_theta=probe_tilt_theta,
             labelling_efficiency=labelling_efficiency,
             structural_integrity_small_cluster=structural_integrity_small_cluster,
             structural_integrity_large_cluster=structural_integrity_large_cluster,

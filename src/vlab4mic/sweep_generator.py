@@ -590,6 +590,7 @@ class sweep_generator:
         probe_steric_hindrance=None,
         probe_DoL=None,
         probe_wobble_theta=None,
+        probe_tilt_theta=None,
         labelling_efficiency=None,
         # structural_integrity
         structural_integrity=None,
@@ -647,7 +648,9 @@ class sweep_generator:
         :param probe_DoL: optional
             Mean degree of labelling (fluorophores per probe).
         :param probe_wobble_theta: optional
-            Maximum angle of probe wobble around the normal, in degrees.
+            Maximum angle of probe wobble around the (tilted) normal, in degrees.
+        :param probe_tilt_theta: optional
+            Mean tilt of the probe axis from the surface normal, in degrees.
         :param labelling_efficiency: optional
             Probability that a probe binds each epitope, between 0 and 1.
         :param structural_integrity, structural_integrity_small_cluster, structural_integrity_large_cluster: optional
@@ -711,6 +714,10 @@ class sweep_generator:
         if probe_wobble_theta is not None:
             self.set_parameter_values(
                 "probe", "probe_wobble_theta", values=probe_wobble_theta
+            )
+        if probe_tilt_theta is not None:
+            self.set_parameter_values(
+                "probe", "probe_tilt_theta", values=probe_tilt_theta
             )
         if labelling_efficiency is not None:
             self.set_parameter_values(
@@ -1699,6 +1706,7 @@ def run_parameter_sweep(
     probe_steric_hindrance=None,
     probe_DoL=None,
     probe_wobble_theta=None,
+    probe_tilt_theta=None,
     labelling_efficiency=None,
     structural_integrity=None,
     structural_integrity_small_cluster=None,
@@ -1797,6 +1805,7 @@ def run_parameter_sweep(
         - probe_steric_hindrance
         - probe_DoL
         - probe_wobble_theta
+        - probe_tilt_theta
         - labelling_efficiency
         - structural_integrity
         - structural_integrity_small_cluster
@@ -1887,6 +1896,7 @@ def run_parameter_sweep(
         probe_steric_hindrance=probe_steric_hindrance,
         probe_DoL=probe_DoL,
         probe_wobble_theta=probe_wobble_theta,
+        probe_tilt_theta=probe_tilt_theta,
         labelling_efficiency=labelling_efficiency,
         structural_integrity=structural_integrity,
         structural_integrity_small_cluster=structural_integrity_small_cluster,

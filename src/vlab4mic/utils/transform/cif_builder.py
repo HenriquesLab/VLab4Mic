@@ -1,7 +1,7 @@
 import numpy as np
 from .points_transforms import decorate_epitopes_normals
 from ..sample.arrays import binomial_epitope_sampling
-from ..transform.normals import add_wobble
+from ..transform.normals import add_wobble, tilt_direction
 
 
 def do_sym_operation(pts_set, sym_operation):
@@ -165,6 +165,13 @@ def indirect_labelling(coords_nomrals, label_data, **kwargs):
             indirect_realisation = None
             list_reoriented_points_normals = None
         else:
+            # tilt the normals by the mean probe tilt (random azimuth); the
+            # wobble below is then applied about the tilted axis
+            tilt = label_data["binding"].get("tilt")
+            if tilt:
+                normals = np.array(
+                    [tilt_direction(normals[i, :], tilt) for i in range(normals.shape[0])]
+                )
             # add wobble to normals
             #normals_ft_epitopes = [normals, epitopes]
             if label_data["binding"]["wobble_range"]["theta"]:

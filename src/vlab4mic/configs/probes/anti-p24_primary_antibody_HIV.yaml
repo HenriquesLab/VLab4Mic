@@ -14,6 +14,7 @@ binding:
   wobble_range:
     theta: 10
     phi:
+  tilt: 0  # mean angle (degrees) between probe axis and surface normal
   distance:
     to_target: 20
     between_targets: estimate  # "estimate" or float

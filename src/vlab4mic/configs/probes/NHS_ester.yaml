@@ -18,6 +18,7 @@ binding:
   wobble_range:
     theta:
     phi:
+  tilt: 0  # mean angle (degrees) between probe axis and surface normal
   distance:
     to_target:
     between_targets:
