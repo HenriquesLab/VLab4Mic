@@ -6,6 +6,8 @@ from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 np.random.seed(44)
 
 structure = "PATH/TO/YOUR/LOCAL/MODEL/AF-P00520-F1-model_v6.cif"
+# name shown in the figure title
+structure_name = os.path.splitext(os.path.basename(structure))[0]
 
 instructions = (
     "## Instructions to obtain a custom structure for this example:\n"
