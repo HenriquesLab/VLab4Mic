@@ -1415,9 +1415,39 @@ class ExperimentParametrisation:
         new_orientation_point = self.structure.axis["pivot"] + reference_rotated
         self.structure.set_axis_from_point(new_orientation_point)
     
-    def set_structure_normal_params(self, mode = "scaling", normal_vector = None):
+    def set_structure_normal_params(self, mode = "scaling", normal_vector = None, n_neighbours = 10):
+        """
+        Set how normals are assigned to the targets of the structure.
+
+        Normals give the direction along which probes are placed on each
+        target site. They are computed when the particle is built, for
+        probes placed at a distance from their target, so set these
+        parameters before building the particle.
+
+        Parameters
+        ----------
+        :param mode : str, optional
+            "scaling" (default): direction from the centroid of the target
+            sites; suited to convex shapes.
+            "local_plane": normal of a plane fitted to the nearest target
+            sites; suited to any surface, including flat ones.
+            "global": normal_vector for every site.
+            "structure_axis": the structure axis for every site.
+            See MolecularReplicates.assign_normals2targets.
+        :param normal_vector : numpy.ndarray, optional
+            Vector used in "global" mode. In "local_plane" mode, the side
+            normals point to on flat surfaces (the structure axis if None).
+        :param n_neighbours : int, optional
+            Number of nearest target sites used to fit each plane in
+            "local_plane" mode. Default is 10.
+
+        Returns
+        -------
+        None
+        """
         self.structure.normals_params["mode"] = mode
         self.structure.normals_params["normal_vector"] = normal_vector
+        self.structure.normals_params["n_neighbours"] = n_neighbours
     
     def set_structural_integrity(
             self,

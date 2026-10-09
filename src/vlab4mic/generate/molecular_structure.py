@@ -23,7 +23,11 @@ from ..utils.data_format.visualisation import (
 
 from ..utils.data_format.structural_format import builder_format  # verified
 
-from ..utils.transform.normals import normals_by_scaling, global_normal_direction  # verified
+from ..utils.transform.normals import (  # verified
+    normals_by_scaling,
+    normals_by_local_plane,
+    global_normal_direction,
+)
 from ..utils.sample import arrays
 
 
@@ -1028,51 +1032,73 @@ class MolecularReplicates(MolecularStructureParser):
 
     def assign_normals2targets(self, target: str = None):
         """
-        Assign normals to targets using a specified method.
+        Assign normals to targets using the method in normals_params["mode"].
+
+        Modes:
+            "scaling": direction from the centroid of the target sites
+                (suited to convex shapes).
+            "local_plane": normal of a plane fitted to the nearest target
+                sites (suited to any surface, including flat ones). On flat
+                surfaces, normals point to the side of
+                normals_params["normal_vector"], or of the structure axis
+                if no vector is set.
+            "global": the same vector, normals_params["normal_vector"],
+                for every site.
+            "structure_axis": the structure axis direction for every site.
 
         Parameters
         ----------
-        mode : str, optional
-            Method for assigning normals ("scaling"). Default is "scaling".
         target : str, optional
             Specific target to assign normals to. If None, assign to all.
         """
         print(f"Assigning normals to targets with method: {self.normals_params['mode']}")
         if target is None:
-            for target_name, value in self.label_targets.items():
-                if self.normals_params["mode"] == "scaling":
-                    normals = normals_by_scaling(
-                        self.label_targets[target_name]["coordinates"]
-                    )
-                    self.label_targets[target_name]["normals"] = normals
-                elif self.normals_params["mode"] == "global":
-                    normals = global_normal_direction(
-                        self.label_targets[target_name]["coordinates"],
-                        normal_vector = self.normals_params["normal_vector"]
-                    )
-                    self.label_targets[target_name]["normals"] = normals
-                elif self.normals_params["mode"] == "structure_axis":
-                    normals = global_normal_direction(
-                        self.label_targets[target_name]["coordinates"],
-                        normal_vector = self.axis["direction"]
-                    )
-                    self.label_targets[target_name]["normals"] = normals
+            target_names = list(self.label_targets.keys())
         else:
-            if self.normals_params["mode"] == "scaling":
-                normals = normals_by_scaling(self.label_targets[target]["coordinates"])
-                self.label_targets[target]["normals"] = normals
-            elif self.normals_params["mode"] == "global":
-                normals = global_normal_direction(
-                        self.label_targets[target_name]["coordinates"],
-                        normal_vector = self.normals_params["normal_vector"]
-                    )
+            target_names = [target]
+        for target_name in target_names:
+            normals = self._compute_target_normals(
+                self.label_targets[target_name]["coordinates"]
+            )
+            if normals is not None:
                 self.label_targets[target_name]["normals"] = normals
-            elif self.normals_params["mode"] == "structure_axis":
-                    normals = global_normal_direction(
-                        self.label_targets[target_name]["coordinates"],
-                        normal_vector = self.axis["direction"]
-                    )
-                    self.label_targets[target_name]["normals"] = normals
+
+    def _compute_target_normals(self, coordinates):
+        """
+        Compute normals for target sites with the method in normals_params.
+
+        Parameters
+        ----------
+        coordinates : numpy.ndarray
+            Nx3 array of target site coordinates.
+
+        Returns
+        -------
+        numpy.ndarray or None
+            Nx3 array of normals, or None if normals_params["mode"] is not
+            a known mode (the existing normals are then kept).
+        """
+        mode = self.normals_params["mode"]
+        if mode == "scaling":
+            return normals_by_scaling(coordinates)
+        elif mode == "local_plane":
+            reference_vector = self.normals_params["normal_vector"]
+            if reference_vector is None:
+                reference_vector = self.axis["direction"]
+            return normals_by_local_plane(
+                coordinates,
+                n_neighbours=self.normals_params.get("n_neighbours", 10),
+                reference_vector=reference_vector,
+            )
+        elif mode == "global":
+            return global_normal_direction(
+                coordinates, normal_vector=self.normals_params["normal_vector"]
+            )
+        elif mode == "structure_axis":
+            return global_normal_direction(
+                coordinates, normal_vector=self.axis["direction"]
+            )
+        return None
 
 
 def build_structure_cif(
