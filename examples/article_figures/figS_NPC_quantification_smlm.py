@@ -95,7 +95,8 @@ list_of_positions, rendered_smlm, smlm_experiment = render_from_localisations(
 
 # parameters for simulation
 structure = "7R5K"
-probe_template = "GFP_w_nanobody"
+# the SMLM data of the reference dataset label Nup96 with a SNAP-tag
+probe_template = "SNAP-tag"
 probe_target_type = "Sequence"
 probe_target_value = "ELAVGSL" # Sequence in the C-terminal of Nup96
 modalities = ["SMLM", ]
@@ -106,7 +107,6 @@ _1, _2, experiment = experiments.image_vsample(
     probe_template=probe_template,
     probe_target_type=probe_target_type,
     probe_target_value=probe_target_value,
-    probe_DoL=2,
     labelling_efficiency=0.8,
     multimodal=modalities,
     SMLM={"exp_time": 0.0002},
@@ -132,7 +132,17 @@ experiment.use_image_for_positioning(
     min_distance=min_distance)
 
 # Run simulation
-experiment.update_modality(modality_name="SMLM", simulate_localisations=False, pixelsize_nm=smlm_pixelsize, lateral_resolution_nm=5, psf_voxel_nm=smlm_pixelsize)
+# localisations displaced by the dataset precision, rendered with the same
+# kernel as the experimental localisations
+experiment.update_modality(
+    modality_name="SMLM",
+    simulate_localistations=True,
+    lateral_precision=np.mean(smlm_experimental_locs.locprecnm),
+    axial_precision=np.mean(smlm_experimental_locs.locprecnm),
+    rendering_kernel_nm=loc_prec,
+    pixelsize_nm=smlm_pixelsize,
+    psf_voxel_nm=smlm_pixelsize,
+)
 experiment.set_modality_acq(modality_name="SMLM", exp_time=0.0002)
 images, noiselsess = experiment.run_simulation()
 

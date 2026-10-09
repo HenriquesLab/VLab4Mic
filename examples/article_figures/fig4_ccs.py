@@ -129,6 +129,9 @@ def download_cif_file(
 
 ########################## 
 random_seed = 24
+# ventral geometry: lattices lie on the coverslip (axis along +z) with a
+# random tilt of up to MAX_TILT_DEG and a random in-plane rotation
+MAX_TILT_DEG = 10
 dome_url = "https://zenodo.org/records/20719843/files/Dome_model_v2.0.cif"
 flat_url = "https://zenodo.org/records/20719843/files/Flat_lattice_model_v2.0.cif"
 
@@ -140,7 +143,7 @@ primary = dict(
     probe_name="custom",
     probe_target_type = "Sequence",
     probe_target_value = "ATETQ",
-    probe_distante_to_epitope = 0,
+    probe_distance_to_epitope = 0,
     probe_DoL=4,  
 )
 ############################ DOME #######################################
@@ -152,8 +155,17 @@ images, noiseless, my_experiment = experiments.image_vsample(
     multimodal=["Widefield", "Confocal", "AiryScan", "STED", "SMLM"],
     run_simulation=False,
     sample_dimensions=[500,500,10],
+    # normals from a plane fitted to neighbouring target sites, valid for
+    # both the curved dome and the flat lattice
+    structure_global_normal_orientation="local_plane",
     random_seed=random_seed
 )
+my_experiment.set_virtualsample_params(
+    random_orientations=False,
+    orientation_tilt_max=MAX_TILT_DEG,
+    random_rotations=True,
+)
+my_experiment.build(modules=["coordinate_field", "imager"])
 my_experiment.update_modality(modality_name="STED", depth_of_field_nm=1000)
 my_experiment.update_modality(modality_name="SMLM", depth_of_field_nm=1000)
 images, noiseless = my_experiment.run_simulation()
@@ -225,14 +237,17 @@ plt.close()
 ########################## FLAT MODEL #########################
 
 my_experiment.select_structure(
+    structure_id="Flat_lattice_model_v2.0",
     structure_path=flat_model,
-    build=False
+    build=True
 )
+my_experiment.set_structure_normal_params(mode="local_plane")
 my_experiment.set_virtualsample_params(
+    random_orientations=False,
+    orientation_tilt_max=MAX_TILT_DEG,
     random_rotations=True,
-    rotation_angles=[85],
 )
-my_experiment.build()
+my_experiment.build(modules=["particle", "coordinate_field", "imager"])
 images, noiseless = my_experiment.run_simulation()
 
 fig = plt.figure(figsize=[10,20])

@@ -248,7 +248,18 @@ my_experiment.set_modality_acq(modality_name="STED", exp_time=0.001)
 sted_images, noiselsess = my_experiment.run_simulation(modality="STED")
 sim_vs_exp["STED"] = (sted_images["STED"]["ch0"][0], STED_experimental_img_patch)
 # SMLM
+# The SMLM data of the reference dataset label Nup96 with a SNAP-tag (the
+# other panels use Nup96-GFP), so the SMLM panel uses the SNAP-tag probe.
+my_experiment.remove_probes()
+my_experiment.add_probe(
+    probe_template="SNAP-tag",
+    probe_target_type="Sequence",
+    probe_target_value="ELAVGSL",
+    labelling_efficiency=0.4,
+)
+my_experiment.build(modules=["particle"])
 loc_prec = np.max(smlm_experimental_locs.locprecnm)
+mean_loc_prec = np.mean(smlm_experimental_locs.locprecnm)
 xrange = smlm_experimental_locs.xnm.max() - smlm_experimental_locs.xnm.min()
 yrange = smlm_experimental_locs.ynm.max() - smlm_experimental_locs.ynm.min()
 list_of_positions, rendered_smlm, smlm_experiment = render_from_localisations(
@@ -274,15 +285,17 @@ SMLM_experimental_img_patch, relative_positions = mimic_experimental_image(
 my_experiment.imager.modalities["SMLM"]["detector"]["noise_model"]["binomial"]["p"] = 0.4
 my_experiment.imager.modalities["SMLM"]["detector"]["noise_model"]["baselevel"]["bl"] = 1
 my_experiment.imager.modalities["SMLM"]["detector"]["noise_model"]["gaussian"]["sigma"] = 0
-# Run simulation
+# Run simulation: localisations are displaced once by the localisation
+# precision of the dataset and rendered with the same Gaussian kernel used
+# above to render the experimental localisations
 my_experiment.update_modality(modality_name="SMLM",
-                              lateral_resolution_nm = loc_prec,
                               pixelsize_nm=smlm_pixelsize,
                               psf_voxel_nm=smlm_pixelsize,
-                              axial_precision=2,
-                              simulate_localistations=False,
-                              lateral_precision=2,
-                              nlocalisations=10)
+                              simulate_localistations=True,
+                              lateral_precision=mean_loc_prec,
+                              axial_precision=mean_loc_prec,
+                              nlocalisations=10,
+                              rendering_kernel_nm=loc_prec)
 my_experiment.set_modality_acq(modality_name="SMLM", exp_time=0.01)
 smlm_images, noiselsess = my_experiment.run_simulation(modality="SMLM")
 sim_vs_exp["SMLM"] = (smlm_images["SMLM"]["ch0"][0], SMLM_experimental_img_patch)

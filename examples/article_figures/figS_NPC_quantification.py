@@ -93,16 +93,23 @@ minDist = minRadius_round
 if images["STED"]["ch0"][0].min() < 0:
     images["STED"]["ch0"][0] += -images["STED"]["ch0"][0].min()
 
+def to_uint8(img):
+    # scale the full intensity range to 0-255; casting 16-bit data to uint8
+    # directly wraps values modulo 256
+    img = np.asarray(img, dtype=float)
+    img = img - img.min()
+    return np.uint8(img / img.max() * 255) if img.max() > 0 else np.uint8(img)
+
 #### Simulated Data
 HCparams = dict(dp=1, minDist=maxRadius_round, 
         param1=10, param2=7, minRadius=minRadius_round, maxRadius=maxRadius_round)
-circles_sim, img_blurred_sim, c_params_sim = metrics.get_circles(images["STED"]["ch0"][0].astype(np.uint8), **HCparams)
+circles_sim, img_blurred_sim, c_params_sim = metrics.get_circles(to_uint8(images["STED"]["ch0"][0]), **HCparams)
 radii_simulated= []
 for (x, y, r) in circles_sim[0]:
     radii_simulated.append((r*pixelsize))
 
 #### Experimental Data
-circles_exp, img_blurred_exp, c_params_exp = metrics.get_circles(experimental_img_processed.astype(np.uint8), **HCparams)
+circles_exp, img_blurred_exp, c_params_exp = metrics.get_circles(to_uint8(experimental_img_processed), **HCparams)
 radii_experimental = []
 for (x, y, r) in circles_exp[0]:
     radii_experimental.append((r*pixelsize))
