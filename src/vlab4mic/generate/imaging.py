@@ -1136,15 +1136,23 @@ class Imager:
         """
         Get emitters of a given fluorophore that are within the ROI.
 
+        The ROI is the box defined by the "ranges" ROI parameter (minimum
+        and maximum per axis). Coordinates are returned as stored, without
+        offsetting them to the ROI origin.
+
         Parameters
         ----------
         fluoname : str
             Name of the fluorophore.
+        masks : bool, optional
+            If True, filter the particle positions instead of the emitters
+            of fluoname (used to create sample masks). Default is False.
 
         Returns
         -------
         numpy.ndarray
-            Array of emitter coordinates within the ROI.
+            Nx3 array of coordinates within the ROI. Empty (0x3) if there
+            are no emitters or none of them is within the ROI.
         """
         # get limits of ROI in xyz
         # to match the previous implementation
@@ -1155,17 +1163,19 @@ class Imager:
         else:
             points = self._get_emitters_by_fluorophorename(fluoname)
         # print(ranges, points)
-        n_emitters = points.shape[0]
-        if n_emitters > 1:
-            rangesT = np.array(ranges).T
-            roi_corners = [rangesT[0].tolist(), rangesT[1].tolist()]
-            logical = [inCube(X, roi_corners) for X in points]
-            emitters_in_ROI = points[logical, :]
-            # up to here the points are only the ones contined
-            # in the ROI, but we still need to offset the coordinates
-            return copy.copy(emitters_in_ROI)
-        else:
-            return points
+        points = np.asarray(points)
+        if points.size == 0:
+            # no emitters: return an empty Nx3 array
+            return np.empty((0, 3))
+        # a single emitter might be given as a 1D array
+        points = points.reshape(-1, points.shape[-1])
+        rangesT = np.array(ranges).T
+        roi_corners = [rangesT[0].tolist(), rangesT[1].tolist()]
+        logical = [inCube(X, roi_corners) for X in points]
+        emitters_in_ROI = points[logical, :]
+        # up to here the points are only the ones contined
+        # in the ROI, but we still need to offset the coordinates
+        return copy.copy(emitters_in_ROI)
 
     def calculate_photons_per_frame(
         self,
