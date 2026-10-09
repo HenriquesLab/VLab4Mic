@@ -69,6 +69,7 @@ class Field:
         self.random_orientations = False
         self.random_rotations = False
         self.sample_initial_orientation = None
+        self.orientation_tilt_max = None
         self.rotation_angles = None
         # random number generator for positions, orientations, rotations
         # and axial offsets. Seeded once per field (see set_random_seed) so
@@ -215,11 +216,14 @@ class Field:
             point = self.get_molecule_param("absolute_positions")
             self.fluorophre_emitters = {fluo_name: point.reshape(1, 3)}
         self._set_fluo_plotting_params(fluo_name)
-        # Orientation of each particle 
+        # Orientation of each particle
+        # a set orientation applies with or without randomisation
+        if kwargs.get("sample_inital_orientation") is not None:
+            self.sample_initial_orientation = kwargs["sample_inital_orientation"]
+        if kwargs.get("orientation_tilt_max") is not None:
+            self.orientation_tilt_max = kwargs["orientation_tilt_max"]
         if random_orientations:
             self.random_orientations = True
-            if "sample_inital_orientation" in kwargs.keys():
-                self.sample_initial_orientation = kwargs["sample_inital_orientation"]
             if "xy_orientations" in kwargs.keys():
                 self.xy_orientations = kwargs["xy_orientations"]
             if "xz_orientations" in kwargs.keys():
@@ -422,8 +426,12 @@ class Field:
         """
         Generate random orientations for all molecules in the field.
 
-        If none of xy_orientations, xz_orientations and yz_orientations is
-        set, each molecule gets an axis drawn uniformly on the sphere
+        If orientation_tilt_max is set, each molecule axis is drawn
+        uniformly over the spherical cap within orientation_tilt_max degrees
+        of sample_initial_orientation (default [0, 0, 1]), e.g. structures
+        lying on the coverslip with a random tilt.
+        Otherwise, if none of xy_orientations, xz_orientations and
+        yz_orientations is set, each molecule gets an axis drawn uniformly on the sphere
         (stored in the "orientations" molecule parameter). Otherwise, each
         molecule draws one angle, in degrees, from each of the lists that
         are set (0 for the others), and the (xy, xz, yz) angles are stored
@@ -433,7 +441,8 @@ class Field:
         Parameters
         ----------
         random_seed : int, optional
-            Seed for the plane-wise angle draws. Default is None.
+            Seed for the field generator (see set_random_seed). Default is
+            None (use the field generator as seeded).
 
         Returns
         -------
@@ -444,6 +453,29 @@ class Field:
         orientations = []
         unconstrained = True
         rng = self._rng_for(random_seed)
+        if self.orientation_tilt_max is not None:
+            # set orientation with a random tilt: axes uniform over the
+            # spherical cap within orientation_tilt_max of the base axis
+            base = self.sample_initial_orientation
+            if base is None:
+                base = [0, 0, 1]
+            base = np.asarray(base, dtype=float)
+            base = base / np.linalg.norm(base)
+            cos_max = np.cos(np.radians(self.orientation_tilt_max))
+            helper = np.array([1.0, 0, 0]) if abs(base[0]) < 0.9 else np.array([0, 1.0, 0])
+            u = np.cross(base, helper)
+            u = u / np.linalg.norm(u)
+            v = np.cross(base, u)
+            for i in range(norientations):
+                cos_t = rng.uniform(cos_max, 1)
+                sin_t = np.sqrt(1 - cos_t**2)
+                phi = rng.uniform(0, 2 * np.pi)
+                orientations.append(
+                    cos_t * base + sin_t * (np.cos(phi) * u + np.sin(phi) * v)
+                )
+            self.set_molecule_param("orientations", orientations)
+            self.set_molecule_param("orientations_planewise", None)
+            return
         xy_orientation_changes = np.zeros((norientations,))
         if self.xy_orientations is not None:
             xy_orientation_changes =  rng.choice(self.xy_orientations, norientations, replace=True)
@@ -637,7 +669,7 @@ class Field:
         self.molecules = molecules
         if self.sample_initial_orientation is not None:
             self.generate_global_orientation(self.sample_initial_orientation)
-        if self.random_orientations:
+        if self.random_orientations or self.orientation_tilt_max is not None:
             self.generate_random_orientations(random_seed=random_seed)
         if self.random_rotations:
             self.initialise_random_rotations(random_seed=random_seed)

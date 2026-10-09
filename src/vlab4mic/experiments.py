@@ -1329,6 +1329,7 @@ class ExperimentParametrisation:
         axial_offset=None,
         rotation_per_particle=None,
         orientation_per_particle=None,
+        orientation_tilt_max: float = None,
         **kwargs,
     ):
         """
@@ -1348,6 +1349,28 @@ class ExperimentParametrisation:
             Whether to randomize particle orientations, overrides the template value.
         :param random_placing : bool, optional
             Whether to randomize particle placement, overrides the template value.
+        :param sample_inital_orientation : list of 3 floats, optional
+            Orientation (direction of the particle axis) for every particle.
+            With orientation_tilt_max, the orientation about which particles
+            are tilted.
+        :param orientation_tilt_max : float, optional
+            Maximum tilt in degrees. Each particle axis is drawn uniformly
+            over the spherical cap within this angle of
+            sample_inital_orientation (default [0, 0, 1]), e.g. a structure
+            lying on the coverslip with a small random tilt. Combine with
+            random_rotations for a random in-plane rotation.
+        :param minimal_distance : float, optional
+            Minimum distance between particles.
+        :param random_rotations : bool, optional
+            Rotate each particle about its axis by a random angle (or one
+            drawn from rotation_angles).
+        :param rotation_angles : list of float, optional
+            Angles in degrees to draw in-plane rotations from.
+        :param xy_orientations, xz_orientations, yz_orientations : list of float, optional
+            Angles in degrees to draw plane-wise orientations from (used
+            with random_orientations).
+        :param axial_offset : list of float, optional
+            Axial positions to draw each particle's z from.
         :param **kwargs
             Additional keyword arguments (currently unused).
 
@@ -1406,7 +1429,8 @@ class ExperimentParametrisation:
         if sample_inital_orientation is not None:
             if len(sample_inital_orientation) == 3:
                 self.virtualsample_params["sample_inital_orientation"] = sample_inital_orientation
-                self.virtualsample_params["random_rotations"] = False
+        if orientation_tilt_max is not None:
+            self.virtualsample_params["orientation_tilt_max"] = orientation_tilt_max
 
 
     def use_image_for_positioning(
