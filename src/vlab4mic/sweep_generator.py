@@ -550,12 +550,9 @@ class sweep_generator:
             Name of parameter to use for sweep.
         :param values: None, tuple, or list, optional
             Parameter values to use. If list, used directly. If tuple,
-            interpreted as (start, stop, step): numeric parameters use
-            np.linspace(start, stop, int((stop - start) / step) + 1), so stop
-            is included; integer parameters (int_slider in
-            parameter_settings.yaml) use np.arange(start, stop, step), so stop
-            is excluded. Tuples are ignored for parameters without an entry
-            in parameter_settings.yaml. If None, the parameter is not set.
+            interpreted as (start, stop, step) and expanded with
+            values_from_range: start, start + step, ... up to stop
+            (included). If None, the parameter is not set.
 
         Returns
         -------
@@ -569,36 +566,10 @@ class sweep_generator:
                 # set list directly as the params to use
                 self.params_by_group[param_group][param_name] = values
             elif type(values) == tuple:
-                # 3 values are expected: min, max, steps
-                # generate a linspace
-                if param_group in self.parameter_settings.keys():
-                    if (
-                        param_name
-                        in self.parameter_settings[param_group].keys()
-                    ):
-                        if (
-                            self.parameter_settings[param_group][param_name][
-                                "wtype"
-                            ]
-                            == "int_slider"
-                        ):
-                            # step = np.ceil((values[1] - values[0]) / values[2])
-                            self.params_by_group[param_group][param_name] = (
-                                np.arange(
-                                    start=values[0],
-                                    stop=values[1],
-                                    step=values[2],
-                                    dtype=int,
-                                )
-                            )
-                        else:
-                            num = int((values[1] - values[0]) / values[2]) + 1
-                            param_iterables = np.linspace(
-                                values[0], values[1], num
-                            )
-                            self.params_by_group[param_group][
-                                param_name
-                            ] = param_iterables
+                # (start, stop, step): values from start to stop inclusive
+                self.params_by_group[param_group][param_name] = (
+                    values_from_range(*values)
+                )
             self.parameters_with_set_values.append(param_name)
         else:
             print(f"{param_group} is not a valid parameter group")
@@ -654,11 +625,9 @@ class sweep_generator:
         argument).
 
         For each of these parameters, pass a list of values to sweep over, or a
-        tuple (start, stop, step). For numeric parameters, a tuple gives
-        np.linspace(start, stop, int((stop - start) / step) + 1), so stop is
-        included; for integer parameters (int_slider in parameter_settings.yaml)
-        it gives np.arange(start, stop, step), so stop is excluded. Tuples are
-        ignored for parameters without an entry in parameter_settings.yaml.
+        tuple (start, stop, step), which gives start, start + step, ... up to
+        stop (included; see values_from_range). This applies to every
+        parameter, numeric or integer.
         For a single value, pass a list with one element.
         If a parameter is None, it is not swept and its default value is used.
 
@@ -1574,9 +1543,8 @@ class sweep_generator:
             )
         if self.reference_image is not None:
             # save reference image
-            name_ref = param_combination_id + ".tiff"
-            dir_name_ref = os.path.join(output_directory, name_ref)
-            # name_ref = output_directory + "reference.tiff"
+            # save reference image without overwriting a condition
+            dir_name_ref = os.path.join(output_directory, "reference.tiff")
             tiff.imwrite(dir_name_ref, self.reference_image)
 
     def add_custom_analysis_metrics(
@@ -1667,6 +1635,35 @@ class sweep_generator:
             **kwargs
         )
         print(f"Virtual sample parameterised to: {self.experiment.virtualsample_params}")
+
+def values_from_range(start, stop, step):
+    """
+    Values of a sweep range given as (start, stop, step).
+
+    Parameters
+    ----------
+    start, stop, step : float or int
+        First value, last value and step. The number of values is
+        round((stop - start) / step) + 1, so stop is included when the
+        range is a whole number of steps, and floating-point division
+        does not drop the last value.
+
+    Returns
+    -------
+    list
+        Values start, start + step, ... up to stop. Integers if start,
+        stop and step are all integers.
+    """
+    if step == 0:
+        raise ValueError("The step of a sweep range cannot be 0")
+    num = int(round((stop - start) / step)) + 1
+    if num < 1:
+        raise ValueError(f"Empty sweep range ({start}, {stop}, {step})")
+    values = start + step * np.arange(num)
+    if all(isinstance(v, (int, np.integer)) for v in (start, stop, step)):
+        return [int(v) for v in values]
+    return [float(v) for v in values]
+
 
 def run_parameter_sweep(
     structures: list[str] = None,
@@ -1781,11 +1778,9 @@ def run_parameter_sweep(
     :param run_analysis: bool, optional
         Whether to run analysis after simulation. Default is True.
     For each of these parameters, pass a list of values to sweep over, or a
-    tuple (start, stop, step). For numeric parameters, a tuple gives
-    np.linspace(start, stop, int((stop - start) / step) + 1), so stop is
-    included; for integer parameters (int_slider in parameter_settings.yaml)
-    it gives np.arange(start, stop, step), so stop is excluded. Tuples are
-    ignored for parameters without an entry in parameter_settings.yaml.
+    tuple (start, stop, step), which gives start, start + step, ... up to
+    stop (included; see values_from_range). This applies to every
+    parameter, numeric or integer.
     For a single value, pass a list with one element.
     If a parameter is None, it is not swept and its default value is used.
     See sweep_generator.set_sweep_parameters for their meaning and units.
@@ -1897,7 +1892,6 @@ def run_parameter_sweep(
         structural_integrity_small_cluster=structural_integrity_small_cluster,
         structural_integrity_large_cluster=structural_integrity_large_cluster,
         sample_dimensions=sample_dimensions,
-        particle_positions=particle_positions,
         particle_orientations=particle_orientations,
         xy_orientations = xy_orientations,
         xz_orientations = xz_orientations,

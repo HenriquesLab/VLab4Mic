@@ -175,10 +175,13 @@ def sweep_vasmples(
                                 and relative_positions is not None
                             ):  # keep the same positions
                                 experiment.clear_virtual_sample()
+                                # positions swept explicitly take precedence
+                                vsample_kwargs = dict(vsample_pars)
+                                vsample_kwargs.setdefault(
+                                    "particle_positions", relative_positions
+                                )
                                 experiment.set_virtualsample_params(
-                                    update_mode=True,
-                                    particle_positions=relative_positions,
-                                    **vsample_pars,
+                                    update_mode=True, **vsample_kwargs
                                 )
                                 experiment.build(
                                     modules=["coordinate_field"],
@@ -337,14 +340,13 @@ def sweep_modalities_updatemod(
                             acq_pars,
                         ) in modality_acq_prams.items():
                             if acq_pars is not None:
-                                # expects to have 'channels' key with one channel at least
+                                # keep the swept acquisition parameters
+                                # (e.g. exp_time) and add the default
+                                # channel if none is given
+                                acq_pars = dict(acq_pars)
                                 if "channels" not in acq_pars.keys():
-                                    channel = "ch0"
-                                    acq_pars = {
-                                        "channels": [
-                                            channel,
-                                        ]
-                                    }
+                                    acq_pars["channels"] = ["ch0"]
+                                channel = acq_pars["channels"][0]
                                 experiment.set_modality_acq(
                                     modality_name=modality_name, **acq_pars
                                 )
