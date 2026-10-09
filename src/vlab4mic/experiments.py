@@ -348,7 +348,9 @@ class ExperimentParametrisation:
             If False, emitters are imaged directly instead of as localisations: lateral_precision,
             axial_precision and nlocalisations are set to None. Default is True.
         :param **kwargs
-            Localisation precision model for localisation-based modalities:
+            Localisation settings for localisation-based modalities:
+            rendering_kernel_nm (standard deviation of the Gaussian used to
+            render localisations; 0 renders a histogram),
             precision_model ("fixed" or "photon_limited"),
             detection_psf_sigma_nm, camera_pixelsize_nm, background_photons,
             excess_noise_factor and axial_precision_ratio.
@@ -408,6 +410,7 @@ class ExperimentParametrisation:
                 changes = True
             if simulate_localistations:
                 for key in (
+                    "rendering_kernel_nm",
                     "precision_model",
                     "detection_psf_sigma_nm",
                     "camera_pixelsize_nm",

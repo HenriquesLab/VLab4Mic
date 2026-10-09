@@ -462,6 +462,28 @@ class Imager:
         else:
             self.modalities[modality]["emitters"]["nlocalisations"] = None
 
+    def get_rendering_kernel(self, modality):
+        """
+        Lateral rendering kernel for localisations of a modality.
+
+        Localisations are displaced once by the localisation precision and
+        then rendered with a lateral Gaussian of this standard deviation,
+        without convolution with the modality PSF.
+
+        Parameters
+        ----------
+        modality : str
+            Name of the modality.
+
+        Returns
+        -------
+        float
+            Standard deviation of the rendering kernel, in nm. 0 (default)
+            renders a histogram of localisations without further blur.
+        """
+        kernel = self.modalities[modality]["emitters"].get("rendering_kernel_nm")
+        return 0.0 if kernel is None else float(kernel)
+
     def get_localisation_precision(self, modality, fluo, exp_time):
         """
         Lateral and axial localisation precision for a modality.
@@ -891,6 +913,13 @@ class Imager:
                                 )
                                 field_data["field_coordinates"] = localisations
                                 field_data["photons_frames"] = photons_frames
+                                # localisations already carry their error:
+                                # render them instead of convolving with the PSF
+                                psf_data = dict(psf_data)
+                                psf_data["render_sigma_xy"] = (
+                                    self.get_rendering_kernel(modality)
+                                    / psf_data["psf_pixelsizeXY"]
+                                )
                             else:
                                 no_emitters = True
                                 # if no emitter is in range, an image with noise should be generated

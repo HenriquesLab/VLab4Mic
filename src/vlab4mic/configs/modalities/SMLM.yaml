@@ -27,6 +27,9 @@ emitters:
   lateral_precision: 5  # in nanometers, used when precision_model is fixed
   axial_precision: 5  # in nanometers, used when precision_model is fixed
   nlocalisations: 5
+  # localisations are not convolved with the PSF above; they are rendered
+  # with a lateral Gaussian of this standard deviation (0 = histogram)
+  rendering_kernel_nm: 0
   # fixed: use lateral_precision and axial_precision
   # photon_limited: derive the precision from the photons per localisation
   # (fluorophore photons per second x exposure time), Mortensen et al. 2010
