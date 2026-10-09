@@ -622,19 +622,23 @@ class MolecularStructureParser:
 
     def gen_targets_by_sequence(self, target_name, sequence, **kwargs):
         """
-        Generate target locations for labelling defined as indirect labeling.
+        Generate target sites from an amino-acid sequence.
+
+        The sequence is searched in every peptide fragment of every chain
+        (fragments are the continuous stretches built by CaPPBuilder, so a
+        match never spans a chain break). Every exact match is a target
+        site, located at the average coordinate of the atoms of the matched
+        residues (method "average").
 
         Parameters
         ----------
         target_name : str
             Name for the target.
         sequence : str
-            Epitope sequence to search for.
+            Epitope sequence to search for (one-letter codes).
         **kwargs
             Additional keyword arguments (e.g., fluorophore, labeling_efficiency, method).
         """
-        #  only the first appearance of the epitope in every chain is retrieved
-        #  if a chain has more than one epitope, only the first one is returned
         target_seq = sequence
         method = "average"
         if "method" in kwargs.keys():
@@ -658,20 +662,19 @@ class MolecularStructureParser:
         epitopes_list = []
         for chains in self.struct:
             for chain in chains:
-                pps = self.ppgen.build_peptides(chain)
-                sequence = ""
-                for peptide in pps:
-                    sequence += peptide.get_sequence()
-                start = sequence.find(target_seq)
-                end = start + len(target_seq)
-                if start != -1:
-                    coords_chain = []
-                    for residue, i in zip(chain, range(len(sequence))):
-                        if i >= start and i <= end:
-                            for atom in residue:
-                                coords_chain.append(atom.get_vector().get_array())
-                    coords_chain = np.array(coords_chain)
-                    epitopes_list.append(coords_chain)
+                for peptide in self.ppgen.build_peptides(chain):
+                    peptide_sequence = str(peptide.get_sequence())
+                    start = peptide_sequence.find(target_seq)
+                    while start != -1:
+                        # residues of the match, indexed within the fragment
+                        matched = peptide[start : start + len(target_seq)]
+                        coords_match = [
+                            atom.get_vector().get_array()
+                            for residue in matched
+                            for atom in residue
+                        ]
+                        epitopes_list.append(np.array(coords_match))
+                        start = peptide_sequence.find(target_seq, start + 1)
         # print(len(epitopes_list))
         # print(f"Summarizing epitopes location with method {method}")
         summarised_epitopes = cif_builder.summarize_epitope_atoms(
