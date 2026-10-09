@@ -8,47 +8,77 @@ def sample_spherical_normalised(npoints, ndim=3):
 
 
 def boolean_epitope_selection(epitopes, selected_epitopes, new_epitope, min_distance):
-    # epitopes is the numpy array containing epitopes coordinates
-    # selected epitopes is a list of indices of the selected epitopes
-    # min_distance is the minimum distance between the epitopes
-    # function should return indices of the selected epitopes
-    n_epi = len(selected_epitopes)
-    if min_distance == 0:
+    """
+    Check whether an epitope is free of steric hindrance.
+
+    Parameters
+    ----------
+    epitopes : numpy.ndarray
+        Nx3 array of epitope coordinates.
+    selected_epitopes : list of int
+        Indices (rows of epitopes) of the epitopes already bound.
+    new_epitope : int
+        Index of the epitope to check.
+    min_distance : float
+        Minimum distance between bound epitopes, in the units of epitopes.
+        0 disables the check.
+
+    Returns
+    -------
+    int
+        1 if new_epitope is at least min_distance away from every selected
+        epitope (or if min_distance is 0 or nothing is selected yet),
+        0 otherwise.
+    """
+    if min_distance == 0 or len(selected_epitopes) == 0:
         return 1
-    else:
-        for i in range(n_epi):
-            is_available = 1
-            if (
-                np.linalg.norm(epitopes[selected_epitopes[i]] - epitopes[new_epitope])
-                < min_distance
-            ):
-                is_available = 0
-                break
-        return is_available
+    distances = np.linalg.norm(
+        epitopes[selected_epitopes] - epitopes[new_epitope], axis=1
+    )
+    return int(np.all(distances >= min_distance))
 
 
 def sample_epitopes_sterically(epitopes, min_distance, p=1):
-    # epitopes is the coordinates array for the epitopes
-    # min_distance is the minimum eculidean distance between the epitopes
-    # step 1: select an epitope randomly
+    """
+    Select the epitopes bound by a probe.
+
+    Epitopes are visited in random order. Each one is bound with probability p
+    (labelling efficiency), unless it lies closer than min_distance to an
+    epitope that is already bound (steric hindrance). Epitopes that fail the
+    efficiency trial stay unbound and do not block their neighbours.
+
+    Random draws use the global numpy random state, so results are
+    reproducible after np.random.seed.
+
+    Parameters
+    ----------
+    epitopes : numpy.ndarray
+        Nx3 array of epitope coordinates.
+    min_distance : float
+        Minimum distance between bound epitopes, in the units of epitopes.
+        0 or None disables steric hindrance.
+    p : float, optional
+        Probability that a probe binds each epitope (labelling efficiency),
+        between 0 and 1. Default is 1.
+
+    Returns
+    -------
+    list of int
+        Indices of the bound epitopes, in the random order they were bound.
+    """
+    n_epitopes = epitopes.shape[0]
+    randomized_indices = np.random.permutation(n_epitopes)
+    # bernoulli trials for probe to bind each epitope
+    binding_trials = np.random.rand(n_epitopes) < p
+    candidates = randomized_indices[binding_trials]
+    if not min_distance:
+        return candidates.tolist()
     selected_indices = []
-    # randomize indices to have a guaranteed stop condition
-    randomized_indices = np.random.choice(
-        range(epitopes.shape[0]), epitopes.shape[0], replace=False
-    )
-    selected_indices.append(randomized_indices[0])
-    #n = 0
-    total = epitopes.shape[0]
-    for i in randomized_indices[1:]:
+    for i in candidates:
         # i here contains the index of the next epitope
         # verify is the next epitope is within the minimum distance
-        #print(f"Compare epitope with all others: {n}/{total}, current index: {i}, started at: {randomized_indices[0]}")
         if boolean_epitope_selection(epitopes, selected_indices, i, min_distance):
-            if np.random.rand() < p:
-                # bernoulli trials for probe to bind epitope
-                selected_indices.append(i)
-        #n+=1
-    # function should return indices of the selected epitopes
+            selected_indices.append(i)
     return selected_indices
 
 
@@ -64,19 +94,41 @@ def sample_array(array, fraction=1):
 
 
 def binomial_epitope_sampling(epitopes, p=1, normals=None, min_distance=0.0):
-    if min_distance:
-        #print(f"sampling with min epitope distance: {min_distance}, and efficiency: {p}")
-        ids_selected = sample_epitopes_sterically(
-            epitopes=epitopes,
-            min_distance=min_distance,
-            p=p)
-        n_epitopes = len(ids_selected)
-    else:
-        ids_selected = sample_epitopes_sterically(
-            epitopes=epitopes,
-            min_distance=0.0,
-            p=p)
-        n_epitopes = len(ids_selected)
+    """
+    Sample the epitopes bound by a probe, with their normals.
+
+    Applies the labelling efficiency and steric hindrance model of
+    sample_epitopes_sterically and returns the bound epitopes.
+
+    Parameters
+    ----------
+    epitopes : numpy.ndarray
+        Nx3 array of epitope coordinates.
+    p : float, optional
+        Probability that a probe binds each epitope (labelling efficiency),
+        between 0 and 1. Default is 1.
+    normals : numpy.ndarray, optional
+        Nx3 array of normals, one per epitope. If given, the normals of the
+        bound epitopes are returned too.
+    min_distance : float, optional
+        Minimum distance between bound epitopes, in the units of epitopes.
+        Default is 0 (no steric hindrance).
+
+    Returns
+    -------
+    subset_epitopes : numpy.ndarray
+        Mx3 array with the coordinates of the M bound epitopes.
+    n_epitopes : int
+        Number of bound epitopes, M.
+    subset_normals : numpy.ndarray or None
+        Mx3 array with the normals of the bound epitopes, or None if
+        normals is None.
+    """
+    ids_selected = sample_epitopes_sterically(
+        epitopes=epitopes,
+        min_distance=min_distance,
+        p=p)
+    n_epitopes = len(ids_selected)
     # create a subset of only the epitopes that were selected
     subset_epitopes = epitopes[ids_selected, :]
     if normals is None:
