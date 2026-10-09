@@ -58,6 +58,28 @@ def structural_similarity(
     simulated_image_pixelsize_nm=None,
     simulated_image_mask=None,
 ):
+    """
+    Structural similarity (SSIM) between a reference and a simulated image.
+
+    SSIM is computed on the 2-D images with local windows of up to 7x7
+    pixels and averaged over the masked pixels. The data range is taken
+    from both images.
+
+    Parameters
+    ----------
+    reference_image, simulated_image : numpy.ndarray
+        2-D images to compare.
+    reference_image_pixelsize_nm, simulated_image_pixelsize_nm : float
+        Pixel sizes; images are resampled to a common pixel size first.
+    reference_image_mask, simulated_image_mask : numpy.ndarray, optional
+        Boolean masks of the pixels to compare. The union of both masks is
+        used; without masks, all pixels are used.
+
+    Returns
+    -------
+    float
+        Mean SSIM over the compared pixels (1 for identical images).
+    """
     reference_interpolated, simulated_image_interpolated, union_mask = (
         match_image_sizes(
             reference_image=reference_image,
@@ -68,13 +90,28 @@ def structural_similarity(
             simulated_image_mask=simulated_image_mask,
         )
     )
-    similarity = ssim(
-        reference_interpolated[union_mask],
-        simulated_image_interpolated[union_mask],
-        data_range=simulated_image_interpolated[union_mask].max()
-        - simulated_image_interpolated[union_mask].min(),
+    reference_interpolated = np.asarray(reference_interpolated, dtype=float)
+    simulated_image_interpolated = np.asarray(simulated_image_interpolated, dtype=float)
+    # SSIM is computed on the 2-D images (local windows of neighbouring
+    # pixels) and averaged over the masked pixels
+    data_range = max(reference_interpolated.max(), simulated_image_interpolated.max()) - min(
+        reference_interpolated.min(), simulated_image_interpolated.min()
     )
-    return similarity
+    if data_range == 0:
+        data_range = 1.0
+    win_size = min(7, *reference_interpolated.shape)
+    if win_size % 2 == 0:
+        win_size -= 1
+    _, ssim_map = ssim(
+        reference_interpolated,
+        simulated_image_interpolated,
+        data_range=data_range,
+        win_size=win_size,
+        full=True,
+    )
+    if union_mask is None:
+        return float(ssim_map.mean())
+    return float(ssim_map[union_mask].mean())
 
 
 def pearson_correlation(
@@ -85,6 +122,24 @@ def pearson_correlation(
     simulated_image_pixelsize_nm=None,
     simulated_image_mask=None,
 ):
+    """
+    Pearson correlation between the pixels of a reference and a simulated image.
+
+    Parameters
+    ----------
+    reference_image, simulated_image : numpy.ndarray
+        2-D images to compare.
+    reference_image_pixelsize_nm, simulated_image_pixelsize_nm : float
+        Pixel sizes; images are resampled to a common pixel size first.
+    reference_image_mask, simulated_image_mask : numpy.ndarray, optional
+        Boolean masks of the pixels to compare. The union of both masks is
+        used; without masks, all pixels are used.
+
+    Returns
+    -------
+    float
+        Pearson correlation coefficient of the compared pixels.
+    """
     reference_interpolated, simulated_image_interpolated, union_mask = (
         match_image_sizes(
             reference_image=reference_image,
@@ -95,6 +150,8 @@ def pearson_correlation(
             simulated_image_mask=simulated_image_mask,
         )
     )
+    if union_mask is None:
+        union_mask = np.ones(np.shape(reference_interpolated), dtype=bool)
     pearson_correlation, pval = pearsonr(
         reference_interpolated[union_mask].flatten(),
         simulated_image_interpolated[union_mask].flatten(),
