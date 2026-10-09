@@ -6,6 +6,63 @@ The project started as `supra_molecular_simulator`, was renamed to
 `supramolsim`, and later became `vlab4mic`. Older entries preserve that package
 history so releases can be traced back to the corresponding version bumps.
 
+## [Unreleased]
+
+Revision release. Model corrections and new analyses requested in the
+review of the manuscript.
+
+### Added
+- `run_replicates`: N independent realisations at fixed parameters, with
+  images, emitter and localisation positions.
+- `vlab4mic.analysis.distinguishability`: accuracy and ROC AUC with
+  bootstrap intervals for telling two structures apart.
+- `vlab4mic.analysis.particle_measures`: ring radius and width, corner
+  detection, apparent breaks, resolved sites.
+- `export_positions` and `utils.io.localisation_table`: emitter and
+  localisation tables in ThunderSTORM-style CSV, with a parameter file.
+- Probe tilt (`binding.tilt`, `probe_tilt_theta`), with the wobble applied
+  about the tilted axis.
+- Photobleaching across frames for every imaging method
+  (`photobleaching_rate`, `set_photobleaching_rate`).
+- Set orientation with a random tilt for virtual samples
+  (`orientation_tilt_max`), e.g. structures on the coverslip.
+- `local_plane` surface normals for flat and non-convex structures.
+- Opt-in photon-limited SMLM localisation precision (Mortensen et al. 2010).
+- Opt-in pixel dwell time for point-scanning modalities (`scanning`).
+- Optional EMCCD gain (`em_gain`).
+- `get_parameters` / `save_parameters`, and `vlab4mic.__version__`.
+- Article scripts for Fig. 1c, the clathrin distinguishability analysis,
+  nuclear pore labels, gaps, PCNA, HIV response curves and run times;
+  `generate_figures.py`.
+
+### Changed
+- Labelling: each epitope gets a labelling-efficiency trial before the
+  steric check against already-bound probes.
+- SMLM localisations are rendered with a separate rendering kernel instead
+  of being convolved with the modality PSF.
+- SMLM photons per localisation follow the fluorophore brightness and the
+  exposure time.
+- Probe templates' wobble is applied; steric size is the largest dimension
+  of the probe model.
+- Every rebuild of a virtual sample is a new, reproducible realisation.
+- Gain is deterministic unless `em_gain` is set; fractional photon counts
+  are rounded without bias.
+- STED default is 2D STED (axial 300 nm); Airyscan lateral 60 nm.
+- SSIM is computed on 2-D images.
+- Sweep tuples `(start, stop, step)` include `stop` and work for every
+  parameter.
+
+### Fixed
+- Structural integrity kept the removed patch when the remainder split.
+- Sequence targets averaged one residue too many and missed repeated
+  motifs.
+- Any detector pixel size works (#96, #97); non-square fields of view.
+- Axial offsets ignored the random seed (#135).
+- Swept exposure times were dropped; the reference image overwrote a
+  sweep result.
+- Probe placement edge cases (antiparallel axis, DoL of 0, missing
+  paratope) and several smaller bugs.
+
 ## [0.1.0] - 2026-06-01
 
 Preprint submission release.

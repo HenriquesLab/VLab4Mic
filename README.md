@@ -194,6 +194,8 @@ When running example scripts, total runtime depends on your hardware and interne
 ### ✔ Virtual sample creation  
 ### ✔ Imaging simulations  
 ### ✔ Parameter sweeps  
+### ✔ Repeated realisations and structural distinguishability (accuracy, ROC AUC)  
+### ✔ Export of emitter and localisation tables (ThunderSTORM-style CSV)  
 ### ✔ Widget-based GUI  
 ### ✔ Flexible Python API  
 

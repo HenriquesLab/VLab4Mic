@@ -299,7 +299,7 @@ This generates and saves a default parameter sweep. The `sweep_gen` object conta
 You can parameterize the sweep by specifying the values or ranges to use for each parameter.  
 You can parameterise by passing the values:
 - as a list,
-- as a tuple with the format (min, max, nsteps) to generate linearly spaced values.
+- as a tuple `(start, stop, step)`, which gives `start, start + step, ...` up to `stop` (included). This works for every parameter.
 
 Example:
 
@@ -311,8 +311,8 @@ sweep_gen = run_parameter_sweep(
     probe_templates=["NPC_Nup96_Cterminal_direct",],  # Probe template tailored to 7R5K
     sweep_repetitions=20,
     # parameters for sweep
-    labelling_efficiency=(0, 1, 5),  # 5 linearly spaced values between 0 and 1
-    structural_integrity=(0, 1, 5),  # 5 linearly spaced values between 0 and 1
+    labelling_efficiency=(0, 1, 0.25),  # 0, 0.25, 0.5, 0.75, 1
+    structural_integrity=(0, 1, 0.25),  # 0, 0.25, 0.5, 0.75, 1
     structural_integrity_small_cluster=[300,],  # 1 single value 
     structural_integrity_large_cluster=[600,],  # 1 single value 
     exp_time=[0.001, 0.01,],  # 2 values
@@ -346,12 +346,14 @@ If a parameter is `None`, it will not be swept and will use default values.
 - probe_steric_hindrance
 - probe_DoL
 - probe_wobble_theta
+- probe_tilt_theta
 - labelling_efficiency
 - structural_integrity
 - structural_integrity_small_cluster
 - structural_integrity_large_cluster
 - sample_dimensions
 - particle_orientations
+- xy_orientations, xz_orientations, yz_orientations
 - rotation_angles
 - minimal_distance
 - pixelsize_nm
@@ -362,6 +364,40 @@ If a parameter is `None`, it will not be swept and will use default values.
 - exp_time
 
 
+
+## 🔁 Repeated realisations, distinguishability and export
+
+Every run of a virtual sample draws its own labelling, orientation, placement and noise. `run_replicates` simulates N independent realisations at fixed parameters and returns, for each, the images and the emitter and localisation positions:
+
+```python
+from vlab4mic.experiments import run_replicates
+
+results, experiment = run_replicates(
+    n_replicates=50,
+    structure="7R5K",
+    probe_template="NPC_Nup96_Cterminal_direct",
+    number_of_particles=1,
+    multimodal=["SMLM"],
+    random_seed=1,
+)
+results[0]["images"]["SMLM"]["ch0"]           # image of realisation 0
+results[0]["positions"]["SMLM"]["ch0"]        # emitters and localisations
+```
+
+Structural distinguishability is the accuracy with which two candidate structures can be told apart. It is computed from realisations of each structure with a cross-validated classifier and reported as accuracy and ROC AUC with bootstrap intervals (0.5: indistinguishable, 1: always told apart):
+
+```python
+from vlab4mic.analysis.distinguishability import distinguishability_from_replicates
+
+score = distinguishability_from_replicates(results_a, results_b, modality="SMLM")
+score["auc"], score["auc_interval"], score["accuracy"]
+```
+
+The emitter and localisation positions of the last simulation can be exported as ThunderSTORM-style CSV tables (with a YAML file of all parameters), for raw-frame or STED simulators and localisation analysis software:
+
+```python
+experiment.export_positions("/path/to/output")
+```
 
 # 📋 Parameter tables
 
@@ -381,15 +417,16 @@ If a parameter is `None`, it will not be swept and will use default values.
 | **probe_target_type** | Type of target: "Sequence", "Residue", or "Primary" |
 | **probe_target_value** | Specific value depending on the target type (e.g., sequence string, residue info, etc.) |
 | **probe_target_option** | Additional option for the probe target, used for secondary epitopes |
-| **probe_distance_to_epitope** | Distance from the probe to the epitope (float, minimal distance set from epitope and probe paratope) |
+| **probe_distance_to_epitope** | Distance from the probe paratope to the epitope, along the probe axis, in Å (structure units) |
 | **probe_model** | 4-letter code for an atomic model on which to base this probe |
 | **probe_fluorophore** | Fluorophore name for emitters (e.g., "AF647") |
 | **probe_paratope** | If probe_model is defined, the paratope defines the anchor point of the probe |
 | **probe_conjugation_target_info** | If probe_model is defined, this dictionary specifies the sites to use as probe emitters |
-| **probe_DoL** | Efficiency of conjugation of emitters (float) |
+| **probe_DoL** | Degree of labelling: mean number of fluorophores per probe, drawn from a Poisson distribution for each probe. None uses every conjugation site; 0 gives probes without fluorophores |
 | **probe_secondary_epitope** | If probe is secondary, this amino acid sequence defines the epitope on the primary antibody model |
-| **probe_wobble_theta** | Enable probe wobbling (float or None) |
-| **probe_steric_hindrance** | Steric hindrance value or configuration (distance between epitopes) |
+| **probe_wobble_theta** | Maximum wobble angle in degrees: the probe axis is drawn uniformly within a cone of this half-angle around the (tilted) normal. Overrides the template value (`binding.wobble_range.theta`); 0 disables wobble |
+| **probe_tilt_theta** | Mean tilt in degrees between the probe axis and the surface normal, with a random azimuth; the wobble is applied about the tilted axis. Overrides the template value (`binding.tilt`, default 0) |
+| **probe_steric_hindrance** | Minimum distance between bound probes, in Å. Default ("estimate"): the largest dimension of the probe model. A probe is bound only if its epitope is at least this far from epitopes already carrying a probe; epitopes that fail the labelling-efficiency trial do not block others |
 | **peptide_motif** | Dictionary specifying motif extraction for probe target sequence |
 | **as_primary** | Whether to treat the probe as a primary linker (bool) |
 
@@ -418,6 +455,9 @@ If a parameter is `None`, it will not be swept and will use default values.
 | **random_rotations** | If True, apply random rotations to particles (bool, default False) |
 | **rotation_angles** | List of rotation angles to choose from |
 | **minimal_distance** | Minimal allowed distance between particles (float) |
+| **sample_inital_orientation** | Orientation [x, y, z] of the particle axis for every particle (also the base orientation for `orientation_tilt_max`) |
+| **orientation_tilt_max** | Maximum tilt in degrees: each particle axis is drawn uniformly within this angle of `sample_inital_orientation` (default +z), e.g. a structure lying on the coverslip. Combine with `random_rotations` for a random in-plane rotation |
+| **random_seed** | Seed for reproducible simulations; every rebuild of the virtual sample is a new, reproducible realisation |
 
 ## 🔬 Modalities parameters
 
@@ -428,14 +468,21 @@ If a parameter is `None`, it will not be swept and will use default values.
 | **axial_resolution_nm** | Axial resolution in nanometers (float or int) |
 | **psf_voxel_nm** | Voxel size used to render the PSF in nanometers (float or int, defaults to 10 nm) |
 | **depth_of_field_nm** | Depth of field in nanometers (float or int) |
+| **lateral_precision**, **axial_precision** | Localisation precision (standard deviation, nm) for localisation-based modalities (SMLM). Each localisation is displaced once by this precision |
+| **nlocalisations** | Mean number of localisations per emitter (Poisson) |
+| **rendering_kernel_nm** | Standard deviation (nm) of the Gaussian used to render localisations; 0 (default) renders a histogram. Localisations are not convolved with the modality PSF |
+| **precision_model** | "fixed" (default: use lateral/axial_precision) or "photon_limited" (precision from photons per localisation, Mortensen et al. 2010; set detection_psf_sigma_nm, camera_pixelsize_nm, background_photons, excess_noise_factor, axial_precision_ratio) |
+| **scanning** | Point-scanning modality: `exp_time` is the pixel dwell time and each emitter emits for the dwell time times its PSF footprint in pixels (default False) |
+
+Detector noise is set per modality in its template: quantum efficiency (binomial), gain (deterministic, or gamma-distributed with `em_gain: true` for an EMCCD), baseline, Gaussian readout noise and analogue-to-digital conversion.
 
 ## 📸 Acquisition parameters
 
 | Parameter name | Description | 
 | --- | --- | 
-| **exp_time** | Exposure time in seconds (float) |
+| **exp_time** | Exposure time per frame in seconds (pixel dwell time for scanning modalities) (float). Photons per emitter and frame are Poisson with mean `photon_yield × exp_time` |
 | **noise** | Whether to use noise at detection or not (bool) |
-| **nframes** | Number of frames (int) |
+| **nframes** | Number of frames (int). With a fluorophore `photobleaching_rate` k (per frame), each emitter stops emitting after an exponentially distributed number of frames, so the signal decays as exp(-k·frame); set it in the fluorophore template or with `experiment.set_photobleaching_rate("AF647", k)` |
 
 ---
 
@@ -471,6 +518,9 @@ Indirect probes include an atomic model for the probe itself, as is the case for
 | **GFP_w_nanobody** | Indirect label based on the crystallographic structure of a nanobody in complex with eGFP | NA | 6XZF | Requires specification of target type and values |
 | **mMaple** | Indirect label based on the crystallographic structure of the fluorescent protein mTFP1 | NA | 2HQK | Requires specification of target type and values |
 | **SNAP-tag** | Indirect label based on the crystallographic structure of SNAP-tag with labelled with a fluorophore | NA | 6Y8P | Requires specification of target type and values |
+| **Halo-tag** | Indirect label based on the crystallographic structure of HaloTag labelled with a fluorophore | NA | 5UXZ | Requires specification of target type and values |
+
+Probe templates set the wobble (`binding.wobble_range.theta`, degrees; 10 for the antibody and nanobody probes) and the mean tilt (`binding.tilt`, degrees; 0 by default). Probe distances (`binding.distance`) are in Å.
 
 ### Structure-specific probes
 
@@ -493,7 +543,7 @@ Indirect probes include an atomic model for the probe itself, as is the case for
 | --- | --- | --- | --- | --- |
 | **Widefield** | Widefield microscope | 130,130,400 | 100 | |
 | **Confocal** | Confocal microscope | 100,100,300 | 70 | |
-| **AiryScan** | AiryScan microscope | 61,61,230 | 40 | |
-| **STED** | STED microscope | 20,20,20 | 15 | |
-| **SMLM** | SMLM image model | 8,8,8 | 2 | Emulates effective image |
+| **AiryScan** | AiryScan microscope | 60,60,230 | 40 | Narrower Gaussian, no pixel reassignment |
+| **STED** | 2D STED microscope | 20,20,300 | 15 | Effective resolution; no depletion physics |
+| **SMLM** | SMLM image model | 8,8,8 (emitters only) | 2 | Localisations (precision 5 nm, 5 per emitter) rendered without PSF convolution |
 | **Reference** | Idealised microscope | 5,5,5 | 5 | |
