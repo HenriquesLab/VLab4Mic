@@ -1023,9 +1023,9 @@ class ExperimentParametrisation:
         if output_directory is None:
             output_directory = self.output_directory
         os.makedirs(output_directory, exist_ok=True)
+        written = [self.save_parameters(output_directory, name=name)]
         previous_dir = getattr(self.imager, "writing_dir", None)
-        self.imager.set_writing_directory(output_directory)
-        written = []
+        self.imager.set_writing_directory(os.path.join(output_directory, ""))
         try:
             positions = self.imager.get_positions()
             modalities = [modality] if modality is not None else list(positions.keys())
@@ -1087,10 +1087,19 @@ class ExperimentParametrisation:
                 acquisition_param=acq_params,
             )
             self.results = simulation_output
+            if save:
+                self.save_parameters(self.output_directory, name=name)
             return simulation_output, simulation_output_noiseless
         else:
             print(f"Simulating: {modality}")
-            acq_p = self.selected_mods[modality]
+            acq_p = dict(self.selected_mods[modality])
+            if save:
+                # honour save for a single modality as for "All"
+                acq_p["save"] = True
+                self.imager.set_writing_directory(
+                    os.path.join(self.output_directory, "")
+                )
+                self.save_parameters(self.output_directory, name=name)
             timeseries_noise, beads_noise, timeseries_noiseless, beads_noiseless = self.imager.generate_imaging(
                 modality=modality, **acq_p
             )
@@ -1605,6 +1614,82 @@ class ExperimentParametrisation:
             )
             self.build(modules=["coordinate_field", "imager"])
 
+    def get_parameters(self):
+        """
+        All parameters of the experiment, as plain Python types.
+
+        Includes the VLab4Mic version, random seed, structure (with the
+        normals construction), probes, structural integrity, virtual
+        sample, fluorophores, imaging modalities and acquisition settings,
+        so that every output can be traced to the parameters that produced
+        it.
+
+        Returns
+        -------
+        dict
+        """
+        def plain(value):
+            if isinstance(value, dict):
+                return {str(k): plain(v) for k, v in value.items()}
+            if isinstance(value, (list, tuple)):
+                return [plain(v) for v in value]
+            if isinstance(value, np.ndarray):
+                return value.tolist() if value.size <= 10000 else f"array{value.shape}"
+            if isinstance(value, np.generic):
+                return value.item()
+            if value is None or isinstance(value, (str, int, float, bool)):
+                return value
+            return str(value)
+
+        structure = getattr(self, "structure", None)
+        normals = getattr(structure, "normals_params", None) if structure is not None else None
+        modalities = {}
+        for name, params in getattr(self, "imaging_modalities", {}).items():
+            modalities[name] = {
+                k: v for k, v in params.items() if k not in ("psf_stack",)
+            }
+        return plain(
+            dict(
+                vlab4mic_version=vlab4mic.__version__,
+                random_seed=self.random_seed,
+                structure_id=getattr(self, "structure_id", None),
+                normals=normals,
+                probes=getattr(self, "probe_parameters", None),
+                structural_integrity=getattr(self, "structural_integrity_eps", None),
+                virtual_sample=getattr(self, "virtualsample_params", None),
+                fluorophores=getattr(self, "fluorophore_parameters", None),
+                imaging_modalities=modalities,
+                acquisition=getattr(self, "selected_mods", None),
+            )
+        )
+
+    def save_parameters(self, output_directory: str = None, name: str = ""):
+        """
+        Write all parameters of the experiment to a YAML file.
+
+        Parameters
+        ----------
+        :param output_directory : str, optional
+            Directory to write to. Default: the experiment output directory.
+        :param name : str, optional
+            Text added to the file name (<date>_<name>_parameters.yml).
+
+        Returns
+        -------
+        str
+            Path written.
+        """
+        if output_directory is None:
+            output_directory = self.output_directory
+        os.makedirs(output_directory, exist_ok=True)
+        file_name = "_".join(
+            x for x in [datetime.now().strftime("%Y%m%d"), name, "parameters"] if x
+        )
+        yaml_functions.save_yaml(
+            data=self.get_parameters(), name=file_name, output_directory=output_directory
+        )
+        return os.path.join(output_directory, file_name + ".yml")
+
     def current_settings(
         self, as_string=True, newline="<br>", modalities_acq_params=False
     ):
@@ -1617,6 +1702,9 @@ class ExperimentParametrisation:
         """
         string = "Current settings of the experiment:" + newline
         string += f"Structure ID: {self.structure_id}" + newline
+        structure = getattr(self, "structure", None)
+        if structure is not None and getattr(structure, "normals_params", None):
+            string += f"Normals: {structure.normals_params.get('mode')}" + newline
         string += f"Probes: {list(self.probe_parameters.keys())}" + newline
         string += f"Virtual sample: {self.coordinate_field_id}" + newline
         string += "Imaging Modalities: "
