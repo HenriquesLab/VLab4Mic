@@ -151,6 +151,7 @@ class Field:
         # Methods accept random_seed for backwards compatibility. A seed
         # different from the current one reseeds the field generator; the
         # same seed keeps the stream going instead of restarting it.
+        """Field generator, reseeded only if a different seed is given."""
         if random_seed is not None and random_seed != self.random_seed:
             self.set_random_seed(random_seed)
         return self.rng
@@ -544,6 +545,20 @@ class Field:
 
     def _random_pos_minimal_dist(self, n, random_seed=None):
         # convert minimal distance in relative units
+        """
+        Draw n positions uniformly in the field, at least minimal_distance apart.
+
+        Positions are drawn one by one from the field generator and rejected
+        if closer than the minimal distance to a position already accepted
+        (at most 10000 draws), then stored as relative positions.
+
+        Parameters
+        ----------
+        n : int
+            Number of positions.
+        random_seed : int, optional
+            Seed for the field generator (see set_random_seed).
+        """
         selected_positions = []
         selected_relative = []
         minimal_distance = self.get_molecule_param("minimal_distance")

@@ -1342,6 +1342,27 @@ class ExperimentParametrisation:
                                 emission = None,
                                 blinking_rates = None,
                                 **kwargs):
+        """
+        Add or update the parameters of a fluorophore.
+
+        A new fluorophore gets constant emission with a photon yield of
+        100000 photons/s, no photobleaching and default blinking rates.
+
+        Parameters
+        ----------
+        :param fluorophoe_id : str
+            Fluorophore name.
+        :param emission : dict, optional
+            Emission parameters: type ("constant"), photon_yield (photons/s)
+            and photobleaching_rate (per frame).
+        :param blinking_rates : dict, optional
+            Blinking kinetics (kon, koff, kbleach, initial_state,
+            photons_per_blink); photons_per_blink sets bead brightness.
+
+        Returns
+        -------
+        None
+        """
         if fluorophoe_id not in self.fluorophore_parameters.keys():
             self.fluorophore_parameters[fluorophoe_id] = dict()
             self.fluorophore_parameters[fluorophoe_id]["emission"] = dict()

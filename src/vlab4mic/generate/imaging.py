@@ -460,6 +460,9 @@ class Imager:
         nlocalisations : float, optional
             Mean number of localisations per emitter.
         **kwargs
+            rendering_kernel_nm : float
+                Standard deviation (nm) of the Gaussian used to render
+                localisations (0: histogram). See get_rendering_kernel.
             precision_model : str
                 "fixed" (default) or "photon_limited".
             detection_psf_sigma_nm, camera_pixelsize_nm,
@@ -1176,6 +1179,22 @@ class Imager:
         )
 
     def generate_modality_mask(self, modality=None, channel="ch0"):
+        """
+        Binary mask of the particle positions imaged with a modality.
+
+        Parameters
+        ----------
+        modality : str, optional
+            Modality name.
+        channel : str, optional
+            Channel. Default "ch0".
+
+        Returns
+        -------
+        numpy.ndarray
+            Mask of the pixels around each particle (particle size plus the
+            modality PSF width).
+        """
         _1, _2, vsample_binay_positions, _3 = self.generate_imaging(
             modality=modality, masks="mask"
         )
@@ -1310,6 +1329,7 @@ class Imager:
             self.write_text(textlines, notes)
 
     def _crop_negative(self, stack):
+        """Clip negative values of an image stack to zero (None is returned as None)."""
         if stack is None:
             return None
         else:
@@ -1380,6 +1400,7 @@ class Imager:
     def _adjust_to_pixel_depth(self, modality, stack):
         # clip to the range of the detector bit depth (no clipping if the
         # bit depth is not set)
+        """Clip an image stack to the saturation level of the detector bit depth."""
         bits = self.modalities[modality]["detector"].get("bits_pixel")
         if bits is None:
             return stack

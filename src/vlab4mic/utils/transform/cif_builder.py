@@ -59,6 +59,21 @@ def sym_transforms_numeric_only(
 def summarize_epitope_atoms(atoms_per_epitope, method="average", residue_pos=0):
     # this function takes the output list from get_epitopes_by_sequence()
     # Each element of the list is the colection of atoms that correspond to that epitope
+    """
+    Summarise the atoms of each epitope into one coordinate.
+
+    Parameters
+    ----------
+    atoms_per_epitope : list of numpy.ndarray
+        Atom coordinates of each epitope.
+    method : str, optional
+        "average" (mean of the atoms, default), "first" or "last" atom.
+
+    Returns
+    -------
+    numpy.ndarray
+        Nx3 epitope coordinates.
+    """
     nepitopes = len(atoms_per_epitope)
     epitopes_summary = np.zeros((nepitopes, 3))
     if method == "average":

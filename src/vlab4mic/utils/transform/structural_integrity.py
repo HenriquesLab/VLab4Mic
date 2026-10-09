@@ -15,6 +15,17 @@ def remove_items_fromlist(test_list, item):
 def ids2delete2(xmer_id, tree, neigh, upbound):
     # this function generates an initial proposal for the IDs to drop
     # by considering neighbors given an initial id
+    """
+    Propose subunits to remove around one subunit.
+
+    Queries the neighbours of xmer_id within upbound (at most neigh) and
+    removes a random number of them, always including xmer_id itself.
+
+    Returns
+    -------
+    list of int
+        Subunit IDs proposed for removal.
+    """
     point2query = tree.data[xmer_id, :]
     # print(f"query with parameters: {xmer_id},{point2query}, {neigh}, {upbound}")
     distances, index_in_data = tree.query(

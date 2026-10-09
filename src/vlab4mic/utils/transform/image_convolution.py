@@ -246,6 +246,7 @@ def generate_frames_volume_convolution(
 # keep
 def _overlap_matrix(n_in, size_in, n_out, size_out):
     # W[o, i] is the fraction of input pixel i that falls in output pixel o
+    """Fraction of each input pixel that falls in each output pixel (n_out x n_in)."""
     edges_in = np.arange(n_in + 1) * size_in
     edges_out = np.arange(n_out + 1) * size_out
     low = np.maximum(edges_out[:-1, None], edges_in[None, :-1])
@@ -332,6 +333,7 @@ def _prepare_data_4convolutions(
     psf_pixelsizeXY: float,
     **kwargs,
 ):
+    """Collect field and PSF data (ranges, voxel and pixel sizes) for convolution functions."""
     psf_half_range = (
         min((psf_array.shape[2] - psf_focus_slice), psf_focus_slice) * psf_zstep
     )

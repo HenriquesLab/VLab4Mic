@@ -25,6 +25,7 @@ def rotate_set(points, axi, angl):
 def _rotation_axis(current, new):
     # axis that rotates current onto new; for antiparallel vectors the
     # cross product is 0, so any axis perpendicular to current is used
+    """Axis rotating vector current onto vector new (any perpendicular axis if antiparallel)."""
     axis = np.cross(current, new)
     if np.linalg.norm(axis) > 1e-12:
         return axis
@@ -43,6 +44,31 @@ def labeling_reorient_set(label_points, piv_id, intern_axis_id, direction, end_p
     # ref is the reference point for overall traslation of pts
     # Translate towards the origin
     # translated_origin, displacement = displace_set2(pts,piv_id,[0,0,0])
+    """
+    Rigidly place a labelling entity on an epitope.
+
+    The entity is rotated about its pivot so that its internal axis (from
+    point piv_id to point intern_axis_id) points along direction (Rodrigues
+    rotation), then translated so that the pivot sits on end_point.
+
+    Parameters
+    ----------
+    label_points : numpy.ndarray
+        Points of the labelling entity (pivot, axis point, emitters).
+    piv_id, intern_axis_id : int
+        Indices of the pivot and of the point defining the internal axis.
+    direction : numpy.ndarray
+        Target direction of the internal axis (e.g. the epitope normal).
+    end_point : numpy.ndarray
+        Position of the pivot after placement (the epitope).
+
+    Returns
+    -------
+    reoriented : numpy.ndarray
+        Placed points.
+    axis : numpy.ndarray
+        Rotation axis used.
+    """
     translated_origin, displacement = transform_displace_set(
         label_points, label_points[piv_id], np.array([0, 0, 0])
     )
@@ -81,6 +107,7 @@ def transform_displace_set(
 
 
 def rotate_pts_by_vector(pts, current_vector, new_vector, pts_referece_center):
+    """Rotate points about a centre so that current_vector turns onto new_vector."""
     translated_origin, displacement = transform_displace_set(
         pts, pts_referece_center, np.array([0, 0, 0])
     )
