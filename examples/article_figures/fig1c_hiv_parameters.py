@@ -20,21 +20,29 @@ STRUCTURAL_INTEGRITIES = [1.0, 0.6, 0.4]
 MODALITIES = ["STED", "SMLM", "AiryScan"]
 
 
+# the capsid is parsed once; only the labelled particle is rebuilt for
+# each condition, and each realisation is imaged in all three modalities
+_, _, experiment = experiments.image_vsample(
+    structure="3J3Y",
+    probe_template="anti-p24_primary_antibody_HIV",
+    structural_integrity_small_cluster=20,
+    structural_integrity_large_cluster=100,
+    number_of_particles=1,
+    sample_dimensions=[300, 300, 100],
+    multimodal=MODALITIES,
+    run_simulation=False,
+    clear_experiment=True,
+    random_seed=random_seed,
+)
+probe_name = list(experiment.probe_parameters)[0]
+
+
 def simulate(labelling_efficiency, structural_integrity, modality):
-    images, _, experiment = experiments.image_vsample(
-        structure="3J3Y",
-        probe_template="anti-p24_primary_antibody_HIV",
-        labelling_efficiency=labelling_efficiency,
-        structural_integrity=structural_integrity,
-        structural_integrity_small_cluster=20,
-        structural_integrity_large_cluster=100,
-        number_of_particles=1,
-        sample_dimensions=[300, 300, 100],
-        multimodal=[modality],
-        clear_experiment=True,
-        random_seed=random_seed,
-    )
-    return np.asarray(images[modality]["ch0"])[0], experiment
+    experiment.probe_parameters[probe_name]["labelling_efficiency"] = labelling_efficiency
+    experiment.set_structural_integrity(structural_integrity=structural_integrity)
+    experiment.build(modules=["particle"])
+    result = experiment.run_replicates(1, modality="All")[0]
+    return np.asarray(result["images"][modality]["ch0"])[0], experiment
 
 
 panels = []
