@@ -66,7 +66,7 @@ def summarize_epitope_atoms(atoms_per_epitope, method="average", residue_pos=0):
             epitopes_summary[i, :] = np.mean(atoms_per_epitope[i], axis=0)
     if method == "last":
         for i in range(nepitopes):
-            epitopes_summary[i, :] = atoms_per_epitope[i][nepitopes - 1,]
+            epitopes_summary[i, :] = atoms_per_epitope[i][-1,]
     if method == "first":
         for i in range(nepitopes):
             epitopes_summary[i, :] = atoms_per_epitope[i][0,]

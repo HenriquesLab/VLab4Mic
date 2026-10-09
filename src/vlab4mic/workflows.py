@@ -465,34 +465,20 @@ def generate_multi_imaging_modalities(
     image_generator.set_experiment_name(experiment_name)
     outputs = dict()
     outputs_noiseless = dict()
+    if savingdir is not None:
+        image_generator.set_writing_directory(os.path.join(savingdir, ""))
     if acquisition_param is None:
         print("No acquisition parameters defined. Using default on all modalities")
-        for mod in image_generator.modalities.keys():
-            # should verify that the path exist
-            if savingdir is not None:
-                savingdir = savingdir + os.sep
-                image_generator.set_writing_directory(savingdir)
-            acq_params = format_modality_acquisition_params(save=write)
-            timeseries, calibration_beads, timeseries_noiseless, calibration_beads_noiseless  = image_generator.generate_imaging(
-                modality=mod, **acq_params
-            )
-            outputs[mod] = timeseries
-            outputs_noiseless[mod] = timeseries_noiseless
-    else:
-        acquisition_parameters = copy.copy(acquisition_param)
-        for mod, acq_param in acquisition_parameters.items():
-            #print(mod, acq_params)
-            if acq_param is None:
-                acq_params = format_modality_acquisition_params()
-            else:
-                acq_params = format_modality_acquisition_params(**acq_param)
-            acq_params["save"] = write
-            if savingdir is not None:
-                savingdir = savingdir + os.sep
-                image_generator.set_writing_directory(savingdir)
-                timeseries, calibration_beads, timeseries_noiseless, calibration_beads_noiseless = image_generator.generate_imaging(
-                    modality=mod, **acq_params
-                )
-                outputs[mod] = timeseries
-                outputs_noiseless[mod] = timeseries_noiseless
+        acquisition_param = {mod: None for mod in image_generator.modalities.keys()}
+    for mod, acq_param in copy.copy(acquisition_param).items():
+        if acq_param is None:
+            acq_params = format_modality_acquisition_params()
+        else:
+            acq_params = format_modality_acquisition_params(**acq_param)
+        acq_params["save"] = write
+        timeseries, calibration_beads, timeseries_noiseless, calibration_beads_noiseless = image_generator.generate_imaging(
+            modality=mod, **acq_params
+        )
+        outputs[mod] = timeseries
+        outputs_noiseless[mod] = timeseries_noiseless
     return outputs, outputs_noiseless

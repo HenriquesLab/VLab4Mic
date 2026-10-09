@@ -589,8 +589,12 @@ class Imager:
             return emitters["lateral_precision"], emitters["axial_precision"]
         elif model == "photon_limited":
             photons = (
-                self.fluorophore_params[fluo]["photons_per_second"] * exp_time
+                self.fluorophore_params[fluo]["photons_per_second"]
+                * self.get_photon_exposure(modality, exp_time)
             )
+            if photons <= 0:
+                # no photons (e.g. noise-only images): no localisations
+                return None, None
             lateral = points_transforms.photon_limited_lateral_precision(
                 photons,
                 psf_sigma_nm=emitters["detection_psf_sigma_nm"],
@@ -1209,8 +1213,8 @@ class Imager:
                 if low_y < 0:
                     low_y = 0
                 high_y = np.ceil(y + modality_psf_width_px)
-                if high_x > max_y:
-                    high_x = max_y
+                if high_y > max_y:
+                    high_y = max_y
                 mask_with_psf[
                     int(low_x) : int(high_x), int(low_y) : int(high_y)
                 ] = 1

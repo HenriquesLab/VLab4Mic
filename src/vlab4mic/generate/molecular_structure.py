@@ -214,7 +214,8 @@ class MolecularStructureParser:
             Random substring.
         """
         if len(string) > size:
-            start = random.randint(0, len(string) - (size + 1))
+            # numpy random state, so motif choice follows the experiment seed
+            start = int(np.random.randint(0, len(string) - size))
             end = start + size
             return string[start:end]
 
@@ -267,12 +268,14 @@ class MolecularStructureParser:
         """
         if chain_name is None:
             chains_in_structure = list(self.protein_names.keys())
-            chain_name = random.choice(chains_in_structure)
+            chain_name = chains_in_structure[np.random.randint(len(chains_in_structure))]
         if chain_id is None:
             try:
-                chain_id = random.choice(self.protein_names[chain_name]["strand_id"].split(","))
+                strands = self.protein_names[chain_name]["strand_id"].split(",")
+                chain_id = strands[np.random.randint(len(strands))]
             except:
-                chain_id = random.choice(list(self.chains_dict.keys()))
+                chain_ids = list(self.chains_dict.keys())
+                chain_id = chain_ids[np.random.randint(len(chain_ids))]
         chain_sequence = self.chains_dict[chain_id]
         return chain_name, chain_id, position, self._sequence_substring(chain_sequence, size=size, position=position)
 

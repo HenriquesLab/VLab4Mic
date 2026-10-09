@@ -1247,8 +1247,9 @@ class ExperimentParametrisation:
                     print(
                         f"Using {probe_target_option} as epitope on {probe_target_value}"
                     )
+                    # epitope on the primary that this secondary binds
                     self.probe_parameters[probe_target_value][
-                        "probe_secondary_epitope"
+                        "epitope_target_info"
                     ] = probe_target_option
         elif (
             probe_configuration["target"]["type"] is None

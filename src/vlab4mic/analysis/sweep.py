@@ -1079,20 +1079,25 @@ def modality_parameters_sweep(
 
 
 def acquisition_parameters_sweep(
-    exp_time: str = None,
-    noise: float = None,
-    nframes: float = None,
-    channels: float = None,
+    exp_time: list = None,
+    noise: list = None,
+    nframes: list = None,
+    channels: list = None,
 ):
     """
     Generate combinations of acquisition parameters for a sweep.
 
     Parameters
     ----------
-    exp_time : str, optional
-    noise : float, optional
-    nframes : float, optional
-    channels : float, optional
+    exp_time : list of float, optional
+        Exposure times per frame, in seconds (pixel dwell times for
+        scanning modalities).
+    noise : list of bool, optional
+        Whether to add detector noise.
+    nframes : list of int, optional
+        Numbers of frames.
+    channels : list of list of str, optional
+        Channels to image.
 
     Returns
     -------

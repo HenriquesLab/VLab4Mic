@@ -1063,17 +1063,17 @@ class LabeledInstance:
                 #selected_emitters = emitter_indices[exact_dol]
             else:
                 int_dol = rng_.poisson(lam=dol)
-                if int_dol != 0:
-                    if int_dol > max_emitters:
-                        # use max value
-                        selected_emitters = emitter_indices
-                    else:
-                        selected_emitters = rng_.choice(
-                            emitter_indices, size=int_dol, replace=False
-                        )
+                if int_dol > max_emitters:
+                    # use max value
+                    selected_emitters = emitter_indices
+                else:
+                    # a draw of 0 shows the probe without fluorophores
+                    selected_emitters = rng_.choice(
+                        emitter_indices, size=int_dol, replace=False
+                    )
             for se in selected_emitters:
                 list_reoriented_points.append(centered_emitters[se])
-            centered_emitters = np.array(list_reoriented_points)
+            centered_emitters = np.array(list_reoriented_points).reshape(-1, 3)
         probe_axis = total_coordinates[0:2, :]
         
         centered_axis, translation_vector2 = transform_displace_set(

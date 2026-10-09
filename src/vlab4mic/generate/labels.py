@@ -270,8 +270,15 @@ def construct_label(
     #    ]
     #else:
     #    print("No DoL provided, using default value. ########################")
-    if "epitope_target_info" in label_config_dictionary.keys():
-        label_params["epitope"]["target"] = label_config_dictionary["epitope_target_info"]
+    if label_config_dictionary.get("epitope_target_info") is not None:
+        # epitope on this probe for a secondary: a sequence, a target dict
+        # {"type", "value"} or {"target": {"type", "value"}}
+        info = label_config_dictionary["epitope_target_info"]
+        if isinstance(info, str):
+            info = {"type": "Sequence", "value": info}
+        elif isinstance(info, dict) and "target" in info:
+            info = info["target"]
+        label_params["epitope"]["target"] = info
     # wobble: an explicit wobble_theta overrides the template value
     # (binding.wobble_range.theta, in degrees); otherwise the template
     # value is kept. None or 0 means no wobble.

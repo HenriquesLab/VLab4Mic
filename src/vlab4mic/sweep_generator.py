@@ -430,12 +430,15 @@ class sweep_generator:
             ref_image = tiff.imread(ref_image_path)
         else:
             override = False
-            ref_image = None  
+            ref_image = None
         if reference_image_mask is not None:
             ref_image_mask = reference_image_mask
         elif ref_image_mask_path is not None:
             image_mask = tiff.imread(ref_image_mask_path)
             ref_image_mask = image_mask > 0
+        elif ref_image is None:
+            # nothing to load
+            ref_image_mask = None
         else:
             if len(ref_image.shape) == 3:
                 image_mask = np.ones(shape=ref_image[0].shape)
@@ -1625,7 +1628,7 @@ class sweep_generator:
         :param **kwargs:
             Passed to use_image_for_positioning, e.g. pixelsize (nm), mode
             ("mask" or "localmaxima") and npositions (number of particles in
-            "mask" mode, default 1). Do not pass background.
+            "mask" mode, default 1) and background (default: image minimum).
 
         Returns
         -------
@@ -1636,9 +1639,10 @@ class sweep_generator:
         else:
             experimental_image_int = image
         print("Using image to position particles in virtual sample")
+        # the image minimum is the default background
+        kwargs.setdefault("background", experimental_image_int.min())
         self.experiment.use_image_for_positioning(
             img=experimental_image_int,
-            background=experimental_image_int.min(),
             **kwargs
         )
         print(f"Virtual sample parameterised to: {self.experiment.virtualsample_params}")

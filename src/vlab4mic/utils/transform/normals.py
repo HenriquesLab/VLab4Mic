@@ -38,6 +38,10 @@ def normals_by_scaling(epitope_locs, scale=0.95):
     normals = np.zeros((len(epitope_locs), 3))
     for i in range(len(epitope_locs)):
         normals[i, :] = epitope_locs[i] - scaled_epitopes_locs[i]
+    # a site at the centroid (e.g. a single site) has no defined direction;
+    # use +z instead of a zero vector
+    zero = np.linalg.norm(normals, axis=1) == 0
+    normals[zero] = [0, 0, 1]
     # then the points from which the normals are traced are the epitopes themselves
     # normals_ft_epitopes = [normals, epitope_locs]
     return normals

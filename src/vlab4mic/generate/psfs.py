@@ -6,8 +6,9 @@ def elliptical_gaussian_3sigmas(shape, std_devs):
     Create a 3D elliptical Gaussian array.
 
     Parameters:
-    - shape: Tuple, shape of the array (depth, height, width).
-    - std_dev: Tuple, standard deviations along each axis (z, y, x).
+    - shape: Tuple, shape of the array (x, y, z).
+    - std_devs: Tuple, standard deviations along each axis (x, y, z), in
+      voxels. The array is normalised to sum 1.
 
     Returns:
     - ndarray: 3D NumPy array representing the elliptical Gaussian.
