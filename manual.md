@@ -393,6 +393,8 @@ score = distinguishability_from_replicates(results_a, results_b, modality="SMLM"
 score["auc"], score["auc_interval"], score["accuracy"]
 ```
 
+Measurements on single particles (ring radius and width, apparent breaks, detected corners, resolved sites) are in `vlab4mic.analysis.particle_measures`, e.g. `ring_measures(localisations)` or `sites_resolved(localisations, 3)`.
+
 The emitter and localisation positions of the last simulation can be exported as ThunderSTORM-style CSV tables (with a YAML file of all parameters), for raw-frame or STED simulators and localisation analysis software:
 
 ```python
