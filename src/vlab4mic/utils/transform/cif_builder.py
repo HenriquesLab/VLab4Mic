@@ -151,13 +151,9 @@ def indirect_labelling(coords_nomrals, label_data, **kwargs):
         # select randomly, and according to labelling_efficiency
         # the places that will be labelled
         #efficiency = label_data["labelling_efficiency"]
-        if label_data["conjugation_sites"]["DoL"] is not None:
-            if label_data["conjugation_sites"]["DoL"] > 0:
-                dol=label_data["conjugation_sites"]["DoL"]
-            else:
-                dol = None
-        else:
-            dol = None
+        # DoL None: every conjugation site carries a fluorophore;
+        # otherwise a Poisson number with mean DoL (0: no fluorophores)
+        dol = label_data["conjugation_sites"]["DoL"]
         epitopes, n_epitopes, normals = binomial_epitope_sampling(
             epitopes=coords_nomrals["coordinates"],
             p=label_data["labelling_efficiency"],
@@ -186,6 +182,10 @@ def indirect_labelling(coords_nomrals, label_data, **kwargs):
             indirect_realisation, list_reoriented_points_normals = decorate_epitopes_normals(
                 normals_ft_epitopes, label_data["emitters"], dol=dol
             )
+            if indirect_realisation.shape[0] == 0:
+                # no probe carries a fluorophore
+                indirect_realisation = None
+                list_reoriented_points_normals = None
     else:
         print("No emitters defined in label. Using direct labelling")
         indirect_realisation, n_epitopes, _ = direct_labelling(coords_nomrals, label_data)

@@ -22,6 +22,16 @@ def rotate_set(points, axi, angl):
 
 
 # following function was reorient_set
+def _rotation_axis(current, new):
+    # axis that rotates current onto new; for antiparallel vectors the
+    # cross product is 0, so any axis perpendicular to current is used
+    axis = np.cross(current, new)
+    if np.linalg.norm(axis) > 1e-12:
+        return axis
+    helper = np.array([1.0, 0, 0]) if abs(current[0]) < 0.9 * np.linalg.norm(current) else np.array([0, 1.0, 0])
+    return np.cross(current, helper)
+
+
 def labeling_reorient_set(label_points, piv_id, intern_axis_id, direction, end_point):
     # pts are the points to reorient
     # piv_id is the pivot index that will be use to reorient pts
@@ -39,13 +49,15 @@ def labeling_reorient_set(label_points, piv_id, intern_axis_id, direction, end_p
     # define an internal axis of orientation
     int_axis = translated_origin[intern_axis_id] - translated_origin[piv_id]
     # get rotation axis
-    V = np.cross(int_axis, direction)
-    if np.linalg.norm(V) == 0:
-        V = direction
+    V = _rotation_axis(int_axis, direction)
     # get angle or rotation in radians
     theta = np.arccos(
-        np.dot(int_axis, direction)
-        / (np.linalg.norm(int_axis) * np.linalg.norm(direction))
+        np.clip(
+            np.dot(int_axis, direction)
+            / (np.linalg.norm(int_axis) * np.linalg.norm(direction)),
+            -1,
+            1,
+        )
     )
     # Rotate pts
     rotated_at_origin = rotate_set(translated_origin, V, theta)
@@ -73,13 +85,15 @@ def rotate_pts_by_vector(pts, current_vector, new_vector, pts_referece_center):
         pts, pts_referece_center, np.array([0, 0, 0])
     )
     # get rotation axis by calculating the cross product of the current axis with new
-    ax_of_rot = np.cross(current_vector, new_vector)
-    if np.linalg.norm(ax_of_rot) == 0:
-        ax_of_rot = new_vector
+    ax_of_rot = _rotation_axis(current_vector, new_vector)
     # get angle or rotation in radians
     theta = np.arccos(
-        np.dot(current_vector, new_vector)
-        / (np.linalg.norm(current_vector) * np.linalg.norm(new_vector))
+        np.clip(
+            np.dot(current_vector, new_vector)
+            / (np.linalg.norm(current_vector) * np.linalg.norm(new_vector)),
+            -1,
+            1,
+        )
     )
     # Rotate pts
     rotated = rotate_set(translated_origin, ax_of_rot, theta)
@@ -112,15 +126,17 @@ def decorate_epitopes_normals(normals_ft_epitopes, labeling_entity, dol:int = No
             normals_ft_epitopes[0][repl],
             normals_ft_epitopes[1][repl],
         )
-        # model degree of labelling
+        # model degree of labelling: Poisson number of fluorophores per probe
+        # (dol <= 0 gives probes without fluorophores)
         if dol is not None:
-            int_dol = np.random.poisson(lam=dol)
+            int_dol = np.random.poisson(lam=dol) if dol > 0 else 0
             #print(f"DOL = {int_dol}")
             max_emitters = len(new_points)
             if int_dol != 0:
                 if int_dol > max_emitters - 2 :
                     # use max value
                     list_reoriented_points.append(new_points)
+                    list_reoriented_points_normals.append(normals_ft_epitopes[0][repl])
                 else:
                     # take the first two points to keep pivot and axis
                     new_points_dol = copy.copy(new_points[0:2])
@@ -132,6 +148,7 @@ def decorate_epitopes_normals(normals_ft_epitopes, labeling_entity, dol:int = No
                     for se in selected_emitters:
                         new_points_dol = np.vstack((new_points_dol, new_points[se]))
                     list_reoriented_points.append(new_points_dol)
+                    list_reoriented_points_normals.append(normals_ft_epitopes[0][repl])
                     #new_points = new_points[0:(2+int_dol)]
                     #list_reoriented_points.append(new_points)
         else:
@@ -151,6 +168,9 @@ def cleanup_labeling_entities(labels_on_epitopes):
     THis method removes those leaving only the true emitters
     """
     n_epitopes = len(labels_on_epitopes)
+    if n_epitopes == 0:
+        # e.g. every probe drew 0 fluorophores
+        return np.empty((0, 3))
     # print(f"cleaning {n_epitopes}")
     pivot_reference_index = 0
     # prepare the list with the first entity's emitters

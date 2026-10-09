@@ -132,6 +132,11 @@ def probe_model(
     )
     target_sites = structural_model.label_targets[probe_name]["coordinates"]
     # calculate axis for antibody by getting center of mass and paratope sequence
+    if not binding["paratope"]:
+        raise ValueError(
+            f"Probe model {model['ID']} needs binding.paratope (a sequence of "
+            "the probe that binds the epitope) to define its anchor and axis."
+        )
     if binding["paratope"]:
         structural_model.gen_Targets(
             target_name="paratope",
