@@ -58,7 +58,8 @@ secondary = dict(
     probe_name="Secondary-clathrin",
     probe_target_type = "Primary",
     probe_target_value = "Primary-clathrin",
-    probe_DoL = 1.5
+    probe_DoL = 1.5,
+    probe_wobble_theta = 15,  # secondary antibody wobble (Supp. Table S1)
 )
 image_outputs4, image_outputs_noiseless4, experiment4 = image_vsample(
     structure = "1XI5",

@@ -39,6 +39,7 @@ secondary_antibody = dict(
     probe_target_type = "Primary",
     probe_target_value = "Primary-HIV",
     probe_DoL=4,
+    probe_wobble_theta=15,  # secondary antibody wobble (Supp. Table S1)
 )
 emitter_plotsize = 1
 zoom = 0.5
