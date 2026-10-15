@@ -53,3 +53,25 @@ def test_smlm_localisations_are_not_convolved_with_psf():
     image = np.asarray(noiseless["ch0"])[0]
     # every localisation of the single emitter lands in one pixel
     assert np.count_nonzero(image) == 1
+
+
+def _imager_with_kernel(kernel):
+    imager, _ = experiments.build_virtual_microscope(multimodal=["SMLM"])
+    imager.modalities["SMLM"]["emitters"]["rendering_kernel_nm"] = kernel
+    return imager
+
+
+def test_default_kernel_is_the_precision():
+    imager, _ = experiments.build_virtual_microscope(multimodal=["SMLM"])
+    assert imager.get_rendering_kernel("SMLM", lateral_precision=6.5) == pytest.approx(6.5)
+
+
+@pytest.mark.parametrize("kernel, expected", [(0, 0.0), (2, 2.0), ("precision", 4.0)])
+def test_rendering_kernel_values(kernel, expected):
+    imager = _imager_with_kernel(kernel)
+    assert imager.get_rendering_kernel("SMLM", lateral_precision=4.0) == expected
+
+
+def test_invalid_rendering_kernel_raises():
+    with pytest.raises(ValueError):
+        _imager_with_kernel("blurry").get_rendering_kernel("SMLM", 4.0)

@@ -460,9 +460,10 @@ class Imager:
         nlocalisations : float, optional
             Mean number of localisations per emitter.
         **kwargs
-            rendering_kernel_nm : float
+            rendering_kernel_nm : float or "precision"
                 Standard deviation (nm) of the Gaussian used to render
-                localisations (0: histogram). See get_rendering_kernel.
+                localisations; "precision" uses the lateral localisation
+                precision, 0 renders a histogram. See get_rendering_kernel.
             precision_model : str
                 "fixed" (default) or "photon_limited".
             detection_psf_sigma_nm, camera_pixelsize_nm,
@@ -526,7 +527,7 @@ class Imager:
         footprint = max(1.0, 2 * np.pi * sigma_x * sigma_y / pixel_nm**2)
         return exp_time * footprint
 
-    def get_rendering_kernel(self, modality):
+    def get_rendering_kernel(self, modality, lateral_precision=None):
         """
         Lateral rendering kernel for localisations of a modality.
 
@@ -538,15 +539,29 @@ class Imager:
         ----------
         modality : str
             Name of the modality.
+        lateral_precision : float, optional
+            Lateral localisation precision of the acquisition (nm), used
+            when rendering_kernel_nm is "precision".
 
         Returns
         -------
         float
-            Standard deviation of the rendering kernel, in nm. 0 (default)
-            renders a histogram of localisations without further blur.
+            Standard deviation of the rendering kernel, in nm. With
+            rendering_kernel_nm "precision" (SMLM default) it is the lateral
+            localisation precision, as in the common practice of rendering
+            each localisation as a Gaussian of its uncertainty; 0 renders a
+            histogram of localisations.
         """
         kernel = self.modalities[modality]["emitters"].get("rendering_kernel_nm")
-        return 0.0 if kernel is None else float(kernel)
+        if kernel is None:
+            return 0.0
+        if isinstance(kernel, str):
+            if kernel.lower() == "precision":
+                return float(lateral_precision or 0.0)
+            raise ValueError(
+                f"rendering_kernel_nm must be a number or 'precision', got {kernel!r}"
+            )
+        return float(kernel)
 
     def get_localisation_precision(self, modality, fluo, exp_time):
         """
@@ -1017,7 +1032,9 @@ class Imager:
                                 # render them instead of convolving with the PSF
                                 psf_data = dict(psf_data)
                                 psf_data["render_sigma_xy"] = (
-                                    self.get_rendering_kernel(modality)
+                                    self.get_rendering_kernel(
+                                        modality, loc_precision_xy_nm
+                                    )
                                     / psf_data["psf_pixelsizeXY"]
                                 )
                             else:

@@ -472,7 +472,7 @@ experiment.export_positions("/path/to/output")
 | **depth_of_field_nm** | Depth of field in nanometers (float or int) |
 | **lateral_precision**, **axial_precision** | Localisation precision (standard deviation, nm) for localisation-based modalities (SMLM). Each localisation is displaced once by this precision |
 | **nlocalisations** | Mean number of localisations per emitter (Poisson) |
-| **rendering_kernel_nm** | Standard deviation (nm) of the Gaussian used to render localisations; 0 (default) renders a histogram. Localisations are not convolved with the modality PSF |
+| **rendering_kernel_nm** | Standard deviation (nm) of the Gaussian used to render localisations. `"precision"` (SMLM default) uses the lateral localisation precision; 0 renders a histogram. Localisations are not convolved with the modality PSF |
 | **precision_model** | "fixed" (default: use lateral/axial_precision) or "photon_limited" (precision from photons per localisation, Mortensen et al. 2010; set detection_psf_sigma_nm, camera_pixelsize_nm, background_photons, excess_noise_factor, axial_precision_ratio) |
 | **scanning** | Point-scanning modality: `exp_time` is the pixel dwell time and each emitter emits for the dwell time times its PSF footprint in pixels (default False) |
 
@@ -547,5 +547,5 @@ Probe templates set the wobble (`binding.wobble_range.theta`, degrees; 10 for th
 | **Confocal** | Confocal microscope | 100,100,300 | 70 | |
 | **AiryScan** | AiryScan microscope | 60,60,230 | 40 | Narrower Gaussian, no pixel reassignment |
 | **STED** | 2D STED microscope | 20,20,300 | 15 | Effective resolution; no depletion physics |
-| **SMLM** | SMLM image model | 8,8,8 (emitters only) | 2 | Localisations (precision 5 nm, 5 per emitter) rendered without PSF convolution |
+| **SMLM** | SMLM image model | 8,8,8 (emitters only) | 2 | Localisations (precision 5 nm, 5 per emitter) rendered as Gaussians of the precision, without PSF convolution |
 | **Reference** | Idealised microscope | 5,5,5 | 5 | |

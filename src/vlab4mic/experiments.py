@@ -353,8 +353,9 @@ class ExperimentParametrisation:
             scanning (bool): point-scanning modality, for which exp_time is
             the pixel dwell time (see Imager.get_photon_exposure).
             Localisation settings for localisation-based modalities:
-            rendering_kernel_nm (standard deviation of the Gaussian used to
-            render localisations; 0 renders a histogram),
+            rendering_kernel_nm (standard deviation in nm of the Gaussian
+            used to render localisations; "precision" uses the lateral
+            localisation precision, the SMLM default; 0 renders a histogram),
             precision_model ("fixed" or "photon_limited"),
             detection_psf_sigma_nm, camera_pixelsize_nm, background_photons,
             excess_noise_factor and axial_precision_ratio.

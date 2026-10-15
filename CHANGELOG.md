@@ -38,8 +38,9 @@ review of the manuscript.
 ### Changed
 - Labelling: each epitope gets a labelling-efficiency trial before the
   steric check against already-bound probes.
-- SMLM localisations are rendered with a separate rendering kernel instead
-  of being convolved with the modality PSF.
+- SMLM localisations are rendered as Gaussians of their localisation
+  precision (`rendering_kernel_nm`) instead of being convolved with the
+  modality PSF.
 - SMLM photons per localisation follow the fluorophore brightness and the
   exposure time.
 - Probe templates' wobble is applied; steric size is the largest dimension
