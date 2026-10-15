@@ -131,7 +131,9 @@ def download_cif_file(
 random_seed = 24
 # ventral geometry: lattices lie on the coverslip (axis along +z) with a
 # random tilt of up to MAX_TILT_DEG and a random in-plane rotation
-MAX_TILT_DEG = 10
+# maximum random tilt of the lattices on the coverslip (degrees); no
+# published reference for this value, set VLAB4MIC_MAX_TILT_DEG to change it
+MAX_TILT_DEG = float(os.environ.get("VLAB4MIC_MAX_TILT_DEG", 10))
 dome_url = "https://zenodo.org/records/20719843/files/Dome_model_v2.0.cif"
 flat_url = "https://zenodo.org/records/20719843/files/Flat_lattice_model_v2.0.cif"
 

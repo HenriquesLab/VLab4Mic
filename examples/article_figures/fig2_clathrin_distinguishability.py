@@ -3,7 +3,11 @@
 For each imaging method, N independent realisations of each lattice (one
 particle each, own labelling, orientation and noise) are simulated and the
 distinguishability (accuracy and ROC AUC with 95% bootstrap intervals) is
-computed with vlab4mic.analysis.distinguishability.
+computed with vlab4mic.analysis.distinguishability from the aspect ratio of
+each particle image (ratio of its principal axes in projection): seen from
+above, the flat lattice is elongated and the dome close to circular. The
+aspect ratio does not depend on particle size, so the two models are not
+separated by their different lateral extent.
 
 - Ventral geometry (Fig. 2b,c): lattices lie on the coverslip (axis +z)
   with a random tilt up to MAX_TILT_DEG and a random in-plane rotation.
@@ -28,9 +32,12 @@ from vlab4mic.analysis.distinguishability import distinguishability_from_replica
 
 N_REALISATIONS = int(os.environ.get("VLAB4MIC_N_REALISATIONS", 100))
 RANDOM_SEED = 24
-MAX_TILT_DEG = 10
+# maximum random tilt of the lattices on the coverslip (degrees); no
+# published reference for this value, set VLAB4MIC_MAX_TILT_DEG to change it
+MAX_TILT_DEG = float(os.environ.get("VLAB4MIC_MAX_TILT_DEG", 10))
 MODALITIES = ["Widefield", "Confocal", "AiryScan", "STED", "SMLM"]
 LABELLING_EFFICIENCIES = [0.2, 0.4, 0.6, 0.8, 1.0]
+FEATURES = "aspect_ratio"
 LE_SWEEP_MODALITIES = ["STED", "SMLM"]
 MODELS = {
     "dome": "https://zenodo.org/records/20719843/files/Dome_model_v2.0.cif",
@@ -98,7 +105,9 @@ def compare(labelling_efficiency, geometry, modalities):
     flat = realisations(experiments_by_model["flat"], labelling_efficiency, geometry)
     rows, scores = [], {}
     for modality in modalities:
-        score = distinguishability_from_replicates(dome, flat, modality, random_state=RANDOM_SEED)
+        score = distinguishability_from_replicates(
+            dome, flat, modality, features=FEATURES, random_state=RANDOM_SEED
+        )
         lateral, axial = resolution(experiments_by_model["dome"], modality)
         rows.append(dict(
             modality=modality, geometry=geometry, labelling_efficiency=labelling_efficiency,
