@@ -57,3 +57,33 @@ def test_needs_two_images_per_class():
     rng = np.random.default_rng(4)
     with pytest.raises(ValueError):
         distinguishability([ring_image(8, rng)], [ring_image(9, rng)] * 3)
+
+
+def ellipse_image(a, b, rng, size=61, n=400, angle=None, scale=1.0):
+    angle = rng.uniform(0, np.pi) if angle is None else angle
+    u = rng.uniform(-1, 1, (n * 3, 2))
+    u = u[(u ** 2).sum(axis=1) <= 1][:n] * [a * scale, b * scale]
+    rot = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
+    pts = u @ rot.T + size / 2
+    image, _, _ = np.histogram2d(pts[:, 0], pts[:, 1], bins=size, range=[[0, size], [0, size]])
+    return image + rng.normal(0, 0.2, image.shape)
+
+
+def test_aspect_ratio_is_size_and_rotation_invariant():
+    from vlab4mic.analysis.distinguishability import aspect_ratio_features
+
+    rng = np.random.default_rng(5)
+    small = aspect_ratio_features(ellipse_image(12, 6, rng, angle=0.3))[0]
+    large = aspect_ratio_features(ellipse_image(12, 6, rng, angle=1.2, scale=1.8))[0]
+    assert small == pytest.approx(2, rel=0.15)
+    assert large == pytest.approx(small, rel=0.1)
+
+
+def test_aspect_ratio_separates_elongated_from_round_regardless_of_size():
+    rng = np.random.default_rng(6)
+    # round particles larger than the elongated ones: size alone would mislead
+    round_ = [ellipse_image(14, 14, rng, scale=rng.uniform(1.0, 1.4)) for _ in range(30)]
+    elongated = [ellipse_image(13, 8, rng, scale=rng.uniform(0.7, 1.0)) for _ in range(30)]
+    result = distinguishability(round_, elongated, features="aspect_ratio",
+                                n_bootstrap=100, random_state=0)
+    assert result["auc"] > 0.95

@@ -102,7 +102,61 @@ def pixel_features(image):
     return (image / total if total > 0 else image).ravel()
 
 
-FEATURES = {"radial_profile": radial_profile_features, "pixels": pixel_features}
+def aspect_ratio_features(image, threshold_rel=0.2, smoothing_px=1.0):
+    """
+    Aspect ratio of a single-particle image (size and rotation invariant).
+
+    The image is smoothed with a Gaussian of smoothing_px pixels (so that
+    isolated noise pixels do not count), the background (median) is
+    subtracted and pixels below threshold_rel of the maximum are ignored;
+    the aspect ratio is the square root of the
+    ratio of the largest to the smallest eigenvalue of the intensity
+    second-moment matrix, i.e. the ratio of the long to the short principal
+    axis of the particle seen in projection (1 for a circular particle).
+
+    Parameters
+    ----------
+    image : numpy.ndarray
+        2-D image, or a stack of frames that is summed.
+    threshold_rel : float, optional
+        Fraction of the maximum below which pixels are ignored. Default 0.2.
+    smoothing_px : float, optional
+        Standard deviation of the smoothing Gaussian, in pixels. Default 1;
+        0 disables smoothing.
+
+    Returns
+    -------
+    numpy.ndarray
+        One-element feature vector [aspect ratio].
+    """
+    image = _as_2d(image)
+    if smoothing_px:
+        image = ndimage.gaussian_filter(image, smoothing_px)
+    image = np.clip(image - np.median(image), 0, None)
+    if image.max() <= 0:
+        return np.array([1.0])
+    image = np.where(image >= threshold_rel * image.max(), image, 0)
+    weights = image / image.sum()
+    x, y = np.indices(image.shape)
+    cx, cy = (weights * x).sum(), (weights * y).sum()
+    dx, dy = x - cx, y - cy
+    cov = np.array(
+        [
+            [(weights * dx * dx).sum(), (weights * dx * dy).sum()],
+            [(weights * dx * dy).sum(), (weights * dy * dy).sum()],
+        ]
+    )
+    low, high = np.sort(np.linalg.eigvalsh(cov))
+    if low <= 0:
+        return np.array([np.inf if high > 0 else 1.0])
+    return np.array([np.sqrt(high / low)])
+
+
+FEATURES = {
+    "radial_profile": radial_profile_features,
+    "pixels": pixel_features,
+    "aspect_ratio": aspect_ratio_features,
+}
 
 
 def image_features(images, features="radial_profile", **kwargs):
@@ -114,8 +168,9 @@ def image_features(images, features="radial_profile", **kwargs):
     images : sequence of numpy.ndarray
         Images (2-D, or stacks of frames that are summed).
     features : str or callable, optional
-        "radial_profile" (default, rotation invariant), "pixels", or a
-        function image -> 1-D feature vector.
+        "radial_profile" (default, rotation invariant), "aspect_ratio"
+        (rotation and size invariant shape), "pixels", or a function
+        image -> 1-D feature vector.
     **kwargs
         Passed to the feature function.
 
