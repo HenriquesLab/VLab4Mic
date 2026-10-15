@@ -150,8 +150,10 @@ experiment.save_parameters(out, name="fig2_clathrin_distinguishability")
 fig, axes = plt.subplots(1, 3, figsize=[18, 5])
 for k, modality in enumerate(MODALITIES):
     s = scores[(modality, "ventral")]
-    axes[0].scatter(np.full(s["n_a"], k) - 0.1, s["scores"][s["labels"] == 0], s=6, label="dome" if k == 0 else None)
-    axes[0].scatter(np.full(s["n_b"], k) + 0.1, s["scores"][s["labels"] == 1], s=6, label="flat" if k == 0 else None)
+    axes[0].scatter(np.full(s["n_a"], k) - 0.1, s["scores"][s["labels"] == 0], s=6, color="C0",
+                    label="dome" if k == 0 else None)
+    axes[0].scatter(np.full(s["n_b"], k) + 0.1, s["scores"][s["labels"] == 1], s=6, color="C1",
+                    label="flat" if k == 0 else None)
 axes[0].set_xticks(range(len(MODALITIES)), MODALITIES)
 axes[0].set_ylabel("P(flat), out-of-fold")
 axes[0].legend()
