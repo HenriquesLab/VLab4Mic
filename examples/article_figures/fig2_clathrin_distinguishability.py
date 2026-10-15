@@ -96,6 +96,11 @@ def realisations(experiment, labelling_efficiency, geometry):
 
 
 def resolution(experiment, modality):
+    # effective lateral and axial resolution: localisation precision for
+    # localisation-based methods, PSF standard deviation otherwise
+    emitters = experiment.imaging_modalities[modality].get("emitters") or {}
+    if emitters.get("lateral_precision") is not None:
+        return [emitters["lateral_precision"], emitters["axial_precision"]]
     psf = experiment.imaging_modalities[modality]["psf_params"]
     return [sd * v for sd, v in zip(psf["std_devs"], psf["voxelsize"])][::2]
 
