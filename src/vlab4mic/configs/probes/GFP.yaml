@@ -28,8 +28,11 @@ conjugation_sites:
       residues: 
       - CRO
   DoL:
-epitope: # for secondary
+epitope: # for secondary (e.g. an anti-GFP antibody)
+  # exposed loop at the end of the beta-barrel opposite the paratope (KGEEL,
+  # the N-terminus used for C-terminal fusions), ~4.4 nm along the barrel.
+  # Polyclonal anti-GFP antibodies bind many sites; this is one choice.
   target:
-    type: 
-    value: 
+    type: Sequence
+    value: KEDGN
   normals:
