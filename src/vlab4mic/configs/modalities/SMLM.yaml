@@ -32,7 +32,9 @@ emitters:
   nlocalisations: 5
   # localisations are not convolved with the PSF above; they are rendered
   # with a lateral Gaussian of this standard deviation in nm. "precision"
-  # uses the lateral localisation precision; 0 renders a histogram
+  # uses the lateral localisation precision; 0 renders a histogram.
+  # The rendered image is a reconstruction: detector noise is not added
+  # to it, since photon noise is already in the localisation precision
   rendering_kernel_nm: precision
   # fixed: use lateral_precision and axial_precision
   # photon_limited: derive the precision from the photons per localisation

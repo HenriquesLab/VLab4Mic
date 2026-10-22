@@ -71,6 +71,16 @@ def voxelize_active_fluorophores_withrange(
     return voxel
 
 
+def render_truncate(shape, sigma):
+    """
+    Truncation (in standard deviations) of a lateral rendering Gaussian.
+
+    The kernel radius covers the whole lateral field, so a kernel wider
+    than the default 4 standard deviations is not cut.
+    """
+    return max(4.0, max(shape[0], shape[1]) / float(sigma))
+
+
 ## keep
 def frame_by_volume_convolution(
     coordinates,
@@ -84,6 +94,7 @@ def frame_by_volume_convolution(
     asframe=True,
     as_mask=False,
     render_sigma_xy=None,
+    render_record=None,
 ):
     """
     Generate a 2D image from the 3D field of active emitters.
@@ -95,6 +106,9 @@ def frame_by_volume_convolution(
     with the PSF, but rendered with a lateral Gaussian of standard
     deviation render_sigma_xy (in voxels; 0 renders a histogram), and the
     slices within projection_depth of the focal slice are summed.
+    If render_record (list) is given with render_sigma_xy, True is appended
+    when the Gaussian filter is applied and False when the voxel is left
+    unchanged (kernel of 0 or no photons in the frame).
 
     projection_depth is in units of slices. All units are in the same scale,
     except image dimensions.
@@ -110,10 +124,15 @@ def frame_by_volume_convolution(
         return intensity_voxel
     if render_sigma_xy is not None:
         # localisations: render without PSF convolution
-        if render_sigma_xy > 0 and np.sum(photon_vector) > 0:
+        filtered = bool(render_sigma_xy > 0 and np.sum(photon_vector) > 0)
+        if render_record is not None:
+            render_record.append(filtered)
+        if filtered:
             convolved_intensity = gaussian_filter(
                 np.asarray(intensity_voxel, dtype=float),
                 sigma=(render_sigma_xy, render_sigma_xy, 0),
+                truncate=render_truncate(intensity_voxel.shape, render_sigma_xy),
+                mode="constant",
             )
         else:
             convolved_intensity = intensity_voxel
@@ -160,6 +179,7 @@ def generate_frames_volume_convolution(
     psf_projection_depth=1,
     as_mask=False,
     render_sigma_xy=None,
+    render_record=None,
     **kwargs,
 ):
     """
@@ -168,7 +188,9 @@ def generate_frames_volume_convolution(
     Inputs are taken from the method _homogenise_scales4convolution_modality.
     If render_sigma_xy is given (in PSF voxels), the coordinates are
     localisations and are rendered with that lateral Gaussian instead of
-    being convolved with the PSF (see frame_by_volume_convolution).
+    being convolved with the PSF (see frame_by_volume_convolution); if
+    render_record (list) is also given, it gets one entry per frame telling
+    whether the Gaussian filter was applied.
     """
     if asframes:
         cframes = []
@@ -199,6 +221,7 @@ def generate_frames_volume_convolution(
                 projection_depth=psf_projection_depth,
                 as_mask=as_mask,
                 render_sigma_xy=render_sigma_xy,
+                render_record=render_record,
             )
             cframes.append(frame_n)
 
