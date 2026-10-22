@@ -5,6 +5,7 @@ import math
 import os
 import copy
 import yaml
+import warnings
 from ..utils.io.yaml_functions import load_yaml
 
 # from .psf.image_psf import load_psf
@@ -527,7 +528,62 @@ class Imager:
         footprint = max(1.0, 2 * np.pi * sigma_x * sigma_y / pixel_nm**2)
         return exp_time * footprint
 
-    def get_rendering_kernel(self, modality, lateral_precision=None):
+    @staticmethod
+    def _note_default(record, modality, key, value, reason="not set"):
+        """Warn that a parameter falls back to a default and log it in record."""
+        warnings.warn(
+            f"{modality}: '{key}' {reason}; using {value!r}", stacklevel=3
+        )
+        if record is not None:
+            record.setdefault("defaults_used", {})[key] = value
+
+    @staticmethod
+    def _note(record, modality, message):
+        """Warn about a computation that is skipped and log it in record."""
+        warnings.warn(f"{modality}: {message}", stacklevel=3)
+        if record is not None:
+            record.setdefault("notes", []).append(message)
+
+    @classmethod
+    def _record_rendering(cls, record, modality, render_record, convolution_type):
+        """
+        Log in record whether localisations went through the rendering Gaussian.
+
+        render_record holds one bool per frame (see
+        image_convolution.frame_by_volume_convolution). It stays empty when
+        the convolution type does not render localisations.
+        """
+        params = record.setdefault("parameters", {})
+        filtered = int(sum(render_record))
+        unfiltered = len(render_record) - filtered
+        params["rendering_filtered_frames"] = filtered
+        params["rendering_unfiltered_frames"] = unfiltered
+        if not render_record:
+            params["rendering_filter_applied"] = False
+            cls._note(
+                record, modality,
+                f"convolution_type '{convolution_type}' does not render "
+                "localisations; Gaussian filter not applied",
+            )
+            return
+        if unfiltered == 0:
+            params["rendering_filter_applied"] = True
+            return
+        params["rendering_filter_applied"] = "partial" if filtered else False
+        if not params.get("rendering_kernel_nm"):
+            cls._note(
+                record, modality,
+                "rendering kernel is 0; localisations rendered as a histogram "
+                "(no Gaussian filter)",
+            )
+        else:
+            cls._note(
+                record, modality,
+                f"{unfiltered} of {len(render_record)} frames had no photons; "
+                "intensity voxel left unchanged (no Gaussian filter)",
+            )
+
+    def get_rendering_kernel(self, modality, lateral_precision=None, record=None):
         """
         Lateral rendering kernel for localisations of a modality.
 
@@ -551,19 +607,34 @@ class Imager:
             localisation precision, as in the common practice of rendering
             each localisation as a Gaussian of its uncertainty; 0 renders a
             histogram of localisations.
+
+            If record (dict) is given, the resolved kernel and any default
+            used are stored in it.
         """
         kernel = self.modalities[modality]["emitters"].get("rendering_kernel_nm")
         if kernel is None:
-            return 0.0
-        if isinstance(kernel, str):
-            if kernel.lower() == "precision":
-                return float(lateral_precision or 0.0)
-            raise ValueError(
-                f"rendering_kernel_nm must be a number or 'precision', got {kernel!r}"
-            )
-        return float(kernel)
+            self._note_default(record, modality, "rendering_kernel_nm", 0.0)
+            value = 0.0
+        elif isinstance(kernel, str):
+            if kernel.lower() != "precision":
+                raise ValueError(
+                    f"rendering_kernel_nm must be a number or 'precision', got {kernel!r}"
+                )
+            if lateral_precision is None:
+                self._note_default(
+                    record, modality, "rendering_kernel_nm", 0.0,
+                    reason="is 'precision' but no lateral precision is available",
+                )
+                value = 0.0
+            else:
+                value = float(lateral_precision)
+        else:
+            value = float(kernel)
+        if record is not None:
+            record.setdefault("parameters", {})["rendering_kernel_nm"] = value
+        return value
 
-    def get_localisation_precision(self, modality, fluo, exp_time):
+    def get_localisation_precision(self, modality, fluo, exp_time, record=None):
         """
         Lateral and axial localisation precision for a modality.
 
@@ -587,6 +658,10 @@ class Imager:
             Name of the fluorophore.
         exp_time : float
             Exposure time per frame, in seconds.
+        record : dict, optional
+            If given, the parameters used are stored under "parameters",
+            defaults taken for missing ones under "defaults_used", and
+            skipped computations under "notes".
 
         Returns
         -------
@@ -602,31 +677,66 @@ class Imager:
             gets no photons (exp_time or photon rate of 0).
         """
         emitters = self.modalities[modality]["emitters"]
-        model = emitters.get("precision_model") or "fixed"
+        model = emitters.get("precision_model")
+        if model is None:
+            model = "fixed"
+            self._note_default(record, modality, "precision_model", model)
+        params = {} if record is None else record.setdefault("parameters", {})
+        params["precision_model"] = model
         if model == "fixed":
-            return emitters["lateral_precision"], emitters["axial_precision"]
+            lateral = emitters["lateral_precision"]
+            axial = emitters["axial_precision"]
         elif model == "photon_limited":
+            for key in ("detection_psf_sigma_nm", "camera_pixelsize_nm"):
+                if emitters.get(key) is None:
+                    raise ValueError(
+                        f"{modality}: precision_model 'photon_limited' needs '{key}'"
+                    )
+            resolved = {}
+            for key, default in (
+                ("background_photons", 0),
+                ("excess_noise_factor", 1),
+                ("axial_precision_ratio", 1),
+            ):
+                if emitters.get(key) is None:
+                    self._note_default(record, modality, key, default)
+                    resolved[key] = default
+                else:
+                    resolved[key] = emitters[key]
             photons = (
                 self.fluorophore_params[fluo]["photons_per_second"]
                 * self.get_photon_exposure(modality, exp_time)
             )
+            params.update(
+                detection_psf_sigma_nm=emitters["detection_psf_sigma_nm"],
+                camera_pixelsize_nm=emitters["camera_pixelsize_nm"],
+                photons_per_localisation=float(photons),
+                **resolved,
+            )
             if photons <= 0:
                 # no photons (e.g. noise-only images): no localisations
-                return None, None
-            lateral = points_transforms.photon_limited_lateral_precision(
-                photons,
-                psf_sigma_nm=emitters["detection_psf_sigma_nm"],
-                pixelsize_nm=emitters["camera_pixelsize_nm"],
-                background_photons=emitters.get("background_photons", 0),
-                excess_noise_factor=emitters.get("excess_noise_factor", 1),
-            )
-            axial = lateral * emitters.get("axial_precision_ratio", 1)
-            return lateral, axial
+                self._note(
+                    record, modality,
+                    "no photons per localisation; localisations are not generated",
+                )
+                lateral, axial = None, None
+            else:
+                lateral = points_transforms.photon_limited_lateral_precision(
+                    photons,
+                    psf_sigma_nm=emitters["detection_psf_sigma_nm"],
+                    pixelsize_nm=emitters["camera_pixelsize_nm"],
+                    background_photons=resolved["background_photons"],
+                    excess_noise_factor=resolved["excess_noise_factor"],
+                )
+                axial = lateral * resolved["axial_precision_ratio"]
         else:
             raise ValueError(
                 f"Unknown precision_model '{model}' for modality {modality}. "
                 "Use 'fixed' or 'photon_limited'."
             )
+        params["lateral_precision_nm"] = lateral
+        params["axial_precision_nm"] = axial
+        return lateral, axial
 
     def _create_modality(self, modality: str):
         self.modalities[modality] = dict(
@@ -856,9 +966,19 @@ class Imager:
            drawn around it, with the precision given by
            get_localisation_precision, and draws photons for each
            localisation the same way.
-        4. Convolves the emitters or localisations with the modality PSF
+        4. Convolves the emitters with the modality PSF, or renders the
+           localisations with a lateral Gaussian (see get_rendering_kernel),
            and adds the fluorophore signals of the channel.
-        5. Adds detector noise if noise is True.
+        5. Adds detector noise if noise is True, except for channels where
+           every fluorophore is rendered as localisations: such images are
+           reconstructions, whose photon noise is in the localisation
+           precision.
+
+        The record of each fluorophore (see get_positions) stores whether
+        the rendering Gaussian was applied ("rendering_filter_applied":
+        True, False or "partial", with the number of filtered and
+        unfiltered frames) and whether detector noise was added
+        ("detector_noise_applied").
 
         Parameters
         ----------
@@ -920,6 +1040,8 @@ class Imager:
                 fluonames = list(self.modalities[modality]["filters"][ch])
                 # prepare a dictionary that contains the emitters per channel defined
                 output_per_fluoname = dict()
+                # fluorophores of the channel rendered as localisations
+                rendered_fluos = []
                 writing_notes = (
                     self.identifier + "_" + str(modality) + "_" + str(ch) + "_"
                 )
@@ -935,12 +1057,19 @@ class Imager:
                     else:
                         emitters = self.get_emitters_in_ROI(fluo)
                     n_emitters = emitters.shape[0]
+                    # per frame: was the rendering Gaussian applied
+                    render_record = None
                     positions_record = dict(
                         emitters=np.empty((0, 3)),
                         emitter_photons=np.empty(0),
                         localisations=None,
                         localisation_photons=None,
                         localisation_uncertainty=None,
+                        # parameters used, config keys filled by a default,
+                        # and computations that were skipped
+                        parameters=dict(exp_time=exp_time, nframes=nframes),
+                        defaults_used={},
+                        notes=[],
                     )
                     if n_emitters < 1:
                         no_emitters = True
@@ -990,12 +1119,28 @@ class Imager:
                         # check for parameters for localisaiton generation
                         loc_precision_xy_nm, loc_precision_z_nm = (
                             self.get_localisation_precision(
-                                modality, fluo, exp_time
+                                modality, fluo, exp_time, record=positions_record
                             )
                         )
                         av_loc_per_emitter = self.modalities[modality][
                             "emitters"
                         ]["nlocalisations"]
+                        positions_record["parameters"][
+                            "nlocalisations"
+                        ] = av_loc_per_emitter
+                        if (loc_precision_xy_nm is None) != (
+                            av_loc_per_emitter is None
+                        ):
+                            missing = (
+                                "nlocalisations"
+                                if av_loc_per_emitter is None
+                                else "localisation precision"
+                            )
+                            self._note(
+                                positions_record, modality,
+                                f"{missing} not set; localisations are not "
+                                "generated and emitters are imaged directly",
+                            )
                         if (
                             loc_precision_xy_nm is not None
                             and av_loc_per_emitter is not None
@@ -1033,11 +1178,30 @@ class Imager:
                                 psf_data = dict(psf_data)
                                 psf_data["render_sigma_xy"] = (
                                     self.get_rendering_kernel(
-                                        modality, loc_precision_xy_nm
+                                        modality,
+                                        loc_precision_xy_nm,
+                                        record=positions_record,
                                     )
                                     / psf_data["psf_pixelsizeXY"]
                                 )
+                                render_record = []
+                                psf_data["render_record"] = render_record
+                                if psf_data["render_sigma_xy"] > 0:
+                                    voxels_xy = [
+                                        n * float(field_data["field_pixelsizeXY"])
+                                        / psf_data["psf_pixelsizeXY"]
+                                        for n in field_data["field_size"][:2]
+                                    ]
+                                    positions_record["parameters"][
+                                        "render_truncate"
+                                    ] = conv.render_truncate(
+                                        voxels_xy, psf_data["render_sigma_xy"]
+                                    )
                             else:
+                                self._note(
+                                    positions_record, modality,
+                                    "no localisations drawn; image has noise only",
+                                )
                                 no_emitters = True
                                 # if no emitter is in range, an image with noise should be generated
                                 emitters = np.array(
@@ -1114,6 +1278,12 @@ class Imager:
                         images, beads = self.images_by_convolutions(
                             convolution_type, **simparams
                         )
+                    if render_record is not None:
+                        rendered_fluos.append(fluo)
+                        self._record_rendering(
+                            positions_record, modality, render_record,
+                            convolution_type,
+                        )
                     writing_notes_fluo = writing_notes_fluo + emission_notes
                     # print(f"max and min only photons: {np.max(images)}, {np.min(images)}")
                     # Beta implementation to save images before detection
@@ -1136,6 +1306,30 @@ class Imager:
                     # # # Up to here only the photon information on arrival
                     timeseries_noise = None
                     beadstack_noise = None
+                    # rendered localisations are a reconstruction: their
+                    # photon noise is already in the localisation precision
+                    render_only = len(rendered_fluos) == len(fluonames)
+                    for fluo in fluonames:
+                        record = self.last_positions[modality][ch][fluo]
+                        record["parameters"]["detector_noise_applied"] = bool(
+                            noise and not render_only
+                        )
+                        if not noise:
+                            continue
+                        if render_only:
+                            self._note(
+                                record, modality,
+                                "rendered localisations are a reconstruction; "
+                                "detector noise not applied (photon noise is "
+                                "in the localisation precision)",
+                            )
+                        elif fluo in rendered_fluos:
+                            self._note(
+                                record, modality,
+                                f"channel {ch} mixes rendered localisations and "
+                                "PSF-convolved emitters; detector noise applied "
+                                "to the rendered localisations too",
+                            )
                     if noise:
                         print("Adding noise")
                         timeseries_noise = np.zeros(
@@ -1145,9 +1339,10 @@ class Imager:
                             timeseries_noiseless
                         )
                         # print(np.max(timeseries), np.min(timeseries))
-                        timeseries_noise = self.add_detector_noise(
-                            modality, timeseries_noise
-                        )
+                        if not render_only:
+                            timeseries_noise = self.add_detector_noise(
+                                modality, timeseries_noise
+                            )
                         if beadstack_noiseless is not None:
                             beadstack_noise = np.zeros(
                                 shape=beadstack_noiseless.shape,
@@ -1275,7 +1470,11 @@ class Imager:
             nm, ROI origin), "emitter_photons" (photons over all frames),
             and, for localisation-based modalities, "localisations" (Mx3,
             nm), "localisation_photons" and "localisation_uncertainty" (nm);
-            these are None otherwise.
+            these are None otherwise. "parameters" holds the values actually
+            used to simulate the image (exposure, frames, precision model and
+            precisions, rendering kernel, ...), "defaults_used" the config
+            keys that were not set and took a default, and "notes" the steps
+            that were skipped.
         """
         positions = getattr(self, "last_positions", {})
         if modality is None:

@@ -1110,10 +1110,12 @@ class ExperimentParametrisation:
                 self.imager.set_writing_directory(
                     os.path.join(self.output_directory, "")
                 )
-                self.save_parameters(self.output_directory, name=name)
             timeseries_noise, beads_noise, timeseries_noiseless, beads_noiseless = self.imager.generate_imaging(
                 modality=modality, **acq_p
             )
+            if save:
+                # after imaging, so the values actually used are written
+                self.save_parameters(self.output_directory, name=name)
             simulation_output = {}
             simulation_output_noiseless = {}
             simulation_output[modality] = timeseries_noise
@@ -1655,7 +1657,10 @@ class ExperimentParametrisation:
         normals construction), probes, structural integrity, virtual
         sample, fluorophores, imaging modalities and acquisition settings,
         so that every output can be traced to the parameters that produced
-        it.
+        it. After a simulation, "simulation" holds, per modality, channel
+        and fluorophore, the values actually used (e.g. the localisation
+        precision), the config keys that took a default, and skipped steps
+        (see yaml_functions.simulation_report).
 
         Returns
         -------
@@ -1681,6 +1686,12 @@ class ExperimentParametrisation:
             modalities[name] = {
                 k: v for k, v in params.items() if k not in ("psf_stack",)
             }
+        imager = getattr(self, "imager", None)
+        simulation = (
+            yaml_functions.simulation_report(imager.get_positions())
+            if imager is not None
+            else None
+        )
         return plain(
             dict(
                 vlab4mic_version=vlab4mic.__version__,
@@ -1693,6 +1704,7 @@ class ExperimentParametrisation:
                 fluorophores=getattr(self, "fluorophore_parameters", None),
                 imaging_modalities=modalities,
                 acquisition=getattr(self, "selected_mods", None),
+                simulation=simulation,
             )
         )
 
