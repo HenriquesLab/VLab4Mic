@@ -43,3 +43,21 @@ def test_ventral_geometry_in_virtual_sample():
     for a in axes:
         a = np.asarray(a, float) / np.linalg.norm(a)
         assert np.degrees(np.arccos(np.clip(abs(a[2]), -1, 1))) <= 10 + 1e-3
+
+
+@pytest.mark.network
+def test_tilt_through_image_vsample():
+    _, _, experiment = experiments.image_vsample(
+        structure="7R5K", probe_template="NPC_Nup96_Cterminal_direct",
+        number_of_particles=6, orientation_tilt_max=10, random_rotations=True,
+        multimodal=["Widefield"], run_simulation=False, clear_experiment=True,
+        random_seed=5,
+    )
+    assert experiment.virtualsample_params["orientation_tilt_max"] == 10
+    axes = [m.get_axis()["direction"] for m in experiment.coordinate_field.molecules]
+    tilts = []
+    for a in axes:
+        a = np.asarray(a, float) / np.linalg.norm(a)
+        tilts.append(np.degrees(np.arccos(np.clip(abs(a[2]), -1, 1))))
+    assert max(tilts) <= 10 + 1e-3
+    assert max(tilts) > 0  # tilted, not all flat

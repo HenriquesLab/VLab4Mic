@@ -1877,6 +1877,7 @@ def generate_virtual_sample(
     rotation_per_particle = None,
     random_rotations=False,
     rotation_angles = None,
+    orientation_tilt_max: float = None,
     expansion_factor=1,
     clear_probes=False,
     clear_experiment=False,
@@ -2074,6 +2075,8 @@ def generate_virtual_sample(
     if rotation_per_particle is not None:
         vsample_configuration["rotation_per_particle"] = rotation_per_particle
     vsample_configuration["rotation_angles"] = rotation_angles
+    if orientation_tilt_max is not None:
+        vsample_configuration["orientation_tilt_max"] = orientation_tilt_max
     vsample_configuration["xy_orientations"] = xy_orientations
     vsample_configuration["xz_orientations"] = xz_orientations
     vsample_configuration["yz_orientations"] = yz_orientations
@@ -2205,6 +2208,7 @@ def image_vsample(
     rotation_per_particle = None,
     random_rotations = False,
     rotation_angles = None,
+    orientation_tilt_max: float = None,
     expansion_factor = 1,
     clear_probes = False,
     clear_experiment = False,
@@ -2295,6 +2299,12 @@ def image_vsample(
         If True, apply random rotations to particles. Default is False.
     :param rotation_angles : any, optional
         Rotation angles for the sample.
+    :param orientation_tilt_max : float, optional
+        Maximum tilt in degrees: each particle axis is drawn uniformly over
+        the spherical cap within this angle of sample_inital_orientation
+        (default [0, 0, 1]), e.g. a structure lying on the coverslip with a
+        small random tilt. Use with random_orientations=False, and with
+        random_rotations for a random in-plane rotation.
     :param clear_probes : bool, optional
         If True, default probe parameters will be cleared. Default is False.
     :param clear_experiment : bool, optional
@@ -2348,6 +2358,7 @@ def image_vsample(
             rotation_per_particle=rotation_per_particle,
             random_rotations=random_rotations,
             rotation_angles=rotation_angles,
+            orientation_tilt_max=orientation_tilt_max,
             clear_probes=clear_probes,
             clear_experiment=clear_experiment,
             primary_probe=primary_probe,
