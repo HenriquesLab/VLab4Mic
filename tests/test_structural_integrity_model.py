@@ -109,3 +109,27 @@ def test_walk_reaches_target_when_enough_subunits_are_reachable():
     np.random.seed(1)
     removed = xmer_ids_remove(0, tree, 0.5, 3, 15)
     assert len(removed) >= 20
+
+
+def test_single_subunit_raises_instead_of_empty_particle():
+    # regression: when eps1 merged every epitope into one subunit, all
+    # trials failed and no epitope was kept, silently
+    points = line_of_subunits(n=10, spacing=10)
+    np.random.seed(0)
+    with pytest.raises(ValueError, match="1 subunit"):
+        xmersubset_byclustering(
+            points, dict(PARAMS, eps1=50), deg_dissasembly=0.5,
+            xmer_neigh_distance=25, return_ids=True,
+        )
+
+
+def test_full_removal_by_every_trial_raises(monkeypatch):
+    from vlab4mic.utils.transform import structural_integrity as si
+
+    monkeypatch.setattr(si, "singlecluster_verification", lambda *a, **k: None)
+    np.random.seed(0)
+    with pytest.raises(ValueError, match="all 50 removal trials"):
+        si.xmersubset_byclustering(
+            line_of_subunits(), PARAMS, deg_dissasembly=0.5,
+            xmer_neigh_distance=25, return_ids=True,
+        )

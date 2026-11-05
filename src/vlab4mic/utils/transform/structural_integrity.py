@@ -218,6 +218,15 @@ def xmersubset_byclustering(
     # obtain a center for each xmer
     xmer_ids_all = np.unique(label_p_epitope)
     n_xmer = len(xmer_ids_all)
+    if n_xmer < 2:
+        # removing the only subunit removes the whole particle: no partial
+        # disassembly exists, and every trial below would fail
+        raise ValueError(
+            f"Structural integrity: the {epitopes_coords.shape[0]} epitopes form "
+            f"{n_xmer} subunit with eps1={d_cluster_params['eps1']} Å "
+            "(structural_integrity_small_cluster), so no partial disassembly is "
+            "possible. Use a distance smaller than the spacing between subunits."
+        )
 
     # generate a center point to refer to a xmer
     sums = np.zeros((n_xmer, 3))
@@ -285,7 +294,17 @@ def xmersubset_byclustering(
             expected_number_reached = True
             break
         i+=1
-    if not expected_number_reached and best_ids is not None:
+    if best_ids is None:
+        # every trial removed the whole particle; returning no epitopes
+        # would silently produce an unlabelled particle
+        raise ValueError(
+            "Structural integrity: all 50 removal trials removed every subunit "
+            f"({n_xmer} subunits, neighbour distance {xmer_neigh_distance} Å, "
+            f"connection distance {d_cluster_params['eps2']} Å). Check "
+            "structural_integrity_small_cluster and "
+            "structural_integrity_large_cluster against the subunit spacing."
+        )
+    if not expected_number_reached:
         warnings.warn(
             "Structural integrity: no removal pattern within 5% of the "
             f"requested fraction after 50 trials; using the closest one "
