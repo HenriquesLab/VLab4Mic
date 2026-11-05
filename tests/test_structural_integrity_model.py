@@ -133,3 +133,13 @@ def test_full_removal_by_every_trial_raises(monkeypatch):
             line_of_subunits(), PARAMS, deg_dissasembly=0.5,
             xmer_neigh_distance=25, return_ids=True,
         )
+
+
+@pytest.mark.parametrize("to_check", [[], [3], [0, 5, 7, 7], np.array([2, 9, 11])])
+def test_notin_logical_list_matches_membership(to_check):
+    from vlab4mic.utils.transform.structural_integrity import notin_logical_list
+
+    V = np.array([0, 1, 2, 3, 5, 7, 7, 9, 10])
+    expected = [x not in to_check for x in V]
+    assert notin_logical_list(V, to_check) == expected
+    assert notin_logical_list(list(V), to_check) == expected

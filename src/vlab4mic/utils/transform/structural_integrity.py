@@ -128,10 +128,10 @@ def notin_logical_list(V, integers_to_check):
     # for V, we want to exclude all occurrences of integers_to_check
     # and it returns a logical vector indicating "False" for indices
     # in V where an element of integers_to_check appear
-    # Create a list comprehension to generate the logical vector
     # returns a logical list that identify all occurrences of
     # each index of integers_to_check in V
-    return [x not in integers_to_check for x in V]
+    # (vectorised: same result as [x not in integers_to_check for x in V])
+    return (~np.isin(np.asarray(V), np.asarray(integers_to_check))).tolist()
 
 
 def singlecluster_verification(
