@@ -14,15 +14,32 @@ Typical use::
     results_a, _ = experiments.run_replicates(100, structure=dome, ...)
     results_b, _ = experiments.run_replicates(100, structure=flat, ...)
     score = distinguishability_from_replicates(results_a, results_b, "SMLM")
+
+Across a parameter sweep::
+
+    table = distinguishability_sweep(
+        dict(structure=dome_path, structure_is_path=True),
+        dict(structure=flat_path, structure_is_path=True),
+        sweep={"labelling_efficiency": [0.2, 0.5, 1.0]},
+        modalities=["STED", "SMLM"],
+        common=dict(probe_list=[probe], number_of_particles=1),
+        n_replicates=100,
+        plot=True,
+    )
 """
 
+import copy
+import itertools
+
 import numpy as np
+import pandas as pd
 from scipy import ndimage
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import StratifiedKFold, cross_val_predict
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
+from tqdm.auto import tqdm
 
 
 def _as_2d(image):
@@ -329,3 +346,303 @@ def distinguishability_from_replicates(
         images_from_replicates(results_b, modality, channel, noiseless),
         **kwargs,
     )
+
+
+# columns of a distinguishability_sweep table that are not swept parameters
+SWEEP_RESULT_COLUMNS = (
+    "modality",
+    "channel",
+    "n_a",
+    "n_b",
+    "accuracy",
+    "accuracy_low",
+    "accuracy_high",
+    "auc",
+    "auc_low",
+    "auc_high",
+    "seed_a",
+    "seed_b",
+)
+
+
+def _as_structure_kwargs(structure):
+    if isinstance(structure, str):
+        return dict(structure=structure)
+    if isinstance(structure, dict):
+        return dict(structure)
+    raise TypeError("A structure is a structure ID / path or a dict of image_vsample arguments")
+
+
+def _set_parameter(kwargs, name, value):
+    # "Modality.parameter" sets a parameter of one modality, the way
+    # image_vsample takes them: Modality={"parameter": value}
+    if "." in name:
+        modality, key = name.split(".", 1)
+        kwargs[modality] = {**kwargs.get(modality, {}), key: value}
+    else:
+        kwargs[name] = value
+
+
+def _point_seeds(random_seed, n_points):
+    if random_seed is None:
+        return [(None, None)] * n_points
+    state = np.random.SeedSequence(random_seed).generate_state(2 * n_points)
+    return [(int(state[2 * k]), int(state[2 * k + 1])) for k in range(n_points)]
+
+
+def distinguishability_sweep(
+    structure_a,
+    structure_b,
+    sweep,
+    modalities,
+    n_replicates=50,
+    common=None,
+    channel="ch0",
+    noiseless=False,
+    random_seed=None,
+    plot=False,
+    plot_parameter=None,
+    metric="auc",
+    progress=True,
+    **kwargs,
+):
+    """
+    Distinguishability of two structures at every point of a parameter sweep.
+
+    At each combination of the swept parameter values, n_replicates
+    independent realisations of each structure are simulated with
+    run_replicates (a new experiment per structure and per point), and
+    distinguishability is computed for every modality.
+
+    Parameters
+    ----------
+    structure_a, structure_b : str or dict
+        The two structures: a structure ID, or a dict of image_vsample
+        arguments specific to that structure (e.g. structure,
+        structure_is_path, probe_list). These override common.
+    sweep : dict
+        {parameter: list of values}. Every combination of values (Cartesian
+        product) is a sweep point. Names are image_vsample arguments (e.g.
+        "labelling_efficiency", "probe_DoL", "structural_integrity",
+        "random_orientations") or "Modality.parameter" for a modality
+        parameter (e.g. "SMLM.lateral_precision", "STED.pixelsize_nm").
+        A swept value overrides the same argument in common and in the
+        structure arguments.
+    modalities : str or list of str
+        Modalities to simulate and compare.
+    n_replicates : int, optional
+        Realisations per structure and per point. Default is 50.
+    common : dict, optional
+        image_vsample arguments shared by both structures (probes, virtual
+        sample, modality parameters...).
+    channel : str, optional
+        Channel to compare. Default "ch0".
+    noiseless : bool, optional
+        Use images without detector noise. Default False.
+    random_seed : int, optional
+        Seed of the whole sweep. Each structure at each point gets its own
+        seed derived from it (recorded in the table as seed_a, seed_b), so
+        the sweep is reproducible and realisations are independent across
+        points and structures.
+    plot : bool, optional
+        Also plot the score against a swept parameter (see
+        plot_distinguishability_sweep). Default False.
+    plot_parameter : str, optional
+        Swept parameter on the x axis of the plot. Needed when more than one
+        parameter is swept.
+    metric : str, optional
+        "auc" (default) or "accuracy", for the plot.
+    progress : bool, optional
+        Show a progress bar over the sweep points. Default True.
+    **kwargs
+        Passed to distinguishability (features, n_splits, n_bootstrap,
+        confidence, classifier, random_state and feature arguments).
+
+    Returns
+    -------
+    pandas.DataFrame
+        One row per sweep point and modality: the swept parameter values,
+        modality, channel, n_a, n_b, accuracy, accuracy_low, accuracy_high,
+        auc, auc_low, auc_high, seed_a, seed_b.
+    matplotlib.figure.Figure
+        Only if plot is True, returned as (table, figure).
+    """
+    from vlab4mic import experiments
+
+    structure_a = _as_structure_kwargs(structure_a)
+    structure_b = _as_structure_kwargs(structure_b)
+    modalities = [modalities] if isinstance(modalities, str) else list(modalities)
+    if not sweep:
+        raise ValueError("sweep needs at least one parameter with a list of values")
+    names = list(sweep)
+    for name in names:
+        if name in SWEEP_RESULT_COLUMNS:
+            raise ValueError(f"{name!r} cannot be a swept parameter name")
+    points = list(itertools.product(*(list(sweep[name]) for name in names)))
+    seeds = _point_seeds(random_seed, len(points))
+
+    rows = []
+    for point, point_seeds in tqdm(
+        list(zip(points, seeds)), desc="sweep points", disable=not progress
+    ):
+        setting = dict(zip(names, point))
+        replicates = []
+        for structure, seed in zip((structure_a, structure_b), point_seeds):
+            arguments = copy.deepcopy({**(common or {}), **structure})
+            for name, value in setting.items():
+                _set_parameter(arguments, name, value)
+            arguments.update(
+                multimodal=modalities,
+                random_seed=seed,
+                n_replicates=n_replicates,
+                modality="All",
+            )
+            results, _ = experiments.run_replicates(**arguments)
+            replicates.append(results)
+        for modality in modalities:
+            score = distinguishability_from_replicates(
+                replicates[0], replicates[1], modality, channel, noiseless, **kwargs
+            )
+            rows.append(
+                dict(
+                    setting,
+                    modality=modality,
+                    channel=channel,
+                    n_a=score["n_a"],
+                    n_b=score["n_b"],
+                    accuracy=score["accuracy"],
+                    accuracy_low=score["accuracy_interval"][0],
+                    accuracy_high=score["accuracy_interval"][1],
+                    auc=score["auc"],
+                    auc_low=score["auc_interval"][0],
+                    auc_high=score["auc_interval"][1],
+                    seed_a=point_seeds[0],
+                    seed_b=point_seeds[1],
+                )
+            )
+    table = pd.DataFrame(rows)
+    if plot:
+        figure = plot_distinguishability_sweep(table, plot_parameter, metric=metric)
+        return table, figure
+    return table
+
+
+def swept_parameters(table):
+    """
+    Names of the swept parameters in a distinguishability_sweep table.
+
+    Parameters
+    ----------
+    table : pandas.DataFrame
+        Output of distinguishability_sweep (also after a CSV round trip).
+
+    Returns
+    -------
+    list of str
+    """
+    return [c for c in table.columns if c not in SWEEP_RESULT_COLUMNS]
+
+
+def scores_vs_parameter(table, parameter=None, metric="auc"):
+    """
+    Score against one swept parameter, one series per curve.
+
+    There is one series per modality and per combination of the values of
+    the other swept parameters.
+
+    Parameters
+    ----------
+    table : pandas.DataFrame
+        Output of distinguishability_sweep.
+    parameter : str, optional
+        Swept parameter for the x axis. Default: the only swept parameter.
+    metric : str, optional
+        "auc" (default) or "accuracy".
+
+    Returns
+    -------
+    pandas.DataFrame
+        Columns series, the parameter, the metric and its interval
+        (metric_low, metric_high), sorted by series and parameter value.
+    """
+    if metric not in ("auc", "accuracy"):
+        raise ValueError("metric is 'auc' or 'accuracy'")
+    swept = swept_parameters(table)
+    if parameter is None:
+        if len(swept) != 1:
+            raise ValueError(f"Several parameters were swept {swept}: choose one")
+        parameter = swept[0]
+    if parameter not in swept:
+        raise ValueError(f"{parameter!r} is not a swept parameter {swept}")
+    others = [p for p in swept if p != parameter]
+    name_modality = table["modality"].nunique() > 1 or not others
+
+    def label(row):
+        parts = [str(row["modality"])] if name_modality else []
+        parts += [f"{p}={row[p]}" for p in others]
+        return ", ".join(parts)
+
+    out = table[[parameter, metric, f"{metric}_low", f"{metric}_high"]].copy()
+    out.insert(0, "series", table.apply(label, axis=1))
+    return out.sort_values(["series", parameter], kind="stable").reset_index(drop=True)
+
+
+def plot_distinguishability_sweep(table, parameter=None, metric="auc", ax=None):
+    """
+    Plot the distinguishability score against one swept parameter.
+
+    One line per modality and per combination of the other swept
+    parameters, with the bootstrap interval as a band and a dashed line at
+    chance (0.5).
+
+    Parameters
+    ----------
+    table : pandas.DataFrame
+        Output of distinguishability_sweep.
+    parameter : str, optional
+        Swept parameter for the x axis. Default: the only swept parameter.
+    metric : str, optional
+        "auc" (default) or "accuracy".
+    ax : matplotlib.axes.Axes, optional
+        Axes to draw on. Default: a new figure.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+    """
+    import matplotlib.pyplot as plt
+
+    data = scores_vs_parameter(table, parameter, metric)
+    parameter = data.columns[1]
+    if ax is None:
+        figure, ax = plt.subplots(figsize=(5, 3.5))
+    else:
+        figure = ax.figure
+    x_values = pd.to_numeric(data[parameter], errors="coerce")
+    numeric = data[parameter].dtype != bool and not x_values.isna().any()
+    if not numeric:
+        # categorical values (booleans, strings, lists): evenly spaced
+        labels = data[parameter].astype(str)
+        categories = list(dict.fromkeys(labels))
+        x_values = labels.map(categories.index)
+    for k, (series, group) in enumerate(data.groupby("series", sort=False)):
+        x = x_values[group.index]
+        colour = f"C{k % 10}"
+        ax.fill_between(x, group[f"{metric}_low"], group[f"{metric}_high"],
+                        color=colour, alpha=0.2, linewidth=0)
+        ax.plot(x, group[metric], "o-", color=colour, linewidth=2, markersize=5,
+                label=series)
+    if not numeric:
+        ax.set_xticks(range(len(categories)), categories)
+    ax.axhline(0.5, color="0.5", linestyle="--", linewidth=1)
+    ax.set_ylim(min(0.4, data[f"{metric}_low"].min() - 0.02), 1.02)
+    ax.set_xlabel(parameter)
+    ax.set_ylabel("ROC AUC" if metric == "auc" else "accuracy")
+    ax.grid(alpha=0.3, linewidth=0.5)
+    ax.spines[["top", "right"]].set_visible(False)
+    if data["series"].nunique() > 1:
+        ax.legend(frameon=False, fontsize=8)
+    else:
+        ax.set_title(data["series"].iloc[0], fontsize=10)
+    figure.tight_layout()
+    return figure
