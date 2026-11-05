@@ -57,12 +57,45 @@ def ids2delete2(xmer_id, tree, neigh, upbound):
     return xmers_removed  # is a list
 
 
+def reachable_subunits(start_id, tree, neighbors, upbound):
+    """
+    Subunits that the removal walk can reach from start_id.
+
+    The walk of xmer_ids_remove grows by removing neighbours of subunits
+    already removed: at most neighbors nearest ones within upbound (as in
+    ids2delete2). This returns every subunit connected to start_id by such
+    steps, which is the most the walk can ever remove.
+
+    Returns
+    -------
+    set of int
+    """
+    seen = {int(start_id)}
+    frontier = [int(start_id)]
+    while frontier:
+        distances, index = tree.query(
+            tree.data[frontier], k=neighbors, distance_upper_bound=upbound
+        )
+        distances = np.asarray(distances).reshape(len(frontier), -1)
+        index = np.asarray(index).reshape(len(frontier), -1)
+        new = set(index[np.isfinite(distances)].tolist()) - seen
+        seen |= new
+        frontier = list(new)
+    return seen
+
+
 def xmer_ids_remove(xmer0_id, tree, percentageoff, neighbors, upbound):
     totalpoints = tree.data.shape[0]
     print("total emitters", totalpoints)
     total2remove = np.floor(totalpoints * percentageoff)
     # total2remove = np.random.poisson(np.floor(totalpoints*percentageoff))
     print("removing: ", total2remove)
+    # if fewer subunits are reachable than must be removed, the walk below
+    # can never reach its target: remove all of them at once instead of
+    # iterating until max_iter (the walk would end with the same set)
+    reachable = reachable_subunits(xmer0_id, tree, neighbors, upbound)
+    if len(reachable) < int(total2remove):
+        return sorted(reachable)
     removed = list([xmer0_id])
     id_query = xmer0_id
     max_iter = 100000
