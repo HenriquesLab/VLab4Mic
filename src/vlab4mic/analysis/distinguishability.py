@@ -9,6 +9,26 @@ receiver operating characteristic curve (ROC AUC), with bootstrap intervals
 over realisations. An AUC of 0.5 means the structures cannot be told apart;
 an AUC of 1 means every image is assigned correctly.
 
+The default features ("shape") describe the shape of the particle image
+only: each image is background subtracted and scaled to unit total
+intensity before the features are computed, so two structures that differ
+only in brightness (e.g. in the number of labelled sites) are not told
+apart. Brightness can be scored on its own with features="brightness", as a
+control. The default classifier is standardisation, principal component
+analysis (95% of the variance) and logistic regression.
+
+Two controls are reported with every score:
+
+- null_auc: the same analysis on two random halves of structure A, which
+  should be close to 0.5. A value far from 0.5 means the score is biased.
+- p_value: the permutation p-value of the AUC (n_permutations > 0), the
+  fraction of label permutations that score at least as well.
+
+A warning is raised when all realisations of a structure have the same
+features, which happens when the realisations are not independent (e.g.
+every replicate simulated with the same random seed); the score is then
+meaningless.
+
 Typical use::
 
     results_a, _ = experiments.run_replicates(100, structure=dome, ...)
@@ -30,10 +50,12 @@ Across a parameter sweep::
 
 import copy
 import itertools
+import warnings
 
 import numpy as np
 import pandas as pd
 from scipy import ndimage
+from sklearn.decomposition import PCA
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import StratifiedKFold, cross_val_predict
@@ -52,6 +74,120 @@ def _as_2d(image):
     return image
 
 
+def normalise_image(image, threshold_rel=0.1):
+    """
+    Background-subtracted image scaled to unit total intensity.
+
+    The median is subtracted, pixels below threshold_rel of the maximum are
+    set to 0 and the image is divided by its total. Multiplying the signal
+    by a constant (a brighter particle) does not change the result. The
+    threshold removes the background noise, which would otherwise make up a
+    larger share of the total in a dimmer image and so let brightness leak
+    into the shape features.
+
+    Parameters
+    ----------
+    image : numpy.ndarray
+        2-D image, or a stack of frames (frames, x, y) that is summed.
+    threshold_rel : float, optional
+        Fraction of the maximum below which pixels are set to 0. Default
+        0.1; 0 keeps every pixel above the median.
+
+    Returns
+    -------
+    numpy.ndarray
+        2-D image with non-negative values summing to 1 (or all zeros).
+    """
+    image = _as_2d(image)
+    image = np.clip(image - np.median(image), 0, None)
+    image = np.where(image >= threshold_rel * image.max(), image, 0)
+    total = image.sum()
+    return image / total if total > 0 else image
+
+
+def shape_features(image, n_bins=8, threshold_rel=0.1):
+    """
+    Rotation-invariant, brightness-independent shape features.
+
+    The image is normalised (normalise_image) and centred on its intensity
+    centroid. Features are:
+
+    - the radial intensity profile (n_bins rings out to half the smaller
+      image dimension);
+    - the log of the rotation-averaged power spectrum (n_bins rings out to
+      the Nyquist frequency), which separates rings from filled discs;
+    - the radius of gyration, the lengths of the major and minor principal
+      axes (square roots of the eigenvalues of the second-moment matrix)
+      and their ratio, minor / major (1 for a round particle).
+
+    Lengths are in pixels, so compare images of the same modality.
+
+    Parameters
+    ----------
+    image : numpy.ndarray
+        2-D image, or a stack of frames that is summed.
+    n_bins : int, optional
+        Number of rings of the profile and of the spectrum. Default 8.
+    threshold_rel : float, optional
+        Background threshold, see normalise_image. Default 0.1.
+
+    Returns
+    -------
+    numpy.ndarray
+        Feature vector of length 2 * n_bins + 4.
+    """
+    image = normalise_image(image, threshold_rel)
+    if image.sum() <= 0:
+        return np.zeros(2 * n_bins + 4)
+    x, y = np.indices(image.shape)
+    dx = x - (image * x).sum()
+    dy = y - (image * y).sum()
+    r = np.hypot(dx, dy)
+    profile = np.histogram(
+        r, bins=np.linspace(0, min(image.shape) / 2, n_bins + 1), weights=image
+    )[0]
+    # rotation-averaged power spectrum; frequency in units of Nyquist
+    power = np.abs(np.fft.fftshift(np.fft.fft2(image))) ** 2
+    centre = np.array(image.shape) // 2
+    k = np.hypot(x - centre[0], y - centre[1]) / (min(image.shape) / 2)
+    edges = np.linspace(0, 1, n_bins + 1)
+    sums = np.histogram(k, bins=edges, weights=power)[0]
+    counts = np.histogram(k, bins=edges)[0]
+    spectrum = np.log(sums / np.maximum(counts, 1) + 1e-12)
+    gyration = np.sqrt((image * r**2).sum())
+    cov = np.array(
+        [
+            [(image * dx * dx).sum(), (image * dx * dy).sum()],
+            [(image * dx * dy).sum(), (image * dy * dy).sum()],
+        ]
+    )
+    minor, major = np.sqrt(np.clip(np.sort(np.linalg.eigvalsh(cov)), 0, None))
+    roundness = minor / major if major > 0 else 1.0
+    return np.concatenate([profile, spectrum, [gyration, major, minor, roundness]])
+
+
+def brightness_features(image):
+    """
+    Total intensity of an image above background (a control feature).
+
+    Use it to measure how much of a difference between two structures is
+    brightness alone (e.g. a different number of labelled sites), which the
+    shape features do not see.
+
+    Parameters
+    ----------
+    image : numpy.ndarray
+        2-D image, or a stack of frames that is summed.
+
+    Returns
+    -------
+    numpy.ndarray
+        One-element feature vector [log(1 + total intensity above the median)].
+    """
+    image = _as_2d(image)
+    return np.array([np.log1p(np.clip(image - np.median(image), 0, None).sum())])
+
+
 def radial_profile_features(image, n_bins=16, max_radius=None):
     """
     Rotation-invariant features of a single-particle image.
@@ -59,7 +195,9 @@ def radial_profile_features(image, n_bins=16, max_radius=None):
     The image is centred on its intensity centroid. Features are the
     radial intensity profile (n_bins rings, normalised to total intensity),
     the radius of gyration, the two eigenvalues of the second-moment
-    matrix (shape and elongation) and the total intensity.
+    matrix (shape and elongation) and the total intensity. Because of the
+    total intensity, and because the background is not subtracted, these
+    features depend on brightness; use "shape" to compare shapes only.
 
     Parameters
     ----------
@@ -170,13 +308,15 @@ def aspect_ratio_features(image, threshold_rel=0.2, smoothing_px=1.0):
 
 
 FEATURES = {
+    "shape": shape_features,
+    "brightness": brightness_features,
     "radial_profile": radial_profile_features,
     "pixels": pixel_features,
     "aspect_ratio": aspect_ratio_features,
 }
 
 
-def image_features(images, features="radial_profile", **kwargs):
+def image_features(images, features="shape", **kwargs):
     """
     Feature matrix of a list of images.
 
@@ -185,8 +325,10 @@ def image_features(images, features="radial_profile", **kwargs):
     images : sequence of numpy.ndarray
         Images (2-D, or stacks of frames that are summed).
     features : str or callable, optional
-        "radial_profile" (default, rotation invariant), "aspect_ratio"
-        (rotation and size invariant shape), "pixels", or a function
+        "shape" (default: rotation invariant, brightness independent),
+        "brightness" (total intensity, a control), "aspect_ratio"
+        (rotation, size and brightness invariant), "radial_profile"
+        (rotation invariant, includes brightness), "pixels", or a function
         image -> 1-D feature vector.
     **kwargs
         Passed to the feature function.
@@ -217,26 +359,139 @@ def _accuracy(labels, scores):
     return float(np.mean((scores >= 0.5) == labels))
 
 
-def distinguishability(
-    images_a,
-    images_b,
-    features="radial_profile",
+def default_classifier(n_features):
+    """
+    Default classifier: standardisation, PCA and logistic regression.
+
+    PCA keeps the components that explain 95% of the variance (only with
+    more than two features), so correlated features (e.g. neighbouring
+    rings of a profile) do not make the logistic regression unstable.
+
+    Parameters
+    ----------
+    n_features : int
+        Number of features.
+
+    Returns
+    -------
+    sklearn.pipeline.Pipeline
+    """
+    steps = [StandardScaler()]
+    if n_features > 2:
+        steps.append(PCA(n_components=0.95, svd_solver="full"))
+    steps.append(LogisticRegression(max_iter=1000))
+    return make_pipeline(*steps)
+
+
+def _out_of_fold_scores(X, labels, classifier, n_splits, random_state):
+    n_splits = int(min(n_splits, np.bincount(labels).min()))
+    if n_splits < 2:
+        raise ValueError("Each structure needs at least 2 images")
+    if np.all(np.ptp(X, axis=0) == 0):
+        # every image has the same features: nothing to learn
+        return np.full(len(labels), 0.5), n_splits
+    if classifier is None:
+        classifier = default_classifier(X.shape[1])
+    folds = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=random_state)
+    scores = cross_val_predict(classifier, X, labels, cv=folds, method="predict_proba")[:, 1]
+    return scores, n_splits
+
+
+def _as_feature_matrix(features):
+    features = np.asarray(features, dtype=float)
+    return features.reshape(len(features), -1)
+
+
+def _score_features(
+    features_a,
+    features_b,
     n_splits=5,
     n_bootstrap=1000,
     confidence=0.95,
     classifier=None,
     random_state=None,
+    n_permutations=0,
+    null_control=True,
+):
+    # cross-validated scores of two feature matrices, with intervals and
+    # controls (see distinguishability)
+    features_a = _as_feature_matrix(features_a)
+    features_b = _as_feature_matrix(features_b)
+    n_unique = []
+    for name, feats in (("A", features_a), ("B", features_b)):
+        unique = len(np.unique(feats, axis=0))
+        n_unique.append(unique)
+        if len(feats) > 1 and unique < 2:
+            warnings.warn(
+                f"All {len(feats)} realisations of structure {name} have the "
+                "same features: they are not independent (were they simulated "
+                "with the same random seed?), so the score is not meaningful.",
+                RuntimeWarning,
+                stacklevel=3,
+            )
+    X = np.vstack([features_a, features_b])
+    labels = np.concatenate([np.zeros(len(features_a)), np.ones(len(features_b))]).astype(int)
+    scores, n_splits = _out_of_fold_scores(X, labels, classifier, n_splits, random_state)
+    auc = float(roc_auc_score(labels, scores))
+    rng = np.random.default_rng(random_state)
+    p_value = np.nan
+    if n_permutations:
+        permuted = []
+        for _ in range(int(n_permutations)):
+            shuffled = rng.permutation(labels)
+            perm_scores, _ = _out_of_fold_scores(X, shuffled, classifier, n_splits, random_state)
+            permuted.append(roc_auc_score(shuffled, perm_scores))
+        p_value = (1 + np.sum(np.array(permuted) >= auc)) / (1 + int(n_permutations))
+    null_auc = np.nan
+    if null_control and len(features_a) >= 4:
+        # two random halves of structure A: should not be told apart
+        order = rng.permutation(len(features_a))
+        half = len(order) // 2
+        null_labels = np.r_[np.zeros(half), np.ones(len(order) - half)].astype(int)
+        null_scores, _ = _out_of_fold_scores(
+            features_a[order], null_labels, classifier, n_splits, random_state
+        )
+        null_auc = float(roc_auc_score(null_labels, null_scores))
+    return dict(
+        accuracy=_accuracy(labels, scores),
+        accuracy_interval=_bootstrap_interval(labels, scores, _accuracy, n_bootstrap, confidence, rng),
+        auc=auc,
+        auc_interval=_bootstrap_interval(labels, scores, roc_auc_score, n_bootstrap, confidence, rng),
+        null_auc=null_auc,
+        p_value=float(p_value),
+        scores=scores,
+        labels=labels,
+        n_a=len(features_a),
+        n_b=len(features_b),
+        n_unique_a=n_unique[0],
+        n_unique_b=n_unique[1],
+        n_splits=n_splits,
+    )
+
+
+def distinguishability(
+    images_a,
+    images_b,
+    features="shape",
+    n_splits=5,
+    n_bootstrap=1000,
+    confidence=0.95,
+    classifier=None,
+    random_state=None,
+    n_permutations=0,
+    null_control=True,
     **feature_kwargs,
 ):
     """
     Accuracy and ROC AUC with which two sets of images are told apart.
 
-    Each image is reduced to a feature vector (image_features). A
-    classifier (default: standardised logistic regression) is evaluated by
-    stratified k-fold cross-validation, so every image is scored by a model
-    that did not see it. Accuracy (threshold 0.5) and ROC AUC are computed
-    from these out-of-fold scores, and their intervals from bootstrap
-    resamples of the realisations within each class.
+    Each image is reduced to a feature vector (image_features; by default
+    shape only, independent of brightness). A classifier (default:
+    default_classifier) is evaluated by stratified k-fold cross-validation,
+    so every image is scored by a model that did not see it. Accuracy
+    (threshold 0.5) and ROC AUC are computed from these out-of-fold scores,
+    and their intervals from bootstrap resamples of the realisations within
+    each class.
 
     Parameters
     ----------
@@ -244,7 +499,7 @@ def distinguishability(
         Simulated images of structure A and of structure B, one per
         independent realisation (e.g. from run_replicates).
     features : str or callable, optional
-        Feature extraction (see image_features). Default "radial_profile".
+        Feature extraction (see image_features). Default "shape".
     n_splits : int, optional
         Number of cross-validation folds. Default is 5 (reduced if a class
         has fewer images).
@@ -253,44 +508,41 @@ def distinguishability(
     confidence : float, optional
         Confidence level of the intervals. Default is 0.95.
     classifier : sklearn estimator, optional
-        Classifier with predict_proba. Default: StandardScaler +
-        LogisticRegression.
+        Classifier with predict_proba. Default: default_classifier.
     random_state : int, optional
-        Seed for the folds and the bootstrap.
+        Seed for the folds, the bootstrap, the permutations and the null
+        control.
+    n_permutations : int, optional
+        Number of label permutations for the p-value. Default 0 (no
+        p-value).
+    null_control : bool, optional
+        Also score two random halves of structure A (null_auc, expected
+        near 0.5). Default True; needs at least 4 images of A.
     **feature_kwargs
         Passed to the feature function.
 
     Returns
     -------
     dict
-        accuracy, accuracy_interval, auc, auc_interval, scores (out-of-fold
-        probability of class B per image), labels (0 for A, 1 for B),
-        n_a, n_b, features (name or function), n_splits.
+        accuracy, accuracy_interval, auc, auc_interval, null_auc (NaN if
+        not computed), p_value (NaN if n_permutations is 0), scores
+        (out-of-fold probability of class B per image), labels (0 for A,
+        1 for B), n_a, n_b, n_unique_a, n_unique_b (distinct feature
+        vectors per class), features (name or function), n_splits.
     """
-    features_a = image_features(images_a, features, **feature_kwargs)
-    features_b = image_features(images_b, features, **feature_kwargs)
-    X = np.vstack([features_a, features_b])
-    labels = np.concatenate([np.zeros(len(features_a)), np.ones(len(features_b))]).astype(int)
-    n_splits = int(min(n_splits, len(features_a), len(features_b)))
-    if n_splits < 2:
-        raise ValueError("Each structure needs at least 2 images")
-    if classifier is None:
-        classifier = make_pipeline(StandardScaler(), LogisticRegression(max_iter=1000))
-    folds = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=random_state)
-    scores = cross_val_predict(classifier, X, labels, cv=folds, method="predict_proba")[:, 1]
-    rng = np.random.default_rng(random_state)
-    return dict(
-        accuracy=_accuracy(labels, scores),
-        accuracy_interval=_bootstrap_interval(labels, scores, _accuracy, n_bootstrap, confidence, rng),
-        auc=float(roc_auc_score(labels, scores)),
-        auc_interval=_bootstrap_interval(labels, scores, roc_auc_score, n_bootstrap, confidence, rng),
-        scores=scores,
-        labels=labels,
-        n_a=len(features_a),
-        n_b=len(features_b),
-        features=features,
+    result = _score_features(
+        image_features(images_a, features, **feature_kwargs),
+        image_features(images_b, features, **feature_kwargs),
         n_splits=n_splits,
+        n_bootstrap=n_bootstrap,
+        confidence=confidence,
+        classifier=classifier,
+        random_state=random_state,
+        n_permutations=n_permutations,
+        null_control=null_control,
     )
+    result["features"] = features
+    return result
 
 
 def images_from_replicates(results, modality, channel="ch0", noiseless=False):
@@ -348,38 +600,44 @@ def distinguishability_from_replicates(
     )
 
 def distinguishability_from_dataframes(
-        features_a, 
+    features_a,
+    features_b,
+    n_splits=5,
+    n_bootstrap=1000,
+    confidence=0.95,
+    classifier=None,
+    random_state=None,
+    n_permutations=0,
+    null_control=True,
+):
+    """
+    Distinguishability of two structures from precomputed features.
+
+    Parameters
+    ----------
+    features_a, features_b : array-like
+        Features measured on each realisation of structure A and of
+        structure B: shape (n_realisations,) for one feature or
+        (n_realisations, n_features).
+    n_splits, n_bootstrap, confidence, classifier, random_state,
+    n_permutations, null_control
+        See distinguishability.
+
+    Returns
+    -------
+    dict
+        See distinguishability (without features).
+    """
+    return _score_features(
+        features_a,
         features_b,
-        n_splits=5,
-        n_bootstrap=1000,
-        confidence=0.95,
-        classifier=None,
-        random_state=None,
-        ):
-    """
-    features_a is a list of features measured on model a
-    features_b is a list of features measured on model b
-    """
-    X = np.vstack([features_a, features_b])
-    labels = np.concatenate([np.zeros(len(features_a)), np.ones(len(features_b))]).astype(int)
-    n_splits = int(min(n_splits, len(features_a), len(features_b)))
-    if n_splits < 2:
-        raise ValueError("Each structure needs at least 2 images")
-    if classifier is None:
-        classifier = make_pipeline(StandardScaler(), LogisticRegression(max_iter=1000))
-    folds = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=random_state)
-    scores = cross_val_predict(classifier, X, labels, cv=folds, method="predict_proba")[:, 1]
-    rng = np.random.default_rng(random_state)
-    return dict(
-        accuracy=_accuracy(labels, scores),
-        accuracy_interval=_bootstrap_interval(labels, scores, _accuracy, n_bootstrap, confidence, rng),
-        auc=float(roc_auc_score(labels, scores)),
-        auc_interval=_bootstrap_interval(labels, scores, roc_auc_score, n_bootstrap, confidence, rng),
-        scores=scores,
-        labels=labels,
-        n_a=len(features_a),
-        n_b=len(features_b),
         n_splits=n_splits,
+        n_bootstrap=n_bootstrap,
+        confidence=confidence,
+        classifier=classifier,
+        random_state=random_state,
+        n_permutations=n_permutations,
+        null_control=null_control,
     )
 
 
@@ -395,6 +653,8 @@ SWEEP_RESULT_COLUMNS = (
     "auc",
     "auc_low",
     "auc_high",
+    "null_auc",
+    "p_value",
     "seed_a",
     "seed_b",
 )
@@ -551,6 +811,8 @@ def distinguishability_sweep(
                     auc=score["auc"],
                     auc_low=score["auc_interval"][0],
                     auc_high=score["auc_interval"][1],
+                    null_auc=score["null_auc"],
+                    p_value=score["p_value"],
                     seed_a=point_seeds[0],
                     seed_b=point_seeds[1],
                 )
