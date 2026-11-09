@@ -28,7 +28,12 @@ def test_sym_operation_matches_per_point_product():
     rot = np.linalg.qr(rng.normal(size=(3, 3)))[0]
     translation = rng.normal(size=3)
     expected = _loop_sym_operation(pts, [rot, translation])
-    np.testing.assert_array_equal(do_sym_operation(pts, [rot, translation]), expected)
+    # equal up to rounding: the vectorised product may sum in a different
+    # order than the per-point one, depending on the BLAS library
+    np.testing.assert_allclose(
+        do_sym_operation(pts, [rot, translation]), expected,
+        rtol=1e-12, atol=1e-12 * np.abs(expected).max(),
+    )
 
 
 def test_sym_operation_of_no_points_is_empty():
