@@ -1587,7 +1587,7 @@ class sweep_generator:
         Notes
         -----
         - Iterates over all parameter combinations in `self.acquisition_outputs`.
-        - For each combination, concatenates all replicate images and saves the result as a TIFF file named after the parameter combination ID.
+        - For each combination, concatenates all replicate images and saves the result as a TIFF file named after the parameter combination ID. If the replicates of a combination differ in image size, each is saved as <combination ID>_rep<NNN>.tiff instead.
         - If `self.reference_image` is present, saves it as "reference.tiff" in the output directory.
         - Saves acquisition parameters as a YAML file in the output directory.
         """
@@ -1613,13 +1613,18 @@ class sweep_generator:
             param_combination_id,
             replicates,
         ) in self.acquisition_outputs.items():
-            nreps = len(replicates)
-            image = replicates[0]
-            for i in range(1, nreps):
-                image = np.concatenate((image, replicates[i]))
-            name = param_combination_id + ".tiff"
-            dir_name = os.path.join(output_directory, name)
-            tiff.imwrite(dir_name, image)
+            shapes = {np.shape(replicate)[1:] for replicate in replicates}
+            if len(shapes) == 1:
+                # one stack per combination, replicates one after the other
+                image = np.concatenate(replicates)
+                dir_name = os.path.join(output_directory, param_combination_id + ".tiff")
+                tiff.imwrite(dir_name, image)
+            else:
+                # the image size can differ between replicates (it follows
+                # the extent of each virtual sample): one file per replicate
+                for i, replicate in enumerate(replicates):
+                    name = f"{param_combination_id}_rep{i:03d}.tiff"
+                    tiff.imwrite(os.path.join(output_directory, name), replicate)
         if floats_as is not None and callable(floats_as):
             copy_of_params = copy.deepcopy(self.acquisition_outputs_parameters)
             for combination_id, list_of_parameters in copy_of_params.items():

@@ -74,3 +74,20 @@ def test_reference_saved_without_overwriting(small_sweep, tmp_path):
     assert "reference.tiff" in files
     n_conditions = len(small_sweep.acquisition_outputs)
     assert sum(f.endswith(".tiff") for f in files) == n_conditions + 1
+
+
+def test_save_images_handles_replicates_of_different_size(tmp_path):
+    import numpy as np
+    import tifffile
+
+    g = sweep_generator.sweep_generator()
+    g.acquisition_outputs = {
+        "same": [np.ones((1, 5, 5)), np.ones((1, 5, 5))],
+        "mixed": [np.ones((1, 6, 6)), np.ones((1, 5, 5))],
+    }
+    g.acquisition_outputs_parameters = {"same": [], "mixed": []}
+    g.reference_image = None
+    g.save_images(output_directory=str(tmp_path))
+    assert tifffile.imread(tmp_path / "same.tiff").shape == (2, 5, 5)
+    assert tifffile.imread(tmp_path / "mixed_rep000.tiff").shape[-2:] == (6, 6)
+    assert tifffile.imread(tmp_path / "mixed_rep001.tiff").shape[-2:] == (5, 5)
