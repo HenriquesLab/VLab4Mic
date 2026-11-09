@@ -271,10 +271,11 @@ def reseed(seeds):
 
 @contextlib.contextmanager
 def quiet():
-    # hide the per-simulation messages and warnings of the library, so the
-    # progress bar stays readable; errors are still raised
+    # hide the per-simulation messages, inner progress bars and warnings of
+    # the library, so the progress bar stays readable; errors are still
+    # raised (and reported by the main process)
     with open(os.devnull, "w") as devnull, contextlib.redirect_stdout(devnull), \
-            warnings.catch_warnings():
+            contextlib.redirect_stderr(devnull), warnings.catch_warnings():
         warnings.simplefilter("ignore")
         yield
 
