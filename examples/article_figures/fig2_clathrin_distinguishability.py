@@ -45,11 +45,21 @@ VLAB4MIC_N_PERMUTATIONS=0):
 - VLAB4MIC_N_PERMUTATIONS: permutations for the p-value (200);
 - VLAB4MIC_MAX_TILT_DEG: maximum tilt on the coverslip in degrees (10);
 - VLAB4MIC_N_WORKERS: conditions simulated in parallel, one process each
-  (1). Each worker loads both lattice models (a few GB of memory). Every
-  condition has its own seed, so results do not depend on this number.
+  (1). Each worker loads both lattice models (about 4 GB of memory). Every
+  condition has its own seed, so results do not depend on this number;
+- VLAB4MIC_SAVE_IMAGES: 1 to save the simulated images of every condition
+  (0). One compressed file per condition in <date>fig2_clathrin_images/ in
+  the output directory, with an array "<modality>_dome" and
+  "<modality>_flat" of shape (realisations, frames, x, y) per imaging
+  method, and the condition parameters as JSON in "condition". To score
+  them with another classifier or features::
+
+      data = np.load("03_labelling_efficiency_0.1.npz")
+      distinguishability(data["STED_dome"], data["STED_flat"], features=...)
 """
 
 import contextlib
+import json
 import os
 import tempfile
 import warnings
@@ -62,12 +72,18 @@ import requests
 from tqdm.auto import tqdm
 
 from vlab4mic import experiments
-from vlab4mic.analysis.distinguishability import distinguishability_from_replicates
+from vlab4mic.analysis.distinguishability import (
+    distinguishability_from_replicates,
+    images_from_replicates,
+)
 
 N_REALISATIONS = int(os.environ.get("VLAB4MIC_N_REALISATIONS", 100))
 N_PERMUTATIONS = int(os.environ.get("VLAB4MIC_N_PERMUTATIONS", 200))
 # parallel worker processes, one condition each at a time (1: serial)
 N_WORKERS = int(os.environ.get("VLAB4MIC_N_WORKERS", 1))
+# save the simulated images of every condition (compressed .npz), so other
+# classifiers can be tried without simulating again
+SAVE_IMAGES = os.environ.get("VLAB4MIC_SAVE_IMAGES", "0") not in ("0", "", "false", "False")
 RANDOM_SEED = 24
 # maximum random tilt of the lattices on the coverslip (degrees); no
 # published reference for this value
@@ -76,7 +92,10 @@ MODALITIES = ["Widefield", "Confocal", "AiryScan", "STED", "SMLM"]
 
 # reference condition, and the values swept one at a time around it
 LABELLING_EFFICIENCY = 1.0
-LABELLING_EFFICIENCIES = [0.2, 0.4, 0.6, 0.8, 1.0]
+# down to a few labelled sites per particle: antibody crowding caps the
+# number of labels at high efficiency, so the outline is lost only at the
+# low end
+LABELLING_EFFICIENCIES = [0.01, 0.05, 0.1, 0.2, 0.4, 0.6, 1.0]
 LINKAGE_ERROR_NM = 10  # distance to epitope of the Antibody probe template
 LINKAGE_ERRORS_NM = [2, 5, 10, 20]  # direct label / nanobody to primary+secondary
 BLUR_MODALITY = "STED"  # PSF-based method whose PSF width is swept
@@ -184,8 +203,16 @@ def interval_columns(prefix, score):
     }
 
 
+def save_images(path, replicates, modalities, condition):
+    arrays = {
+        f"{mod}_{name}": np.stack(images_from_replicates(results, mod)).astype(np.float32)
+        for mod in modalities for name, results in replicates.items()
+    }
+    np.savez_compressed(path, condition=json.dumps(condition), **arrays)
+
+
 def compare(sweep, geometry="ventral", labelling_efficiency=LABELLING_EFFICIENCY,
-            linkage_error_nm=LINKAGE_ERROR_NM, modalities=MODALITIES):
+            linkage_error_nm=LINKAGE_ERROR_NM, modalities=MODALITIES, images_path=None):
     # simulate both lattices under one condition and score every modality
     modality = modalities[0] if len(modalities) == 1 else "All"
     replicates = {
@@ -203,6 +230,12 @@ def compare(sweep, geometry="ventral", labelling_efficiency=LABELLING_EFFICIENCY
             lateral_resolution_nm=lateral, axial_resolution_nm=axial,
             n_per_class=N_REALISATIONS, features=MAIN_FEATURES,
         )
+        if images_path is not None and mod == modalities[0]:
+            condition = {k: v for k, v in row.items() if k not in ("modality", "features")}
+            condition["resolution_nm"] = {
+                m: resolution(experiments_by_model["dome"], m) for m in modalities
+            }
+            save_images(images_path, replicates, modalities, condition)
         score = distinguishability_from_replicates(
             replicates["dome"], replicates["flat"], mod, features=MAIN_FEATURES,
             random_state=RANDOM_SEED, n_permutations=N_PERMUTATIONS,
@@ -285,17 +318,22 @@ def setup_experiments_quietly(paths):
         setup_experiments(paths)
 
 
-def run_condition(index, arguments, blur, seeds):
+def run_condition(index, arguments, blur, seeds, images_path):
     with quiet():
         reseed(seeds)
         set_blur(BLUR_MODALITY, *blur)
-        rows, scores = compare(**arguments)
+        rows, scores = compare(**arguments, images_path=images_path)
     return index, rows, scores
 
 
-def run_conditions(conditions, paths, n_workers):
+def run_conditions(conditions, paths, n_workers, images_dir=None):
     seeds = condition_seeds(len(conditions))
-    jobs = [(k, arguments, blur, seeds[k]) for k, (_, arguments, blur) in enumerate(conditions)]
+    jobs = []
+    for k, (label, arguments, blur) in enumerate(conditions):
+        images_path = None
+        if images_dir is not None:
+            images_path = os.path.join(images_dir, f"{k:02d}_{label.replace(' ', '_')}.npz")
+        jobs.append((k, arguments, blur, seeds[k], images_path))
     results = [None] * len(conditions)
     progress = tqdm(total=len(conditions), desc="conditions", unit="condition")
     if n_workers <= 1:
@@ -387,6 +425,7 @@ def make_figures(results, reference_scores, default_lateral, default_axial, out_
             errorbars(ax, sub[column], sub, fmt="o-", color=colours[modality], label=modality)
         style(ax, xlabel)
         ax.set_title(title, loc="left")
+    axes[2].set_xscale("log")
     axes[2].legend(frameon=False, fontsize=8)
 
     # e: width of the blur (PSF standard deviation) of BLUR_MODALITY
@@ -440,12 +479,16 @@ def main():
     default_lateral, default_axial = resolution(experiment, BLUR_MODALITY)
     conditions = list_conditions(default_lateral, default_axial)
     n_workers = max(1, min(N_WORKERS, len(conditions)))
-    print(f"{len(conditions)} conditions, {N_REALISATIONS} realisations per lattice, "
-          f"{n_workers} worker(s)")
-    results, reference_scores = run_conditions(conditions, paths, n_workers)
-
     out = experiment.output_directory
     out_prefix = os.path.join(out, experiment.date_as_string + "fig2_clathrin_")
+    images_dir = None
+    if SAVE_IMAGES:
+        images_dir = out_prefix + "images"
+        os.makedirs(images_dir, exist_ok=True)
+    print(f"{len(conditions)} conditions, {N_REALISATIONS} realisations per lattice, "
+          f"{n_workers} worker(s)" + (f", images saved to {images_dir}" if images_dir else ""))
+    results, reference_scores = run_conditions(conditions, paths, n_workers, images_dir)
+
     results.to_csv(out_prefix + "distinguishability.csv", index=False)
     experiment.save_parameters(out, name="fig2_clathrin_distinguishability")
     make_figures(results, reference_scores, default_lateral, default_axial, out_prefix)
