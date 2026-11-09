@@ -130,3 +130,26 @@ def test_sweep_runs_real_simulations():
     )
     assert list(table.labelling_efficiency) == [0.5, 1.0]
     assert (table.n_a == 3).all() and (table.n_b == 3).all()
+
+
+def test_distinguishability_from_dataframes():
+    nrepeats = 100
+    d1 = dict(
+        modality_name = np.repeat("mod_1", repeats=nrepeats),
+        parameter_1 = np.concatenate([np.zeros(int(nrepeats/2)), np.ones(int(nrepeats/2))]).astype(int),
+        measurements_1 = np.random.uniform(low=0, high=1, size=nrepeats)
+    )
+    d2 = dict(
+        modality_name = np.repeat("mod_1", repeats=nrepeats),
+        parameter_1 = np.concatenate([np.zeros(int(nrepeats/2)), np.ones(int(nrepeats/2))]).astype(int),
+        measurements_1 = np.random.uniform(low=0, high=1, size=nrepeats)
+    )
+    df1 = pd.DataFrame(d1)
+    df2 = pd.DataFrame(d2)
+    logistic_reg_dataframe__aspectratio = dist.group_dataframes_1value(
+        dataframe1=df1,
+        dataframe2=df2,
+        main_category="modality_name",
+        param_name_1="parameter_1",
+        metric_name="measurements_1"
+        )
