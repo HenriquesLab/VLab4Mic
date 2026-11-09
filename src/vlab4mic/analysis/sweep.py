@@ -21,6 +21,7 @@ def sweep_vasmples(
     repetitions=1,
     use_experiment_structure=False,
     structure_is_path=False,
+    structure_normal_params=None,
     **kwargs,
 ):
     """
@@ -47,6 +48,10 @@ def sweep_vasmples(
         Use the structure already selected in the experiment.
     structure_is_path : bool, optional
         If True, structures are paths to structure files. Default False.
+    structure_normal_params : dict, optional
+        Arguments of ExperimentParametrisation.set_structure_normal_params,
+        applied to every structure after it is built (e.g. mode
+        "local_plane" for flat surfaces). Default: the structure default.
     **kwargs
         Additional keyword arguments.
 
@@ -121,6 +126,8 @@ def sweep_vasmples(
         else:
             experiment.structure_id = struct
             experiment._build_structure()
+        if structure_normal_params is not None:
+            experiment.set_structure_normal_params(**structure_normal_params)
         # for rep in range(repetitions):
         probe_n = 0
         for probe in probes:
