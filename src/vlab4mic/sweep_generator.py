@@ -862,29 +862,29 @@ class sweep_generator:
                 "particle_orientations",
                 values=particle_orientations,
             )
-        random_orientations = self.enable_random_orientations
+        plane_orientations = self.enable_random_orientations
         if xy_orientations is not None:
             self.set_parameter_values(
                 "virtual_sample",
                 "xy_orientations",
                 values=xy_orientations,
             )
-            random_orientations = True
+            plane_orientations = True
         if xz_orientations is not None:
             self.set_parameter_values(
                 "virtual_sample",
                 "xz_orientations",
                 values=xz_orientations,
             )
-            random_orientations = True
+            plane_orientations = True
         if yz_orientations is not None:
             self.set_parameter_values(
                 "virtual_sample",
                 "yz_orientations",
                 values=yz_orientations,
             )
-            random_orientations = True
-        self.enable_random_orientations = random_orientations
+            plane_orientations = True
+        self.enable_random_orientations = plane_orientations
         if rotation_angles is not None:
             self.set_parameter_values(
                 "virtual_sample", "rotation_angles", values=rotation_angles
