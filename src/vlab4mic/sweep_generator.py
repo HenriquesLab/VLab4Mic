@@ -1564,12 +1564,11 @@ class sweep_generator:
             replicates,
         ) in self.acquisition_outputs.items():
             nreps = len(replicates)
-            image = replicates[0]
             for i in range(1, nreps):
-                image = np.concatenate((image, replicates[i]))
-            name = param_combination_id + ".tiff"
-            dir_name = os.path.join(output_directory, name)
-            tiff.imwrite(dir_name, image)
+                image = replicates[i]
+                name = param_combination_id + "_replica" + str(i) + ".tiff"
+                dir_name = os.path.join(output_directory, name)
+                tiff.imwrite(dir_name, image)
         if floats_as is not None and callable(floats_as):
             copy_of_params = copy.deepcopy(self.acquisition_outputs_parameters)
             for combination_id, list_of_parameters in copy_of_params.items():
