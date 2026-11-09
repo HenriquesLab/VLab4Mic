@@ -347,6 +347,41 @@ def distinguishability_from_replicates(
         **kwargs,
     )
 
+def distinguishability_from_dataframes(
+        features_a, 
+        features_b,
+        n_splits=5,
+        n_bootstrap=1000,
+        confidence=0.95,
+        classifier=None,
+        random_state=None,
+        ):
+    """
+    features_a is a list of features measured on model a
+    features_b is a list of features measured on model b
+    """
+    X = np.vstack([features_a, features_b])
+    labels = np.concatenate([np.zeros(len(features_a)), np.ones(len(features_b))]).astype(int)
+    n_splits = int(min(n_splits, len(features_a), len(features_b)))
+    if n_splits < 2:
+        raise ValueError("Each structure needs at least 2 images")
+    if classifier is None:
+        classifier = make_pipeline(StandardScaler(), LogisticRegression(max_iter=1000))
+    folds = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=random_state)
+    scores = cross_val_predict(classifier, X, labels, cv=folds, method="predict_proba")[:, 1]
+    rng = np.random.default_rng(random_state)
+    return dict(
+        accuracy=_accuracy(labels, scores),
+        accuracy_interval=_bootstrap_interval(labels, scores, _accuracy, n_bootstrap, confidence, rng),
+        auc=float(roc_auc_score(labels, scores)),
+        auc_interval=_bootstrap_interval(labels, scores, roc_auc_score, n_bootstrap, confidence, rng),
+        scores=scores,
+        labels=labels,
+        n_a=len(features_a),
+        n_b=len(features_b),
+        n_splits=n_splits,
+    )
+
 
 # columns of a distinguishability_sweep table that are not swept parameters
 SWEEP_RESULT_COLUMNS = (
@@ -646,3 +681,37 @@ def plot_distinguishability_sweep(table, parameter=None, metric="auc", ax=None):
         ax.set_title(data["series"].iloc[0], fontsize=10)
     figure.tight_layout()
     return figure
+
+
+def group_dataframes_1value(dataframe1, dataframe2,
+                             main_category="modality_name",
+                             param_name_1="labelling_efficiency",
+                             metric_name = "image_aspect_ratio"):
+    rows = []
+    main_category_values = list(dataframe1[main_category].unique())
+    for category_value in main_category_values:
+        for param_1_value in list(dataframe1[param_name_1].unique()):
+            features_tmp_1 = dataframe1.loc[
+                (dataframe1[main_category] == category_value) & (dataframe1[param_name_1] == param_1_value),
+                metric_name]
+            features_tmp_2 = dataframe2.loc[
+                (dataframe2[main_category] == category_value) & (dataframe2[param_name_1] == param_1_value),
+                metric_name]
+            score = distinguishability_from_dataframes(
+                np.reshape(features_tmp_1, -1).reshape(-1,1), 
+                np.reshape(features_tmp_2, -1).reshape(-1,1))
+            tmp = dict(
+                    modality=category_value,
+                    metric_used = metric_name,
+                    n_a=score["n_a"],
+                    n_b=score["n_b"],
+                    accuracy=score["accuracy"],
+                    accuracy_low=score["accuracy_interval"][0],
+                    accuracy_high=score["accuracy_interval"][1],
+                    auc=score["auc"],
+                    auc_low=score["auc_interval"][0],
+                    auc_high=score["auc_interval"][1],
+                )
+            tmp[param_name_1] = param_1_value
+            rows.append(tmp)
+    return pd.DataFrame(rows)
