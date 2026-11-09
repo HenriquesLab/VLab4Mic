@@ -146,7 +146,7 @@ def test_distinguishability_from_dataframes():
     )
     df1 = pd.DataFrame(d1)
     df2 = pd.DataFrame(d2)
-    logistic_reg_dataframe__aspectratio = dist.group_dataframes_1value(
+    logistic_reg_dataframe = dist.group_dataframes_1value(
         dataframe1=df1,
         dataframe2=df2,
         main_category="modality_name",
