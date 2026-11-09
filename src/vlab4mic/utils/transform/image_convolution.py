@@ -127,7 +127,23 @@ def frame_by_volume_convolution(
         filtered = bool(render_sigma_xy > 0 and np.sum(photon_vector) > 0)
         if render_record is not None:
             render_record.append(filtered)
-        if filtered:
+        if filtered and asframe:
+            # the kernel does not blur along z, so projecting the slices
+            # first and filtering the 2D image gives the same frame as
+            # filtering the volume and then projecting, at a fraction of
+            # the cost
+            projected = _project_slices(
+                np.asarray(intensity_voxel, dtype=float),
+                zfocus_slice,
+                projection_depth_half,
+            )
+            return gaussian_filter(
+                projected,
+                sigma=(render_sigma_xy, render_sigma_xy),
+                truncate=render_truncate(intensity_voxel.shape, render_sigma_xy),
+                mode="constant",
+            )
+        elif filtered:
             convolved_intensity = gaussian_filter(
                 np.asarray(intensity_voxel, dtype=float),
                 sigma=(render_sigma_xy, render_sigma_xy, 0),
@@ -141,25 +157,31 @@ def frame_by_volume_convolution(
     else:
         # there's no need to calculate the convolution if there are no photons
         convolved_intensity = intensity_voxel
-    subset_of_frames = (
-        zfocus_slice - projection_depth_half,
-        zfocus_slice + projection_depth_half,
-    )
-    if projection_depth_half > int(convolved_intensity.shape[2] / 2):
-        projection_depth_half = int(convolved_intensity.shape[2] / 2)
     if asframe:
-        frame = np.sum(
-            np.array(
-                convolved_intensity[
-                    :, :, zfocus_slice - projection_depth_half : zfocus_slice + projection_depth_half
-                ]
-            ),
-            axis=2,
+        return _project_slices(
+            convolved_intensity, zfocus_slice, projection_depth_half
         )
-        return frame
     else:
         return convolved_intensity
-    
+
+
+def _project_slices(volume, zfocus_slice, projection_depth_half):
+    """
+    Sum the slices of volume within projection_depth_half of zfocus_slice.
+
+    projection_depth_half is limited to half the number of slices.
+    """
+    if projection_depth_half > int(volume.shape[2] / 2):
+        projection_depth_half = int(volume.shape[2] / 2)
+    return np.sum(
+        np.array(
+            volume[
+                :, :, zfocus_slice - projection_depth_half : zfocus_slice + projection_depth_half
+            ]
+        ),
+        axis=2,
+    )
+
 
 # keep
 def generate_frames_volume_convolution(

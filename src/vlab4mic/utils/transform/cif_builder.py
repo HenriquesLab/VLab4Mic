@@ -7,14 +7,17 @@ from ..transform.normals import add_wobble, tilt_direction
 def do_sym_operation(pts_set, sym_operation):
     # pts_set contains the coordinates of al epitopes/atoms of an asymetric unit
     # sym is a list of 2 objects, the first is a matrix that establishes a rotation
-    rot = sym_operation[0]
+    rot = np.asarray(sym_operation[0])
     translation = sym_operation[1]
-    symmetry_transformed = []
-    for epi in pts_set:
-        rotated = np.matmul(rot, epi)  ## matrix * vector
-        rot_trans = rotated + translation
-        symmetry_transformed.append(rot_trans)
-    pts_set_symm = np.array(symmetry_transformed)
+    pts = np.asarray(pts_set)
+    if len(pts) == 0:
+        return np.array([])
+    # rot @ p + translation for every point p, written out term by term so
+    # the sums are done in the same order as a per-point matrix-vector
+    # product (vectorised, without a Python loop over the points)
+    pts_set_symm = (
+        pts[:, [0]] * rot[:, 0] + pts[:, [1]] * rot[:, 1] + pts[:, [2]] * rot[:, 2]
+    ) + translation
     return pts_set_symm
 
 

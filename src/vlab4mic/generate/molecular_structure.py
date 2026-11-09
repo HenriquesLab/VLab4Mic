@@ -41,6 +41,9 @@ class MolecularStructureParser:
         self.ch_builder_max_dist = 5
         self.ppgen = None
         self.CIFdictionary = None
+        # CIF fields read by the structure parser, reused by
+        # generate_MMCIF_dictionary to avoid reading the file twice
+        self._parsed_mmcif_dict = None
         self.protein_names = None
         self.assembly_operations = None
         self.chains_dict = None
@@ -94,6 +97,9 @@ class MolecularStructureParser:
         elif self.format == "CIF":
             parser = MMCIFParser()
             self.struct = parser.get_structure(self.identifier, self.source_file)
+            # MMCIFParser keeps the fields it read from the file (private
+            # attribute); if absent, the file is read again when needed
+            self._parsed_mmcif_dict = getattr(parser, "_mmcif_dict", None)
         else:
             print(f"{self.format} is not a valid format. Valid options are PDB or CIF.")
         if self.chain_builder == "PPBuilder":
@@ -121,8 +127,14 @@ class MolecularStructureParser:
         """
         Generate a dictionary with all fields parsed from the CIF file.
         """
-        # generate the dictionary with all field parsed from CIF file
-        self.CIFdictionary = MMCIF2Dict(self.source_file)
+        # generate the dictionary with all field parsed from CIF file,
+        # reusing the one read by the structure parser when available
+        parsed = getattr(self, "_parsed_mmcif_dict", None)
+        if isinstance(parsed, dict):
+            self.CIFdictionary = parsed
+        else:
+            self.CIFdictionary = MMCIF2Dict(self.source_file)
+        self._parsed_mmcif_dict = None
         self._gen_protein_names()
 
     def get_atoms_infile(self):
