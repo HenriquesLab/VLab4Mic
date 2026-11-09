@@ -115,6 +115,8 @@ class sweep_generator:
         # set to True when plane-wise orientations are swept
         self.enable_random_orientations = False
         self.reference_parameters_unsorted = dict()
+        # set to False to analyse simulations without a reference image
+        self.use_reference = True
         self.default_metrics = {
             "ssim": structural_similarity,
             "pearson": pearson_correlation,
@@ -1059,20 +1061,36 @@ class sweep_generator:
         Returns
         -------
         None
+
+        Notes
+        -----
+        If self.use_reference is False, no reference image is generated or
+        loaded, and metrics are called with reference_image=None. Only
+        metrics that do not need a reference (custom metrics) can be used.
         """
         if self.acquisition_outputs is None:
             self.generate_acquisitions(capture_outputs=capture_outputs)
-        if self.reference_image is None:
-            self.generate_reference_image()
-        if len(self.reference_image.shape) == 3:
-            # if reference image is 3D, take the first frame
-            reference_image = self.reference_image[0]
-            reference_image_mask = self.reference_image_mask
+        if not self.use_reference:
+            reference_image = None
+            reference_image_mask = None
+            reference_image_parameters = None
+            needs_reference = set(self.metrics) & set(self.default_metrics)
+            if needs_reference:
+                raise ValueError(
+                    f"Metrics {sorted(needs_reference)} need a reference image"
+                )
         else:
-            reference_image = self.reference_image
+            if self.reference_image is None:
+                self.generate_reference_image()
+            if len(self.reference_image.shape) == 3:
+                # if reference image is 3D, take the first frame
+                reference_image = self.reference_image[0]
+            else:
+                reference_image = self.reference_image
             reference_image_mask = self.reference_image_mask
-        if len(self.metrics.keys()) == 0:
-            self.use_default_metrics()
+            reference_image_parameters = self.reference_image_parameters
+            if len(self.metrics.keys()) == 0:
+                self.use_default_metrics()
         print("Running analysis...")
         measurement_vectors, inputs, metric = (
             sweep.analyse_sweep_single_reference(
@@ -1081,7 +1099,7 @@ class sweep_generator:
                 img_params=self.acquisition_outputs_parameters,
                 reference_image=reference_image,
                 reference_image_mask=reference_image_mask,
-                reference_params=self.reference_image_parameters,
+                reference_params=reference_image_parameters,
                 metrics=self.metrics,
                 **self.analysis_parameters,
             )
@@ -1584,6 +1602,7 @@ class sweep_generator:
         custom_metrics: list[callable] = None,
         heatmap_params={"cmaps_range": "each"},
         lineplots_params=None,
+        clear_existing_metrics = False,
         **kwargs,
     ):
         """
@@ -1632,6 +1651,9 @@ class sweep_generator:
             else:
                 self.plot_parameters[metric_name]["lineplots"] = {}
             self.metrics[metric_name] = custom_metrics[m]
+        if clear_existing_metrics:
+            for c_metrics in current_metrics:
+                del self.metrics[c_metrics]
         
     def virtual_sample_from_image(self, image, as_int=True, **kwargs):
         """
@@ -1718,6 +1740,7 @@ def run_parameter_sweep(
     reference_parameters: dict = None,
     reference_image= None,
     reference_image_parameters = None,
+    use_reference: bool = True,
     clear_experiment=True,
     run_analysis=True,
     # parameters to sweep
@@ -1815,6 +1838,12 @@ def run_parameter_sweep(
     :param reference_image_parameters: dict, optional
         Passed to sweep_generator.load_reference_image, e.g.
         {"ref_pixelsize": 100} (nm) and reference_image_mask.
+    :param use_reference: bool, optional
+        If False, the sweep is simulated and analysed without a reference
+        image: none is generated (so the reference structure is not loaded)
+        or loaded, and the reference_* parameters are ignored. Default
+        metrics are not used; custom_metrics are called with
+        reference_image=None. Default is True.
     :param clear_experiment: bool, optional
         Whether to clear the experiment before running. Default is True.
     :param run_analysis: bool, optional
@@ -1951,21 +1980,26 @@ def run_parameter_sweep(
         depth_of_field_nm=depth_of_field_nm,
         exp_time=exp_time,
     )
-    if reference_image is not None and reference_image_parameters is not None:
-        sweep_gen.load_reference_image(
-            reference_image=reference_image,
-            **reference_image_parameters
+    sweep_gen.use_reference = use_reference
+    if use_reference:
+        if (
+            reference_image is not None
+            and reference_image_parameters is not None
+        ):
+            sweep_gen.load_reference_image(
+                reference_image=reference_image,
+                **reference_image_parameters
+            )
+        if reference_parameters is None:
+            reference_parameters = dict()
+        sweep_gen.set_reference_parameters(
+            reference_structure=reference_structure,
+            reference_structure_is_path=reference_structure_is_path,
+            reference_probe=reference_probe,
+            **reference_parameters,
         )
-    if reference_parameters is None:
-        reference_parameters = dict()
-    sweep_gen.set_reference_parameters(
-        reference_structure=reference_structure,
-        reference_structure_is_path=reference_structure_is_path,
-        reference_probe=reference_probe,
-        **reference_parameters,
-    )
+        sweep_gen.use_default_metrics(metrics=default_metrics)
     sweep_gen.set_na_as_zero_in_plots(na_as_zero=na_as_zero)
-    sweep_gen.use_default_metrics(metrics=default_metrics)
     if custom_metrics is not None:
         sweep_gen.add_custom_analysis_metrics(custom_metrics=custom_metrics)
     if plot_parameters is not None:

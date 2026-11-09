@@ -611,7 +611,11 @@ def analyse_sweep_single_reference(
         List of metric names used.
     """
     measurement_vectors = []
-    # ref_pixelsize = analysis_case_params["ref_pixelsize"]
+    # no reference parameters when analysing without a reference image
+    if reference_params is None:
+        ref_pixelsize = None
+    else:
+        ref_pixelsize = reference_params["ref_pixelsize"]
     inputs = dict()
     for params_id in img_params.keys():
         inputs[params_id] = dict()
@@ -631,9 +635,7 @@ def analyse_sweep_single_reference(
                 similarity_vector.append(
                     metric(
                         reference_image=reference_image,
-                        reference_image_pixelsize_nm=reference_params[
-                            "ref_pixelsize"
-                        ],
+                        reference_image_pixelsize_nm=ref_pixelsize,
                         reference_image_mask=reference_image_mask,
                         simulated_image=im1,
                         simulated_image_pixelsize_nm=modality_pixelsize,
