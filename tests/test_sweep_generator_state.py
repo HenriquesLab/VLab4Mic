@@ -86,3 +86,10 @@ def test_plane_orientations_enable_random_orientations():
     g.create_parameters_iterables()
     assert g.params_by_group["virtual_sample"]["random_orientations"] == [True]
     assert "xy_orientations" in g.params_by_group["virtual_sample"]
+
+
+def test_random_orientations_argument_is_used():
+    g = sweep_generator.sweep_generator()
+    g.set_sweep_parameters(labelling_efficiency=[1], random_orientations=True)
+    g.create_parameters_iterables()
+    assert g.params_by_group["virtual_sample"]["random_orientations"] == [True]
