@@ -109,6 +109,9 @@ class sweep_generator:
         # to ensure all parameter groups (including particle_structural_integrity) are available
         self.param_settings = self.parameter_settings
         self.use_experiment_structure = False
+        # set to True when structures are given as file paths
+        self.structure_is_path = False
+        self.reference_structure_is_path = False
         # set to True when plane-wise orientations are swept
         self.enable_random_orientations = False
         self.reference_parameters_unsorted = dict()
@@ -135,7 +138,9 @@ class sweep_generator:
         """
         self.sweep_repetitions = repeats
 
-    def select_structures(self, structures: list = None, **kwargs):
+    def select_structures(
+        self, structures: list = None, structure_is_path: bool = False, **kwargs
+    ):
         """
         Select structures to use in the sweep.
 
@@ -143,6 +148,9 @@ class sweep_generator:
         ----------
         :param structures: list of str, optional
             List of 4-letter PDB/CIF IDs or paths to structure files. If None, uses all available structures.
+        :param structure_is_path: bool, optional
+            If True, structures are paths to structure files (CIF/PDB).
+            Default is False.
         :param **kwargs: Additional keyword arguments.
 
         Returns
@@ -151,7 +159,10 @@ class sweep_generator:
         """
         if structures is not None and type(structures) == list:
             self.structures = structures
+            self.structure_is_path = structure_is_path
             self.use_experiment_structure = False
+            print(f"structures: {self.structures}, {len(self.structures)}")
+            print(f"structure_is_path: {self.structure_is_path}")
 
     def select_probe_templates(self, probe_templates: list = None, **kwargs):
         """
@@ -242,6 +253,7 @@ class sweep_generator:
                 particle_structural_integrity=self.structural_integrity_parameters,
                 virtual_samples=self.vsample_parameters,
                 repetitions=self.sweep_repetitions,
+                structure_is_path=self.structure_is_path,
             )
 
     def generate_acquisitions(self, capture_outputs=True):
@@ -287,6 +299,7 @@ class sweep_generator:
         reference_structure: str = None,
         reference_probe: str = None,
         reference_probe_parameters: dict = None,
+        reference_structure_is_path: bool = None,
         **kwargs,
     ):
         """
@@ -295,7 +308,11 @@ class sweep_generator:
         Parameters
         ----------
         :param reference_structure: str, optional
-            4-letter ID of PDB/CIF model.
+            4-letter ID of PDB/CIF model, or path to a structure file. If
+            None, uses the first structure of the sweep.
+        :param reference_structure_is_path: bool, optional
+            If True, reference_structure is a path to a structure file. If
+            None, follows the sweep structures (see select_structures).
         :param reference_probe: str, optional
             Name ID of probe configuration file (filename).
         :param reference_probe_parameters: dict, optional
@@ -310,6 +327,10 @@ class sweep_generator:
             self.reference_structure = self.structures[0]
         else:
             self.reference_structure = reference_structure
+        if reference_structure_is_path is None:
+            self.reference_structure_is_path = self.structure_is_path
+        else:
+            self.reference_structure_is_path = reference_structure_is_path
         if reference_probe is not None:
             self.reference_probe = reference_probe
         if reference_probe_parameters is not None:
@@ -334,7 +355,7 @@ class sweep_generator:
         if self.use_experiment_structure:
             structure_is_path = True
         else:
-            structure_is_path = False
+            structure_is_path = self.reference_structure_is_path
         if use_experiment_probe:
             reference_probe = list(self.probes)[0]
         else:
@@ -347,6 +368,7 @@ class sweep_generator:
         self.set_reference_parameters(
             reference_structure=self.reference_structure,
             reference_probe=reference_probe,
+            reference_structure_is_path=self.reference_structure_is_path,
             **reference_sample_params,
         )
         self.reference_virtual_sample, self.reference_virtual_sample_params = (
@@ -1680,6 +1702,7 @@ def run_parameter_sweep(
     structures: list[str] = None,
     probe_templates: list[str] = None,
     modalities: list[str] = None,
+    structure_is_path: bool = False,
     output_directory: str = None,
     output_name: str = None,
     save_analysis_results: bool = True,
@@ -1690,6 +1713,7 @@ def run_parameter_sweep(
     number_of_particles: int = 1,
     particle_positions: int = None,
     reference_structure=None,
+    reference_structure_is_path: bool = None,
     reference_probe=None,
     reference_parameters: dict = None,
     reference_image= None,
@@ -1755,6 +1779,9 @@ def run_parameter_sweep(
         List of probe configuration filenames to use in the sweep.
     :param modalities: list of str, optional
         List of imaging modality names to use in the sweep.
+    :param structure_is_path: bool, optional
+        If True, structures are paths to structure files (CIF/PDB) rather
+        than IDs. Default is False.
     :param output_directory: str, optional
         Directory to save outputs. If None, uses default.
     :param output_name: str, optional
@@ -1775,6 +1802,9 @@ def run_parameter_sweep(
         Explicit particle positions to use. If None, positions are generated.
     :param reference_structure: str, optional
         Structure ID or path for the reference sample.
+    :param reference_structure_is_path: bool, optional
+        If True, reference_structure is a path to a structure file. If None,
+        follows structure_is_path.
     :param reference_probe: str, optional
         Probe configuration for the reference sample.
     :param reference_parameters: dict, optional
@@ -1864,7 +1894,9 @@ def run_parameter_sweep(
     sweep_gen = sweep_generator(random_seed=random_seed)
     if clear_experiment:
         sweep_gen.experiment.clear_experiment()
-    sweep_gen.select_structures(structures=structures)
+    sweep_gen.select_structures(
+        structures=structures, structure_is_path=structure_is_path
+    )
     sweep_gen.select_probe_templates(probe_templates=probe_templates)
     sweep_gen.select_modalities(modalities=modalities)
     sweep_gen.set_output_directory(output_directory=output_directory)
@@ -1928,6 +1960,7 @@ def run_parameter_sweep(
         reference_parameters = dict()
     sweep_gen.set_reference_parameters(
         reference_structure=reference_structure,
+        reference_structure_is_path=reference_structure_is_path,
         reference_probe=reference_probe,
         **reference_parameters,
     )

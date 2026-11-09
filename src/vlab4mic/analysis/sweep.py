@@ -20,6 +20,7 @@ def sweep_vasmples(
     virtual_samples=None,
     repetitions=1,
     use_experiment_structure=False,
+    structure_is_path=False,
     **kwargs,
 ):
     """
@@ -30,7 +31,8 @@ def sweep_vasmples(
     experiment : ExperimentParametrisation, optional
         Experiment object to use. If None, a new one is created.
     structures : list, optional
-        List of structure IDs.
+        List of structure IDs, or of paths to structure files if
+        structure_is_path is True.
     probes : list, optional
         List of probe names.
     probe_parameters : dict, optional
@@ -41,6 +43,10 @@ def sweep_vasmples(
         Dictionary of virtual sample parameter sets.
     repetitions : int, optional
         Number of repetitions for each combination.
+    use_experiment_structure : bool, optional
+        Use the structure already selected in the experiment.
+    structure_is_path : bool, optional
+        If True, structures are paths to structure files. Default False.
     **kwargs
         Additional keyword arguments.
 
@@ -101,10 +107,16 @@ def sweep_vasmples(
 
     for struct in structures:
         if use_experiment_structure:
+            print("use_experiment_structure == True")
             experiment.build(
                 modules=[
                     "structure",
                 ]
+            )
+        elif structure_is_path:
+            print("structure_is_path == True")
+            experiment.select_structure(
+                structure_path=struct,
             )
         else:
             experiment.structure_id = struct
