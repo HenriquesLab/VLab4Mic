@@ -49,8 +49,10 @@ VLAB4MIC_N_PERMUTATIONS=0):
   condition has its own seed, so results do not depend on this number.
 """
 
+import contextlib
 import os
 import tempfile
+import warnings
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -267,10 +269,26 @@ def reseed(seeds):
     np.random.seed(seeds[2])
 
 
+@contextlib.contextmanager
+def quiet():
+    # hide the per-simulation messages and warnings of the library, so the
+    # progress bar stays readable; errors are still raised
+    with open(os.devnull, "w") as devnull, contextlib.redirect_stdout(devnull), \
+            warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        yield
+
+
+def setup_experiments_quietly(paths):
+    with quiet():
+        setup_experiments(paths)
+
+
 def run_condition(index, arguments, blur, seeds):
-    reseed(seeds)
-    set_blur(BLUR_MODALITY, *blur)
-    rows, scores = compare(**arguments)
+    with quiet():
+        reseed(seeds)
+        set_blur(BLUR_MODALITY, *blur)
+        rows, scores = compare(**arguments)
     return index, rows, scores
 
 
@@ -286,20 +304,26 @@ def run_conditions(conditions, paths, n_workers):
             results[index] = (rows, scores)
             progress.update()
     else:
-        from concurrent.futures import ProcessPoolExecutor, as_completed
+        from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
 
         # one thread per worker for numpy / scipy, so workers do not compete
         for variable in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
             os.environ.setdefault(variable, "1")
-        with ProcessPoolExecutor(n_workers, initializer=setup_experiments,
+        with ProcessPoolExecutor(n_workers, initializer=setup_experiments_quietly,
                                  initargs=(paths,)) as pool:
             futures = {pool.submit(run_condition, *job): label
                        for job, (label, _, _) in zip(jobs, conditions)}
-            for future in as_completed(futures):
-                index, rows, scores = future.result()
-                results[index] = (rows, scores)
-                progress.set_postfix_str(f"done: {futures[future]}")
-                progress.update()
+            pending = set(futures)
+            while pending:
+                # wake up regularly so the elapsed time keeps moving while
+                # the long conditions run
+                done, pending = wait(pending, timeout=5, return_when=FIRST_COMPLETED)
+                for future in done:
+                    index, rows, scores = future.result()
+                    results[index] = (rows, scores)
+                    progress.set_postfix_str(f"done: {futures[future]}")
+                    progress.update()
+                progress.refresh()
     progress.close()
     rows = [row for condition_rows, _ in results for row in condition_rows]
     reference_scores = results[0][1]
@@ -410,7 +434,7 @@ def main():
     paths = {name: download(url) for name, url in MODELS.items()}
     # the main process also builds the experiments: defaults, output
     # directory and parameter file, and the conditions when N_WORKERS is 1
-    setup_experiments(paths)
+    setup_experiments_quietly(paths)
     experiment = experiments_by_model["dome"]
     default_lateral, default_axial = resolution(experiment, BLUR_MODALITY)
     conditions = list_conditions(default_lateral, default_axial)
