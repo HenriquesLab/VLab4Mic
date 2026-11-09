@@ -87,3 +87,45 @@ def test_aspect_ratio_separates_elongated_from_round_regardless_of_size():
     result = distinguishability(round_, elongated, features="aspect_ratio",
                                 n_bootstrap=100, random_state=0)
     assert result["auc"] > 0.95
+
+
+def test_shape_features_are_rotation_and_brightness_invariant():
+    from vlab4mic.analysis.distinguishability import shape_features
+
+    rng = np.random.default_rng(7)
+    image = ring_image(8, rng, noise=0)
+    a = shape_features(image)
+    np.testing.assert_allclose(a, shape_features(np.rot90(image)), atol=1e-9)
+    np.testing.assert_allclose(a, shape_features(3 * image + 100), atol=1e-9)
+
+
+def test_brightness_alone_is_not_shape():
+    # same shape, twice the brightness: shape features do not tell them
+    # apart, the brightness control does
+    rng = np.random.default_rng(8)
+    dim = [ring_image(10, rng, photons=50) for _ in range(40)]
+    bright = [ring_image(10, rng, photons=100) for _ in range(40)]
+    shape = distinguishability(dim, bright, n_bootstrap=100, random_state=0)
+    brightness = distinguishability(dim, bright, features="brightness",
+                                    n_bootstrap=100, random_state=0)
+    assert abs(shape["auc"] - 0.5) < 0.2
+    assert brightness["auc"] > 0.95
+
+
+def test_identical_realisations_warn():
+    rng = np.random.default_rng(9)
+    a, b = ring_image(8, rng), ring_image(12, rng)
+    with pytest.warns(RuntimeWarning, match="not independent"):
+        result = distinguishability([a] * 10, [b] * 10, n_bootstrap=50, random_state=0)
+    assert result["n_unique_a"] == 1 and result["n_unique_b"] == 1
+
+
+def test_null_control_and_permutation_p_value():
+    rng = np.random.default_rng(10)
+    a = [ring_image(8, rng) for _ in range(30)]
+    b = [ring_image(12, rng) for _ in range(30)]
+    result = distinguishability(a, b, n_bootstrap=50, n_permutations=50, random_state=0)
+    assert abs(result["null_auc"] - 0.5) < 0.25
+    assert result["p_value"] == pytest.approx(1 / 51)
+    same = distinguishability(a[:15], a[15:], n_bootstrap=50, n_permutations=50, random_state=0)
+    assert same["p_value"] > 0.05

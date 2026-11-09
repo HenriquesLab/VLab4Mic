@@ -1,21 +1,49 @@
-"""Fig. 2b-d and Supp. Fig. S1: distinguishability of domed and flat clathrin lattices.
+"""Fig. 2 and Supp. Fig. S1: distinguishability of domed and flat clathrin lattices.
 
-For each imaging method, N independent realisations of each lattice (one
-particle each, own labelling, orientation and noise) are simulated and the
-distinguishability (accuracy and ROC AUC with 95% bootstrap intervals) is
-computed with vlab4mic.analysis.distinguishability from the aspect ratio of
-each particle image (ratio of its principal axes in projection): seen from
-above, the flat lattice is elongated and the dome close to circular. The
-aspect ratio does not depend on particle size, so the two models are not
-separated by their different lateral extent.
+Structural distinguishability is the accuracy with which a classifier tells
+two candidate structures apart under stated simulation parameters. For each
+condition, N independent realisations of each lattice are simulated (one
+particle each, with its own random labelling pattern, orientation and
+noise), and vlab4mic.analysis.distinguishability reports the out-of-fold
+accuracy and ROC AUC of a classifier, with 95% bootstrap intervals.
 
-- Ventral geometry (Fig. 2b,c): lattices lie on the coverslip (axis +z)
-  with a random tilt up to MAX_TILT_DEG and a random in-plane rotation.
-- Labelling efficiency sweep (Fig. 2d) at the ventral geometry.
-- Uniform random orientations (Supp. Fig. S1), as a control.
+Classifier: each image is background subtracted and scaled to unit total
+intensity, then described by rotation-invariant shape features (radial
+profile, rotation-averaged power spectrum, principal axes); standardisation,
+PCA and logistic regression, 5-fold stratified cross-validation. Because the
+images are normalised, the lattices are not told apart by brightness (the
+dome carries more labelled sites than the flat lattice). Every score comes
+with four controls:
 
-Set VLAB4MIC_N_REALISATIONS to change the number of realisations per class
-(default 100; e.g. 5 for a quick run).
+- brightness: the AUC from total intensity alone, the difference the shape
+  features deliberately ignore;
+- aspect_ratio: the AUC from the size-invariant aspect ratio alone;
+- null_auc: two random halves of the domes, which should score 0.5;
+- p_value: permutation p-value of the shape AUC.
+
+Geometry (Leterrier, co-author): clathrin pits and plaques are imaged at the
+ventral surface of cultured cells, lying flat on the coverslip, so the two
+forms differ mainly in depth. The lattices lie on the coverslip (axis +z)
+with a random tilt up to MAX_TILT_DEG and a random in-plane rotation. Uniform
+random orientations are a supplementary control.
+
+Conditions (ventral geometry unless stated):
+
+- reference: every imaging method at its default effective resolution,
+  labelling efficiency 1 and the antibody's linkage error (Fig. 2b,c);
+- labelling efficiency sweep, every imaging method (Fig. 2d);
+- linkage error sweep (distance from fluorophore to epitope), every
+  imaging method (Fig. 2e);
+- width of the microscope's blur: lateral and axial PSF width of a
+  PSF-based method (BLUR_MODALITY) swept separately (Fig. 2f);
+- uniform random orientations, every imaging method (Supp. Fig. S1).
+
+Environment variables (for a quick run, e.g. VLAB4MIC_N_REALISATIONS=5
+VLAB4MIC_N_PERMUTATIONS=0):
+
+- VLAB4MIC_N_REALISATIONS: realisations per lattice and condition (100);
+- VLAB4MIC_N_PERMUTATIONS: permutations for the p-value (200);
+- VLAB4MIC_MAX_TILT_DEG: maximum tilt on the coverslip in degrees (10).
 """
 
 import os
@@ -26,19 +54,32 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import requests
+from tqdm.auto import tqdm
 
 from vlab4mic import experiments
 from vlab4mic.analysis.distinguishability import distinguishability_from_replicates
 
 N_REALISATIONS = int(os.environ.get("VLAB4MIC_N_REALISATIONS", 100))
+N_PERMUTATIONS = int(os.environ.get("VLAB4MIC_N_PERMUTATIONS", 200))
 RANDOM_SEED = 24
 # maximum random tilt of the lattices on the coverslip (degrees); no
-# published reference for this value, set VLAB4MIC_MAX_TILT_DEG to change it
+# published reference for this value
 MAX_TILT_DEG = float(os.environ.get("VLAB4MIC_MAX_TILT_DEG", 10))
 MODALITIES = ["Widefield", "Confocal", "AiryScan", "STED", "SMLM"]
+
+# reference condition, and the values swept one at a time around it
+LABELLING_EFFICIENCY = 1.0
 LABELLING_EFFICIENCIES = [0.2, 0.4, 0.6, 0.8, 1.0]
-FEATURES = "aspect_ratio"
-LE_SWEEP_MODALITIES = ["STED", "SMLM"]
+LINKAGE_ERROR_NM = 10  # distance to epitope of the Antibody probe template
+LINKAGE_ERRORS_NM = [2, 5, 10, 20]  # direct label / nanobody to primary+secondary
+BLUR_MODALITY = "STED"  # PSF-based method whose PSF width is swept
+LATERAL_BLUR_NM = [10, 20, 40, 80, 130]  # PSF standard deviation, axial at default
+AXIAL_BLUR_NM = [50, 100, 200, 300, 600]  # PSF standard deviation, lateral at default
+
+# features scored for every condition: the main classifier and controls
+MAIN_FEATURES = "shape"
+CONTROL_FEATURES = ["aspect_ratio", "brightness"]
+
 MODELS = {
     "dome": "https://zenodo.org/records/20719843/files/Dome_model_v2.0.cif",
     "flat": "https://zenodo.org/records/20719843/files/Flat_lattice_model_v2.0.cif",
@@ -62,9 +103,9 @@ def download(url):
 
 
 def build_experiment(model_path, seed):
-    # each lattice model is parsed once; geometry and labelling efficiency
-    # are changed on the same experiment, and every realisation is imaged
-    # in all modalities
+    # each lattice model is parsed once; probe, geometry and PSF are changed
+    # on the same experiment. Realisations continue the experiment's random
+    # stream, so every realisation of every condition is independent.
     _, _, experiment = experiments.image_vsample(
         structure=model_path,
         structure_is_path=True,
@@ -80,9 +121,16 @@ def build_experiment(model_path, seed):
     return experiment
 
 
-def realisations(experiment, labelling_efficiency, geometry):
-    probe_name = list(experiment.probe_parameters)[0]
-    experiment.probe_parameters[probe_name]["labelling_efficiency"] = labelling_efficiency
+def set_probe(experiment, labelling_efficiency, linkage_error_nm):
+    experiment.remove_probes()
+    experiment.add_probe(
+        **PROBE,
+        labelling_efficiency=labelling_efficiency,
+        probe_distance_to_epitope=linkage_error_nm,
+    )
+
+
+def set_geometry(experiment, geometry):
     if geometry == "ventral":
         experiment.set_virtualsample_params(
             random_orientations=False, orientation_tilt_max=MAX_TILT_DEG,
@@ -91,37 +139,77 @@ def realisations(experiment, labelling_efficiency, geometry):
     else:
         experiment.virtualsample_params.pop("orientation_tilt_max", None)
         experiment.set_virtualsample_params(random_orientations=True, random_rotations=True)
-    experiment.build(modules=["particle"])
-    return experiment.run_replicates(N_REALISATIONS, modality="All")
 
 
 def resolution(experiment, modality):
-    # effective lateral and axial resolution: localisation precision for
-    # localisation-based methods, PSF standard deviation otherwise
+    # effective lateral and axial resolution (nm): localisation precision
+    # for localisation-based methods, PSF standard deviation otherwise
     emitters = experiment.imaging_modalities[modality].get("emitters") or {}
     if emitters.get("lateral_precision") is not None:
-        return [emitters["lateral_precision"], emitters["axial_precision"]]
+        return emitters["lateral_precision"], emitters["axial_precision"]
     psf = experiment.imaging_modalities[modality]["psf_params"]
-    return [sd * v for sd, v in zip(psf["std_devs"], psf["voxelsize"])][::2]
+    lateral, _, axial = [sd * v for sd, v in zip(psf["std_devs"], psf["voxelsize"])]
+    return lateral, axial
 
 
-def compare(labelling_efficiency, geometry, modalities):
-    dome = realisations(experiments_by_model["dome"], labelling_efficiency, geometry)
-    flat = realisations(experiments_by_model["flat"], labelling_efficiency, geometry)
-    rows, scores = [], {}
-    for modality in modalities:
-        score = distinguishability_from_replicates(
-            dome, flat, modality, features=FEATURES, random_state=RANDOM_SEED
+def set_blur(modality, lateral_nm, axial_nm):
+    for experiment in experiments_by_model.values():
+        experiment.update_modality(
+            modality, lateral_resolution_nm=lateral_nm, axial_resolution_nm=axial_nm
         )
-        lateral, axial = resolution(experiments_by_model["dome"], modality)
-        rows.append(dict(
-            modality=modality, geometry=geometry, labelling_efficiency=labelling_efficiency,
+
+
+def realisations(experiment, geometry, labelling_efficiency, linkage_error_nm, modality):
+    set_probe(experiment, labelling_efficiency, linkage_error_nm)
+    set_geometry(experiment, geometry)
+    experiment.build(modules=["particle"])
+    return experiment.run_replicates(N_REALISATIONS, modality=modality)
+
+
+def interval_columns(prefix, score):
+    return {
+        f"{prefix}accuracy": score["accuracy"],
+        f"{prefix}accuracy_low": score["accuracy_interval"][0],
+        f"{prefix}accuracy_high": score["accuracy_interval"][1],
+        f"{prefix}auc": score["auc"],
+        f"{prefix}auc_low": score["auc_interval"][0],
+        f"{prefix}auc_high": score["auc_interval"][1],
+    }
+
+
+def compare(sweep, geometry="ventral", labelling_efficiency=LABELLING_EFFICIENCY,
+            linkage_error_nm=LINKAGE_ERROR_NM, modalities=MODALITIES):
+    # simulate both lattices under one condition and score every modality
+    modality = modalities[0] if len(modalities) == 1 else "All"
+    replicates = {
+        name: realisations(experiment, geometry, labelling_efficiency,
+                           linkage_error_nm, modality)
+        for name, experiment in experiments_by_model.items()
+    }
+    rows, scores = [], {}
+    for mod in modalities:
+        lateral, axial = resolution(experiments_by_model["dome"], mod)
+        row = dict(
+            sweep=sweep, modality=mod, geometry=geometry,
+            labelling_efficiency=labelling_efficiency,
+            linkage_error_nm=linkage_error_nm,
             lateral_resolution_nm=lateral, axial_resolution_nm=axial,
-            n_per_class=N_REALISATIONS, accuracy=score["accuracy"],
-            accuracy_low=score["accuracy_interval"][0], accuracy_high=score["accuracy_interval"][1],
-            auc=score["auc"], auc_low=score["auc_interval"][0], auc_high=score["auc_interval"][1],
-        ))
-        scores[(modality, geometry)] = score
+            n_per_class=N_REALISATIONS, features=MAIN_FEATURES,
+        )
+        score = distinguishability_from_replicates(
+            replicates["dome"], replicates["flat"], mod, features=MAIN_FEATURES,
+            random_state=RANDOM_SEED, n_permutations=N_PERMUTATIONS,
+        )
+        row.update(interval_columns("", score))
+        row.update(null_auc=score["null_auc"], p_value=score["p_value"])
+        for control in CONTROL_FEATURES:
+            control_score = distinguishability_from_replicates(
+                replicates["dome"], replicates["flat"], mod, features=control,
+                random_state=RANDOM_SEED, null_control=False,
+            )
+            row.update(interval_columns(f"{control}_", control_score))
+        rows.append(row)
+        scores[mod] = score
     return rows, scores
 
 
@@ -130,49 +218,142 @@ experiments_by_model = {
     name: build_experiment(path, RANDOM_SEED + k) for k, (name, path) in enumerate(paths.items())
 }
 experiment = experiments_by_model["dome"]
-rows, scores = [], {}
-for geometry in ["ventral", "uniform"]:
-    new_rows, new_scores = compare(1.0, geometry, MODALITIES)
+
+default_lateral, default_axial = resolution(experiment, BLUR_MODALITY)
+# every condition: (label, compare arguments, (lateral, axial) blur of
+# BLUR_MODALITY or None for the default)
+conditions = [("reference", dict(sweep="reference"), None),
+              ("uniform orientation", dict(sweep="uniform_orientation", geometry="uniform"), None)]
+conditions += [(f"labelling efficiency {le}",
+                dict(sweep="labelling_efficiency", labelling_efficiency=le), None)
+               for le in LABELLING_EFFICIENCIES if le != LABELLING_EFFICIENCY]
+conditions += [(f"linkage error {d} nm", dict(sweep="linkage_error", linkage_error_nm=d), None)
+               for d in LINKAGE_ERRORS_NM if d != LINKAGE_ERROR_NM]
+conditions += [(f"{BLUR_MODALITY} lateral blur {v} nm",
+                dict(sweep="lateral_blur", modalities=[BLUR_MODALITY]), (v, default_axial))
+               for v in LATERAL_BLUR_NM]
+conditions += [(f"{BLUR_MODALITY} axial blur {v} nm",
+                dict(sweep="axial_blur", modalities=[BLUR_MODALITY]), (default_lateral, v))
+               for v in AXIAL_BLUR_NM]
+
+rows = []
+progress = tqdm(conditions, desc="conditions", unit="condition")
+for label, arguments, blur in progress:
+    progress.set_postfix_str(label)
+    set_blur(BLUR_MODALITY, *(blur or (default_lateral, default_axial)))
+    new_rows, new_scores = compare(**arguments)
     rows += new_rows
-    scores.update(new_scores)
-for le in LABELLING_EFFICIENCIES[:-1]:
-    new_rows, _ = compare(le, "ventral", LE_SWEEP_MODALITIES)
-    rows += new_rows
+    if arguments["sweep"] == "reference":
+        reference_scores = new_scores
+set_blur(BLUR_MODALITY, default_lateral, default_axial)
 
 results = pd.DataFrame(rows)
 out = experiment.output_directory
-prefix = os.path.join(out, experiment.date_as_string + "fig2_clathrin_")
-results.to_csv(prefix + "distinguishability.csv", index=False)
+out_prefix = os.path.join(out, experiment.date_as_string + "fig2_clathrin_")
+results.to_csv(out_prefix + "distinguishability.csv", index=False)
 experiment.save_parameters(out, name="fig2_clathrin_distinguishability")
 
-# Fig. 2b: score distributions (ventral); Fig. 2c: AUC vs resolution;
-# Fig. 2d: AUC vs labelling efficiency; Fig. S1: uniform orientations
-fig, axes = plt.subplots(1, 3, figsize=[18, 5])
+
+# figures ----------------------------------------------------------------
+def errorbars(ax, x, data, prefix="", **kwargs):
+    auc = data[f"{prefix}auc"]
+    yerr = [auc - data[f"{prefix}auc_low"], data[f"{prefix}auc_high"] - auc]
+    ax.errorbar(x, auc, yerr=yerr, capsize=2, **kwargs)
+
+
+def style(ax, xlabel):
+    ax.axhline(0.5, color="0.5", linestyle="--", linewidth=1)
+    ax.set_ylim(0.3, 1.05)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel("ROC AUC")
+    ax.spines[["top", "right"]].set_visible(False)
+
+
+def series_including_reference(sweep):
+    # a one-parameter sweep plus the reference point it passes through
+    keep = results.sweep.isin([sweep, "reference"])
+    return results[keep]
+
+
+colours = {m: f"C{k}" for k, m in enumerate(MODALITIES)}
+fig, axes = plt.subplots(2, 3, figsize=[16, 9])
+axes = axes.ravel()
+
+# a: out-of-fold scores per imaging method (reference)
 for k, modality in enumerate(MODALITIES):
-    s = scores[(modality, "ventral")]
-    axes[0].scatter(np.full(s["n_a"], k) - 0.1, s["scores"][s["labels"] == 0], s=6, color="C0",
-                    label="dome" if k == 0 else None)
-    axes[0].scatter(np.full(s["n_b"], k) + 0.1, s["scores"][s["labels"] == 1], s=6, color="C1",
-                    label="flat" if k == 0 else None)
+    s = reference_scores[modality]
+    for label, offset, colour in [(0, -0.12, "C0"), (1, 0.12, "C1")]:
+        values = s["scores"][s["labels"] == label]
+        axes[0].scatter(np.full(values.size, k) + offset, values, s=5, color=colour,
+                        alpha=0.6, label=["dome", "flat"][label] if k == 0 else None)
 axes[0].set_xticks(range(len(MODALITIES)), MODALITIES)
 axes[0].set_ylabel("P(flat), out-of-fold")
-axes[0].legend()
-full = results[results.labelling_efficiency == 1.0]
-for geometry, marker in [("ventral", "o"), ("uniform", "x")]:
-    sub = full[full.geometry == geometry]
-    for res, colour in [("axial_resolution_nm", "C0"), ("lateral_resolution_nm", "C1")]:
-        axes[1].errorbar(sub[res], sub.auc, yerr=[sub.auc - sub.auc_low, sub.auc_high - sub.auc],
-                         fmt=marker, color=colour, label=f"{geometry}, {res.split('_')[0]}")
+axes[0].set_title("a  classifier scores", loc="left")
+axes[0].legend(frameon=False)
+
+# b: AUC against the axial resolution each method delivers (reference)
+reference = results[results.sweep == "reference"]
+for modality in MODALITIES:
+    sub = reference[reference.modality == modality]
+    errorbars(axes[1], sub.axial_resolution_nm, sub, fmt="o", color=colours[modality],
+              label=modality)
 axes[1].set_xscale("log")
-axes[1].set_xlabel("effective resolution (nm)")
-axes[1].set_ylabel("AUC")
-axes[1].legend(fontsize=7)
-for modality in LE_SWEEP_MODALITIES:
-    sub = results[(results.modality == modality) & (results.geometry == "ventral")].sort_values("labelling_efficiency")
-    axes[2].errorbar(sub.labelling_efficiency, sub.auc, yerr=[sub.auc - sub.auc_low, sub.auc_high - sub.auc], fmt="o-", label=modality)
-axes[2].set_xlabel("labelling efficiency")
-axes[2].set_ylabel("AUC")
-axes[2].legend()
-fig.savefig(prefix + "distinguishability.png", dpi=300, bbox_inches="tight")
-plt.close()
-print(results)
+style(axes[1], "axial resolution (nm)")
+axes[1].set_title("b  imaging method", loc="left")
+axes[1].legend(frameon=False, fontsize=8)
+
+# c, d: labelling efficiency and linkage error, one line per method
+for ax, sweep, column, xlabel, title in [
+    (axes[2], "labelling_efficiency", "labelling_efficiency", "labelling efficiency",
+     "c  labelling efficiency"),
+    (axes[3], "linkage_error", "linkage_error_nm", "linkage error (nm)", "d  linkage error"),
+]:
+    data = series_including_reference(sweep)
+    for modality in MODALITIES:
+        sub = data[data.modality == modality].sort_values(column)
+        errorbars(ax, sub[column], sub, fmt="o-", color=colours[modality], label=modality)
+    style(ax, xlabel)
+    ax.set_title(title, loc="left")
+axes[2].legend(frameon=False, fontsize=8)
+
+# e: width of the blur (PSF standard deviation) of BLUR_MODALITY
+for sweep, column, marker, label in [
+    ("lateral_blur", "lateral_resolution_nm", "o-", "lateral (axial %g nm)" % default_axial),
+    ("axial_blur", "axial_resolution_nm", "s-", "axial (lateral %g nm)" % default_lateral),
+]:
+    sub = results[results.sweep == sweep].sort_values(column)
+    errorbars(axes[4], sub[column], sub, fmt=marker, label=label)
+axes[4].set_xscale("log")
+style(axes[4], f"{BLUR_MODALITY} PSF width, s.d. (nm)")
+axes[4].set_title("e  width of the blur", loc="left")
+axes[4].legend(frameon=False, fontsize=8)
+
+# f: controls at the reference condition
+x = np.arange(len(MODALITIES))
+reference = reference.set_index("modality").loc[MODALITIES]
+for offset, prefix, label in [(-0.2, "", "shape (main)"), (0, "aspect_ratio_", "aspect ratio"),
+                              (0.2, "brightness_", "brightness only")]:
+    errorbars(axes[5], x + offset, reference, prefix, fmt="o", label=label)
+axes[5].scatter(x, reference.null_auc, marker="x", color="k", label="null (dome vs dome)")
+axes[5].set_xticks(x, MODALITIES)
+style(axes[5], "")
+axes[5].set_title("f  controls", loc="left")
+axes[5].legend(frameon=False, fontsize=8)
+
+fig.tight_layout()
+fig.savefig(out_prefix + "distinguishability.png", dpi=300, bbox_inches="tight")
+plt.close(fig)
+
+# Supp. Fig. S1: ventral geometry against uniform random orientations
+fig, ax = plt.subplots(figsize=[6, 4])
+for offset, sweep, label in [(-0.1, "reference", "ventral"), (0.1, "uniform_orientation", "uniform")]:
+    sub = results[results.sweep == sweep].set_index("modality").loc[MODALITIES]
+    errorbars(ax, x + offset, sub, fmt="o", label=label)
+ax.set_xticks(x, MODALITIES)
+style(ax, "")
+ax.legend(frameon=False)
+fig.tight_layout()
+fig.savefig(out_prefix + "distinguishability_orientation_S1.png", dpi=300, bbox_inches="tight")
+plt.close(fig)
+
+print(results.drop(columns=[c for c in results.columns if c.endswith(("_low", "_high"))]))
