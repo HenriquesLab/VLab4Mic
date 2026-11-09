@@ -114,6 +114,9 @@ class sweep_generator:
         self.reference_structure_is_path = False
         # set to True when plane-wise orientations are swept
         self.enable_random_orientations = False
+        # how probe normals are computed on every swept structure (see
+        # set_structure_normal_params); None keeps the structure default
+        self.structure_normal_params = None
         self.reference_parameters_unsorted = dict()
         # set to False to analyse simulations without a reference image
         self.use_reference = True
@@ -124,6 +127,32 @@ class sweep_generator:
         self.metrics = {}
 
         print("vLab4mic sweep generator initialised")
+
+    def set_structure_normal_params(self, mode="scaling", normal_vector=None, n_neighbours=10):
+        """
+        Set how probe normals are computed on every structure of the sweep.
+
+        Applied to each structure after it is built, before its particle
+        is labelled (see ExperimentParametrisation.set_structure_normal_params).
+        For example, "local_plane" gives correct normals on flat surfaces.
+
+        Parameters
+        ----------
+        :param mode: str
+            Normals mode, e.g. "scaling" (default of a structure),
+            "local_plane" or "global".
+        :param normal_vector: array-like, optional
+            Normal vector for mode "global".
+        :param n_neighbours: int, optional
+            Neighbours used by "local_plane". Default 10.
+
+        Returns
+        -------
+        None
+        """
+        self.structure_normal_params = dict(
+            mode=mode, normal_vector=normal_vector, n_neighbours=n_neighbours
+        )
 
     def set_number_of_repetitions(self, repeats: int = 3):
         """
@@ -240,6 +269,7 @@ class sweep_generator:
                 particle_structural_integrity=self.structural_integrity_parameters,
                 virtual_samples=self.vsample_parameters,
                 repetitions=self.sweep_repetitions,
+                structure_normal_params=self.structure_normal_params,
                 use_experiment_structure=True,
             )
         else:
@@ -255,6 +285,7 @@ class sweep_generator:
                 particle_structural_integrity=self.structural_integrity_parameters,
                 virtual_samples=self.vsample_parameters,
                 repetitions=self.sweep_repetitions,
+                structure_normal_params=self.structure_normal_params,
                 structure_is_path=self.structure_is_path,
             )
 
@@ -631,6 +662,9 @@ class sweep_generator:
         xz_orientations = None,
         yz_orientations = None,
         rotation_angles=None,
+        random_orientations=None,
+        random_rotations=None,
+        orientation_tilt_max=None,
         minimal_distance=None,
         # modality params
         pixelsize_nm=None,
@@ -695,6 +729,13 @@ class sweep_generator:
             enables random orientations for the sweep.
         :param rotation_angles: optional
             Rotation angles of particles around their axis, in degrees.
+        :param random_orientations: optional
+            Randomise particle orientations (list of booleans).
+        :param random_rotations: optional
+            Random in-plane rotation of each particle (list of booleans).
+        :param orientation_tilt_max: optional
+            Maximum random tilt, in degrees, of each particle about its
+            initial orientation (e.g. lying flat on the coverslip).
         :param minimal_distance: optional
             Not applied in sweeps yet (a warning is printed).
         :param pixelsize_nm: optional
@@ -848,6 +889,15 @@ class sweep_generator:
             self.set_parameter_values(
                 "virtual_sample", "rotation_angles", values=rotation_angles
             )
+        for name, values in (
+            ("random_orientations", random_orientations),
+            ("random_rotations", random_rotations),
+            ("orientation_tilt_max", orientation_tilt_max),
+        ):
+            if values is not None:
+                if not isinstance(values, (list, tuple)):
+                    values = [values]
+                self.set_parameter_values("virtual_sample", name, values=list(values))
         if exp_time is not None:
             self.set_parameter_values(
                 "acquisition", "exp_time", values=exp_time
@@ -1768,6 +1818,10 @@ def run_parameter_sweep(
     xz_orientations = None,
     yz_orientations = None,
     rotation_angles=None,
+    random_orientations=None,
+    random_rotations=None,
+    orientation_tilt_max=None,
+    structure_normal_orientation=None,
     minimal_distance=None,
     pixelsize_nm=None,
     lateral_resolution_nm=None,
@@ -1877,6 +1931,8 @@ def run_parameter_sweep(
         - particle_orientations
         - xy_orientations, xz_orientations, yz_orientations
         - rotation_angles
+        - random_orientations, random_rotations, orientation_tilt_max (maximum
+          random tilt in degrees about the initial orientation)
         - minimal_distance
         - pixelsize_nm
         - lateral_resolution_nm
@@ -1884,6 +1940,10 @@ def run_parameter_sweep(
         - psf_voxel_nm
         - depth_of_field_nm
         - exp_time
+    :param structure_normal_orientation: str or numpy.ndarray, optional
+        How probe normals are computed on every structure: a mode such as
+        "local_plane" (correct on flat surfaces), or a normal vector (mode
+        "global"). Default: the structure default.
     :param na_as_zero: bool, optional
         Show missing metric values as zero in plots. Default is True.
     :param custom_metrics: list of callable, optional
@@ -1972,6 +2032,9 @@ def run_parameter_sweep(
         xz_orientations = xz_orientations,
         yz_orientations = yz_orientations,
         rotation_angles=rotation_angles,
+        random_orientations=random_orientations,
+        random_rotations=random_rotations,
+        orientation_tilt_max=orientation_tilt_max,
         minimal_distance=minimal_distance,
         pixelsize_nm=pixelsize_nm,
         lateral_resolution_nm=lateral_resolution_nm,
@@ -1980,6 +2043,13 @@ def run_parameter_sweep(
         depth_of_field_nm=depth_of_field_nm,
         exp_time=exp_time,
     )
+    if structure_normal_orientation is not None:
+        if isinstance(structure_normal_orientation, str):
+            sweep_gen.set_structure_normal_params(mode=structure_normal_orientation)
+        else:
+            sweep_gen.set_structure_normal_params(
+                mode="global", normal_vector=np.asarray(structure_normal_orientation)
+            )
     sweep_gen.use_reference = use_reference
     if use_reference:
         if (
