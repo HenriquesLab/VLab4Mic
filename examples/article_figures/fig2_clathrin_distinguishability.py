@@ -90,7 +90,12 @@ N_REALISATIONS = int(os.environ.get("VLAB4MIC_N_REALISATIONS", 100))
 N_PERMUTATIONS = int(os.environ.get("VLAB4MIC_N_PERMUTATIONS", 200))
 # parallel worker processes, one sweep (or scoring group) each at a time
 N_WORKERS = int(os.environ.get("VLAB4MIC_N_WORKERS", 1))
-SAVE_IMAGES = os.environ.get("VLAB4MIC_SAVE_IMAGES", "0") not in ("0", "", "false", "False")
+SAVE_IMAGES = os.environ.get("VLAB4MIC_SAVE_IMAGES", "0") not in (
+    "0",
+    "",
+    "false",
+    "False",
+)
 RANDOM_SEED = 24
 # maximum random tilt of the lattices on the coverslip (degrees); no
 # published reference for this value
@@ -114,18 +119,37 @@ LABELLING_EFFICIENCIES = [0.01, 0.05, 0.1, 0.2, 0.4, 0.6, 1.0]
 # fail on the clathrin lattices. Below 0.5 the removal often misses the
 # requested fraction.
 STRUCTURAL_INTEGRITY = 1.0
-STRUCTURAL_INTEGRITIES = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+STRUCTURAL_INTEGRITIES = [0.5, 0.7, 1.0]
 SI_SMALL_CLUSTER_A = 100
 SI_LARGE_CLUSTER_A = 300
 LINKAGE_ERROR_NM = 10  # distance to epitope of the Antibody probe template
-LINKAGE_ERRORS_NM = [2, 5, 10, 20]  # direct label / nanobody to primary+secondary
+LINKAGE_ERRORS_NM = [
+    2,
+    5,
+    10,
+    20,
+]  # direct label / nanobody to primary+secondary
 BLUR_MODALITY = "STED"  # PSF-based method whose PSF width is swept
-LATERAL_BLUR_NM = [10, 20, 40, 80, 130]  # PSF standard deviation, axial at default
-AXIAL_BLUR_NM = [50, 100, 200, 300, 600]  # PSF standard deviation, lateral at default
+LATERAL_BLUR_NM = [
+    10,
+    20,
+    40,
+    80,
+    130,
+]  # PSF standard deviation, axial at default
+AXIAL_BLUR_NM = [
+    50,
+    100,
+    200,
+    300,
+    600,
+]  # PSF standard deviation, lateral at default
 
 MODELS = {
     "dome": "https://zenodo.org/records/20719843/files/Dome_model_v2.0.cif",
-    "flat": "https://zenodo.org/records/20719843/files/Flat_lattice_model_v2.0.cif",
+    "flat": (
+        "https://zenodo.org/records/20719843/files/Flat_lattice_model_v2.0.cif"
+    ),
 }
 # probe as run_parameter_sweep arguments (one value each)
 PROBE = dict(
@@ -135,8 +159,11 @@ PROBE = dict(
     probe_DoL=[4],
 )
 GEOMETRIES = {
-    "ventral": dict(random_orientations=False, random_rotations=True,
-                    orientation_tilt_max=MAX_TILT_DEG),
+    "ventral": dict(
+        random_orientations=False,
+        random_rotations=True,
+        orientation_tilt_max=MAX_TILT_DEG,
+    ),
     "uniform": dict(random_orientations=True, random_rotations=True),
 }
 
@@ -145,9 +172,16 @@ SHAPE_COLUMNS = [f"shape_{k:02d}" for k in range(20)]
 FEATURE_COLUMNS = SHAPE_COLUMNS + ["aspect_ratio", "brightness"]
 CONTROL_FEATURES = ["aspect_ratio", "brightness"]
 # columns that identify a condition in the feature table
-CONDITION_COLUMNS = ["sweep", "geometry", "modality", "labelling_efficiency",
-                     "structural_integrity", "linkage_error_nm",
-                     "lateral_resolution_nm", "axial_resolution_nm"]
+CONDITION_COLUMNS = [
+    "sweep",
+    "geometry",
+    "modality",
+    "labelling_efficiency",
+    "structural_integrity",
+    "linkage_error_nm",
+    "lateral_resolution_nm",
+    "axial_resolution_nm",
+]
 
 
 def download(url):
@@ -164,8 +198,12 @@ def quiet():
     # hide the per-simulation messages, inner progress bars and warnings of
     # the library, so the progress bars stay readable; errors are still
     # raised (and reported by the main process)
-    with open(os.devnull, "w") as devnull, contextlib.redirect_stdout(devnull), \
-            contextlib.redirect_stderr(devnull), warnings.catch_warnings():
+    with (
+        open(os.devnull, "w") as devnull,
+        contextlib.redirect_stdout(devnull),
+        contextlib.redirect_stderr(devnull),
+        warnings.catch_warnings(),
+    ):
         warnings.simplefilter("ignore")
         yield
 
@@ -202,22 +240,33 @@ def image_features(image, pixelsize_nm):
     if _last_image[0] is not image:
         prepared = same_field_of_view(image, pixelsize_nm)
         _last_image[0] = image
-        _last_image[1] = np.concatenate([
-            shape_features(prepared),
-            aspect_ratio_features(prepared),
-            brightness_features(prepared),
-        ])
+        _last_image[1] = np.concatenate(
+            [
+                shape_features(prepared),
+                aspect_ratio_features(prepared),
+                brightness_features(prepared),
+            ]
+        )
     return _last_image[1]
 
 
 def make_feature_metric(index, name):
-    def metric(simulated_image=None, simulated_image_pixelsize_nm=None, **kwargs):
-        return float(image_features(simulated_image, simulated_image_pixelsize_nm)[index])
+    def metric(
+        simulated_image=None, simulated_image_pixelsize_nm=None, **kwargs
+    ):
+        return float(
+            image_features(simulated_image, simulated_image_pixelsize_nm)[
+                index
+            ]
+        )
+
     metric.__name__ = name
     return metric
 
 
-FEATURE_METRICS = [make_feature_metric(k, name) for k, name in enumerate(FEATURE_COLUMNS)]
+FEATURE_METRICS = [
+    make_feature_metric(k, name) for k, name in enumerate(FEATURE_COLUMNS)
+]
 
 
 # simulation: one run_parameter_sweep per lattice and sweep block ----------
@@ -225,25 +274,56 @@ def list_sweeps():
     # every sweep block: (label, geometry, run_parameter_sweep arguments,
     # modalities). The grid is split by labelling efficiency so that blocks
     # can run in parallel; the slow blocks come first.
-    integrity = dict(structural_integrity=STRUCTURAL_INTEGRITIES,
-                     structural_integrity_small_cluster=[SI_SMALL_CLUSTER_A],
-                     structural_integrity_large_cluster=[SI_LARGE_CLUSTER_A])
-    sweeps = [(f"grid, labelling efficiency {le}", "ventral",
-               dict(labelling_efficiency=[le], **integrity), MODALITIES)
-              for le in LABELLING_EFFICIENCIES]
+    integrity = dict(
+        structural_integrity=STRUCTURAL_INTEGRITIES,
+        structural_integrity_small_cluster=[SI_SMALL_CLUSTER_A],
+        structural_integrity_large_cluster=[SI_LARGE_CLUSTER_A],
+    )
+    sweeps = [
+        (
+            f"grid, labelling efficiency {le}",
+            "ventral",
+            dict(labelling_efficiency=[le], **integrity),
+            MODALITIES,
+        )
+        for le in LABELLING_EFFICIENCIES
+    ]
     sweeps += [
-        ("linkage error", "ventral",
-         dict(labelling_efficiency=[LABELLING_EFFICIENCY],
-              probe_distance_to_epitope=[d for d in LINKAGE_ERRORS_NM if d != LINKAGE_ERROR_NM]),
-         MODALITIES),
-        ("uniform orientation", "uniform",
-         dict(labelling_efficiency=[LABELLING_EFFICIENCY]), MODALITIES),
-        (f"{BLUR_MODALITY} lateral blur", "ventral",
-         dict(labelling_efficiency=[LABELLING_EFFICIENCY], lateral_resolution_nm=LATERAL_BLUR_NM),
-         [BLUR_MODALITY]),
-        (f"{BLUR_MODALITY} axial blur", "ventral",
-         dict(labelling_efficiency=[LABELLING_EFFICIENCY], axial_resolution_nm=AXIAL_BLUR_NM),
-         [BLUR_MODALITY]),
+        (
+            "linkage error",
+            "ventral",
+            dict(
+                labelling_efficiency=[LABELLING_EFFICIENCY],
+                probe_distance_to_epitope=[
+                    d for d in LINKAGE_ERRORS_NM if d != LINKAGE_ERROR_NM
+                ],
+            ),
+            MODALITIES,
+        ),
+        (
+            "uniform orientation",
+            "uniform",
+            dict(labelling_efficiency=[LABELLING_EFFICIENCY]),
+            MODALITIES,
+        ),
+        (
+            f"{BLUR_MODALITY} lateral blur",
+            "ventral",
+            dict(
+                labelling_efficiency=[LABELLING_EFFICIENCY],
+                lateral_resolution_nm=LATERAL_BLUR_NM,
+            ),
+            [BLUR_MODALITY],
+        ),
+        (
+            f"{BLUR_MODALITY} axial blur",
+            "ventral",
+            dict(
+                labelling_efficiency=[LABELLING_EFFICIENCY],
+                axial_resolution_nm=AXIAL_BLUR_NM,
+            ),
+            [BLUR_MODALITY],
+        ),
     ]
     return sweeps
 
@@ -255,15 +335,21 @@ def resolution(experiment, modality):
     if emitters.get("lateral_precision") is not None:
         return emitters["lateral_precision"], emitters["axial_precision"]
     psf = experiment.imaging_modalities[modality]["psf_params"]
-    lateral, _, axial = [sd * v for sd, v in zip(psf["std_devs"], psf["voxelsize"])]
+    lateral, _, axial = [
+        sd * v for sd, v in zip(psf["std_devs"], psf["voxelsize"])
+    ]
     return lateral, axial
 
 
-def run_sweep(model, model_path, label, geometry, arguments, modalities, seed, images_dir):
+def run_sweep(
+    model, model_path, label, geometry, arguments, modalities, seed, images_dir
+):
     # one lattice, one sweep block: per-image feature table
     output_directory = None
     if images_dir is not None:
-        output_directory = os.path.join(images_dir, f"{label.replace(', ', '_').replace(' ', '_')}_{model}")
+        output_directory = os.path.join(
+            images_dir, f"{label.replace(', ', '_').replace(' ', '_')}_{model}"
+        )
         os.makedirs(output_directory, exist_ok=True)
     with quiet():
         generator = run_parameter_sweep(
@@ -289,37 +375,66 @@ def run_sweep(model, model_path, label, geometry, arguments, modalities, seed, i
         )
         table = generator.analysis["dataframes"].copy()
         defaults = {m: resolution(generator.experiment, m) for m in modalities}
-    table = table.rename(columns={"probe_distance_to_epitope": "linkage_error_nm"})
+    table = table.rename(
+        columns={"probe_distance_to_epitope": "linkage_error_nm"}
+    )
     table["modality"] = table["modality_name"]
     table["model"] = model
     table["geometry"] = geometry
-    table["sweep"] = label.split(",")[0].replace(f"{BLUR_MODALITY} ", "").replace(" ", "_")
+    table["sweep"] = (
+        label.split(",")[0].replace(f"{BLUR_MODALITY} ", "").replace(" ", "_")
+    )
     # parameters not swept in this block are at their reference value
-    for column, value in (("labelling_efficiency", LABELLING_EFFICIENCY),
-                          ("structural_integrity", STRUCTURAL_INTEGRITY),
-                          ("linkage_error_nm", LINKAGE_ERROR_NM)):
+    for column, value in (
+        ("labelling_efficiency", LABELLING_EFFICIENCY),
+        ("structural_integrity", STRUCTURAL_INTEGRITY),
+        ("linkage_error_nm", LINKAGE_ERROR_NM),
+    ):
         if column not in table:
             table[column] = value
-    for k, column in enumerate(("lateral_resolution_nm", "axial_resolution_nm")):
+    for k, column in enumerate(
+        ("lateral_resolution_nm", "axial_resolution_nm")
+    ):
         default = table["modality"].map(lambda m: defaults[m][k])
-        table[column] = table[column].fillna(default) if column in table else default
+        table[column] = (
+            table[column].fillna(default) if column in table else default
+        )
     return table
 
 
 def simulate(paths, n_workers, images_dir):
     sweeps = list_sweeps()
-    seeds = np.random.SeedSequence(RANDOM_SEED).generate_state(len(sweeps) * len(paths))
+    seeds = np.random.SeedSequence(RANDOM_SEED).generate_state(
+        len(sweeps) * len(paths)
+    )
     jobs = []
     for k, (label, geometry, arguments, modalities) in enumerate(sweeps):
         for j, (model, path) in enumerate(paths.items()):
-            jobs.append((model, path, label, geometry, arguments, modalities,
-                         int(seeds[k * len(paths) + j]), images_dir))
-    tables = run_in_parallel(run_sweep, jobs, n_workers, "sweeps",
-                             labels=[f"{job[2]} ({job[0]})" for job in jobs])
+            jobs.append(
+                (
+                    model,
+                    path,
+                    label,
+                    geometry,
+                    arguments,
+                    modalities,
+                    int(seeds[k * len(paths) + j]),
+                    images_dir,
+                )
+            )
+    tables = run_in_parallel(
+        run_sweep,
+        jobs,
+        n_workers,
+        "sweeps",
+        labels=[f"{job[2]} ({job[0]})" for job in jobs],
+    )
     features = pd.concat(tables, ignore_index=True)
-    reference = ((features.sweep == "grid")
-                 & np.isclose(features.labelling_efficiency, LABELLING_EFFICIENCY)
-                 & np.isclose(features.structural_integrity, STRUCTURAL_INTEGRITY))
+    reference = (
+        (features.sweep == "grid")
+        & np.isclose(features.labelling_efficiency, LABELLING_EFFICIENCY)
+        & np.isclose(features.structural_integrity, STRUCTURAL_INTEGRITY)
+    )
     features.loc[reference, "sweep"] = "reference"
     keep = ["model"] + CONDITION_COLUMNS + ["Replica"] + FEATURE_COLUMNS
     return features[keep]
@@ -336,18 +451,30 @@ def run_in_parallel(function, jobs, n_workers, description, labels):
             results[k] = function(*job)
             progress.update()
     else:
-        from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
+        from concurrent.futures import (
+            FIRST_COMPLETED,
+            ProcessPoolExecutor,
+            wait,
+        )
 
         # one thread per worker for numpy / scipy, so workers do not compete
-        for variable in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
+        for variable in (
+            "OMP_NUM_THREADS",
+            "OPENBLAS_NUM_THREADS",
+            "MKL_NUM_THREADS",
+        ):
             os.environ.setdefault(variable, "1")
         with ProcessPoolExecutor(min(n_workers, len(jobs))) as pool:
-            futures = {pool.submit(function, *job): (k, label)
-                       for k, (job, label) in enumerate(zip(jobs, labels))}
+            futures = {
+                pool.submit(function, *job): (k, label)
+                for k, (job, label) in enumerate(zip(jobs, labels))
+            }
             pending = set(futures)
             while pending:
                 # wake up regularly so the elapsed time keeps moving
-                done, pending = wait(pending, timeout=5, return_when=FIRST_COMPLETED)
+                done, pending = wait(
+                    pending, timeout=5, return_when=FIRST_COMPLETED
+                )
                 for future in done:
                     k, label = futures[future]
                     results[k] = future.result()
@@ -376,16 +503,22 @@ def score_condition(condition, dome, flat):
     flat = flat.sort_values("Replica")
     with quiet():
         score = distinguishability_from_dataframes(
-            dome[SHAPE_COLUMNS].to_numpy(), flat[SHAPE_COLUMNS].to_numpy(),
-            random_state=RANDOM_SEED, n_permutations=N_PERMUTATIONS,
+            dome[SHAPE_COLUMNS].to_numpy(),
+            flat[SHAPE_COLUMNS].to_numpy(),
+            random_state=RANDOM_SEED,
+            n_permutations=N_PERMUTATIONS,
         )
-        row = dict(condition, n_per_class=min(len(dome), len(flat)), features="shape")
+        row = dict(
+            condition, n_per_class=min(len(dome), len(flat)), features="shape"
+        )
         row.update(interval_columns("", score))
         row.update(null_auc=score["null_auc"], p_value=score["p_value"])
         for control in CONTROL_FEATURES:
             control_score = distinguishability_from_dataframes(
-                dome[[control]].to_numpy(), flat[[control]].to_numpy(),
-                random_state=RANDOM_SEED, null_control=False,
+                dome[[control]].to_numpy(),
+                flat[[control]].to_numpy(),
+                random_state=RANDOM_SEED,
+                null_control=False,
             )
             row.update(interval_columns(f"{control}_", control_score))
     return row, dict(scores=score["scores"], labels=score["labels"])
@@ -397,12 +530,23 @@ def score_features(features, n_workers):
     jobs, labels = [], []
     for key, group in features.groupby(CONDITION_COLUMNS, sort=False):
         condition = dict(zip(CONDITION_COLUMNS, key))
-        jobs.append((condition, group[group.model == "dome"], group[group.model == "flat"]))
+        jobs.append(
+            (
+                condition,
+                group[group.model == "dome"],
+                group[group.model == "flat"],
+            )
+        )
         labels.append(f"{condition['sweep']} {condition['modality']}")
-    outputs = run_in_parallel(score_condition, jobs, n_workers, "scores", labels)
+    outputs = run_in_parallel(
+        score_condition, jobs, n_workers, "scores", labels
+    )
     results = pd.DataFrame([row for row, _ in outputs])
-    reference_scores = {row["modality"]: scores for row, scores in outputs
-                        if row["sweep"] == "reference"}
+    reference_scores = {
+        row["modality"]: scores
+        for row, scores in outputs
+        if row["sweep"] == "reference"
+    }
     return results, reference_scores
 
 
@@ -426,7 +570,9 @@ def grid_results(results):
     return results[results.sweep.isin(["grid", "reference"])]
 
 
-def make_figures(results, reference_scores, default_lateral, default_axial, out_prefix):
+def make_figures(
+    results, reference_scores, default_lateral, default_axial, out_prefix
+):
     colours = {m: f"C{k}" for k, m in enumerate(MODALITIES)}
     grid = grid_results(results)
     fig, axes = plt.subplots(2, 4, figsize=[21, 9])
@@ -437,8 +583,14 @@ def make_figures(results, reference_scores, default_lateral, default_axial, out_
         s = reference_scores[modality]
         for label, offset, colour in [(0, -0.12, "C0"), (1, 0.12, "C1")]:
             values = s["scores"][s["labels"] == label]
-            axes[0].scatter(np.full(values.size, k) + offset, values, s=5, color=colour,
-                            alpha=0.6, label=["dome", "flat"][label] if k == 0 else None)
+            axes[0].scatter(
+                np.full(values.size, k) + offset,
+                values,
+                s=5,
+                color=colour,
+                alpha=0.6,
+                label=["dome", "flat"][label] if k == 0 else None,
+            )
     axes[0].set_xticks(range(len(MODALITIES)), MODALITIES)
     axes[0].set_ylabel("P(flat), out-of-fold")
     axes[0].set_title("a  classifier scores", loc="left")
@@ -448,8 +600,14 @@ def make_figures(results, reference_scores, default_lateral, default_axial, out_
     reference = results[results.sweep == "reference"]
     for modality in MODALITIES:
         sub = reference[reference.modality == modality]
-        errorbars(axes[1], sub.axial_resolution_nm, sub, fmt="o", color=colours[modality],
-                  label=modality)
+        errorbars(
+            axes[1],
+            sub.axial_resolution_nm,
+            sub,
+            fmt="o",
+            color=colours[modality],
+            label=modality,
+        )
     axes[1].set_xscale("log")
     style(axes[1], "axial resolution (nm)")
     axes[1].set_title("b  imaging method", loc="left")
@@ -458,15 +616,34 @@ def make_figures(results, reference_scores, default_lateral, default_axial, out_
     # c, d: labelling efficiency at integrity 1 and structural integrity at
     # labelling efficiency 1 (row and column of the grid)
     for ax, column, fixed, fixed_value, xlabel, title in [
-        (axes[2], "labelling_efficiency", "structural_integrity", STRUCTURAL_INTEGRITY,
-         "labelling efficiency", f"c  labelling efficiency (integrity {STRUCTURAL_INTEGRITY:g})"),
-        (axes[3], "structural_integrity", "labelling_efficiency", LABELLING_EFFICIENCY,
-         "structural integrity", f"d  structural integrity (labelling {LABELLING_EFFICIENCY:g})"),
+        (
+            axes[2],
+            "labelling_efficiency",
+            "structural_integrity",
+            STRUCTURAL_INTEGRITY,
+            "labelling efficiency",
+            f"c  labelling efficiency (integrity {STRUCTURAL_INTEGRITY:g})",
+        ),
+        (
+            axes[3],
+            "structural_integrity",
+            "labelling_efficiency",
+            LABELLING_EFFICIENCY,
+            "structural integrity",
+            f"d  structural integrity (labelling {LABELLING_EFFICIENCY:g})",
+        ),
     ]:
         data = grid[np.isclose(grid[fixed], fixed_value)]
         for modality in MODALITIES:
             sub = data[data.modality == modality].sort_values(column)
-            errorbars(ax, sub[column], sub, fmt="o-", color=colours[modality], label=modality)
+            errorbars(
+                ax,
+                sub[column],
+                sub,
+                fmt="o-",
+                color=colours[modality],
+                label=modality,
+            )
         style(ax, xlabel)
         ax.set_title(title, loc="left")
     axes[2].set_xscale("log")
@@ -476,15 +653,31 @@ def make_figures(results, reference_scores, default_lateral, default_axial, out_
     data = results[results.sweep.isin(["linkage_error", "reference"])]
     for modality in MODALITIES:
         sub = data[data.modality == modality].sort_values("linkage_error_nm")
-        errorbars(axes[4], sub.linkage_error_nm, sub, fmt="o-", color=colours[modality],
-                  label=modality)
+        errorbars(
+            axes[4],
+            sub.linkage_error_nm,
+            sub,
+            fmt="o-",
+            color=colours[modality],
+            label=modality,
+        )
     style(axes[4], "linkage error (nm)")
     axes[4].set_title("e  linkage error", loc="left")
 
     # f: width of the blur (PSF standard deviation) of BLUR_MODALITY
     for sweep, column, marker, label in [
-        ("lateral_blur", "lateral_resolution_nm", "o-", "lateral (axial %g nm)" % default_axial),
-        ("axial_blur", "axial_resolution_nm", "s-", "axial (lateral %g nm)" % default_lateral),
+        (
+            "lateral_blur",
+            "lateral_resolution_nm",
+            "o-",
+            "lateral (axial %g nm)" % default_axial,
+        ),
+        (
+            "axial_blur",
+            "axial_resolution_nm",
+            "s-",
+            "axial (lateral %g nm)" % default_lateral,
+        ),
     ]:
         sub = results[results.sweep == sweep].sort_values(column)
         errorbars(axes[5], sub[column], sub, fmt=marker, label=label)
@@ -496,10 +689,19 @@ def make_figures(results, reference_scores, default_lateral, default_axial, out_
     # g: controls at the reference condition
     x = np.arange(len(MODALITIES))
     reference = reference.set_index("modality").loc[MODALITIES]
-    for offset, prefix, label in [(-0.2, "", "shape (main)"), (0, "aspect_ratio_", "aspect ratio"),
-                                  (0.2, "brightness_", "brightness only")]:
+    for offset, prefix, label in [
+        (-0.2, "", "shape (main)"),
+        (0, "aspect_ratio_", "aspect ratio"),
+        (0.2, "brightness_", "brightness only"),
+    ]:
         errorbars(axes[6], x + offset, reference, prefix, fmt="o", label=label)
-    axes[6].scatter(x, reference.null_auc, marker="x", color="k", label="null (dome vs dome)")
+    axes[6].scatter(
+        x,
+        reference.null_auc,
+        marker="x",
+        color="k",
+        label="null (dome vs dome)",
+    )
     axes[6].set_xticks(x, MODALITIES)
     style(axes[6], "")
     axes[6].set_title("g  controls", loc="left")
@@ -507,47 +709,86 @@ def make_figures(results, reference_scores, default_lateral, default_axial, out_
     axes[7].axis("off")
 
     fig.tight_layout()
-    fig.savefig(out_prefix + "distinguishability.png", dpi=300, bbox_inches="tight")
+    fig.savefig(
+        out_prefix + "distinguishability.png", dpi=300, bbox_inches="tight"
+    )
     plt.close(fig)
 
     # labelling efficiency x structural integrity: one AUC heatmap per method
     les = sorted(grid.labelling_efficiency.unique())
     sis = sorted(grid.structural_integrity.unique())
-    fig, axes = plt.subplots(1, len(MODALITIES), figsize=[4.2 * len(MODALITIES), 4.2],
-                             sharey=True, constrained_layout=True)
+    fig, axes = plt.subplots(
+        1,
+        len(MODALITIES),
+        figsize=[4.2 * len(MODALITIES), 4.2],
+        sharey=True,
+        constrained_layout=True,
+    )
     for ax, modality in zip(axes, MODALITIES):
-        table = (grid[grid.modality == modality]
-                 .pivot_table(index="structural_integrity", columns="labelling_efficiency",
-                              values="auc")
-                 .reindex(index=sis, columns=les))
-        image = ax.imshow(table.values, origin="lower", cmap="viridis", vmin=0.5, vmax=1,
-                          aspect="auto")
+        table = (
+            grid[grid.modality == modality]
+            .pivot_table(
+                index="structural_integrity",
+                columns="labelling_efficiency",
+                values="auc",
+            )
+            .reindex(index=sis, columns=les)
+        )
+        image = ax.imshow(
+            table.values,
+            origin="lower",
+            cmap="viridis",
+            vmin=0.5,
+            vmax=1,
+            aspect="auto",
+        )
         for i in range(len(sis)):
             for j in range(len(les)):
                 value = table.values[i, j]
                 if np.isfinite(value):
-                    ax.text(j, i, f"{value:.2f}", ha="center", va="center", fontsize=7,
-                            color="white" if value < 0.8 else "black")
+                    ax.text(
+                        j,
+                        i,
+                        f"{value:.2f}",
+                        ha="center",
+                        va="center",
+                        fontsize=7,
+                        color="white" if value < 0.8 else "black",
+                    )
         ax.set_xticks(range(len(les)), [f"{v:g}" for v in les], rotation=45)
         ax.set_yticks(range(len(sis)), [f"{v:g}" for v in sis])
         ax.set_xlabel("labelling efficiency")
         ax.set_title(modality)
     axes[0].set_ylabel("structural integrity")
     fig.colorbar(image, ax=axes, label="ROC AUC", shrink=0.9)
-    fig.savefig(out_prefix + "distinguishability_heatmaps.png", dpi=300, bbox_inches="tight")
+    fig.savefig(
+        out_prefix + "distinguishability_heatmaps.png",
+        dpi=300,
+        bbox_inches="tight",
+    )
     plt.close(fig)
 
     # Supp. Fig. S1: ventral geometry against uniform random orientations
     fig, ax = plt.subplots(figsize=[6, 4])
-    for offset, sweep, label in [(-0.1, "reference", "ventral"),
-                                 (0.1, "uniform_orientation", "uniform")]:
-        sub = results[results.sweep == sweep].set_index("modality").loc[MODALITIES]
+    for offset, sweep, label in [
+        (-0.1, "reference", "ventral"),
+        (0.1, "uniform_orientation", "uniform"),
+    ]:
+        sub = (
+            results[results.sweep == sweep]
+            .set_index("modality")
+            .loc[MODALITIES]
+        )
         errorbars(ax, x + offset, sub, fmt="o", label=label)
     ax.set_xticks(x, MODALITIES)
     style(ax, "")
     ax.legend(frameon=False)
     fig.tight_layout()
-    fig.savefig(out_prefix + "distinguishability_orientation_S1.png", dpi=300, bbox_inches="tight")
+    fig.savefig(
+        out_prefix + "distinguishability_orientation_S1.png",
+        dpi=300,
+        bbox_inches="tight",
+    )
     plt.close(fig)
 
 
@@ -558,36 +799,57 @@ def main():
         features_path = sys.argv[sys.argv.index("--features") + 1]
         features = pd.read_csv(features_path)
         out_prefix = features_path.replace("features.csv", "")
-        print(f"Scoring {features_path}: {len(features)} images, {n_workers} worker(s)")
+        print(
+            f"Scoring {features_path}: {len(features)} images, {n_workers} worker(s)"
+        )
     else:
         paths = {name: download(url) for name, url in MODELS.items()}
         from vlab4mic.experiments import ExperimentParametrisation, output_path
 
         out_prefix = os.path.join(
-            str(output_path), ExperimentParametrisation().date_as_string + "fig2_clathrin_"
+            str(output_path),
+            ExperimentParametrisation().date_as_string + "fig2_clathrin_",
         )
         images_dir = None
         if SAVE_IMAGES:
             images_dir = out_prefix + "images"
             os.makedirs(images_dir, exist_ok=True)
-        print(f"{len(list_sweeps()) * len(paths)} sweeps, {N_REALISATIONS} realisations per "
-              f"lattice and condition, {n_workers} worker(s)"
-              + (f", images saved to {images_dir}" if images_dir else ""))
+        print(
+            f"{len(list_sweeps()) * len(paths)} sweeps, {N_REALISATIONS} realisations per "
+            f"lattice and condition, {n_workers} worker(s)"
+            + (f", images saved to {images_dir}" if images_dir else "")
+        )
         features = simulate(paths, n_workers, images_dir)
         features.to_csv(out_prefix + "features.csv", index=False)
-        settings = {name: value for name, value in globals().items()
-                    if name.isupper() and isinstance(value, (int, float, str, list, dict))}
+        settings = {
+            name: value
+            for name, value in globals().items()
+            if name.isupper()
+            and isinstance(value, (int, float, str, list, dict))
+        }
         with open(out_prefix + "settings.json", "w") as handle:
             json.dump(settings, handle, indent=1, default=str)
-        print(f"Feature table: {out_prefix}features.csv ({len(features)} images)")
+        print(
+            f"Feature table: {out_prefix}features.csv ({len(features)} images)"
+        )
 
     results, reference_scores = score_features(features, n_workers)
     results.to_csv(out_prefix + "distinguishability.csv", index=False)
-    reference_blur = results[(results.sweep == "reference") & (results.modality == BLUR_MODALITY)]
+    reference_blur = results[
+        (results.sweep == "reference") & (results.modality == BLUR_MODALITY)
+    ]
     default_lateral = float(reference_blur.lateral_resolution_nm.iloc[0])
     default_axial = float(reference_blur.axial_resolution_nm.iloc[0])
-    make_figures(results, reference_scores, default_lateral, default_axial, out_prefix)
-    print(results.drop(columns=[c for c in results.columns if c.endswith(("_low", "_high"))]))
+    make_figures(
+        results, reference_scores, default_lateral, default_axial, out_prefix
+    )
+    print(
+        results.drop(
+            columns=[
+                c for c in results.columns if c.endswith(("_low", "_high"))
+            ]
+        )
+    )
 
 
 if __name__ == "__main__":
