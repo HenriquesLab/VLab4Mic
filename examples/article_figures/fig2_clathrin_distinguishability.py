@@ -31,7 +31,9 @@ Conditions (ventral geometry unless stated):
 
 - reference: every imaging method at its default effective resolution,
   labelling efficiency 1 and the antibody's linkage error (Fig. 2b,c);
-- labelling efficiency sweep, every imaging method (Fig. 2d);
+- labelling efficiency x structural integrity grid, every imaging method:
+  AUC against each at 1 of the other (Fig. 2c,d) and one heatmap per
+  method (Fig. 2 heatmaps);
 - linkage error sweep (distance from fluorophore to epitope), every
   imaging method (Fig. 2e);
 - width of the microscope's blur: lateral and axial PSF width of a
@@ -96,6 +98,17 @@ LABELLING_EFFICIENCY = 1.0
 # number of labels at high efficiency, so the outline is lost only at the
 # low end
 LABELLING_EFFICIENCIES = [0.01, 0.05, 0.1, 0.2, 0.4, 0.6, 1.0]
+# structural integrity: fraction of the lattice left after removing a
+# contiguous patch of subunits. Subunits are epitopes within
+# SI_SMALL_CLUSTER_A of each other, and the remaining lattice must stay
+# connected at SI_LARGE_CLUSTER_A (both in angstrom). These distances keep
+# the requested fraction on both lattices; much smaller or larger values
+# fail on the clathrin lattices. Below 0.5 the removal often misses the
+# requested fraction.
+STRUCTURAL_INTEGRITY = 1.0
+STRUCTURAL_INTEGRITIES = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+SI_SMALL_CLUSTER_A = 100
+SI_LARGE_CLUSTER_A = 300
 LINKAGE_ERROR_NM = 10  # distance to epitope of the Antibody probe template
 LINKAGE_ERRORS_NM = [2, 5, 10, 20]  # direct label / nanobody to primary+secondary
 BLUR_MODALITY = "STED"  # PSF-based method whose PSF width is swept
@@ -185,9 +198,15 @@ def set_blur(modality, lateral_nm, axial_nm):
         )
 
 
-def realisations(experiment, geometry, labelling_efficiency, linkage_error_nm, modality):
+def realisations(experiment, geometry, labelling_efficiency, linkage_error_nm,
+                 structural_integrity, modality):
     set_probe(experiment, labelling_efficiency, linkage_error_nm)
     set_geometry(experiment, geometry)
+    experiment.set_structural_integrity(
+        structural_integrity=structural_integrity,
+        structural_integrity_small_cluster=SI_SMALL_CLUSTER_A,
+        structural_integrity_large_cluster=SI_LARGE_CLUSTER_A,
+    )
     experiment.build(modules=["particle"])
     return experiment.run_replicates(N_REALISATIONS, modality=modality)
 
@@ -212,12 +231,13 @@ def save_images(path, replicates, modalities, condition):
 
 
 def compare(sweep, geometry="ventral", labelling_efficiency=LABELLING_EFFICIENCY,
-            linkage_error_nm=LINKAGE_ERROR_NM, modalities=MODALITIES, images_path=None):
+            linkage_error_nm=LINKAGE_ERROR_NM, structural_integrity=STRUCTURAL_INTEGRITY,
+            modalities=MODALITIES, images_path=None):
     # simulate both lattices under one condition and score every modality
     modality = modalities[0] if len(modalities) == 1 else "All"
     replicates = {
         name: realisations(experiment, geometry, labelling_efficiency,
-                           linkage_error_nm, modality)
+                           linkage_error_nm, structural_integrity, modality)
         for name, experiment in experiments_by_model.items()
     }
     rows, scores = [], {}
@@ -226,6 +246,7 @@ def compare(sweep, geometry="ventral", labelling_efficiency=LABELLING_EFFICIENCY
         row = dict(
             sweep=sweep, modality=mod, geometry=geometry,
             labelling_efficiency=labelling_efficiency,
+            structural_integrity=structural_integrity,
             linkage_error_nm=linkage_error_nm,
             lateral_resolution_nm=lateral, axial_resolution_nm=axial,
             n_per_class=N_REALISATIONS, features=MAIN_FEATURES,
@@ -271,9 +292,12 @@ def list_conditions(default_lateral, default_axial):
     conditions = [("reference", dict(sweep="reference"), default),
                   ("uniform orientation", dict(sweep="uniform_orientation", geometry="uniform"),
                    default)]
-    conditions += [(f"labelling efficiency {le}",
-                    dict(sweep="labelling_efficiency", labelling_efficiency=le), default)
-                   for le in LABELLING_EFFICIENCIES if le != LABELLING_EFFICIENCY]
+    # labelling efficiency x structural integrity grid; the reference is its
+    # (LABELLING_EFFICIENCY, STRUCTURAL_INTEGRITY) point
+    conditions += [(f"labelling efficiency {le}, integrity {si}",
+                    dict(sweep="grid", labelling_efficiency=le, structural_integrity=si), default)
+                   for le in LABELLING_EFFICIENCIES for si in STRUCTURAL_INTEGRITIES
+                   if (le, si) != (LABELLING_EFFICIENCY, STRUCTURAL_INTEGRITY)]
     conditions += [(f"linkage error {d} nm", dict(sweep="linkage_error", linkage_error_nm=d),
                     default) for d in LINKAGE_ERRORS_NM if d != LINKAGE_ERROR_NM]
     conditions += [(f"{BLUR_MODALITY} lateral blur {v} nm",
@@ -332,7 +356,7 @@ def run_conditions(conditions, paths, n_workers, images_dir=None):
     for k, (label, arguments, blur) in enumerate(conditions):
         images_path = None
         if images_dir is not None:
-            images_path = os.path.join(images_dir, f"{k:02d}_{label.replace(' ', '_')}.npz")
+            images_path = os.path.join(images_dir, f"{k:02d}_{label.replace(', ', '_').replace(' ', '_')}.npz")
         jobs.append((k, arguments, blur, seeds[k], images_path))
     results = [None] * len(conditions)
     progress = tqdm(total=len(conditions), desc="conditions", unit="condition")
@@ -384,9 +408,15 @@ def style(ax, xlabel):
     ax.spines[["top", "right"]].set_visible(False)
 
 
+def grid_results(results):
+    # the labelling efficiency x structural integrity grid, reference included
+    return results[results.sweep.isin(["grid", "reference"])]
+
+
 def make_figures(results, reference_scores, default_lateral, default_axial, out_prefix):
     colours = {m: f"C{k}" for k, m in enumerate(MODALITIES)}
-    fig, axes = plt.subplots(2, 3, figsize=[16, 9])
+    grid = grid_results(results)
+    fig, axes = plt.subplots(2, 4, figsize=[21, 9])
     axes = axes.ravel()
 
     # a: out-of-fold scores per imaging method (reference)
@@ -412,14 +442,15 @@ def make_figures(results, reference_scores, default_lateral, default_axial, out_
     axes[1].set_title("b  imaging method", loc="left")
     axes[1].legend(frameon=False, fontsize=8)
 
-    # c, d: labelling efficiency and linkage error (each sweep plus the
-    # reference point it passes through), one line per method
-    for ax, sweep, column, xlabel, title in [
-        (axes[2], "labelling_efficiency", "labelling_efficiency", "labelling efficiency",
-         "c  labelling efficiency"),
-        (axes[3], "linkage_error", "linkage_error_nm", "linkage error (nm)", "d  linkage error"),
+    # c, d: labelling efficiency at integrity 1 and structural integrity at
+    # labelling efficiency 1 (row and column of the grid)
+    for ax, column, fixed, fixed_value, xlabel, title in [
+        (axes[2], "labelling_efficiency", "structural_integrity", STRUCTURAL_INTEGRITY,
+         "labelling efficiency", f"c  labelling efficiency (integrity {STRUCTURAL_INTEGRITY:g})"),
+        (axes[3], "structural_integrity", "labelling_efficiency", LABELLING_EFFICIENCY,
+         "structural integrity", f"d  structural integrity (labelling {LABELLING_EFFICIENCY:g})"),
     ]:
-        data = results[results.sweep.isin([sweep, "reference"])]
+        data = grid[np.isclose(grid[fixed], fixed_value)]
         for modality in MODALITIES:
             sub = data[data.modality == modality].sort_values(column)
             errorbars(ax, sub[column], sub, fmt="o-", color=colours[modality], label=modality)
@@ -428,32 +459,69 @@ def make_figures(results, reference_scores, default_lateral, default_axial, out_
     axes[2].set_xscale("log")
     axes[2].legend(frameon=False, fontsize=8)
 
-    # e: width of the blur (PSF standard deviation) of BLUR_MODALITY
+    # e: linkage error (sweep plus the reference point it passes through)
+    data = results[results.sweep.isin(["linkage_error", "reference"])]
+    for modality in MODALITIES:
+        sub = data[data.modality == modality].sort_values("linkage_error_nm")
+        errorbars(axes[4], sub.linkage_error_nm, sub, fmt="o-", color=colours[modality],
+                  label=modality)
+    style(axes[4], "linkage error (nm)")
+    axes[4].set_title("e  linkage error", loc="left")
+
+    # f: width of the blur (PSF standard deviation) of BLUR_MODALITY
     for sweep, column, marker, label in [
         ("lateral_blur", "lateral_resolution_nm", "o-", "lateral (axial %g nm)" % default_axial),
         ("axial_blur", "axial_resolution_nm", "s-", "axial (lateral %g nm)" % default_lateral),
     ]:
         sub = results[results.sweep == sweep].sort_values(column)
-        errorbars(axes[4], sub[column], sub, fmt=marker, label=label)
-    axes[4].set_xscale("log")
-    style(axes[4], f"{BLUR_MODALITY} PSF width, s.d. (nm)")
-    axes[4].set_title("e  width of the blur", loc="left")
-    axes[4].legend(frameon=False, fontsize=8)
+        errorbars(axes[5], sub[column], sub, fmt=marker, label=label)
+    axes[5].set_xscale("log")
+    style(axes[5], f"{BLUR_MODALITY} PSF width, s.d. (nm)")
+    axes[5].set_title("f  width of the blur", loc="left")
+    axes[5].legend(frameon=False, fontsize=8)
 
-    # f: controls at the reference condition
+    # g: controls at the reference condition
     x = np.arange(len(MODALITIES))
     reference = reference.set_index("modality").loc[MODALITIES]
     for offset, prefix, label in [(-0.2, "", "shape (main)"), (0, "aspect_ratio_", "aspect ratio"),
                                   (0.2, "brightness_", "brightness only")]:
-        errorbars(axes[5], x + offset, reference, prefix, fmt="o", label=label)
-    axes[5].scatter(x, reference.null_auc, marker="x", color="k", label="null (dome vs dome)")
-    axes[5].set_xticks(x, MODALITIES)
-    style(axes[5], "")
-    axes[5].set_title("f  controls", loc="left")
-    axes[5].legend(frameon=False, fontsize=8)
+        errorbars(axes[6], x + offset, reference, prefix, fmt="o", label=label)
+    axes[6].scatter(x, reference.null_auc, marker="x", color="k", label="null (dome vs dome)")
+    axes[6].set_xticks(x, MODALITIES)
+    style(axes[6], "")
+    axes[6].set_title("g  controls", loc="left")
+    axes[6].legend(frameon=False, fontsize=8)
+    axes[7].axis("off")
 
     fig.tight_layout()
     fig.savefig(out_prefix + "distinguishability.png", dpi=300, bbox_inches="tight")
+    plt.close(fig)
+
+    # labelling efficiency x structural integrity: one AUC heatmap per method
+    les = sorted(grid.labelling_efficiency.unique())
+    sis = sorted(grid.structural_integrity.unique())
+    fig, axes = plt.subplots(1, len(MODALITIES), figsize=[4.2 * len(MODALITIES), 4.2],
+                             sharey=True, constrained_layout=True)
+    for ax, modality in zip(axes, MODALITIES):
+        table = (grid[grid.modality == modality]
+                 .pivot_table(index="structural_integrity", columns="labelling_efficiency",
+                              values="auc")
+                 .reindex(index=sis, columns=les))
+        image = ax.imshow(table.values, origin="lower", cmap="viridis", vmin=0.5, vmax=1,
+                          aspect="auto")
+        for i in range(len(sis)):
+            for j in range(len(les)):
+                value = table.values[i, j]
+                if np.isfinite(value):
+                    ax.text(j, i, f"{value:.2f}", ha="center", va="center", fontsize=7,
+                            color="white" if value < 0.8 else "black")
+        ax.set_xticks(range(len(les)), [f"{v:g}" for v in les], rotation=45)
+        ax.set_yticks(range(len(sis)), [f"{v:g}" for v in sis])
+        ax.set_xlabel("labelling efficiency")
+        ax.set_title(modality)
+    axes[0].set_ylabel("structural integrity")
+    fig.colorbar(image, ax=axes, label="ROC AUC", shrink=0.9)
+    fig.savefig(out_prefix + "distinguishability_heatmaps.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
 
     # Supp. Fig. S1: ventral geometry against uniform random orientations
