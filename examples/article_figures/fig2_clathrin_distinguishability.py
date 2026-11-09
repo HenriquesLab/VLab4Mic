@@ -43,7 +43,10 @@ VLAB4MIC_N_PERMUTATIONS=0):
 
 - VLAB4MIC_N_REALISATIONS: realisations per lattice and condition (100);
 - VLAB4MIC_N_PERMUTATIONS: permutations for the p-value (200);
-- VLAB4MIC_MAX_TILT_DEG: maximum tilt on the coverslip in degrees (10).
+- VLAB4MIC_MAX_TILT_DEG: maximum tilt on the coverslip in degrees (10);
+- VLAB4MIC_N_WORKERS: conditions simulated in parallel, one process each
+  (1). Each worker loads both lattice models (a few GB of memory). Every
+  condition has its own seed, so results do not depend on this number.
 """
 
 import os
@@ -61,6 +64,8 @@ from vlab4mic.analysis.distinguishability import distinguishability_from_replica
 
 N_REALISATIONS = int(os.environ.get("VLAB4MIC_N_REALISATIONS", 100))
 N_PERMUTATIONS = int(os.environ.get("VLAB4MIC_N_PERMUTATIONS", 200))
+# parallel worker processes, one condition each at a time (1: serial)
+N_WORKERS = int(os.environ.get("VLAB4MIC_N_WORKERS", 1))
 RANDOM_SEED = 24
 # maximum random tilt of the lattices on the coverslip (degrees); no
 # published reference for this value
@@ -213,45 +218,92 @@ def compare(sweep, geometry="ventral", labelling_efficiency=LABELLING_EFFICIENCY
     return rows, scores
 
 
-paths = {name: download(url) for name, url in MODELS.items()}
-experiments_by_model = {
-    name: build_experiment(path, RANDOM_SEED + k) for k, (name, path) in enumerate(paths.items())
-}
-experiment = experiments_by_model["dome"]
+# conditions and parallel execution -----------------------------------------
+experiments_by_model = {}  # set in every process by setup_experiments
 
-default_lateral, default_axial = resolution(experiment, BLUR_MODALITY)
-# every condition: (label, compare arguments, (lateral, axial) blur of
-# BLUR_MODALITY or None for the default)
-conditions = [("reference", dict(sweep="reference"), None),
-              ("uniform orientation", dict(sweep="uniform_orientation", geometry="uniform"), None)]
-conditions += [(f"labelling efficiency {le}",
-                dict(sweep="labelling_efficiency", labelling_efficiency=le), None)
-               for le in LABELLING_EFFICIENCIES if le != LABELLING_EFFICIENCY]
-conditions += [(f"linkage error {d} nm", dict(sweep="linkage_error", linkage_error_nm=d), None)
-               for d in LINKAGE_ERRORS_NM if d != LINKAGE_ERROR_NM]
-conditions += [(f"{BLUR_MODALITY} lateral blur {v} nm",
-                dict(sweep="lateral_blur", modalities=[BLUR_MODALITY]), (v, default_axial))
-               for v in LATERAL_BLUR_NM]
-conditions += [(f"{BLUR_MODALITY} axial blur {v} nm",
-                dict(sweep="axial_blur", modalities=[BLUR_MODALITY]), (default_lateral, v))
-               for v in AXIAL_BLUR_NM]
 
-rows = []
-progress = tqdm(conditions, desc="conditions", unit="condition")
-for label, arguments, blur in progress:
-    progress.set_postfix_str(label)
-    set_blur(BLUR_MODALITY, *(blur or (default_lateral, default_axial)))
-    new_rows, new_scores = compare(**arguments)
-    rows += new_rows
-    if arguments["sweep"] == "reference":
-        reference_scores = new_scores
-set_blur(BLUR_MODALITY, default_lateral, default_axial)
+def setup_experiments(paths):
+    # parse both lattice models once per process (worker initializer)
+    experiments_by_model.update({
+        name: build_experiment(path, RANDOM_SEED + k) for k, (name, path) in enumerate(paths.items())
+    })
 
-results = pd.DataFrame(rows)
-out = experiment.output_directory
-out_prefix = os.path.join(out, experiment.date_as_string + "fig2_clathrin_")
-results.to_csv(out_prefix + "distinguishability.csv", index=False)
-experiment.save_parameters(out, name="fig2_clathrin_distinguishability")
+
+def list_conditions(default_lateral, default_axial):
+    # every condition: (label, compare arguments, (lateral, axial) blur of
+    # BLUR_MODALITY). The slow all-modality conditions come first.
+    default = (default_lateral, default_axial)
+    conditions = [("reference", dict(sweep="reference"), default),
+                  ("uniform orientation", dict(sweep="uniform_orientation", geometry="uniform"),
+                   default)]
+    conditions += [(f"labelling efficiency {le}",
+                    dict(sweep="labelling_efficiency", labelling_efficiency=le), default)
+                   for le in LABELLING_EFFICIENCIES if le != LABELLING_EFFICIENCY]
+    conditions += [(f"linkage error {d} nm", dict(sweep="linkage_error", linkage_error_nm=d),
+                    default) for d in LINKAGE_ERRORS_NM if d != LINKAGE_ERROR_NM]
+    conditions += [(f"{BLUR_MODALITY} lateral blur {v} nm",
+                    dict(sweep="lateral_blur", modalities=[BLUR_MODALITY]), (v, default_axial))
+                   for v in LATERAL_BLUR_NM]
+    conditions += [(f"{BLUR_MODALITY} axial blur {v} nm",
+                    dict(sweep="axial_blur", modalities=[BLUR_MODALITY]), (default_lateral, v))
+                   for v in AXIAL_BLUR_NM]
+    return conditions
+
+
+def condition_seeds(n_conditions):
+    # three seeds per condition (dome field, flat field, numpy global), so
+    # each condition is reproducible whatever the number of workers and the
+    # order in which conditions run
+    state = np.random.SeedSequence(RANDOM_SEED).generate_state(3 * n_conditions)
+    return [tuple(int(v) for v in state[3 * k:3 * k + 3]) for k in range(n_conditions)]
+
+
+def reseed(seeds):
+    # field seeds (placement, orientation) come from each experiment's seed
+    # generator; labelling and photon/detector noise use numpy's global one
+    for experiment, seed in zip(experiments_by_model.values(), seeds[:2]):
+        experiment.random_seed = seed
+        experiment._seed_generator = None
+    np.random.seed(seeds[2])
+
+
+def run_condition(index, arguments, blur, seeds):
+    reseed(seeds)
+    set_blur(BLUR_MODALITY, *blur)
+    rows, scores = compare(**arguments)
+    return index, rows, scores
+
+
+def run_conditions(conditions, paths, n_workers):
+    seeds = condition_seeds(len(conditions))
+    jobs = [(k, arguments, blur, seeds[k]) for k, (_, arguments, blur) in enumerate(conditions)]
+    results = [None] * len(conditions)
+    progress = tqdm(total=len(conditions), desc="conditions", unit="condition")
+    if n_workers <= 1:
+        for job, (label, _, _) in zip(jobs, conditions):
+            progress.set_postfix_str(label)
+            index, rows, scores = run_condition(*job)
+            results[index] = (rows, scores)
+            progress.update()
+    else:
+        from concurrent.futures import ProcessPoolExecutor, as_completed
+
+        # one thread per worker for numpy / scipy, so workers do not compete
+        for variable in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
+            os.environ.setdefault(variable, "1")
+        with ProcessPoolExecutor(n_workers, initializer=setup_experiments,
+                                 initargs=(paths,)) as pool:
+            futures = {pool.submit(run_condition, *job): label
+                       for job, (label, _, _) in zip(jobs, conditions)}
+            for future in as_completed(futures):
+                index, rows, scores = future.result()
+                results[index] = (rows, scores)
+                progress.set_postfix_str(f"done: {futures[future]}")
+                progress.update()
+    progress.close()
+    rows = [row for condition_rows, _ in results for row in condition_rows]
+    reference_scores = results[0][1]
+    return pd.DataFrame(rows), reference_scores
 
 
 # figures ----------------------------------------------------------------
@@ -269,91 +321,111 @@ def style(ax, xlabel):
     ax.spines[["top", "right"]].set_visible(False)
 
 
-def series_including_reference(sweep):
-    # a one-parameter sweep plus the reference point it passes through
-    keep = results.sweep.isin([sweep, "reference"])
-    return results[keep]
+def make_figures(results, reference_scores, default_lateral, default_axial, out_prefix):
+    colours = {m: f"C{k}" for k, m in enumerate(MODALITIES)}
+    fig, axes = plt.subplots(2, 3, figsize=[16, 9])
+    axes = axes.ravel()
 
+    # a: out-of-fold scores per imaging method (reference)
+    for k, modality in enumerate(MODALITIES):
+        s = reference_scores[modality]
+        for label, offset, colour in [(0, -0.12, "C0"), (1, 0.12, "C1")]:
+            values = s["scores"][s["labels"] == label]
+            axes[0].scatter(np.full(values.size, k) + offset, values, s=5, color=colour,
+                            alpha=0.6, label=["dome", "flat"][label] if k == 0 else None)
+    axes[0].set_xticks(range(len(MODALITIES)), MODALITIES)
+    axes[0].set_ylabel("P(flat), out-of-fold")
+    axes[0].set_title("a  classifier scores", loc="left")
+    axes[0].legend(frameon=False)
 
-colours = {m: f"C{k}" for k, m in enumerate(MODALITIES)}
-fig, axes = plt.subplots(2, 3, figsize=[16, 9])
-axes = axes.ravel()
-
-# a: out-of-fold scores per imaging method (reference)
-for k, modality in enumerate(MODALITIES):
-    s = reference_scores[modality]
-    for label, offset, colour in [(0, -0.12, "C0"), (1, 0.12, "C1")]:
-        values = s["scores"][s["labels"] == label]
-        axes[0].scatter(np.full(values.size, k) + offset, values, s=5, color=colour,
-                        alpha=0.6, label=["dome", "flat"][label] if k == 0 else None)
-axes[0].set_xticks(range(len(MODALITIES)), MODALITIES)
-axes[0].set_ylabel("P(flat), out-of-fold")
-axes[0].set_title("a  classifier scores", loc="left")
-axes[0].legend(frameon=False)
-
-# b: AUC against the axial resolution each method delivers (reference)
-reference = results[results.sweep == "reference"]
-for modality in MODALITIES:
-    sub = reference[reference.modality == modality]
-    errorbars(axes[1], sub.axial_resolution_nm, sub, fmt="o", color=colours[modality],
-              label=modality)
-axes[1].set_xscale("log")
-style(axes[1], "axial resolution (nm)")
-axes[1].set_title("b  imaging method", loc="left")
-axes[1].legend(frameon=False, fontsize=8)
-
-# c, d: labelling efficiency and linkage error, one line per method
-for ax, sweep, column, xlabel, title in [
-    (axes[2], "labelling_efficiency", "labelling_efficiency", "labelling efficiency",
-     "c  labelling efficiency"),
-    (axes[3], "linkage_error", "linkage_error_nm", "linkage error (nm)", "d  linkage error"),
-]:
-    data = series_including_reference(sweep)
+    # b: AUC against the axial resolution each method delivers (reference)
+    reference = results[results.sweep == "reference"]
     for modality in MODALITIES:
-        sub = data[data.modality == modality].sort_values(column)
-        errorbars(ax, sub[column], sub, fmt="o-", color=colours[modality], label=modality)
-    style(ax, xlabel)
-    ax.set_title(title, loc="left")
-axes[2].legend(frameon=False, fontsize=8)
+        sub = reference[reference.modality == modality]
+        errorbars(axes[1], sub.axial_resolution_nm, sub, fmt="o", color=colours[modality],
+                  label=modality)
+    axes[1].set_xscale("log")
+    style(axes[1], "axial resolution (nm)")
+    axes[1].set_title("b  imaging method", loc="left")
+    axes[1].legend(frameon=False, fontsize=8)
 
-# e: width of the blur (PSF standard deviation) of BLUR_MODALITY
-for sweep, column, marker, label in [
-    ("lateral_blur", "lateral_resolution_nm", "o-", "lateral (axial %g nm)" % default_axial),
-    ("axial_blur", "axial_resolution_nm", "s-", "axial (lateral %g nm)" % default_lateral),
-]:
-    sub = results[results.sweep == sweep].sort_values(column)
-    errorbars(axes[4], sub[column], sub, fmt=marker, label=label)
-axes[4].set_xscale("log")
-style(axes[4], f"{BLUR_MODALITY} PSF width, s.d. (nm)")
-axes[4].set_title("e  width of the blur", loc="left")
-axes[4].legend(frameon=False, fontsize=8)
+    # c, d: labelling efficiency and linkage error (each sweep plus the
+    # reference point it passes through), one line per method
+    for ax, sweep, column, xlabel, title in [
+        (axes[2], "labelling_efficiency", "labelling_efficiency", "labelling efficiency",
+         "c  labelling efficiency"),
+        (axes[3], "linkage_error", "linkage_error_nm", "linkage error (nm)", "d  linkage error"),
+    ]:
+        data = results[results.sweep.isin([sweep, "reference"])]
+        for modality in MODALITIES:
+            sub = data[data.modality == modality].sort_values(column)
+            errorbars(ax, sub[column], sub, fmt="o-", color=colours[modality], label=modality)
+        style(ax, xlabel)
+        ax.set_title(title, loc="left")
+    axes[2].legend(frameon=False, fontsize=8)
 
-# f: controls at the reference condition
-x = np.arange(len(MODALITIES))
-reference = reference.set_index("modality").loc[MODALITIES]
-for offset, prefix, label in [(-0.2, "", "shape (main)"), (0, "aspect_ratio_", "aspect ratio"),
-                              (0.2, "brightness_", "brightness only")]:
-    errorbars(axes[5], x + offset, reference, prefix, fmt="o", label=label)
-axes[5].scatter(x, reference.null_auc, marker="x", color="k", label="null (dome vs dome)")
-axes[5].set_xticks(x, MODALITIES)
-style(axes[5], "")
-axes[5].set_title("f  controls", loc="left")
-axes[5].legend(frameon=False, fontsize=8)
+    # e: width of the blur (PSF standard deviation) of BLUR_MODALITY
+    for sweep, column, marker, label in [
+        ("lateral_blur", "lateral_resolution_nm", "o-", "lateral (axial %g nm)" % default_axial),
+        ("axial_blur", "axial_resolution_nm", "s-", "axial (lateral %g nm)" % default_lateral),
+    ]:
+        sub = results[results.sweep == sweep].sort_values(column)
+        errorbars(axes[4], sub[column], sub, fmt=marker, label=label)
+    axes[4].set_xscale("log")
+    style(axes[4], f"{BLUR_MODALITY} PSF width, s.d. (nm)")
+    axes[4].set_title("e  width of the blur", loc="left")
+    axes[4].legend(frameon=False, fontsize=8)
 
-fig.tight_layout()
-fig.savefig(out_prefix + "distinguishability.png", dpi=300, bbox_inches="tight")
-plt.close(fig)
+    # f: controls at the reference condition
+    x = np.arange(len(MODALITIES))
+    reference = reference.set_index("modality").loc[MODALITIES]
+    for offset, prefix, label in [(-0.2, "", "shape (main)"), (0, "aspect_ratio_", "aspect ratio"),
+                                  (0.2, "brightness_", "brightness only")]:
+        errorbars(axes[5], x + offset, reference, prefix, fmt="o", label=label)
+    axes[5].scatter(x, reference.null_auc, marker="x", color="k", label="null (dome vs dome)")
+    axes[5].set_xticks(x, MODALITIES)
+    style(axes[5], "")
+    axes[5].set_title("f  controls", loc="left")
+    axes[5].legend(frameon=False, fontsize=8)
 
-# Supp. Fig. S1: ventral geometry against uniform random orientations
-fig, ax = plt.subplots(figsize=[6, 4])
-for offset, sweep, label in [(-0.1, "reference", "ventral"), (0.1, "uniform_orientation", "uniform")]:
-    sub = results[results.sweep == sweep].set_index("modality").loc[MODALITIES]
-    errorbars(ax, x + offset, sub, fmt="o", label=label)
-ax.set_xticks(x, MODALITIES)
-style(ax, "")
-ax.legend(frameon=False)
-fig.tight_layout()
-fig.savefig(out_prefix + "distinguishability_orientation_S1.png", dpi=300, bbox_inches="tight")
-plt.close(fig)
+    fig.tight_layout()
+    fig.savefig(out_prefix + "distinguishability.png", dpi=300, bbox_inches="tight")
+    plt.close(fig)
 
-print(results.drop(columns=[c for c in results.columns if c.endswith(("_low", "_high"))]))
+    # Supp. Fig. S1: ventral geometry against uniform random orientations
+    fig, ax = plt.subplots(figsize=[6, 4])
+    for offset, sweep, label in [(-0.1, "reference", "ventral"),
+                                 (0.1, "uniform_orientation", "uniform")]:
+        sub = results[results.sweep == sweep].set_index("modality").loc[MODALITIES]
+        errorbars(ax, x + offset, sub, fmt="o", label=label)
+    ax.set_xticks(x, MODALITIES)
+    style(ax, "")
+    ax.legend(frameon=False)
+    fig.tight_layout()
+    fig.savefig(out_prefix + "distinguishability_orientation_S1.png", dpi=300, bbox_inches="tight")
+    plt.close(fig)
+
+
+def main():
+    paths = {name: download(url) for name, url in MODELS.items()}
+    # the main process also builds the experiments: defaults, output
+    # directory and parameter file, and the conditions when N_WORKERS is 1
+    setup_experiments(paths)
+    experiment = experiments_by_model["dome"]
+    default_lateral, default_axial = resolution(experiment, BLUR_MODALITY)
+    conditions = list_conditions(default_lateral, default_axial)
+    n_workers = max(1, min(N_WORKERS, len(conditions)))
+    print(f"{len(conditions)} conditions, {N_REALISATIONS} realisations per lattice, "
+          f"{n_workers} worker(s)")
+    results, reference_scores = run_conditions(conditions, paths, n_workers)
+
+    out = experiment.output_directory
+    out_prefix = os.path.join(out, experiment.date_as_string + "fig2_clathrin_")
+    results.to_csv(out_prefix + "distinguishability.csv", index=False)
+    experiment.save_parameters(out, name="fig2_clathrin_distinguishability")
+    make_figures(results, reference_scores, default_lateral, default_axial, out_prefix)
+    print(results.drop(columns=[c for c in results.columns if c.endswith(("_low", "_high"))]))
+
+
+if __name__ == "__main__":
+    main()
