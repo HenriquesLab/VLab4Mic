@@ -1432,6 +1432,7 @@ class ExperimentParametrisation:
         rotation_per_particle=None,
         orientation_per_particle=None,
         orientation_tilt_max: float = None,
+        position_jitter_nm=None,
         **kwargs,
     ):
         """
@@ -1461,6 +1462,11 @@ class ExperimentParametrisation:
             sample_inital_orientation (default [0, 0, 1]), e.g. a structure
             lying on the coverslip with a small random tilt. Combine with
             random_rotations for a random in-plane rotation.
+        :param position_jitter_nm : float or list of 3 floats, optional
+            Maximum random offset (nm) of every particle, drawn anew for
+            every virtual sample: one value for x and y, or three for x, y
+            and z. Places particles at random positions relative to the
+            detector pixels. Default None (no offset).
         :param minimal_distance : float, optional
             Minimum distance between particles.
         :param random_rotations : bool, optional
@@ -1533,6 +1539,8 @@ class ExperimentParametrisation:
                 self.virtualsample_params["sample_inital_orientation"] = sample_inital_orientation
         if orientation_tilt_max is not None:
             self.virtualsample_params["orientation_tilt_max"] = orientation_tilt_max
+        if position_jitter_nm is not None:
+            self.virtualsample_params["position_jitter_nm"] = position_jitter_nm
 
 
     def use_image_for_positioning(
@@ -1878,6 +1886,7 @@ def generate_virtual_sample(
     random_rotations=False,
     rotation_angles = None,
     orientation_tilt_max: float = None,
+    position_jitter_nm=None,
     expansion_factor=1,
     clear_probes=False,
     clear_experiment=False,
@@ -2077,6 +2086,8 @@ def generate_virtual_sample(
     vsample_configuration["rotation_angles"] = rotation_angles
     if orientation_tilt_max is not None:
         vsample_configuration["orientation_tilt_max"] = orientation_tilt_max
+    if position_jitter_nm is not None:
+        vsample_configuration["position_jitter_nm"] = position_jitter_nm
     vsample_configuration["xy_orientations"] = xy_orientations
     vsample_configuration["xz_orientations"] = xz_orientations
     vsample_configuration["yz_orientations"] = yz_orientations
@@ -2209,6 +2220,7 @@ def image_vsample(
     random_rotations = False,
     rotation_angles = None,
     orientation_tilt_max: float = None,
+    position_jitter_nm=None,
     expansion_factor = 1,
     clear_probes = False,
     clear_experiment = False,
@@ -2305,6 +2317,10 @@ def image_vsample(
         (default [0, 0, 1]), e.g. a structure lying on the coverslip with a
         small random tilt. Use with random_orientations=False, and with
         random_rotations for a random in-plane rotation.
+    :param position_jitter_nm : float or list of 3 floats, optional
+        Maximum random offset (nm) of every particle, drawn anew for every
+        virtual sample: one value for x and y, or three for x, y and z.
+        Default None (no offset).
     :param clear_probes : bool, optional
         If True, default probe parameters will be cleared. Default is False.
     :param clear_experiment : bool, optional
@@ -2359,6 +2375,7 @@ def image_vsample(
             random_rotations=random_rotations,
             rotation_angles=rotation_angles,
             orientation_tilt_max=orientation_tilt_max,
+            position_jitter_nm=position_jitter_nm,
             clear_probes=clear_probes,
             clear_experiment=clear_experiment,
             primary_probe=primary_probe,
