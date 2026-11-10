@@ -1,4 +1,4 @@
-"""Fig. 2 and Supp. Fig. S1: can domed and flat clathrin lattices be told apart by curvature?
+"""Fig. 2 and Supp. Fig. S1: can domed and flat clathrin lattices be told apart by their aspect ratio and brightness?
 
 Each lattice is simulated with run_parameter_sweep. Every repetition is an
 independent realisation: one particle with its own random labelling,
@@ -9,12 +9,13 @@ scored per condition with distinguishability_from_features: out-of-fold
 ROC AUC of a classifier with a 95% bootstrap interval, a null control (two
 random halves of the domes, expected 0.5) and a permutation p-value.
 
-Features: "whitened" curvature features. Each image is brought to a common
-field of view, background subtracted, normalised to unit total and whitened
-(rotated to its principal axes, each axis divided by its spread), so the
-features are blind to brightness, size, elongation and orientation. They
-describe how labels are distributed within the normalised outline, e.g.
-crowded towards the rim of a curved cap seen from above.
+Features: aspect ratio and brightness. The aspect ratio is the ratio of
+the principal axes of the particle image (smoothed, background subtracted,
+thresholded): it measures elongation and is blind to size, orientation and
+brightness. Brightness is the total intensity above background: it follows
+the number of labelled sites. Each image is first brought to a common field
+of view. Each feature is also scored alone (aspect_ratio_auc,
+brightness_auc), to show what each contributes.
 
 Geometry: clathrin pits and plaques lie flat on the coverslip at the
 ventral surface of cultured cells, so the lattices are placed flat with a
@@ -71,7 +72,8 @@ SAVE_IMAGES = os.environ.get("VLAB4MIC_SAVE_IMAGES", "0") not in ("0", "", "fals
 RANDOM_SEED = 24
 
 MODALITIES = ["Widefield", "Confocal", "AiryScan", "STED", "SMLM"]
-FEATURES = "whitened"
+FEATURES = ["aspect_ratio", "brightness"]
+CONTROLS = {"aspect_ratio": "aspect_ratio", "brightness": "brightness"}  # each alone
 FOV_NM = 600  # lateral size of the virtual sample and common field of view
 MAX_TILT_DEG = 10  # random tilt of the lattices on the coverslip
 POSITION_JITTER_NM = 100  # random particle position, +-100 nm in x and y
@@ -194,8 +196,12 @@ def make_figures(scores, prefix):
     fig, axes = plt.subplots(2, 3, figsize=[16, 9])
     axes = axes.ravel()
     x = np.arange(len(MODALITIES))
-    errorbars(axes[0], x - 0.1, reference, fmt="o", label="dome vs flat")
-    axes[0].scatter(x + 0.1, reference.null_auc, marker="x", color="k", label="null (dome vs dome)")
+    errorbars(axes[0], x - 0.2, reference, fmt="o", label="aspect ratio + brightness")
+    for offset, name, marker, colour in [(0.0, "aspect_ratio", "^", "C2"), (0.2, "brightness", "D", "C1")]:
+        alone = reference[[f"{name}_auc", f"{name}_auc_low", f"{name}_auc_high"]].set_axis(
+            ["auc", "auc_low", "auc_high"], axis=1)
+        errorbars(axes[0], x + offset, alone, fmt=marker, color=colour, label=f"{name.replace('_', ' ')} alone")
+    axes[0].scatter(x + 0.35, reference.null_auc, marker="x", color="k", label="null (dome vs dome)")
     axes[0].set_xticks(x, MODALITIES)
     axes[0].legend(frameon=False)
     style(axes[0], "", "a  imaging method (reference)")
@@ -272,7 +278,7 @@ def main():
             json.dump(settings, handle, indent=1, default=str)
 
     scores = distinguishability_from_features(
-        features, "model", ("dome", "flat"), FEATURES, by=CONDITIONS,
+        features, "model", ("dome", "flat"), FEATURES, by=CONDITIONS, controls=CONTROLS,
         replicate_column="Replica", n_permutations=N_PERMUTATIONS,
         random_state=RANDOM_SEED, n_workers=N_WORKERS,
     )
