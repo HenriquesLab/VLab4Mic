@@ -70,6 +70,7 @@ class Field:
         self.random_rotations = False
         self.sample_initial_orientation = None
         self.orientation_tilt_max = None
+        self.position_jitter_nm = None
         self.rotation_angles = None
         # random number generator for positions, orientations, rotations
         # and axial offsets. Seeded once per field (see set_random_seed) so
@@ -176,6 +177,9 @@ class Field:
         fluo_name = "AF647"
         if random_seed is not None:
             self.set_random_seed(random_seed)
+        # random offset of every particle, applied whenever absolute
+        # positions are computed (see _gen_abs_from_rel_positions)
+        self.position_jitter_nm = kwargs.get("position_jitter_nm")
         self.calculate_absolute_reference()
         if "minimal_distance" in kwargs.keys():
             self.molecules_params["minimal_distance"] = kwargs["minimal_distance"]
@@ -402,6 +406,43 @@ class Field:
             self.molecules_params["relative_positions"] = rand
             self._gen_abs_from_rel_positions()
 
+    def jitter_positions(self, position_jitter_nm, random_seed=None):
+        """
+        Move every particle by a random offset.
+
+        Each particle is translated rigidly by an offset drawn uniformly
+        within plus or minus position_jitter_nm along each axis, so that
+        particles do not all sit at the same position relative to the
+        detector pixels. Only the absolute positions change: the relative
+        positions, from which absolute positions are recomputed for every
+        new field, are kept, so offsets do not accumulate.
+
+        Parameters
+        ----------
+        position_jitter_nm : float or sequence of 3 floats
+            Maximum offset in nm. A single value applies to x and y only
+            (z unchanged); three values give the maximum offset along x, y
+            and z.
+        random_seed : int, optional
+            Seed for the field generator. If None, the field generator is
+            used as seeded (see set_random_seed).
+
+        Returns
+        -------
+        None
+        """
+        amplitude = np.atleast_1d(np.asarray(position_jitter_nm, dtype=float))
+        if amplitude.size == 1:
+            amplitude = np.array([amplitude[0], amplitude[0], 0.0])
+        elif amplitude.size != 3:
+            raise ValueError("position_jitter_nm is one value (x and y) or three values (x, y, z)")
+        # absolute positions are in units of the field scale
+        amplitude = amplitude * 1e-9 / self.scale
+        rng = self._rng_for(random_seed)
+        positions = np.array(self.get_molecule_param("absolute_positions"), dtype=float).reshape(-1, 3)
+        positions = positions + rng.uniform(-1, 1, positions.shape) * amplitude
+        self.molecules_params["absolute_positions"] = positions
+
     def randomise_axial_position(self, random_seed=None):
         """
         Assign each molecule an axial position drawn from axial_offset.
@@ -613,6 +654,8 @@ class Field:
         for pos in self.molecules_params["relative_positions"]:
             abs_pos.append(self._calculate_absolute_position(pos))
         self.set_molecule_param("absolute_positions", np.array(abs_pos))
+        if self.position_jitter_nm is not None:
+            self.jitter_positions(self.position_jitter_nm)
         if self.axial_offset is not None:
             self.randomise_axial_position()
 

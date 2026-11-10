@@ -665,6 +665,7 @@ class sweep_generator:
         random_orientations=None,
         random_rotations=None,
         orientation_tilt_max=None,
+        position_jitter_nm=None,
         minimal_distance=None,
         # modality params
         pixelsize_nm=None,
@@ -736,6 +737,10 @@ class sweep_generator:
         :param orientation_tilt_max: optional
             Maximum random tilt, in degrees, of each particle about its
             initial orientation (e.g. lying flat on the coverslip).
+        :param position_jitter_nm: optional
+            Maximum random offset (nm) of every particle, drawn anew for
+            every repetition (list of values; a value of [x, y, z] gives
+            per-axis offsets).
         :param minimal_distance: optional
             Not applied in sweeps yet (a warning is printed).
         :param pixelsize_nm: optional
@@ -893,6 +898,7 @@ class sweep_generator:
             ("random_orientations", random_orientations),
             ("random_rotations", random_rotations),
             ("orientation_tilt_max", orientation_tilt_max),
+            ("position_jitter_nm", position_jitter_nm),
         ):
             if values is not None:
                 if not isinstance(values, (list, tuple)):
@@ -1826,6 +1832,7 @@ def run_parameter_sweep(
     random_orientations=None,
     random_rotations=None,
     orientation_tilt_max=None,
+    position_jitter_nm=None,
     structure_normal_orientation=None,
     minimal_distance=None,
     pixelsize_nm=None,
@@ -1938,6 +1945,8 @@ def run_parameter_sweep(
         - rotation_angles
         - random_orientations, random_rotations, orientation_tilt_max (maximum
           random tilt in degrees about the initial orientation)
+        - position_jitter_nm (maximum random offset in nm of every particle,
+          drawn anew for every repetition; off by default)
         - minimal_distance
         - pixelsize_nm
         - lateral_resolution_nm
@@ -2040,6 +2049,7 @@ def run_parameter_sweep(
         random_orientations=random_orientations,
         random_rotations=random_rotations,
         orientation_tilt_max=orientation_tilt_max,
+        position_jitter_nm=position_jitter_nm,
         minimal_distance=minimal_distance,
         pixelsize_nm=pixelsize_nm,
         lateral_resolution_nm=lateral_resolution_nm,
