@@ -29,7 +29,33 @@ features, which happens when the realisations are not independent (e.g.
 every replicate simulated with the same random seed); the score is then
 meaningless.
 
-Typical use::
+Choose features that measure the difference in question and are blind to
+the rest. "whitened" features are invariant to size, elongation and
+orientation, and compare the internal distribution of labels (e.g. the
+curvature of a lattice); "shape" features include size and outline. Simulate
+the variability that real samples have (random orientation, and random
+position relative to the pixels with position_jitter_nm), so the classifier
+cannot learn features of the simulation that no experiment reproduces.
+
+With a parameter sweep, features of every image are computed as sweep
+metrics and scored afterwards from the feature table::
+
+    metrics = feature_metrics("whitened", fov_nm=600)
+    tables = []
+    for name, path in {"dome": dome_path, "flat": flat_path}.items():
+        sweep = run_parameter_sweep(structures=[path], structure_is_path=True,
+                                    use_reference=False, custom_metrics=metrics,
+                                    default_metrics=[], position_jitter_nm=100,
+                                    labelling_efficiency=[0.1, 0.5, 1.0], ...,
+                                    return_generator=True)
+        tables.append(sweep.analysis["dataframes"].assign(model=name))
+    features = pd.concat(tables)
+    scores = distinguishability_from_features(
+        features, "model", ("dome", "flat"), "whitened",
+        by=["modality_name", "labelling_efficiency"], n_permutations=200)
+    plot_distinguishability_heatmaps(scores, x="labelling_efficiency", ...)
+
+Other typical use::
 
     results_a, _ = experiments.run_replicates(100, structure=dome, ...)
     results_b, _ = experiments.run_replicates(100, structure=flat, ...)
@@ -49,6 +75,7 @@ Across a parameter sweep::
 """
 
 import copy
+import inspect
 import itertools
 import warnings
 
@@ -103,6 +130,70 @@ def normalise_image(image, threshold_rel=0.1):
     image = np.where(image >= threshold_rel * image.max(), image, 0)
     total = image.sum()
     return image / total if total > 0 else image
+
+
+def same_field_of_view(image, pixelsize_nm, fov_nm):
+    """
+    Pad or crop an image, about its centre, to a field of view in nm.
+
+    The image size of a simulation can differ between conditions or
+    realisations of the same imaging method; features that depend on the
+    image size (e.g. rings out to half the image) are only comparable on a
+    common field of view. Padding uses the median of the image.
+
+    Parameters
+    ----------
+    image : numpy.ndarray
+        2-D image, or a stack of frames that is summed.
+    pixelsize_nm : float
+        Pixel size of the image in nm.
+    fov_nm : float
+        Side of the square output field of view in nm.
+
+    Returns
+    -------
+    numpy.ndarray
+        Square image of round(fov_nm / pixelsize_nm) pixels per side.
+    """
+    image = _as_2d(image)
+    n = max(int(round(fov_nm / pixelsize_nm)), 1)
+    out = np.full((n, n), np.median(image))
+    src, dst = [], []
+    for size in image.shape:
+        if size >= n:
+            start = (size - n) // 2
+            src.append(slice(start, start + n))
+            dst.append(slice(0, n))
+        else:
+            start = (n - size) // 2
+            src.append(slice(0, size))
+            dst.append(slice(start, start + size))
+    out[tuple(dst)] = image[tuple(src)]
+    return out
+
+
+def prepare_image(image, pixelsize_nm=None, fov_nm=None, threshold_rel=0.1):
+    """
+    Common field of view (optional), background subtraction and unit total.
+
+    Parameters
+    ----------
+    image : numpy.ndarray
+        2-D image, or a stack of frames that is summed.
+    pixelsize_nm, fov_nm : float, optional
+        If both are given, the image is first brought to a field of view of
+        fov_nm (see same_field_of_view).
+    threshold_rel : float, optional
+        Background threshold, see normalise_image. Default 0.1.
+
+    Returns
+    -------
+    numpy.ndarray
+        2-D image with non-negative values summing to 1 (or all zeros).
+    """
+    if pixelsize_nm is not None and fov_nm is not None:
+        image = same_field_of_view(image, pixelsize_nm, fov_nm)
+    return normalise_image(image, threshold_rel)
 
 
 def shape_features(image, n_bins=8, threshold_rel=0.1):
@@ -186,6 +277,69 @@ def brightness_features(image):
     """
     image = _as_2d(image)
     return np.array([np.log1p(np.clip(image - np.median(image), 0, None).sum())])
+
+
+def whitened_features(image, n_bins=8, rho_max=3.0, threshold_rel=0.1):
+    """
+    Size-, elongation- and orientation-invariant ("curvature") features.
+
+    The image is normalised (normalise_image) and whitened: coordinates are
+    centred on the intensity centroid, rotated to the principal axes and
+    divided by the standard deviation along each axis, so every particle
+    has unit spread along both axes. What remains is how intensity is
+    distributed within that normalised outline, e.g. labels crowded towards
+    the rim of a curved cap seen from above:
+
+    - the radial density profile in whitened units (n_bins rings out to
+      rho_max, intensity per unit area);
+    - the moments <rho^4> and <rho^6> (<rho^2> = 2 by construction);
+    - an indicator of images without a 2-D signal (all zeros, a single
+      pixel or a line), for which the other features are 0.
+
+    Use it to compare structures by their internal distribution of labels
+    rather than by their size or outline.
+
+    Parameters
+    ----------
+    image : numpy.ndarray
+        2-D image, or a stack of frames that is summed.
+    n_bins : int, optional
+        Number of rings. Default 8.
+    rho_max : float, optional
+        Outer radius of the profile in whitened units. Default 3.
+    threshold_rel : float, optional
+        Background threshold, see normalise_image. Default 0.1.
+
+    Returns
+    -------
+    numpy.ndarray
+        Feature vector of length n_bins + 3.
+    """
+    image = normalise_image(image, threshold_rel)
+    empty = np.zeros(n_bins + 3)
+    empty[-1] = 1.0
+    if image.sum() <= 0:
+        return empty
+    x, y = np.indices(image.shape)
+    dx = x - (image * x).sum()
+    dy = y - (image * y).sum()
+    cov = np.array(
+        [
+            [(image * dx * dx).sum(), (image * dx * dy).sum()],
+            [(image * dx * dy).sum(), (image * dy * dy).sum()],
+        ]
+    )
+    values, vectors = np.linalg.eigh(cov)
+    if values.min() <= 1e-9:
+        return empty
+    u = (dx * vectors[0, 1] + dy * vectors[1, 1]) / np.sqrt(values[1])
+    v = (dx * vectors[0, 0] + dy * vectors[1, 0]) / np.sqrt(values[0])
+    rho = np.hypot(u, v)
+    edges = np.linspace(0, rho_max, n_bins + 1)
+    mass = np.histogram(rho, bins=edges, weights=image)[0]
+    density = mass / (np.pi * (edges[1:] ** 2 - edges[:-1] ** 2))
+    moments = [(image * rho**4).sum(), (image * rho**6).sum()]
+    return np.concatenate([density, moments, [0.0]])
 
 
 def radial_profile_features(image, n_bins=16, max_radius=None):
@@ -309,6 +463,7 @@ def aspect_ratio_features(image, threshold_rel=0.2, smoothing_px=1.0):
 
 FEATURES = {
     "shape": shape_features,
+    "whitened": whitened_features,
     "brightness": brightness_features,
     "radial_profile": radial_profile_features,
     "pixels": pixel_features,
@@ -316,7 +471,42 @@ FEATURES = {
 }
 
 
-def image_features(images, features="shape", **kwargs):
+def _call_feature(function, image, kwargs):
+    # pass a feature function only the arguments it accepts, so one set of
+    # arguments (e.g. n_bins) can serve several feature sets
+    accepted = inspect.signature(function).parameters
+    return function(image, **{k: v for k, v in kwargs.items() if k in accepted})
+
+
+def feature_names(features, **kwargs):
+    """
+    Column names of a named feature set, as used in feature tables.
+
+    Parameters
+    ----------
+    features : str
+        "shape", "whitened", "brightness" or "aspect_ratio" (sets with a
+        fixed number of features).
+    **kwargs
+        Feature arguments that change the number of features (n_bins).
+
+    Returns
+    -------
+    list of str
+    """
+    if features == "shape":
+        n = 2 * kwargs.get("n_bins", 8) + 4
+        return [f"shape_{k:02d}" for k in range(n)]
+    if features == "whitened":
+        n_bins = kwargs.get("n_bins", 8)
+        return ([f"whitened_{k:02d}" for k in range(n_bins)]
+                + ["whitened_m4", "whitened_m6", "whitened_empty"])
+    if features in ("brightness", "aspect_ratio"):
+        return [features]
+    raise ValueError(f"No fixed column names for features {features!r}")
+
+
+def image_features(images, features="shape", pixelsize_nm=None, fov_nm=None, **kwargs):
     """
     Feature matrix of a list of images.
 
@@ -326,10 +516,15 @@ def image_features(images, features="shape", **kwargs):
         Images (2-D, or stacks of frames that are summed).
     features : str or callable, optional
         "shape" (default: rotation invariant, brightness independent),
+        "whitened" (curvature: size, elongation and orientation invariant),
         "brightness" (total intensity, a control), "aspect_ratio"
         (rotation, size and brightness invariant), "radial_profile"
         (rotation invariant, includes brightness), "pixels", or a function
         image -> 1-D feature vector.
+    pixelsize_nm, fov_nm : float, optional
+        If both are given, every image is first brought to a field of view
+        of fov_nm (see same_field_of_view), so that features of images of
+        different sizes are comparable.
     **kwargs
         Passed to the feature function.
 
@@ -339,7 +534,68 @@ def image_features(images, features="shape", **kwargs):
         Array of shape (n_images, n_features).
     """
     function = FEATURES[features] if isinstance(features, str) else features
+    if pixelsize_nm is not None and fov_nm is not None:
+        images = [same_field_of_view(image, pixelsize_nm, fov_nm) for image in images]
     return np.array([function(image, **kwargs) for image in images])
+
+
+def feature_metrics(features, fov_nm=None, **kwargs):
+    """
+    Features as custom metrics of a parameter sweep.
+
+    Returns one metric function per feature column, to pass as
+    custom_metrics to run_parameter_sweep (or add_custom_analysis_metrics).
+    The sweep analysis dataframe then has one row per simulated image and
+    one column per feature: a feature table for
+    distinguishability_from_features. Each image is measured once, whatever
+    the number of columns.
+
+    Parameters
+    ----------
+    features : str or list of str
+        Named feature sets with fixed columns (see feature_names), e.g.
+        ["whitened"] or ["whitened", "brightness"].
+    fov_nm : float, optional
+        Common field of view in nm (see same_field_of_view), using the pixel
+        size of each image. Recommended: image sizes can differ between
+        conditions and realisations.
+    **kwargs
+        Passed to the feature functions.
+
+    Returns
+    -------
+    list of callable
+        Metric functions, named after their feature column.
+    """
+    features = [features] if isinstance(features, str) else list(features)
+    columns = [(name, feature_names(name, **kwargs)) for name in features]
+    last = {"image": None, "values": None}
+
+    def measure(image, pixelsize_nm):
+        # the sweep calls every metric in turn with the same image object;
+        # keeping a reference to it means its id cannot be reused
+        if last["image"] is not image:
+            prepared = image
+            if fov_nm is not None:
+                prepared = same_field_of_view(image, pixelsize_nm, fov_nm)
+            last["image"] = image
+            last["values"] = np.concatenate(
+                [np.atleast_1d(_call_feature(FEATURES[name], prepared, kwargs))
+                 for name, _ in columns]
+            )
+        return last["values"]
+
+    metrics = []
+    index = 0
+    for _, names in columns:
+        for name in names:
+            def metric(simulated_image=None, simulated_image_pixelsize_nm=None,
+                       _index=index, **unused):
+                return float(measure(simulated_image, simulated_image_pixelsize_nm)[_index])
+            metric.__name__ = name
+            metrics.append(metric)
+            index += 1
+    return metrics
 
 
 def _bootstrap_interval(labels, scores, metric, n_bootstrap, confidence, rng):
@@ -639,6 +895,284 @@ def distinguishability_from_dataframes(
         n_permutations=n_permutations,
         null_control=null_control,
     )
+
+
+def _feature_columns(table, features):
+    # column names of a feature set in a feature table: a column name, a
+    # named feature set (columns "<name>" or "<name>_..."), or a list
+    if not isinstance(features, str):
+        return list(features)
+    if features in table.columns:
+        return [features]
+    columns = [c for c in table.columns if c.startswith(features + "_")]
+    if not columns:
+        raise ValueError(f"No columns for features {features!r} in the table")
+    return columns
+
+
+def _score_condition(condition, a, b, controls, options):
+    # scores of one condition; a, b: feature matrices of the two classes
+    score = _score_features(a, b, **options)
+    row = dict(condition)
+    row.update(
+        n_a=score["n_a"], n_b=score["n_b"],
+        n_unique_a=score["n_unique_a"], n_unique_b=score["n_unique_b"],
+        accuracy=score["accuracy"],
+        accuracy_low=score["accuracy_interval"][0],
+        accuracy_high=score["accuracy_interval"][1],
+        auc=score["auc"], auc_low=score["auc_interval"][0], auc_high=score["auc_interval"][1],
+        null_auc=score["null_auc"], p_value=score["p_value"],
+    )
+    control_options = dict(options, n_permutations=0, null_control=False)
+    for name, (control_a, control_b) in controls.items():
+        control = _score_features(control_a, control_b, **control_options)
+        row.update({
+            f"{name}_auc": control["auc"],
+            f"{name}_auc_low": control["auc_interval"][0],
+            f"{name}_auc_high": control["auc_interval"][1],
+        })
+    return row, dict(scores=score["scores"], labels=score["labels"])
+
+
+def distinguishability_from_features(
+    table,
+    label_column,
+    classes,
+    features,
+    by=None,
+    controls=None,
+    replicate_column=None,
+    n_splits=5,
+    n_bootstrap=1000,
+    confidence=0.95,
+    classifier=None,
+    random_state=None,
+    n_permutations=0,
+    null_control=True,
+    n_workers=1,
+    progress=True,
+    return_scores=False,
+):
+    """
+    Distinguishability of two classes in a feature table, per condition.
+
+    The table has one row per image (e.g. the analysis dataframe of
+    run_parameter_sweep with feature_metrics, for both structures, with a
+    column naming the structure). For every condition (combination of the
+    by columns), the images of the two classes are scored as in
+    distinguishability: out-of-fold accuracy and ROC AUC with bootstrap
+    intervals, the null control and, optionally, a permutation p-value.
+    Nothing is simulated, so other features or classifiers can be tried on
+    the same table in seconds.
+
+    Parameters
+    ----------
+    table : pandas.DataFrame
+        Feature table, one row per image.
+    label_column : str
+        Column naming the class of each image (e.g. "model").
+    classes : tuple of 2
+        The two class values to compare (A, B), e.g. ("dome", "flat").
+    features : str or list of str
+        Feature columns: a named feature set ("whitened" selects the
+        columns whitened_...), a column name, or a list of columns.
+    by : str or list of str, optional
+        Columns defining a condition (e.g. ["modality_name",
+        "labelling_efficiency"]). Default: one condition, the whole table.
+    controls : dict, optional
+        {name: features}: also score these features alone, as controls
+        (e.g. {"brightness": "brightness"}), reported as <name>_auc with
+        its interval.
+    replicate_column : str, optional
+        Column used to order the images of each class (e.g. "Replica"),
+        for reproducible folds.
+    n_splits, n_bootstrap, confidence, classifier, random_state,
+    n_permutations, null_control
+        See distinguishability.
+    n_workers : int, optional
+        Conditions scored in parallel processes. Default 1. In a script,
+        call it under ``if __name__ == "__main__":`` when n_workers > 1.
+    progress : bool, optional
+        Show a progress bar. Default True.
+    return_scores : bool, optional
+        Also return the out-of-fold scores and labels of every condition.
+
+    Returns
+    -------
+    pandas.DataFrame
+        One row per condition: the by columns, features, n_a, n_b,
+        n_unique_a, n_unique_b, accuracy, accuracy_low, accuracy_high, auc,
+        auc_low, auc_high, null_auc, p_value and the control columns.
+    dict
+        Only if return_scores: {condition tuple: {"scores", "labels"}}.
+    """
+    columns = _feature_columns(table, features)
+    control_columns = {name: _feature_columns(table, f) for name, f in (controls or {}).items()}
+    by = [] if by is None else ([by] if isinstance(by, str) else list(by))
+    options = dict(n_splits=n_splits, n_bootstrap=n_bootstrap, confidence=confidence,
+                   classifier=classifier, random_state=random_state,
+                   n_permutations=n_permutations, null_control=null_control)
+    groups = table.groupby(by, sort=False) if by else [((), table)]
+    jobs = []
+    for key, group in groups:
+        key = key if isinstance(key, tuple) else (key,)
+        a = group[group[label_column] == classes[0]]
+        b = group[group[label_column] == classes[1]]
+        if len(a) < 2 or len(b) < 2:
+            warnings.warn(f"Skipping condition {dict(zip(by, key))}: fewer than 2 images "
+                          f"of a class", RuntimeWarning, stacklevel=2)
+            continue
+        if replicate_column is not None:
+            a, b = a.sort_values(replicate_column), b.sort_values(replicate_column)
+        condition = dict(zip(by, key))
+        condition["features"] = features if isinstance(features, str) else "+".join(columns)
+        jobs.append((condition, a[columns].to_numpy(float), b[columns].to_numpy(float),
+                     {name: (a[c].to_numpy(float), b[c].to_numpy(float))
+                      for name, c in control_columns.items()}))
+    outputs = [None] * len(jobs)
+    bar = tqdm(total=len(jobs), desc="conditions", disable=not progress)
+    if n_workers <= 1:
+        for k, job in enumerate(jobs):
+            outputs[k] = _score_condition(*job, options)
+            bar.update()
+    else:
+        from concurrent.futures import ProcessPoolExecutor, as_completed
+
+        with ProcessPoolExecutor(min(n_workers, max(len(jobs), 1))) as pool:
+            futures = {pool.submit(_score_condition, *job, options): k
+                       for k, job in enumerate(jobs)}
+            for future in as_completed(futures):
+                outputs[futures[future]] = future.result()
+                bar.update()
+    bar.close()
+    result = pd.DataFrame([row for row, _ in outputs])
+    if return_scores:
+        scores = {tuple(row[c] for c in by): s for row, s in outputs}
+        return result, scores
+    return result
+
+
+def feature_ablation(table, label_column, classes, groups, by=None, **kwargs):
+    """
+    AUC of each group of features alone, per condition.
+
+    Shows which features carry the distinguishability of two classes, e.g.
+    whether a score comes from the size of the particles, their outline,
+    their internal structure or their brightness.
+
+    Parameters
+    ----------
+    table, label_column, classes, by
+        See distinguishability_from_features.
+    groups : dict
+        {group name: features} (named feature set, column or list of
+        columns), e.g. {"profile": [...], "moments": ["whitened_m4",
+        "whitened_m6"], "brightness": "brightness"}.
+    **kwargs
+        Passed to distinguishability_from_features (by default without the
+        null control and permutations).
+
+    Returns
+    -------
+    pandas.DataFrame
+        The rows of distinguishability_from_features for every group, with
+        a feature_group column.
+    """
+    kwargs.setdefault("null_control", False)
+    kwargs.setdefault("n_permutations", 0)
+    tables = []
+    for name, features in groups.items():
+        result = distinguishability_from_features(table, label_column, classes, features,
+                                                  by=by, **kwargs)
+        result.insert(0, "feature_group", name)
+        tables.append(result)
+    return pd.concat(tables, ignore_index=True)
+
+
+def plot_distinguishability_heatmaps(
+    scores,
+    x,
+    y,
+    facet=None,
+    metric="auc",
+    facet_order=None,
+    highlight=None,
+    vmin=0.5,
+    vmax=1.0,
+    cmap="viridis",
+    annotate=True,
+    axes=None,
+):
+    """
+    Heatmaps of a score against two parameters, one panel per facet.
+
+    Parameters
+    ----------
+    scores : pandas.DataFrame
+        Output of distinguishability_from_features (or any table with the
+        x, y, facet and metric columns), one row per condition.
+    x, y : str
+        Columns on the horizontal and vertical axes.
+    facet : str, optional
+        Column with one panel per value (e.g. "modality_name").
+    metric : str, optional
+        Column shown. Default "auc".
+    facet_order : list, optional
+        Order of the panels. Default: order of appearance.
+    highlight : list of dict, optional
+        Cells to outline, each {"x": value, "y": value, "facet": value
+        (if facet), "colour": colour (default "red")}.
+    vmin, vmax : float, optional
+        Colour scale. Default 0.5 (chance) to 1.
+    cmap : str, optional
+        Colour map. Default "viridis".
+    annotate : bool, optional
+        Print the value in every cell. Default True.
+    axes : sequence of matplotlib.axes.Axes, optional
+        One axes per panel. Default: a new figure.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+    """
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Rectangle
+
+    facets = [None] if facet is None else (facet_order or list(dict.fromkeys(scores[facet])))
+    if axes is None:
+        figure, axes = plt.subplots(1, len(facets), figsize=(3.2 * len(facets), 3.0),
+                                    sharey=True, constrained_layout=True, squeeze=False)
+        axes = axes[0]
+    figure = axes[0].figure
+    xs = sorted(scores[x].unique())
+    ys = sorted(scores[y].unique())
+    image = None
+    for ax, value in zip(axes, facets):
+        data = scores if facet is None else scores[scores[facet] == value]
+        grid = (data.pivot_table(index=y, columns=x, values=metric)
+                .reindex(index=ys, columns=xs).to_numpy())
+        image = ax.imshow(grid, origin="lower", cmap=cmap, vmin=vmin, vmax=vmax, aspect="auto")
+        if annotate:
+            for i in range(len(ys)):
+                for j in range(len(xs)):
+                    if np.isfinite(grid[i, j]):
+                        level = (grid[i, j] - vmin) / (vmax - vmin)
+                        ax.text(j, i, f"{grid[i, j]:.2f}", ha="center", va="center",
+                                fontsize=7, color="white" if level < 0.6 else "black")
+        for cell in highlight or []:
+            if facet is not None and cell.get("facet") != value:
+                continue
+            j, i = xs.index(cell["x"]), ys.index(cell["y"])
+            ax.add_patch(Rectangle((j - 0.5, i - 0.5), 1, 1, fill=False, linewidth=2.5,
+                                   edgecolor=cell.get("colour", "red")))
+        ax.set_xticks(range(len(xs)), [f"{v:g}" for v in xs], rotation=45)
+        ax.set_yticks(range(len(ys)), [f"{v:g}" for v in ys])
+        ax.set_xlabel(x)
+        if value is not None:
+            ax.set_title(str(value))
+    axes[0].set_ylabel(y)
+    figure.colorbar(image, ax=list(axes), label=metric, shrink=0.9)
+    return figure
 
 
 # columns of a distinguishability_sweep table that are not swept parameters
