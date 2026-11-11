@@ -322,3 +322,81 @@ filament_diameters = sns.histplot(data=combined_df_sw, palette=custom_palette, b
 filename = my_experiment_probe3.date_as_string + 'vlab4mic_apparent_diameter_microtubule.png'
 filename2 = os.path.join(my_experiment.output_directory, filename)
 fig.savefig(filename2, dpi=300, bbox_inches='tight') 
+fig.close()
+
+### Apparent continuity
+
+labelling_efficiencies = [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.5, 1]
+replicates_per_le = dict()
+n_replicates_le = 100
+for labeff in labelling_efficiencies:
+    primary_le = dict(
+        probe_template="Antibody",
+        probe_name="ATubulin_epitopes",
+        probe_distance_to_epitope = 0,
+        probe_model=probe_model,
+        probe_target_type="Sequence",
+        probe_target_value="EEVGV",
+        labelling_efficiency=labeff,
+        probe_paratope= "TITCH", # sequence in 1IGT
+        probe_secondary_epitope = "EKKNW"
+    )
+    __, noiseless_, my_experiment_le = experiments.image_vsample(
+        probe_list=[primary_le],
+        **common
+    )
+    my_experiment_le.particle.source = dict()
+    my_experiment_le.particle.load_source(**copy.deepcopy(particle_generator_data))
+    my_experiment_le.set_virtualsample_params(
+        sample_dimensions=sample_dimensions,
+        update_mode = False 
+    )
+    my_experiment_le.particle.generate_instance()
+    my_experiment_le.build(modules=["coordinate_field", "imager"])
+    replicates_le = my_experiment_le.run_replicates(n_replicates=n_replicates_le, modality="SMLM")
+    replicates_per_le[labeff] = copy.copy(replicates_le)
+
+filament_measures_per_le = dict()
+smooth_sigma = 0.0
+
+filaments_params_le = dict(
+    pixel_size=2, 
+    max_length_nm=500, 
+    modality="SMLM", 
+    channel="ch0", 
+    fill_holes=True,
+    row_binning=7,
+    min_snr=2,
+    mode="total",
+    smooth_sigma=smooth_sigma,
+    threshold_method = "otsu"
+)
+
+for i in labelling_efficiencies:
+    df_, filament_metrics_list_, masks_, blurred_, tables_ = measure_filaments(
+    replicates=replicates_per_le[i], 
+    **filaments_params_le
+    )
+    filament_measures_per_le[i] = dict()
+    filament_measures_per_le[i]["dataframe"] = df_
+    filament_measures_per_le[i]["filament_metrics_list"] = filament_metrics_list_
+    filament_measures_per_le[i]["masks"] = masks_
+    filament_measures_per_le[i]["blurred"] = blurred_
+    filament_measures_per_le[i]["tables"] = tables_
+
+dfs = dict() 
+for lef in labelling_efficiencies:
+    dfs[lef] = filament_measures_per_le[lef]["dataframe"]
+
+merged = pd.concat(
+    [d.assign(source=name) for name, d in dfs.items()],
+    ignore_index=True,
+)
+fig = plt.figure()
+ax = fig.add_subplot(111)
+sns.swarmplot(data=merged, x="source", y="mean_eccentricity", ax=ax)
+filename = my_experiment_le.date_as_string + 'vlab4mic_mean_eccentricities_per_LE.png'
+filename2 = os.path.join(my_experiment_le.output_directory, filename)
+plt.xlabel("Labelling efficiency")
+fig.savefig(filename2, dpi=300, bbox_inches='tight')
+fig.close()
