@@ -199,6 +199,19 @@ my_experiment_probe3.particle.generate_instance()
 my_experiment_probe3.build(modules=["coordinate_field", "imager"])
 replicates_3 = my_experiment_probe3.run_replicates(n_replicates=n_replicates, modality="SMLM")
 
+fig = plt.figure(figsize=(20,10))
+ax1 = fig.add_subplot(1,3,1)
+ax1.imshow(replicates_1[0]["images"]["SMLM"]["ch0"][0], cmap="grey")
+ax1.set_title("Primary Antibody")
+ax2 = fig.add_subplot(1,3,2)
+ax2.imshow(replicates_2[0]["images"]["SMLM"]["ch0"][0], cmap="grey")
+ax2.set_title("Primary Antibody + Secondary Antibody (NHS)")
+ax3 = fig.add_subplot(1,3,3)
+ax3.imshow(replicates_3[0]["images"]["SMLM"]["ch0"][0], cmap="grey")
+ax3.set_title("Primary Antibody + Secondary Antibody (site-specific)")
+filename = my_experiment_probe3.date_as_string + 'vlab4mic_microtubules_simulation_examples.png'
+filename2 = os.path.join(my_experiment.output_directory, filename)
+fig.savefig(filename2, dpi=300, bbox_inches='tight') 
 
 def measure_filaments(replicates, 
                       max_length_nm=500, 
