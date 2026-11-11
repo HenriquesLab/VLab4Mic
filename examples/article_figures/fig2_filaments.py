@@ -225,13 +225,10 @@ def measure_filaments(replicates,
                       mode="single", 
                       threshold_method = "otsu",
                       threshold_method_kwargs = None,):
-    #number_of_segments = []
     tables = []
     masks = []
     eccentricities = []
     major_axis_lengths = []
-    #continuities = []
-    #max_length_nm = 500 / 2
     filament_metrics_list = []
     rows = []
     blurred_list = []
