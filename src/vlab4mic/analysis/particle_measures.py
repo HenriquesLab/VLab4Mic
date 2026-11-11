@@ -580,3 +580,9 @@ def _fwhm_1d(profile, x, background_width, min_snr, mode="single"):
     width = x_right - x_left
     center = 0.5 * (x_left + x_right)
     return width, center, p
+
+def simple_width(image):
+    profile_ = image.sum(axis=0)
+    x = np.arange(0, 500, dtype=float)
+    width, center, p = _fwhm_1d(profile_, x, 5, 0, mode="total")
+    return width
