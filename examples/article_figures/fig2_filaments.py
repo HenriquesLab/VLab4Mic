@@ -322,7 +322,7 @@ filament_diameters = sns.histplot(data=combined_df_sw, palette=custom_palette, b
 filename = my_experiment_probe3.date_as_string + 'vlab4mic_apparent_diameter_microtubule.png'
 filename2 = os.path.join(my_experiment.output_directory, filename)
 fig.savefig(filename2, dpi=300, bbox_inches='tight') 
-fig.close()
+plt.close()
 
 ### Apparent continuity
 
@@ -399,4 +399,4 @@ filename = my_experiment_le.date_as_string + 'vlab4mic_mean_eccentricities_per_L
 filename2 = os.path.join(my_experiment_le.output_directory, filename)
 plt.xlabel("Labelling efficiency")
 fig.savefig(filename2, dpi=300, bbox_inches='tight')
-fig.close()
+plt.close()
