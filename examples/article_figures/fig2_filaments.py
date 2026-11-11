@@ -394,7 +394,7 @@ merged = pd.concat(
 )
 fig = plt.figure()
 ax = fig.add_subplot(111)
-sns.swarmplot(data=merged, x="source", y="mean_eccentricity", ax=ax)
+sns.swarmplot(data=merged, x="source", y="mean_eccentricity", ax=ax, s=1)
 filename = my_experiment_le.date_as_string + 'vlab4mic_mean_eccentricities_per_LE.png'
 filename2 = os.path.join(my_experiment_le.output_directory, filename)
 plt.xlabel("Labelling efficiency")
