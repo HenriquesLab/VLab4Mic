@@ -390,3 +390,193 @@ def threshold_mask_and_measure(
     table.attrs["pixel_size"] = pixel_size
 
     return mask, table, work
+
+
+def measure_filament_width(
+    image,
+    pixel_size=1.0,
+    search_halfwidth=None,
+    row_binning=1,
+    background_width=5,
+    min_snr=2.0,
+    mode="single",
+    min_sum = 0.001,
+):
+    """
+    Measure the apparent width (FWHM) of a vertical filament centred in a 2D image.
+
+    Each row (or bin of rows) is treated as a transversal line profile. The FWHM
+    is measured per profile with sub-pixel linear interpolation. The FWHM of the
+    centre-aligned average profile along the whole filament is also reported.
+
+    Parameters
+    ----------
+    image : 2D array
+        Grayscale image with a bright, roughly vertical filament near the centre column.
+    pixel_size : float
+        Physical size of a pixel. Widths are returned in these units.
+    search_halfwidth : int or None
+        Half-width (in px) of the window around the centre column where the peak
+        is searched. Defaults to a quarter of the image width.
+    row_binning : int
+        Number of consecutive rows averaged into one profile (improves SNR).
+    background_width : int
+        Number of pixels at each edge of the search window used to estimate
+        the local background.
+    min_snr : float
+        Profiles whose (peak - background) / background_std is below this value
+        are discarded (NaN).
+
+    Returns
+    -------
+    dict with keys
+        "widths"          : 1D array, FWHM per profile (NaN where invalid)
+        "centers"         : 1D array, sub-pixel filament centre per profile (px)
+        "rows"            : 1D array, central row index of each profile
+        "mean", "median", "std" : statistics of valid per-profile widths
+        "n_valid"         : number of valid profiles
+        "fwhm_avg_profile": FWHM of the centre-aligned mean profile
+        "avg_profile"     : (x, profile) tuple of the aligned mean profile
+    """
+    img = np.asarray(image, dtype=float)
+    if img.ndim != 2:
+        raise ValueError("image must be 2D")
+    n_rows, n_cols = img.shape
+
+    if image.sum() < min_sum:
+        return  {
+            "widths": None,
+            "centers": None,
+            "rows": None,
+            "mean": None,
+            "median": None,
+            "std": None,
+            "n_valid": None,
+            "fwhm_avg_profile": None,
+            "avg_profile": None
+        }
+    if search_halfwidth is None:
+        search_halfwidth = max(n_cols // 4, 3)
+    c0 = n_cols // 2
+    x_lo = max(c0 - search_halfwidth, 0)
+    x_hi = min(c0 + search_halfwidth + 1, n_cols)
+    x = np.arange(x_lo, x_hi, dtype=float)
+
+    # Bin rows
+    n_bins = n_rows // row_binning
+    binned = img[: n_bins * row_binning, x_lo:x_hi]
+    binned = binned.reshape(n_bins, row_binning, -1).mean(axis=1)
+    rows = np.arange(n_bins) * row_binning + (row_binning - 1) / 2.0
+
+    widths = np.full(n_bins, np.nan)
+    centers = np.full(n_bins, np.nan)
+    aligned = []
+
+    for i, prof in enumerate(binned):
+        res = _fwhm_1d(prof, x, background_width, min_snr, mode)
+        if res is None:
+            continue
+        widths[i], centers[i], prof_bg = res
+        aligned.append((x - centers[i], prof_bg))
+
+    valid = widths[~np.isnan(widths)] * pixel_size
+    widths *= pixel_size
+
+    # Centre-aligned mean profile over the whole filament
+    fwhm_avg = np.nan
+    avg_profile = (None, None)
+    if aligned:
+        step = 0.25  # sub-pixel sampling grid
+        x_al = np.arange(-search_halfwidth, search_halfwidth + step, step)
+        try:
+            stack = np.array(
+                [np.interp(x_al, xs, p, left=np.nan, right=np.nan) for xs, p in aligned]
+            )
+            mean_prof = np.nanmean(stack, axis=0)
+            ok = ~np.isnan(mean_prof)
+            x_al, mean_prof = x_al[ok], mean_prof[ok]
+            # Profile is already background-subtracted -> baseline 0
+            res = _fwhm_1d(mean_prof, x_al, background_width=0, min_snr=0, mode=mode)
+            if res is not None:
+                fwhm_avg = res[0] * pixel_size
+            avg_profile = (x_al * pixel_size, mean_prof)
+        except:
+            avg_profile = (None, None)
+
+
+    return {
+        "widths": widths,
+        "centers": centers,
+        "rows": rows,
+        "mean": np.mean(valid) if valid.size else np.nan,
+        "median": np.median(valid) if valid.size else np.nan,
+        "std": np.std(valid) if valid.size else np.nan,
+        "n_valid": int(valid.size),
+        "fwhm_avg_profile": fwhm_avg,
+        "avg_profile": avg_profile,
+    }
+
+
+def _fwhm_1d(profile, x, background_width, min_snr, mode="single"):
+    """
+    FWHM of a 1D profile using linear interpolation at half maximum.
+
+    mode="single": width of the brightest peak (walk outward from the maximum
+                   until the profile first drops below half max).
+    mode="total" : total width of the structure, from the outermost left
+                   half-max crossing to the outermost right one. Several
+                   peaks are treated as one structure.
+
+    Returns (width, center, background_subtracted_profile) or None if invalid.
+    """
+    if mode not in ("single", "total"):
+        raise ValueError("mode must be 'single' or 'total'")
+
+    p = np.asarray(profile, dtype=float)
+    n = p.size
+
+    if background_width > 0 and 2 * background_width < n:
+        edges = np.concatenate([p[:background_width], p[-background_width:]])
+        bg, bg_std = np.median(edges), np.std(edges)
+    else:
+        bg, bg_std = 0.0, 0.0
+
+    p = p - bg
+    i_max = int(np.argmax(p))
+    amp = p[i_max]
+    if amp <= 0:
+        return None, None, None
+    if bg_std > 0 and amp / bg_std < min_snr:
+        return None, None, None
+
+    half = amp / 2.0
+
+    if mode == "single":
+        # Walk outward from the peak until the profile drops below half max
+        i = i_max
+        while i > 0 and p[i] >= half:
+            i -= 1
+        if p[i] >= half:
+            return None
+        j = i_max
+        while j < n - 1 and p[j] >= half:
+            j += 1
+        if p[j] >= half:
+            return None
+        i_in, i_out = i + 1, i      # left crossing between i and i+1
+        j_in, j_out = j - 1, j      # right crossing between j-1 and j
+    else:
+        # Outermost samples at or above half max
+        above = np.flatnonzero(p >= half)
+        i_first, i_last = above[0], above[-1]
+        if i_first == 0 or i_last == n - 1:
+            return None  # structure touches the window edge
+        i_in, i_out = i_first, i_first - 1
+        j_in, j_out = i_last, i_last + 1
+
+    x_left = x[i_out] + (half - p[i_out]) * (x[i_in] - x[i_out]) / (p[i_in] - p[i_out])
+    x_right = x[j_in] + (half - p[j_in]) * (x[j_out] - x[j_in]) / (p[j_out] - p[j_in])
+
+    width = x_right - x_left
+    center = 0.5 * (x_left + x_right)
+    return width, center, p
