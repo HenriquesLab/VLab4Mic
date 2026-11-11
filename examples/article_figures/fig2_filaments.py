@@ -209,7 +209,7 @@ ax2.set_title("Primary Antibody + Secondary Antibody (NHS)")
 ax3 = fig.add_subplot(1,3,3)
 ax3.imshow(replicates_3[0]["images"]["SMLM"]["ch0"][0], cmap="grey")
 ax3.set_title("Primary Antibody + Secondary Antibody (site-specific)")
-filename = my_experiment_probe3.date_as_string + 'vlab4mic_microtubules_simulation_examples.png'
+filename = my_experiment_probe3.date_as_string + 'vlab4mic_microtubules_different_probes.png'
 filename2 = os.path.join(my_experiment.output_directory, filename)
 fig.savefig(filename2, dpi=300, bbox_inches='tight') 
 
@@ -398,5 +398,15 @@ sns.swarmplot(data=merged, x="source", y="mean_eccentricity", ax=ax)
 filename = my_experiment_le.date_as_string + 'vlab4mic_mean_eccentricities_per_LE.png'
 filename2 = os.path.join(my_experiment_le.output_directory, filename)
 plt.xlabel("Labelling efficiency")
+fig.savefig(filename2, dpi=300, bbox_inches='tight')
+plt.close()
+
+n_le = len(labelling_efficiencies)
+fig, ax = plt.subplots(1, n_le, figsize=(30,10))
+for i, lef in enumerate(labelling_efficiencies):
+    ax[i].imshow(filament_measures_per_le[lef]["blurred"][0], cmap = "grey")
+    ax[i].set_title(f"LE = {lef}")
+filename = my_experiment_le.date_as_string + 'vlab4mic_microtubules_across_LE.png'
+filename2 = os.path.join(my_experiment_le.output_directory, filename)
 fig.savefig(filename2, dpi=300, bbox_inches='tight')
 plt.close()
