@@ -73,11 +73,15 @@ my_experiment.set_virtualsample_params(
     particle_positions=pts)
 my_experiment.build(modules=["coordinate_field","imager"])
 
-fig = plt.figure(figsize=(10,10))
+fig = plt.figure(figsize=(20,10))
 ax1 = fig.add_subplot(1,2,1, projection="3d")
 my_experiment.coordinate_field.show_field(view_init=[90,0,0], emitters_plotsize=1, axis_object=ax1)
 ax2 = fig.add_subplot(1,2,2, projection="3d")
 my_experiment.coordinate_field.show_field(view_init=[0,0,0], emitters_plotsize=1, axis_object=ax2)
+filename = my_experiment.date_as_string + 'vlab4mic_microtubule_filament.png'
+filename2 = os.path.join(my_experiment.output_directory, filename)
+fig.savefig(filename2, dpi=300, bbox_inches='tight') 
+
 
 n_molecules = len(my_experiment.coordinate_field.molecules)
 epitopes_new = np.empty(shape=(0,3))
@@ -104,7 +108,7 @@ particle_generator_data = dict(
 probe_parameters_custom = copy.deepcopy(my_experiment.particle.labels["ATubulin_epitopes"])
 
 ### Filament diameter
-n_replicates = 200
+n_replicates = 100
 labelling_efficiency_primary = 1
 labelling_efficiency_secondary = 1
 
@@ -302,8 +306,9 @@ custom_palette = {
     "Primary_Secondary_NHS": "#a34bb0",
 }
 
-filament_diameters = sns.histplot(data=combined_df_sw, palette=custom_palette, bins=30)
-fig = filament_diameters.get_figure()
+fig = plt.figure()
+ax = fig.add_subplot(111)
+filament_diameters = sns.histplot(data=combined_df_sw, palette=custom_palette, bins=30, ax=ax)
 filename = my_experiment_probe3.date_as_string + 'vlab4mic_apparent_diameter_microtubule.png'
 filename2 = os.path.join(my_experiment.output_directory, filename)
 fig.savefig(filename2, dpi=300, bbox_inches='tight') 
