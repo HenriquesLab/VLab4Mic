@@ -224,7 +224,48 @@ def count_occupied_sectors(points, n_sectors, centre=None, offset_deg=None):
     return int(np.unique(sectors).size)
 
 
-def count_ring_corners(points, radius, r_min, r_max, n_corners, n_steps=1000, min_per_section=1):
+def fit_spots(points, max_spots, random_state=0):
+    """
+    Separate spots supported by a set of localisations.
+
+    Gaussian mixtures with 1 to max_spots spherical components are fitted to
+    the localisations (x, y), and the Bayesian information criterion (BIC)
+    selects the number of components. Sites closer than the localisation
+    precision allows to separate are fitted as a single spot.
+
+    Parameters
+    ----------
+    points : numpy.ndarray
+        Nx2 or Nx3 localisation coordinates, N >= 1.
+    max_spots : int
+        Largest number of spots tried (limited to N // 2).
+    random_state : int, optional
+        Seed for the mixture fits.
+
+    Returns
+    -------
+    means : numpy.ndarray
+        kx2 spot centres (x, y).
+    counts : numpy.ndarray
+        Localisations assigned to each spot.
+    """
+    from sklearn.mixture import GaussianMixture
+
+    xy = np.asarray(points, dtype=float)[:, :2]
+    k_max = max(1, min(max_spots, len(xy) // 2))
+    fits = [
+        GaussianMixture(k, covariance_type="spherical", n_init=2, random_state=random_state).fit(xy)
+        for k in range(1, k_max + 1)
+    ]
+    best = min(fits, key=lambda fit: fit.bic(xy))
+    counts = np.bincount(best.predict(xy), minlength=best.n_components)
+    return best.means_, counts
+
+
+def count_ring_corners(
+    points, radius, r_min, r_max, n_corners, n_steps=1000, min_per_section=1,
+    resolve_spots=False, random_state=0,
+):
     """
     Number of detected corners of a ring-shaped particle.
 
@@ -234,6 +275,11 @@ def count_ring_corners(points, radius, r_min, r_max, n_corners, n_steps=1000, mi
        phi_i modulo 2*pi/n_corners (wrapped, so both sides of an edge count as close).
     4. Corners = segments of width 2*pi/n_corners, starting at phi_rot - pi/n_corners,
        that contain at least min_per_section localisations.
+    5. If resolve_spots, the kept localisations must also form separate spots
+       (fit_spots, at most n_corners): a corner is an occupied segment that
+       contains the centre of a spot with at least min_per_section
+       localisations and inside [r_min, r_max]. A single cloud spread over
+       several segments then counts as at most one corner.
 
     Unlike count_occupied_sectors, background is removed with a radial window
     and a minimum number of localisations per segment can be required.
@@ -252,11 +298,19 @@ def count_ring_corners(points, radius, r_min, r_max, n_corners, n_steps=1000, mi
         Candidate rotations tried within one segment. Default 1000.
     min_per_section : int, optional
         Localisations a segment needs to count as a corner. Default 1.
+    resolve_spots : bool, optional
+        Also require each corner to be a separate spot (step 5). Default False.
+    random_state : int, optional
+        Seed for the spot fits.
 
     Returns
     -------
     dict with
-        n_corners      : int, number of occupied segments
+        n_corners      : int, number of detected corners
+        n_segments_occupied : int, occupied segments (step 4 only)
+        spot_means     : kx2 spot centres, original frame (empty if not resolve_spots)
+        spot_counts    : localisations per spot
+        spot_is_corner : bool mask, spots that count as a corner
         points         : input coordinates
         centre         : fitted centre (x, y), None if no points
         radius, r_min, r_max, symmetry : parameters used
@@ -279,7 +333,8 @@ def count_ring_corners(points, radius, r_min, r_max, n_corners, n_steps=1000, mi
         r_max=r_max, symmetry=n_corners, r=np.empty(0), phi=np.empty(0),
         kept=np.zeros(len(xy), bool), phi_rot=None, aligned=np.empty((0, 2)),
         segment=np.empty(0, int), segment_counts=np.zeros(n_corners, int),
-        segment_edges=None,
+        segment_edges=None, n_segments_occupied=0, spot_means=np.empty((0, 2)),
+        spot_counts=np.empty(0, int), spot_is_corner=np.empty(0, bool),
     )
     if len(xy) == 0:
         return result
@@ -308,11 +363,28 @@ def count_ring_corners(points, radius, r_min, r_max, n_corners, n_steps=1000, mi
 
     c, s = np.cos(-phi_rot), np.sin(-phi_rot)
     aligned = np.c_[dx, dy] @ np.array([[c, s], [-s, c]])
+    n_occupied = int((counts >= min_per_section).sum())
     result.update(
-        n_corners=int((counts >= min_per_section).sum()), phi_rot=float(phi_rot),
+        n_corners=n_occupied, n_segments_occupied=n_occupied, phi_rot=float(phi_rot),
         aligned=aligned, segment=segment, segment_counts=counts,
         segment_edges=start + period * np.arange(n_corners + 1),
     )
+
+    # 5. corners must be separate spots
+    if resolve_spots:
+        spot_means, spot_counts = fit_spots(xy[kept], n_corners, random_state=random_state)
+        sx, sy = (spot_means - centre).T
+        spot_r = np.hypot(sx, sy)
+        spot_segment = np.floor(((np.arctan2(sy, sx) - start) % (2 * np.pi)) / period).astype(int) % n_corners
+        is_corner = (
+            (spot_r >= r_min) & (spot_r <= r_max)
+            & (spot_counts >= min_per_section)
+            & (counts[spot_segment] >= min_per_section)
+        )
+        result.update(
+            n_corners=int(np.unique(spot_segment[is_corner]).size),
+            spot_means=spot_means, spot_counts=spot_counts, spot_is_corner=is_corner,
+        )
     return result
 
 
@@ -328,6 +400,7 @@ def ring_corners_from_replicates(
     min_per_section=1,
     min_locs_to_circlefit=10,
     max_radius=None,
+    resolve_spots=False,
 ):
     """
     Corners (count_ring_corners) and radius (fit_circle_geometric) of the
@@ -337,7 +410,7 @@ def ring_corners_from_replicates(
     ----------
     replicates : list of dict
         Output of run_replicates.
-    radius, r_min, r_max, n_corners, min_per_section
+    radius, r_min, r_max, n_corners, min_per_section, resolve_spots
         Passed to count_ring_corners.
     modality : str, optional
         Modality name. Default "SMLM".
@@ -367,7 +440,8 @@ def ring_corners_from_replicates(
         locs = split_by_midpoint_z(record["localisations"], split=split_z)
         n_locs = 0 if locs is None else len(locs)
         corners = count_ring_corners(
-            locs, radius, r_min, r_max, n_corners, min_per_section=min_per_section
+            locs, radius, r_min, r_max, n_corners, min_per_section=min_per_section,
+            resolve_spots=resolve_spots,
         )
         radius_fit = None
         if n_locs >= max(min_locs_to_circlefit, 3):
@@ -392,6 +466,8 @@ def plot_ring_corners(result, axes=None):
     (b) kept localisations centred and rotated by -phi_rot;
     (c) kept localisations coloured by segment, segment edges, detected corners
         (filled circle = occupied, light circle = empty; numbers = counts).
+    With resolve_spots, spot centres are drawn in (b) and (c) (black cross =
+    counted as a corner, grey cross = not counted).
 
     Parameters
     ----------
@@ -454,6 +530,15 @@ def plot_ring_corners(result, axes=None):
             ax.text(1.15 * r_edge * np.cos(mid), 1.15 * r_edge * np.sin(mid),
                     str(result["segment_counts"][k]), ha="center", va="center", fontsize=8)
     ax.set_title(f"(c) segments: {result['n_corners']} corners")
+
+    spots = result.get("spot_means", np.empty((0, 2)))
+    if len(spots) and len(al):
+        c, s = np.cos(-result["phi_rot"]), np.sin(-result["phi_rot"])
+        spots_aligned = (spots - result["centre"]) @ np.array([[c, s], [-s, c]])
+        is_corner = result["spot_is_corner"]
+        for ax in axes[1:]:
+            ax.scatter(*spots_aligned[is_corner].T, marker="x", s=80, c="k", lw=2)
+            ax.scatter(*spots_aligned[~is_corner].T, marker="x", s=80, c="0.6", lw=2)
 
     lim = 1.3 * r_edge
     for ax in axes[1:]:
@@ -523,18 +608,10 @@ def sites_resolved(points, n_sites, random_state=0):
     n_components : int
         Number of components selected by BIC.
     """
-    from sklearn.mixture import GaussianMixture
-
     xy = np.asarray(points, dtype=float)[:, :2]
     if xy.shape[0] < 2 * n_sites:
         return False, 0
-    bic = [
-        GaussianMixture(k, covariance_type="spherical", n_init=2, random_state=random_state)
-        .fit(xy)
-        .bic(xy)
-        for k in range(1, n_sites + 1)
-    ]
-    n_components = int(np.argmin(bic)) + 1
+    n_components = len(fit_spots(xy, n_sites, random_state=random_state)[0])
     return n_components == n_sites, n_components
 
 

@@ -89,6 +89,7 @@ sectorcounting_params_le = dict(
     min_per_section=min_locs_per_segment,
     min_locs_to_circlefit=10,
     max_radius=R_MAX_NM,
+    resolve_spots=True,  # corners must be separate spots, not one cloud
 )
 
 for i in labelling_efficiencies:
@@ -321,3 +322,117 @@ for ncorners in threshold_for_plot:
     filename2 = os.path.join(my_experiment_ro.output_directory, filename)
     fig.savefig(filename2, dpi=300, bbox_inches='tight')
     plt.close()
+
+
+########### SMLM modalities
+# Top-view PCNA imaged with the localisation precision reported for two SMLM
+# modalities. Only the localisation precision changes; corners are counted on
+# the localisations, so the rendering kernel stays at RENDERING_KERNEL_NM.
+
+PUBLISHED = {"DNA-PAINT": 3.0, "dSTORM": 6.5}
+probe = dict(
+    probe_template="Linker",
+    probe_name="pcna_ser186",
+    probe_target_type="Atom_residue",
+    probe_target_value={"atoms": ["CA"], "residues": ["SER"], "position": 186},
+    probe_distance_to_epitope=0,
+)
+
+counting_measures_per_modality = dict()
+for modality_label, precision in PUBLISHED.items():
+    counting_measures_per_modality[modality_label] = dict()
+    for labeff in labelling_efficiencies:
+        _, _, my_experiment_mod = experiments.image_vsample(
+            structure="4ZTD",
+            **probe,
+            labelling_efficiency=labeff,
+            random_rotations=True,
+            multimodal=["SMLM"],
+            number_of_particles=1,
+            sample_dimensions=[100, 100, 50],
+            sample_inital_orientation=[0, 0, 1],  # trimer seen from above
+            run_simulation=False,
+            clear_experiment=True,
+            random_seed=RANDOM_SEED,
+        )
+        my_experiment_mod.update_modality(
+            modality_name="SMLM",
+            pixelsize_nm=PIXEL_NM,
+            psf_voxel_nm=PIXEL_NM,
+            simulate_localistations=True,
+            nlocalisations=nlocalisations,
+            lateral_precision=precision,
+            axial_precision=precision,
+            rendering_kernel_nm=RENDERING_KERNEL_NM,
+        )
+        replicates_mod = my_experiment_mod.run_replicates(n_replicates=n_replicates_le, modality="SMLM")
+        results, images_list, rows = ring_corners_from_replicates(
+            replicates=replicates_mod,
+            **sectorcounting_params_le
+        )
+        counting_measures_per_modality[modality_label][labeff] = dict(
+            dataframe=results, images=images_list, rows=rows
+        )
+
+merged_modalities = pd.concat(
+    [
+        counting_measures_per_modality[m][lef]["dataframe"].assign(
+            modality=f"{m} ({PUBLISHED[m]} nm)", source=lef
+        )
+        for m in PUBLISHED
+        for lef in labelling_efficiencies
+    ],
+    ignore_index=True,
+)
+correct_counts = (
+    merged_modalities.assign(correct=merged_modalities["n_corners"] == N_SEGMENTS)
+    .groupby(["modality", "source"])["correct"]
+    .sum()
+    .unstack("modality")
+)
+print(correct_counts)
+# same count from occupied segments only, i.e. without requiring separate spots
+print(
+    merged_modalities.assign(correct=merged_modalities["n_segments_occupied"] == N_SEGMENTS)
+    .groupby(["modality", "source"])["correct"]
+    .sum()
+    .unstack("modality")
+)
+
+# plot 12: PCNAs detected with 3 corners vs LE, per SMLM modality
+fig, ax = plt.subplots(figsize=(5, 3.5))
+for modality_label in correct_counts.columns:
+    ax.plot(correct_counts.index, correct_counts[modality_label], marker="o", lw=2, label=modality_label)
+# PCNAs with all three sites labelled: the best any modality can do
+ax.plot(
+    labelling_efficiencies,
+    n_replicates_le * np.array(labelling_efficiencies) ** N_SEGMENTS,
+    color="grey", ls="--", lw=1, label="all 3 sites labelled (LE³)",
+)
+ax.set_xlabel("Labelling efficiency")
+ax.set_ylabel(f"PCNAs with {N_SEGMENTS} corners detected")
+ax.set_ylim(0, n_replicates_le)
+ax.set_xticks(labelling_efficiencies)
+ax.legend()
+ax.set_title(
+    f"PCNA correctly detected (n = {n_replicates_le} per LE)" + "\n"
+    + "Min locs per sector = " + str(min_locs_per_segment)
+)
+filename = my_experiment_mod.date_as_string + 'vlab4mic_pcna_3corners_detected_SMLM_modalities.png'
+filename2 = os.path.join(my_experiment_mod.output_directory, filename)
+fig.savefig(filename2, dpi=300, bbox_inches='tight')
+plt.close()
+
+# plot 13: example images per modality across LE
+fig, ax = plt.subplots(len(PUBLISHED), n_le, figsize=(30, 6))
+for row, modality_label in enumerate(PUBLISHED):
+    for i, lef in enumerate(labelling_efficiencies):
+        ax[row, i].imshow(counting_measures_per_modality[modality_label][lef]["images"][0][0], cmap="grey")
+        ax[row, i].set_title(f"{modality_label}, LE = {lef}")
+        ax[row, i].set_xticks([])
+        ax[row, i].set_yticks([])
+filename = my_experiment_mod.date_as_string + 'vlab4mic_PCNAs_across_LE_SMLM_modalities.png'
+filename2 = os.path.join(my_experiment_mod.output_directory, filename)
+plt.tight_layout()
+fig.savefig(filename2, dpi=300, bbox_inches='tight')
+plt.close()
