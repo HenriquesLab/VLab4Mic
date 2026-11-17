@@ -325,8 +325,8 @@ for ncorners in threshold_for_plot:
 
 
 ########### SMLM modalities
-# Top-view PCNA imaged with the localisation precision reported for two SMLM
-# modalities. Only the localisation precision changes; corners are counted on
+# Top-view PCNA (random in-plane rotations, no random orientations) imaged
+# with the localisation precision reported for two SMLM modalities. Only the localisation precision changes; corners are counted on
 # the localisations, so the rendering kernel stays at RENDERING_KERNEL_NM.
 
 PUBLISHED = {"DNA-PAINT": 3.0, "dSTORM": 6.5}
@@ -346,7 +346,8 @@ for modality_label, precision in PUBLISHED.items():
             structure="4ZTD",
             **probe,
             labelling_efficiency=labeff,
-            random_rotations=True,
+            random_orientations=False,  # always seen from above
+            random_rotations=True,  # random in-plane rotation only
             multimodal=["SMLM"],
             number_of_particles=1,
             sample_dimensions=[100, 100, 50],
@@ -436,3 +437,39 @@ filename2 = os.path.join(my_experiment_mod.output_directory, filename)
 plt.tight_layout()
 fig.savefig(filename2, dpi=300, bbox_inches='tight')
 plt.close()
+
+# plot 14: gallery of rendered PCNAs per modality at reference LEs.
+# DNA-PAINT particles where three separate spots were detected are framed.
+GALLERY_ROWS, GALLERY_COLS = 5, 10
+HIGHLIGHT_MODALITY = "DNA-PAINT"
+HIGHLIGHT_COLOR = "tab:orange"
+for lab_eff_reference in [0.7, 1]:
+    fig = plt.figure(figsize=(2 * GALLERY_COLS, 2.1 * GALLERY_ROWS * len(PUBLISHED)))
+    subfigs = fig.subfigures(len(PUBLISHED), 1, hspace=0.05)
+    for subfig, modality_label in zip(subfigs, PUBLISHED):
+        measures = counting_measures_per_modality[modality_label][lab_eff_reference]
+        n_corners = measures["dataframe"]["n_corners"].to_numpy()
+        n_shown = min(GALLERY_ROWS * GALLERY_COLS, len(measures["images"]))
+        highlight = modality_label == HIGHLIGHT_MODALITY
+        ax = subfig.subplots(GALLERY_ROWS, GALLERY_COLS)
+        for k, a in enumerate(ax.flat):
+            a.set_xticks([])
+            a.set_yticks([])
+            if k >= n_shown:
+                a.axis("off")
+                continue
+            a.imshow(measures["images"][k][0], cmap="grey")
+            if highlight and n_corners[k] == N_SEGMENTS:
+                for spine in a.spines.values():
+                    spine.set_color(HIGHLIGHT_COLOR)
+                    spine.set_linewidth(4)
+        title = f"{modality_label} ({PUBLISHED[modality_label]} nm precision)"
+        if highlight:
+            n_resolved = int((n_corners[:n_shown] == N_SEGMENTS).sum())
+            title += f": {n_resolved}/{n_shown} with {N_SEGMENTS} separate spots (framed)"
+        subfig.suptitle(title, fontsize=16)
+    fig.suptitle(f"PCNA, LE = {lab_eff_reference}", fontsize=18, y=1.02)
+    filename = my_experiment_mod.date_as_string + 'vlab4mic_PCNA_gallery_SMLM_modalities_' + str(lab_eff_reference) + 'LE.png'
+    filename2 = os.path.join(my_experiment_mod.output_directory, filename)
+    fig.savefig(filename2, dpi=300, bbox_inches='tight')
+    plt.close()
