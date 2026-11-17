@@ -4,6 +4,7 @@ from scipy.optimize import least_squares
 from vlab4mic import experiments
 from scipy import optimize
 import pandas as pd
+import os
 import seaborn as sns
 
 
@@ -394,7 +395,8 @@ merged = pd.concat(
     ignore_index=True,
 )
 ######## plot 1
-sns.boxplot(data=merged, x="source", y="n_corners")
+fig, ax = plt.subplots(figsize=(5, 3.5))
+sns.boxplot(data=merged, x="source", y="n_corners", ax=ax)
 plt.xlabel("Labelling efficiency")
 plt.ylabel("Number of Corners detected")
 if split_z:
@@ -402,7 +404,10 @@ if split_z:
 else:
     sides = "Both sides of NPC"
 plt.title("Corners detected on NPC simuations" + "\n" + sides + "\n" + "Min locs per sector = " + str(min_locs_per_segment))
-
+filename = my_experiment_le.date_as_string + 'vlab4mic_corners_detected_on_NPC_simuations.png'
+filename2 = os.path.join(my_experiment_le.output_directory, filename)
+fig.savefig(filename2, dpi=300, bbox_inches='tight')
+plt.close()
 
 #### plot 2
 n_corners = 8
@@ -419,6 +424,12 @@ if split_z:
 else:
     sides = "Both sides of NPC"
 ax.set_title("Corners detected on NPC simuations. LE = " + str(lab_eff_reference) + "\n" + sides + "\n" + "Min locs per sector = " + str(min_locs_per_segment))
+filename = my_experiment_le.date_as_string + 'vlab4mic_corners_detected_on_NPC_simuations_0.3LE.png'
+filename2 = os.path.join(my_experiment_le.output_directory, filename)
+fig.savefig(filename2, dpi=300, bbox_inches='tight')
+plt.close()
+
+
 
 ### plot 3
 from scipy.stats import binom
@@ -438,6 +449,12 @@ if split_z:
 else:
     sides = "Both sides of NPC"
 ax.set_title("Corners detected on NPC simuations. LE = " + str(lab_eff_reference) + "\n" + sides + "\n" + "Min locs per sector = " + str(min_locs_per_segment))
+filename = my_experiment_le.date_as_string + 'vlab4mic_corners_detected_on_NPC_simuations_0.4LE.png'
+filename2 = os.path.join(my_experiment_le.output_directory, filename)
+fig.savefig(filename2, dpi=300, bbox_inches='tight')
+plt.close()
+
+
 
 ### plot 4
 
@@ -458,6 +475,9 @@ else:
     maintitle = "probe_DoL: " + str(probe_DoL) + ". DoF: " + str(depth_of_field_nm)
 fig.suptitle(maintitle)
 plt.tight_layout()
+fig.savefig(filename2, dpi=300, bbox_inches='tight')
+plt.close()
+
 
 ## plot 5
 # e.g. pores where only 3 or fewer corners were detected
@@ -469,10 +489,18 @@ for ncorners in threshold_for_plot:
     corners = results[_df.n_corners == ncorners]
     ids = list(_df.loc[_df["n_corners"] == ncorners].replicate)
     for example in ids[:1]:
-        plot_npc_corners(counting_measures_per_le[lab_eff_reference]["rows"][example])
+        fig = plot_npc_corners(counting_measures_per_le[lab_eff_reference]["rows"][example])
+    filename = my_experiment_le.date_as_string + 'vlab4mic_npc_corners_example_' + str(ncorners) + '.png'
+    filename2 = os.path.join(my_experiment_le.output_directory, filename)
+    fig.savefig(filename2, dpi=300, bbox_inches='tight')
+    plt.close()
 
 # plot 6
-
-sns.boxplot(data=merged, x="source", y="radius_fit")
+fig, ax = plt.subplots(figsize=(5, 3.5))
+sns.boxplot(data=merged, x="source", y="radius_fit", ax=ax)
 plt.xlabel("Labelling efficiency")
 plt.ylabel("Radius fit")
+filename = my_experiment_le.date_as_string + 'vlab4mic_npc_radius_fit_LE.png'
+filename2 = os.path.join(my_experiment_le.output_directory, filename)
+fig.savefig(filename2, dpi=300, bbox_inches='tight')
+plt.close()
