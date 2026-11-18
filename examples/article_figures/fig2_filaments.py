@@ -6,6 +6,7 @@ import seaborn as sns
 import os
 from vlab4mic.analysis import particle_measures
 import pandas as pd
+from scipy import optimize, stats
 
 structure = "5SYF"
 probe_model = "1IGT"          # used for every primary and secondary antibody
@@ -322,6 +323,233 @@ filament_diameters = sns.histplot(data=combined_df_sw, palette=custom_palette, b
 filename = my_experiment_probe3.date_as_string + 'vlab4mic_apparent_diameter_microtubule.png'
 filename2 = os.path.join(my_experiment.output_directory, filename)
 fig.savefig(filename2, dpi=300, bbox_inches='tight') 
+plt.close()
+
+### Hollow cylinder fit of the 3D localisations
+reference_diameter = 25    # nm, microtubule
+
+def orthonormal_basis(direction):
+    """Two unit vectors orthogonal to direction and to each other."""
+    direction = direction / np.linalg.norm(direction)
+    helper = np.array([0.0, 0.0, 1.0]) if abs(direction[2]) < 0.9 else np.array([1.0, 0.0, 0.0])
+    u = np.cross(direction, helper)
+    u /= np.linalg.norm(u)
+    v = np.cross(direction, u)
+    return u, v
+
+def cylinder_coordinates(points, pivot, direction):
+    """Position along the axis and (u, v) position across it, for each point."""
+    u, v = orthonormal_basis(direction)
+    centred = points - pivot
+    return centred @ direction, centred @ u, centred @ v
+
+def fit_hollow_cylinder(points, reference_diameter=25, background_radius_factor=3, max_points=20000, random_seed=0):
+    """
+    Fit a hollow cylinder to 3D coordinates (nm).
+
+    Model: points lie on a cylindrical shell of radius R, blurred with an
+    isotropic Gaussian of width sigma (labelling offset, localisation
+    precision). Their distance to the axis then follows a Rice distribution
+    Rice(R, sigma). Points further than background_radius_factor *
+    reference_diameter from the axis are ignored, and a uniform background
+    in the cross-section accounts for localisations off the filament. The
+    axis is first fitted geometrically (robust least squares of distance to
+    axis minus R, starting from the principal axis of the points and the
+    reference radius), then axis, R, sigma and the background fraction are
+    refined by maximum likelihood.
+
+    Returns a dict with the axis (pivot, direction), radius, sigma,
+    background fraction, diameter and the coordinates of every point in the
+    cylinder frame (along, u, v, radial).
+    """
+    points = np.asarray(points, dtype=float)
+    rng = np.random.default_rng(random_seed)
+    if points.shape[0] > max_points:
+        subset = points[rng.choice(points.shape[0], max_points, replace=False)]
+    else:
+        subset = points
+    centroid = subset.mean(axis=0)
+    __, eigenvectors = np.linalg.eigh(np.cov((subset - centroid).T))
+    direction0 = eigenvectors[:, -1]
+    u0, v0 = orthonormal_basis(direction0)
+    shift_limit = 2 * reference_diameter
+
+    def axis_from_params(params):
+        tilt_u, tilt_v, shift_u, shift_v = params[:4]
+        direction = direction0 + tilt_u * u0 + tilt_v * v0
+        direction /= np.linalg.norm(direction)
+        pivot = centroid + shift_u * u0 + shift_v * v0
+        return pivot, direction
+
+    def radial_distances(params, coordinates):
+        pivot, direction = axis_from_params(params)
+        __, across_u, across_v = cylinder_coordinates(coordinates, pivot, direction)
+        return np.hypot(across_u, across_v)
+
+    # geometric fit: distance to the axis equal to the radius
+    geometric = optimize.least_squares(
+        lambda params: radial_distances(params, subset) - params[4],
+        x0=[0, 0, 0, 0, reference_diameter / 2],
+        bounds=([-0.5, -0.5, -shift_limit, -shift_limit, 0], [0.5, 0.5, shift_limit, shift_limit, np.inf]),
+        loss="soft_l1", f_scale=5,
+    )
+
+    # maximum likelihood on the points within max_radial of the geometric
+    # axis: distances to the axis follow Rice(R, sigma) plus a uniform
+    # background in the cross-section
+    max_radial = background_radius_factor * reference_diameter
+    near_axis = subset[radial_distances(geometric.x, subset) < max_radial]
+    residual_sd = np.std(radial_distances(geometric.x, near_axis) - geometric.x[4])
+
+    def negative_log_likelihood(axis_params, radius, sigma, background):
+        radial = radial_distances(axis_params, near_axis)
+        shell = stats.rice.pdf(radial, radius / sigma, scale=sigma) / stats.rice.cdf(max_radial, radius / sigma, scale=sigma)
+        uniform = 2 * radial / max_radial ** 2
+        return -np.sum(np.log((1 - background) * shell + background * uniform + 1e-300))
+
+    shell_bounds = [(0, max_radial), (0.5, max_radial), (0, 0.99)]
+    # shell and background with the geometric axis, then all together
+    shell_fit = optimize.minimize(
+        lambda params: negative_log_likelihood(geometric.x[:4], *params),
+        x0=[geometric.x[4], max(residual_sd, 1), 0.05],
+        method="L-BFGS-B",
+        bounds=shell_bounds,
+    )
+    likelihood = optimize.minimize(
+        lambda params: negative_log_likelihood(params[:4], *params[4:]),
+        x0=np.append(geometric.x[:4], shell_fit.x),
+        method="L-BFGS-B",
+        bounds=[(-0.5, 0.5), (-0.5, 0.5), (-shift_limit, shift_limit), (-shift_limit, shift_limit)] + shell_bounds,
+    )
+    pivot, direction = axis_from_params(likelihood.x)
+    along, across_u, across_v = cylinder_coordinates(points, pivot, direction)
+    radius, sigma, background = likelihood.x[4:]
+    return dict(
+        pivot=pivot,
+        direction=direction,
+        radius=radius,
+        sigma=sigma,
+        background=background,
+        max_radial=max_radial,
+        diameter=2 * radius,
+        reference_diameter=reference_diameter,
+        geometric_diameter=2 * geometric.x[4],
+        along=along,
+        across_u=across_u,
+        across_v=across_v,
+        radial=np.hypot(across_u, across_v),
+        n_points=points.shape[0],
+        success=bool(likelihood.success),
+    )
+
+def plot_hollow_cylinder_fit(fit, axs, color="#F58B19", title="", section_length=100, max_scatter=2000, random_seed=0):
+    """
+    Draw a hollow cylinder fit on three axes: a section of the fitted
+    cylinder (section_length nm long, centred) with its points in 3D, in the
+    frame of the cylinder (axs[0] must be 3D); the cross-section of all points
+    with the fitted and reference circles; and the distances to the axis with
+    the fitted model.
+    """
+    rng = np.random.default_rng(random_seed)
+    radius, sigma, background = fit["radius"], fit["sigma"], fit["background"]
+    reference_radius = fit["reference_diameter"] / 2
+    limit = min(radius + 4 * sigma, fit["max_radial"])
+    angles = np.linspace(0, 2 * np.pi, 100)
+    # 3D section, in the frame of the cylinder
+    along_centre = np.median(fit["along"])
+    in_section = np.flatnonzero((np.abs(fit["along"] - along_centre) <= section_length / 2) & (fit["radial"] <= limit))
+    shown = rng.choice(in_section, min(max_scatter, in_section.size), replace=False)
+    along_grid, angle_grid = np.meshgrid(np.linspace(-section_length / 2, section_length / 2, 20), angles)
+    axs[0].plot_surface(along_grid, radius * np.cos(angle_grid), radius * np.sin(angle_grid),
+                        color="grey", alpha=0.25, linewidth=0)
+    axs[0].scatter(fit["along"][shown] - along_centre, fit["across_u"][shown], fit["across_v"][shown], s=1, c=color, alpha=0.6, depthshade=False)
+    axs[0].set_xlim(-section_length / 2, section_length / 2)
+    axs[0].set_ylim(-limit, limit)
+    axs[0].set_zlim(-limit, limit)
+    axs[0].set_box_aspect((section_length, 2 * limit, 2 * limit))
+    axs[0].view_init(elev=20, azim=-35)
+    axs[0].set_xlabel("along axis (nm)")
+    axs[0].set_ylabel("u (nm)")
+    axs[0].set_zlabel("v (nm)")
+    axs[0].set_title(title)
+    # cross-section
+    bins = np.linspace(-limit, limit, 60)
+    cross_section, __, __ = np.histogram2d(fit["across_u"], fit["across_v"], bins=[bins, bins])
+    axs[1].imshow(cross_section.T, cmap="grey", origin="lower", extent=[-limit, limit, -limit, limit])
+    axs[1].plot(radius * np.cos(angles), radius * np.sin(angles), c=color,
+                label=f"fit: {2 * radius:.1f} nm")
+    axs[1].plot(reference_radius * np.cos(angles), reference_radius * np.sin(angles), "--", c="white",
+                label=f"reference: {fit['reference_diameter']:.0f} nm")
+    axs[1].set_xlabel("u (nm)")
+    axs[1].set_ylabel("v (nm)")
+    axs[1].legend(loc="upper right", fontsize="small")
+    axs[1].set_title("Cross-section")
+    # distances to the axis, with the fitted model
+    max_radial = fit["max_radial"]
+    radial_range = np.linspace(0, max_radial, 300)
+    shell = stats.rice.pdf(radial_range, radius / sigma, scale=sigma) / stats.rice.cdf(max_radial, radius / sigma, scale=sigma)
+    model = (1 - background) * shell + background * 2 * radial_range / max_radial ** 2
+    axs[2].hist(fit["radial"][fit["radial"] < max_radial], bins=np.linspace(0, max_radial, 60), density=True, color=color, alpha=0.6)
+    axs[2].plot(radial_range, model, c="black",
+                label=f"fit: R = {radius:.1f} nm, $\\sigma$ = {sigma:.1f} nm, bg = {100 * background:.0f}%")
+    axs[2].axvline(radius, c=color)
+    axs[2].axvline(reference_radius, ls="--", c="grey", label=f"reference R = {reference_radius:.1f} nm")
+    axs[2].set_xlabel("distance to axis (nm)")
+    axs[2].set_ylabel("density")
+    axs[2].legend(fontsize="small")
+    axs[2].set_title("Distance to the cylinder axis")
+
+def replicate_localisations(result, modality="SMLM", channel="ch0"):
+    """3D localisations (nm) of all fluorophores of one channel in a replicate."""
+    records = result["positions"][modality][channel].values()
+    return np.vstack([record["localisations"] for record in records if record["localisations"] is not None])
+
+replicates_per_strategy = {
+    "Primary": replicates_1,
+    "Primary_Secondary_SiteSpec": replicates_3,
+    "Primary_Secondary_NHS": replicates_2,
+}
+cylinder_fits = dict()
+cylinder_rows = []
+for strategy, replicates in replicates_per_strategy.items():
+    cylinder_fits[strategy] = []
+    for result in replicates:
+        fit = fit_hollow_cylinder(replicate_localisations(result), reference_diameter=reference_diameter)
+        cylinder_fits[strategy].append(fit)
+        cylinder_rows.append(dict(
+            strategy=strategy,
+            replicate=result["replicate"],
+            diameter=fit["diameter"],
+            sigma=fit["sigma"],
+            background=fit["background"],
+            success=fit["success"],
+        ))
+cylinder_df = pd.DataFrame(cylinder_rows)
+print(cylinder_df.groupby("strategy")[["diameter", "sigma", "background"]].agg(["mean", "std"]))
+
+# apparent hollow cylinder of the first replicate of each strategy
+n_strategies = len(replicates_per_strategy)
+fig = plt.figure(figsize=(21, 6 * n_strategies))
+for i, strategy in enumerate(replicates_per_strategy):
+    axs = [
+        fig.add_subplot(n_strategies, 3, 3 * i + 1, projection="3d"),
+        fig.add_subplot(n_strategies, 3, 3 * i + 2),
+        fig.add_subplot(n_strategies, 3, 3 * i + 3),
+    ]
+    plot_hollow_cylinder_fit(cylinder_fits[strategy][0], axs, color=custom_palette[strategy], title=strategy)
+filename = my_experiment_probe3.date_as_string + 'vlab4mic_hollow_cylinder_fit_microtubule.png'
+filename2 = os.path.join(my_experiment.output_directory, filename)
+fig.savefig(filename2, dpi=300, bbox_inches='tight')
+plt.close()
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+sns.histplot(data=cylinder_df, x="diameter", hue="strategy", palette=custom_palette, bins=30, ax=ax)
+ax.axvline(reference_diameter, ls="--", c="grey")
+ax.set_xlabel("Hollow cylinder diameter (nm)")
+filename = my_experiment_probe3.date_as_string + 'vlab4mic_hollow_cylinder_diameter_microtubule.png'
+filename2 = os.path.join(my_experiment.output_directory, filename)
+fig.savefig(filename2, dpi=300, bbox_inches='tight')
 plt.close()
 
 ### Apparent continuity
