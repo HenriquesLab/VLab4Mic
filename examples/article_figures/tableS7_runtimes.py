@@ -25,7 +25,6 @@ VLAB4MIC_TIME_FULL_RUN (1).
 
 import os
 import platform
-import resource
 import subprocess
 import sys
 import time
@@ -58,6 +57,12 @@ def hardware():
         if sys.platform == "darwin":
             cpu = subprocess.run(["sysctl", "-n", "machdep.cpu.brand_string"],
                                  capture_output=True, text=True, check=True).stdout.strip()
+        elif sys.platform == "win32":
+            import winreg
+
+            key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
+                                 r"HARDWARE\DESCRIPTION\System\CentralProcessor\0")
+            cpu = winreg.QueryValueEx(key, "ProcessorNameString")[0].strip()
         elif os.path.exists("/proc/cpuinfo"):
             with open("/proc/cpuinfo") as handle:
                 cpu = next(line.split(":", 1)[1].strip() for line in handle
@@ -65,19 +70,49 @@ def hardware():
     except Exception:
         pass
     try:
-        ram_gb = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") / 1e9
-    except (ValueError, OSError, AttributeError):
+        if sys.platform == "win32":
+            import ctypes
+
+            class MemoryStatus(ctypes.Structure):
+                _fields_ = [("dwLength", ctypes.c_ulong), ("dwMemoryLoad", ctypes.c_ulong),
+                            ("ullTotalPhys", ctypes.c_ulonglong), ("ullAvailPhys", ctypes.c_ulonglong),
+                            ("ullTotalPageFile", ctypes.c_ulonglong), ("ullAvailPageFile", ctypes.c_ulonglong),
+                            ("ullTotalVirtual", ctypes.c_ulonglong), ("ullAvailVirtual", ctypes.c_ulonglong),
+                            ("ullAvailExtendedVirtual", ctypes.c_ulonglong)]
+
+            status = MemoryStatus()
+            status.dwLength = ctypes.sizeof(MemoryStatus)
+            ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status))
+            ram_gb = status.ullTotalPhys / 1e9
+        else:
+            ram_gb = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") / 1e9
+    except Exception:
         ram_gb = float("nan")
     return dict(cpu=cpu, logical_cores=os.cpu_count(), ram_gb=round(ram_gb, 1),
                 os=platform.platform())
 
 
 def peak_memory_gb():
-    """Peak resident memory of this process and of its finished worker processes (GB)."""
-    scale = 1e9 if sys.platform == "darwin" else 1e6  # ru_maxrss: bytes on macOS, kB on Linux
-    own = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / scale
-    workers = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss / scale
-    return round(max(own, workers), 2)
+    """
+    Peak resident memory (GB): of this process and its finished worker
+    processes on macOS and Linux; of this process only on Windows (needs
+    psutil); NaN if it cannot be measured.
+    """
+    try:
+        import resource  # not available on Windows
+
+        scale = 1e9 if sys.platform == "darwin" else 1e6  # ru_maxrss: bytes on macOS, kB on Linux
+        own = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / scale
+        workers = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss / scale
+        return round(max(own, workers), 2)
+    except ImportError:
+        pass
+    try:
+        import psutil
+
+        return round(psutil.Process().memory_info().peak_wset / 1e9, 2)
+    except Exception:
+        return float("nan")
 
 
 def simulate_condition(path, n_realisations, modalities, seed):
