@@ -634,6 +634,8 @@ merged = pd.concat(
     [d.assign(source=name) for name, d in dfs.items()],
     ignore_index=True,
 )
+filename = my_experiment_le.date_as_string + 'vlab4mic_filament_measures_per_LE.csv'
+merged.to_csv(os.path.join(my_experiment_le.output_directory, filename), index=False)
 fig = plt.figure()
 ax = fig.add_subplot(111)
 sns.swarmplot(data=merged, x="source", y="mean_eccentricity", ax=ax, s=1)
