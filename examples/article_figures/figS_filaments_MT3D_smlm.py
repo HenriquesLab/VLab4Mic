@@ -221,10 +221,9 @@ replicates_per_le = dict()
 n_replicates_le = 100
 for labeff in labelling_efficiencies:
     primary_le = dict(
-        probe_template="Antibody",
+        probe_template="Linker",
         probe_name="ATubulin_epitopes",
         probe_distance_to_epitope = 0,
-        probe_model=probe_model,
         probe_target_type="Sequence",
         probe_target_value="EEVGV",
         probe_steric_hindrance=0,
@@ -295,6 +294,8 @@ fig, ax = plt.subplots(1, n_le, figsize=(30,10))
 for i, lef in enumerate(labelling_efficiencies):
     ax[i].imshow(filament_measures_per_le[lef]["blurred"][0], cmap = "grey")
     ax[i].set_title(f"LE = {lef}")
+    ax[i].set_xticks([])
+    ax[i].set_yticks([])
 filename = my_experiment_le.date_as_string + 'vlab4mic_MT3D_microtubules_across_LE.png'
 filename2 = os.path.join(my_experiment_le.output_directory, filename)
 fig.savefig(filename2, dpi=300, bbox_inches='tight')
