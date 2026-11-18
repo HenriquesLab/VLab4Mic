@@ -1,59 +1,193 @@
-"""Supp. Table S7: run times.
+"""Supp. Table S7: run times of the Fig. 2 analysis.
 
-Times, on the current machine:
-- one virtual sample (nuclear pore, 7R5K, GFP-nanobody, 10 particles in
-  1 x 1 um) imaged in five modalities;
-- N realisations of one particle for a distinguishability score (SMLM);
-- a parameter sweep of 3 labelling efficiencies x 3 repetitions (STED).
-The hardware is recorded with the results.
+Times the clathrin distinguishability analysis of Fig. 2 with the same
+models, probe, geometry, sweep machinery and scoring
+(fig2_clathrin_distinguishability.py), on the current machine:
+
+1. one realisation of one lattice imaged in five imaging methods;
+2. one Fig. 2 condition (reference: 100% labelling, structural integrity 1):
+   N realisations of each lattice in five imaging methods;
+3. scoring that condition (classifier, bootstrap and permutation test);
+4. the whole Fig. 2 run (every sweep block for both lattices), simulation
+   and scoring timed separately. Set VLAB4MIC_TIME_FULL_RUN=0 to skip it.
+
+The hardware, software versions, number of worker processes, number of
+simulated images and peak memory are recorded with each time.
+
+Outputs, in the VLab4Mic output directory: <date>tableS7_runtimes.csv
+(one row per task; source data for Supp. Table S7).
+
+Run:   python tableS7_runtimes.py
+Environment variables: as fig2_clathrin_distinguishability.py
+(VLAB4MIC_N_REALISATIONS, VLAB4MIC_N_PERMUTATIONS, VLAB4MIC_N_WORKERS), and
+VLAB4MIC_TIME_FULL_RUN (1).
 """
 
 import os
 import platform
+import resource
+import subprocess
+import sys
 import time
+from concurrent.futures import ProcessPoolExecutor
+from datetime import datetime
+from importlib.metadata import version
 
+import numpy as np
 import pandas as pd
 
-from vlab4mic import experiments, sweep_generator
-
-N_REALISATIONS = int(os.environ.get("VLAB4MIC_N_REALISATIONS", 100))
-RANDOM_SEED = 7
-MODALITIES = ["Widefield", "Confocal", "AiryScan", "STED", "SMLM"]
-
-rows = []
-
-start = time.perf_counter()
-_, _, experiment = experiments.image_vsample(
-    structure="7R5K", probe_template="GFP_w_nanobody", probe_target_type="Sequence",
-    probe_target_value="ELAVGSL", number_of_particles=10, multimodal=MODALITIES,
-    clear_experiment=True, random_seed=RANDOM_SEED,
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import fig2_clathrin_distinguishability as fig2  # noqa: E402
+from vlab4mic.analysis.distinguishability import (  # noqa: E402
+    distinguishability_from_features,
+    feature_metrics,
 )
-rows.append(dict(task="One virtual sample, five imaging methods",
-                 settings="7R5K, GFP-nanobody, 10 particles, 1 x 1 um",
-                 seconds=time.perf_counter() - start))
+from vlab4mic.experiments import ExperimentParametrisation, output_path  # noqa: E402
+from vlab4mic.sweep_generator import run_parameter_sweep  # noqa: E402
 
-start = time.perf_counter()
-experiments.run_replicates(
-    N_REALISATIONS, structure="7R5K", probe_template="NPC_Nup96_Cterminal_direct",
-    number_of_particles=1, multimodal=["SMLM"], random_seed=RANDOM_SEED,
-)
-rows.append(dict(task=f"{N_REALISATIONS} realisations for one distinguishability score (one class)",
-                 settings="7R5K, one particle, SMLM",
-                 seconds=time.perf_counter() - start))
+TIME_FULL_RUN = os.environ.get("VLAB4MIC_TIME_FULL_RUN", "1") not in ("0", "", "false", "False")
+RANDOM_SEED = fig2.RANDOM_SEED
+REFERENCE = dict(labelling_efficiency=[fig2.LABELLING_EFFICIENCY],
+                 structural_integrity=[fig2.STRUCTURAL_INTEGRITY], **fig2.SI_CLUSTERS)
 
-start = time.perf_counter()
-sweep_generator.run_parameter_sweep(
-    structures=["7R5K"], probe_templates=["NPC_Nup96_Cterminal_direct"],
-    modalities=["STED"], labelling_efficiency=[0.3, 0.6, 1.0], sweep_repetitions=3,
-    save_sweep_images=False, save_analysis_results=False, analysis_plots=False,
-    run_analysis=True, random_seed=RANDOM_SEED,
-)
-rows.append(dict(task="Parameter sweep", settings="3 conditions x 3 repeats, STED",
-                 seconds=time.perf_counter() - start))
 
-results = pd.DataFrame(rows)
-results["hardware"] = f"{platform.processor() or platform.machine()}, {platform.platform()}"
-results["python"] = platform.python_version()
-out = experiment.output_directory
-results.to_csv(os.path.join(out, experiment.date_as_string + "tableS7_runtimes.csv"), index=False)
-print(results)
+def hardware():
+    """CPU model, logical cores, RAM (GB) and operating system."""
+    cpu = platform.processor() or platform.machine()
+    try:
+        if sys.platform == "darwin":
+            cpu = subprocess.run(["sysctl", "-n", "machdep.cpu.brand_string"],
+                                 capture_output=True, text=True, check=True).stdout.strip()
+        elif os.path.exists("/proc/cpuinfo"):
+            with open("/proc/cpuinfo") as handle:
+                cpu = next(line.split(":", 1)[1].strip() for line in handle
+                           if line.startswith("model name"))
+    except Exception:
+        pass
+    try:
+        ram_gb = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") / 1e9
+    except (ValueError, OSError, AttributeError):
+        ram_gb = float("nan")
+    return dict(cpu=cpu, logical_cores=os.cpu_count(), ram_gb=round(ram_gb, 1),
+                os=platform.platform())
+
+
+def peak_memory_gb():
+    """Peak resident memory of this process and of its finished worker processes (GB)."""
+    scale = 1e9 if sys.platform == "darwin" else 1e6  # ru_maxrss: bytes on macOS, kB on Linux
+    own = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / scale
+    workers = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss / scale
+    return round(max(own, workers), 2)
+
+
+def simulate_condition(path, n_realisations, modalities, seed):
+    """Feature table of one lattice at the reference condition, as in Fig. 2."""
+    sweep = run_parameter_sweep(
+        structures=[path], structure_is_path=True, modalities=modalities,
+        custom_metrics=feature_metrics(fig2.FEATURES, fov_nm=fig2.FOV_NM),
+        random_seed=seed, save_sweep_images=False, output_directory=None,
+        **{**fig2.COMMON, "sweep_repetitions": n_realisations}, **fig2.VENTRAL, **REFERENCE,
+    )
+    return sweep.analysis["dataframes"]
+
+
+def score(features, by):
+    return distinguishability_from_features(
+        features, "model", ("dome", "flat"), fig2.FEATURES, by=by, controls=fig2.CONTROLS,
+        replicate_column="Replica", n_permutations=fig2.N_PERMUTATIONS,
+        random_state=RANDOM_SEED, n_workers=fig2.N_WORKERS, progress=False,
+    )
+
+
+def main():
+    rows = []
+
+    def record(task, settings, seconds, n_images, n_conditions, n_realisations):
+        rows.append(dict(task=task, settings=settings, n_conditions=n_conditions,
+                         realisations_per_lattice=n_realisations, n_images=n_images,
+                         seconds=round(seconds, 1), minutes=round(seconds / 60, 2),
+                         seconds_per_image=round(seconds / n_images, 3) if n_images else np.nan,
+                         peak_memory_gb=peak_memory_gb()))
+        print(f"{task}: {seconds:.1f} s", flush=True)
+
+    paths = {name: fig2.download(url) for name, url in fig2.MODELS.items()}  # not timed
+    seeds = np.random.SeedSequence(RANDOM_SEED).generate_state(4)
+    n_mod = len(fig2.MODALITIES)
+
+    # 1. one realisation, one lattice, five imaging methods
+    start = time.perf_counter()
+    simulate_condition(paths["dome"], 1, fig2.MODALITIES, int(seeds[0]))
+    record("One realisation, five imaging methods",
+           "dome lattice, one particle, ventral geometry, 100% labelling",
+           time.perf_counter() - start, n_mod, 1, 1)
+
+    # 2. one Fig. 2 condition: N realisations of each lattice, five methods
+    start = time.perf_counter()
+    tables = []
+    for k, (model, path) in enumerate(paths.items()):
+        table = simulate_condition(path, fig2.N_REALISATIONS, fig2.MODALITIES, int(seeds[1 + k]))
+        table["model"] = model
+        tables.append(table)
+    features = pd.concat(tables, ignore_index=True)
+    n_images = 2 * fig2.N_REALISATIONS * n_mod
+    record("One Fig. 2 condition, simulation",
+           f"dome and flat lattices, {fig2.N_REALISATIONS} realisations each, five imaging methods",
+           time.perf_counter() - start, n_images, 1, fig2.N_REALISATIONS)
+
+    # 3. scoring that condition
+    start = time.perf_counter()
+    score(features, by=["modality_name"])
+    record("One Fig. 2 condition, distinguishability score",
+           f"five imaging methods; 5-fold cross-validation, 1,000 bootstrap resamples, "
+           f"{fig2.N_PERMUTATIONS} permutations",
+           time.perf_counter() - start, n_images, 1, fig2.N_REALISATIONS)
+
+    # 4. the whole Fig. 2 run
+    if TIME_FULL_RUN:
+        blocks = [(model, path, block) for block in fig2.SWEEPS for model, path in paths.items()]
+        block_seeds = np.random.SeedSequence(RANDOM_SEED).generate_state(len(blocks))
+        jobs = [block + (int(seed), None) for block, seed in zip(blocks, block_seeds)]
+        start = time.perf_counter()
+        if fig2.N_WORKERS > 1:
+            with ProcessPoolExecutor(fig2.N_WORKERS) as pool:
+                tables = list(pool.map(fig2.simulate, jobs))
+        else:
+            tables = [fig2.simulate(job) for job in jobs]
+        seconds = time.perf_counter() - start
+        features = pd.concat(tables, ignore_index=True)
+        n_images = len(features)
+        # a condition is one parameter set, imaged in every method of its block
+        n_conditions = len(features.drop_duplicates(
+            [c for c in fig2.CONDITIONS if c != "modality_name"]))
+        record("Whole Fig. 2 run, simulation",
+               f"{len(fig2.SWEEPS)} sweep blocks x 2 lattices, {fig2.N_REALISATIONS} realisations "
+               "per lattice and condition",
+               seconds, n_images, n_conditions, fig2.N_REALISATIONS)
+        start = time.perf_counter()
+        score(features, by=fig2.CONDITIONS)
+        record("Whole Fig. 2 run, distinguishability scores",
+               f"every condition and imaging method; {fig2.N_PERMUTATIONS} permutations",
+               time.perf_counter() - start, n_images, n_conditions, fig2.N_REALISATIONS)
+
+    results = pd.DataFrame(rows)
+    for key, value in hardware().items():
+        results[key] = value
+    results["workers"] = fig2.N_WORKERS
+    results["python"] = platform.python_version()
+    results["vlab4mic"] = version("vlab4mic")  # installed metadata; may lag an editable install
+    try:
+        results["git_commit"] = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"], cwd=os.path.dirname(os.path.abspath(__file__)),
+            capture_output=True, text=True, check=True).stdout.strip()
+    except Exception:
+        results["git_commit"] = ""
+    results["date"] = datetime.now().strftime("%Y-%m-%d")
+    prefix = os.path.join(str(output_path), ExperimentParametrisation().date_as_string)
+    path = prefix + "tableS7_runtimes.csv"
+    results.to_csv(path, index=False)
+    print(results.to_string(index=False))
+    print(f"saved {path}")
+
+
+if __name__ == "__main__":
+    main()
