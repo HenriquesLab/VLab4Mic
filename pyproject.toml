@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vlab4mic"
-version = "0.2.0"
+version = "1.1.0"
 description = "VLab4Mic: A virtual laboratory for microscopy simulation and validation"
 keywords = [
     "microscopy",
