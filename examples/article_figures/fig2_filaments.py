@@ -311,7 +311,7 @@ combined_df_sw = pd.DataFrame(data={
     "Primary_Secondary_SiteSpec": df3["s_width"],
     "Primary_Secondary_NHS": df2["s_width"],
     }
-) / filaments_params["pixel_size"]
+) * filaments_params["pixel_size"]
 custom_palette = {
     "Primary": "#F58B19",
     "Primary_Secondary_SiteSpec": "green",
