@@ -322,8 +322,10 @@ ax = fig.add_subplot(111)
 filament_diameters = sns.histplot(data=combined_df_sw, palette=custom_palette, bins=30, ax=ax)
 filename = my_experiment_probe3.date_as_string + 'vlab4mic_apparent_diameter_microtubule.png'
 filename2 = os.path.join(my_experiment.output_directory, filename)
-fig.savefig(filename2, dpi=300, bbox_inches='tight') 
+fig.savefig(filename2, dpi=300, bbox_inches='tight')
 plt.close()
+filename = my_experiment_probe3.date_as_string + 'vlab4mic_apparent_diameter_microtubule.csv'
+combined_df_sw.to_csv(os.path.join(my_experiment.output_directory, filename), index=False)
 
 ### Hollow cylinder fit of the 3D localisations
 reference_diameter = 25    # nm, microtubule
