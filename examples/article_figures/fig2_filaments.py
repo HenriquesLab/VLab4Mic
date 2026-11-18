@@ -326,23 +326,37 @@ plt.close()
 
 ### Apparent continuity
 
-labelling_efficiencies = [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.5, 1]
+labelling_efficiencies = [0.001, 0.005, 0.01, 0.05, 0.1, 0.2, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
 replicates_per_le = dict()
 n_replicates_le = 100
 for labeff in labelling_efficiencies:
-    primary_le = dict(
+    primary_1 = dict(
         probe_template="Antibody",
         probe_name="ATubulin_epitopes",
         probe_distance_to_epitope = 0,
         probe_model=probe_model,
         probe_target_type="Sequence",
         probe_target_value="EEVGV",
-        labelling_efficiency=labeff,
-        probe_paratope= "TITCH", # sequence in 1IGT
+        labelling_efficiency=1,
+        probe_paratope= "TITCH",
         probe_secondary_epitope = "EKKNW"
     )
+    secondary_1 = dict(
+        probe_template="Antibody",
+        probe_name="Secondary_L1",
+        probe_model=probe_model,
+        probe_target_type="Primary",
+        probe_target_value="ATubulin_epitopes",
+        probe_conjugation_target_info=dict(
+            type="Atom_residue",
+            value=dict(atoms=["CA"], residues=["LYS"]),
+        ),
+        probe_paratope= "TITCH", 
+        labelling_efficiency=labeff,
+    )
     __, noiseless_, my_experiment_le = experiments.image_vsample(
-        probe_list=[primary_le],
+        primary_probe=primary_1,
+        secondary_probe=secondary_1,
         **common
     )
     my_experiment_le.particle.source = dict()
