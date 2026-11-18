@@ -988,3 +988,138 @@ def simple_width(image):
     x = np.arange(0, 500, dtype=float)
     width, center, p = _fwhm_1d(profile_, x, 5, 0, mode="total")
     return width
+
+def filament_strip_profiles(
+    image,
+    pixel_size=1.0,
+    strip_length=10.0,
+    half_width=50.0,
+    background_width=10.0,
+    threshold_rel=0.05,
+    flat_fraction=0.1,
+    reference_percentile=90,
+):
+    """
+    Line profiles across a straight filament, in strips along its central axis.
+
+    The central axis is the principal axis of the pixels above threshold_rel
+    of the maximum (intensity weighted), through their intensity centroid,
+    so the filament can have any orientation. From the first to the last of
+    these pixels along the axis, the filament is divided into strips of
+    strip_length (as many as fit, centred on that extent). The pixels of each strip within half_width of the axis are
+    projected on the direction across the axis: one line profile per strip
+    (mean intensity per bin of one pixel). The amplitude of a profile is its
+    maximum above the background (median of the outer background_width at
+    each side). A strip is flat, no filament crosses it, when its amplitude
+    is below flat_fraction of the reference amplitude (reference_percentile
+    of the amplitudes of all strips). A run of flat strips between two strips
+    that are not flat is an apparent break.
+
+    Parameters
+    ----------
+    image : 2D array
+        Image of a single, roughly straight filament.
+    pixel_size : float
+        Physical size of a pixel. strip_length, half_width, background_width
+        and the lengths returned are in the same units.
+    strip_length : float
+        Length of a strip along the axis.
+    half_width : float
+        Half the length of the profiles across the axis.
+    background_width : float
+        Length at each end of a profile used for its background.
+    threshold_rel : float
+        Fraction of the maximum above which pixels define the axis and its
+        extent.
+    flat_fraction : float
+        Fraction of the reference amplitude below which a strip is flat.
+    reference_percentile : float
+        Percentile of the strip amplitudes used as reference amplitude.
+
+    Returns
+    -------
+    dict with keys
+        "centroid", "direction" : point (px) and unit vector (row, col) of the axis
+        "positions"   : centre of each strip along the axis, from the centroid
+        "offsets"     : centre of each profile bin across the axis
+        "profiles"    : 2D array (n_strips, n_bins), one line profile per strip
+        "amplitudes"  : amplitude of each profile above its background
+        "flat"        : bool per strip
+        "n_strips"    : number of strips (0 for an empty image)
+        "fraction_flat"  : fraction of flat strips
+        "n_breaks"       : number of apparent breaks
+        "longest_break"  : length of the longest apparent break (0 if none)
+        "min_amplitude"  : smallest amplitude of the strips, without the first
+                           and last, relative to the reference amplitude
+    """
+    img = np.clip(np.asarray(image, dtype=float), 0, None)
+    if img.ndim != 2:
+        raise ValueError("image must be 2D")
+    result = dict(centroid=None, direction=None, positions=None, offsets=None,
+                  profiles=None, amplitudes=None, flat=None, n_strips=0,
+                  fraction_flat=np.nan, n_breaks=0, longest_break=0.0,
+                  min_amplitude=np.nan)
+    if img.max() <= 0:
+        return result
+
+    # central axis: principal axis of the bright pixels
+    rows, cols = np.indices(img.shape)
+    support = img >= threshold_rel * img.max()
+    if support.sum() < 2:
+        return result
+    weights = img[support]
+    points = np.column_stack([rows[support], cols[support]]).astype(float)
+    centroid = np.average(points, axis=0, weights=weights)
+    centred = points - centroid
+    cov = (centred * weights[:, None]).T @ centred / weights.sum()
+    direction = np.linalg.eigh(cov)[1][:, -1]
+    normal = np.array([-direction[1], direction[0]])
+    support_along = centred @ direction * pixel_size
+    start, end = support_along.min(), support_along.max()
+
+    # strips along the axis, centred on the extent, profiles across it
+    n_strips = max(int(round((end - start) / strip_length)), 1)
+    along_edges = 0.5 * (start + end - n_strips * strip_length) + strip_length * np.arange(n_strips + 1)
+    n_bins = max(int(round(2 * half_width / pixel_size)), 1)
+    across_edges = np.linspace(-half_width, half_width, n_bins + 1)
+    offsets_px = np.column_stack([rows.ravel(), cols.ravel()]) - centroid
+    along = offsets_px @ direction * pixel_size
+    across = offsets_px @ normal * pixel_size
+    inside = ((along >= along_edges[0]) & (along <= along_edges[-1])
+              & (np.abs(across) <= half_width))
+    bins = [along_edges, across_edges]
+    sums = np.histogram2d(along[inside], across[inside], bins=bins,
+                          weights=img.ravel()[inside])[0]
+    counts = np.histogram2d(along[inside], across[inside], bins=bins)[0]
+    profiles = sums / np.maximum(counts, 1)
+
+    # amplitude above the background of each profile
+    n_background = min(max(int(round(background_width / pixel_size)), 1), n_bins // 2)
+    edges = np.concatenate([profiles[:, :n_background], profiles[:, -n_background:]], axis=1)
+    amplitudes = np.clip(profiles.max(axis=1) - np.median(edges, axis=1), 0, None)
+    reference = np.percentile(amplitudes, reference_percentile)
+    flat = amplitudes < flat_fraction * reference if reference > 0 else np.ones(n_strips, bool)
+
+    # apparent breaks: runs of flat strips with a strip that is not flat at each side
+    padded = np.concatenate([[False], flat, [False]]).astype(int)
+    changes = np.flatnonzero(np.diff(padded))
+    run_starts, run_stops = changes[::2], changes[1::2]
+    interior = (run_starts > 0) & (run_stops < n_strips)
+    break_lengths = (run_stops - run_starts)[interior] * strip_length
+    inner = amplitudes[1:-1] if n_strips > 2 else amplitudes
+
+    result.update(
+        centroid=centroid,
+        direction=direction,
+        positions=0.5 * (along_edges[:-1] + along_edges[1:]),
+        offsets=0.5 * (across_edges[:-1] + across_edges[1:]),
+        profiles=profiles,
+        amplitudes=amplitudes,
+        flat=flat,
+        n_strips=n_strips,
+        fraction_flat=float(flat.mean()),
+        n_breaks=int(interior.sum()),
+        longest_break=float(break_lengths.max()) if break_lengths.size else 0.0,
+        min_amplitude=float(inner.min() / reference) if reference > 0 else np.nan,
+    )
+    return result
