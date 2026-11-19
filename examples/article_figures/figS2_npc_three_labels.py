@@ -18,6 +18,9 @@ Only pores whose localisations cover at least MIN_CORNERS of the eight
 corners (around the pore centre) are fitted, as sparse partial arcs give
 unstable circle fits; the number of pores used is reported.
 
+One simulated SMLM image per label is saved and shown with a dotted circle
+of the pore diameter at the Nup96 epitopes (NPC_DIAMETER_NM).
+
 Set VLAB4MIC_N_REALISATIONS to change the number of realisations.
 """
 
@@ -26,6 +29,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import tifffile
 
 from vlab4mic import experiments
 from vlab4mic.analysis.particle_measures import (
@@ -38,6 +42,7 @@ N_REALISATIONS = int(os.environ.get("VLAB4MIC_N_REALISATIONS", 100))
 RANDOM_SEED = 44
 LABELLING_EFFICIENCY = 0.4  # Supp. Note 4
 MIN_CORNERS = 5
+NPC_DIAMETER_NM = 107  # pore diameter at the Nup96 epitopes
 TARGET = dict(probe_target_type="Sequence", probe_target_value="ELAVGSL")
 LABELS = {
     "SNAP-tag": [dict(probe_template="SNAP-tag", probe_name="SNAP-tag", **TARGET)],
@@ -56,6 +61,7 @@ PUBLISHED_RADIUS_NM = {
 }
 
 rows = []
+images = {}  # one SMLM image per label, preferring a pore used in the fits
 for i, (label, probes) in enumerate(LABELS.items()):
     _, _, experiment = experiments.image_vsample(
         structure="7R5K",
@@ -70,6 +76,8 @@ for i, (label, probes) in enumerate(LABELS.items()):
     )
     experiment.set_virtualsample_params(random_orientations=False, random_rotations=True)
     for result in experiment.run_replicates(N_REALISATIONS, modality="SMLM"):
+        image = np.asarray(result["images"]["SMLM"]["ch0"])[0]
+        images.setdefault(label, (image, False))
         record = list(result["positions"]["SMLM"]["ch0"].values())[0]
         points = record["localisations"]
         if points is None or len(points) < 3:
@@ -83,6 +91,8 @@ for i, (label, probes) in enumerate(LABELS.items()):
                              n_localisations=len(points)))
             continue
         measures = ring_measures(points)
+        if not images[label][1]:
+            images[label] = (image, True)
         rows.append(dict(label=label, used=True, corners=corners,
                          radius_nm=measures["radius"], width_nm=measures["width"],
                          n_localisations=len(points)))
@@ -111,5 +121,25 @@ ax.plot(lims, lims, "--", color="grey")
 ax.set_xlabel("published ring radius (nm)")
 ax.set_ylabel("predicted ring radius (nm)")
 fig.savefig(prefix + "radius.png", dpi=300, bbox_inches="tight")
+plt.close()
+
+# simulated image per label with the pore diameter at the epitopes
+# detector pixel size is in units of the imager scale (metres per unit)
+pixelsize_nm = (experiment.imager.modalities["SMLM"]["detector"]["pixelsize"]
+                * experiment.imager.get_roi_params("scale") / 1e-9)
+fig, axes = plt.subplots(1, len(LABELS), figsize=[5 * len(LABELS), 5])
+for ax, label in zip(axes, LABELS):
+    image = images[label][0]
+    tifffile.imwrite(prefix + "image_" + label.replace(" ", "_") + ".tif", image)
+    height, width = image.shape
+    ax.imshow(image, cmap="grey", extent=[0, width * pixelsize_nm, height * pixelsize_nm, 0])
+    # the pore is at the centre of the field of view
+    centre = (width * pixelsize_nm / 2, height * pixelsize_nm / 2)
+    ax.add_patch(plt.Circle(centre, NPC_DIAMETER_NM / 2, fill=False, linestyle=":",
+                            color="yellow", linewidth=1.5))
+    ax.set_title(label)
+    ax.set_xlabel("x (nm)")
+    ax.set_ylabel("y (nm)")
+fig.savefig(prefix + "images_npc_diameter.png", dpi=300, bbox_inches="tight")
 plt.close()
 print(summary)
