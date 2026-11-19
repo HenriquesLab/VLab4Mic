@@ -18,11 +18,12 @@ Only pores whose localisations cover at least MIN_CORNERS of the eight
 corners (around the pore centre) are fitted, as sparse partial arcs give
 unstable circle fits; the number of pores used is reported.
 
-STED: not localisation based, so the radius is measured on the image with
-the Hough circle transform (metrics.get_circles), with the STED modality
-and circle detection parameters of figS_NPC_quantification.py. The circle
-closest to the image centre is taken; pores without a detected circle are
-not used.
+STED (modality parameters of figS_NPC_quantification.py): not localisation
+based, so the radius is measured on the image. The pixels within
+STED_REGION_NM of the image centre (where the pore is) are thresholded
+(Otsu) and a circle is fitted to the positions of the bright pixels
+(fit_circle_geometric); the width is the standard deviation of their
+distances to the centre.
 
 For each modality, one simulated image and the average image over all
 realisations per label (pores always at the image centre) are saved and
@@ -41,10 +42,11 @@ import tifffile
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 
 from vlab4mic import experiments
-from vlab4mic.analysis import metrics
 from vlab4mic.analysis.particle_measures import (
+    compute_threshold,
     count_occupied_sectors,
     fit_circle,
+    fit_circle_geometric,
     ring_measures,
 )
 
@@ -60,9 +62,8 @@ STED_PARAMS = dict(lateral_resolution_nm=15, axial_resolution_nm=20, psf_voxel_n
                    depth_of_field_nm=100, pixelsize_nm=15)
 STED_EXP_TIME = 0.0002
 STED_BINOMIAL_P = 0.7
-# expected ring radii for the Hough circle detection on STED images
-MIN_RADIUS_NM = 40
-MAX_RADIUS_NM = 70
+# STED pixels further than this from the image centre are background
+STED_REGION_NM = 100
 TARGET = dict(probe_target_type="Sequence", probe_target_value="ELAVGSL")
 LABELS = {
     "SNAP-tag": [dict(probe_template="SNAP-tag", probe_name="SNAP-tag", **TARGET)],
@@ -86,14 +87,6 @@ def pixelsize_nm(experiment, modality):
     return detector["pixelsize"] * detector["scale"] / 1e-9
 
 
-def to_uint8(img):
-    # scale the full intensity range to 0-255; casting 16-bit data to uint8
-    # directly wraps values modulo 256
-    img = np.asarray(img, dtype=float)
-    img = img - img.min()
-    return np.uint8(img / img.max() * 255) if img.max() > 0 else np.uint8(img)
-
-
 def measure_smlm(result):
     """Ring radius and width from the localisations of one pore."""
     record = list(result["positions"]["SMLM"]["ch0"].values())[0]
@@ -111,17 +104,20 @@ def measure_smlm(result):
 
 
 def measure_sted(image, pixelsize):
-    """Ring radius from the Hough circle closest to the image centre."""
-    min_radius_px = int(np.ceil(MIN_RADIUS_NM / pixelsize))
-    max_radius_px = int(np.ceil(MAX_RADIUS_NM / pixelsize))
-    circles = metrics.get_circles(to_uint8(image), dp=1, minDist=max_radius_px, param1=10,
-                                  param2=7, minRadius=min_radius_px, maxRadius=max_radius_px)[0]
-    if circles is None:
-        return dict(used=False, n_circles=0)
-    circles = circles[0]
-    image_centre = (np.array(image.shape[::-1]) - 1) / 2  # (x, y) in pixels
-    x, y, r = circles[np.argmin(np.linalg.norm(circles[:, :2] - image_centre, axis=1))]
-    return dict(used=True, n_circles=len(circles), radius_nm=r * pixelsize)
+    """Ring radius and width from a circle fit to the bright pixels around the image centre."""
+    rows_px, cols_px = np.indices(image.shape)
+    xy = np.c_[cols_px.ravel() + 0.5, rows_px.ravel() + 0.5] * pixelsize  # pixel centres, nm
+    values = np.asarray(image, dtype=float).ravel()
+    image_centre = np.array(image.shape[::-1]) * pixelsize / 2
+    # the pore is at the image centre: ignore the background further out
+    region = np.linalg.norm(xy - image_centre, axis=1) <= STED_REGION_NM
+    xy, values = xy[region], values[region]
+    points = xy[values > compute_threshold(values, method="otsu")]
+    if len(points) < 3:
+        return dict(used=False, n_pixels=len(points))
+    centre, radius = fit_circle_geometric(points)
+    width = np.linalg.norm(points - centre, axis=1).std()
+    return dict(used=True, n_pixels=len(points), radius_nm=radius, width_nm=width)
 
 
 rows = []
