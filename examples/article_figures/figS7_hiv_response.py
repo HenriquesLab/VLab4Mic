@@ -89,7 +89,10 @@ CONTROLS = {"brightness": "brightness"}  # scored alone, as a control
 FOV_NM = 600  # lateral size of the virtual sample and common field of view
 POSITION_JITTER_NM = 100  # random particle position, +-100 nm in x and y
 
-LABELLING_EFFICIENCIES = [0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 1.0]
+LABELLING_EFFICIENCIES = [0.001, 0.005, 0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 1.0]
+# seeds are drawn in the order the efficiencies were added, so the earlier
+# ones keep the seeds (and realisations) of the previous runs
+SEED_ORDER = [0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 1.0, 0.001, 0.005]
 INTACT = 1.0
 STRUCTURAL_INTEGRITIES = [0.25, 0.5, 0.75]  # each compared with INTACT
 SI_CLUSTERS = dict(structural_integrity_small_cluster=[20],  # A
@@ -185,14 +188,14 @@ def save_figure(fig, path_without_extension):
 def make_heatmaps(scores, prefix):
     """AUC (shape features) and brightness-alone AUC, as in Fig. 2b."""
     data = scores.copy()
-    data["labelling efficiency (%)"] = (100 * data.labelling_efficiency).round().astype(int)
+    data["labelling efficiency"] = data.labelling_efficiency
     data["structural integrity"] = data.structural_integrity
-    fig, axes = plt.subplots(2, len(MODALITIES), figsize=(3.4 * len(MODALITIES), 5.6),
+    fig, axes = plt.subplots(2, len(MODALITIES), figsize=(4.2 * len(MODALITIES), 5.6),
                              sharey=True, constrained_layout=True)
     for row, (metric, title) in enumerate([("auc", "shape features"),
                                            ("brightness_auc", "brightness alone")]):
         plot_distinguishability_heatmaps(
-            data, x="labelling efficiency (%)", y="structural integrity",
+            data, x="labelling efficiency", y="structural integrity",
             facet="modality_name", facet_order=MODALITIES, metric=metric, axes=axes[row])
         for ax, modality in zip(axes[row], MODALITIES):
             ax.set_title(f"{modality.replace('AiryScan', 'Airyscan')}, {title}")
@@ -236,7 +239,7 @@ def make_gallery(examples, prefix):
                     continue
                 ax.imshow(example["image"], cmap="gray", vmin=0, vmax=vmax or 1.0)
                 if r == 0:
-                    ax.set_title(f"{int(round(100 * le))}% LE\nintegrity {si:g}", fontsize=7)
+                    ax.set_title(f"LE {le:g}\nintegrity {si:g}", fontsize=7)
                 if c == 0 and b == 0:
                     ax.text(-0.08, 0.5, modality.replace("AiryScan", "Airyscan"), fontsize=8,
                             rotation=90, ha="right", va="center", transform=ax.transAxes)
@@ -263,8 +266,9 @@ def main():
     else:
         prefix = os.path.join(str(output_path),
                               ExperimentParametrisation().date_as_string + "figS7_hiv_")
-        seeds = np.random.SeedSequence(RANDOM_SEED).generate_state(len(LABELLING_EFFICIENCIES))
-        jobs = [(le, int(seed)) for le, seed in zip(LABELLING_EFFICIENCIES, seeds)]
+        seeds = dict(zip(SEED_ORDER,
+                         np.random.SeedSequence(RANDOM_SEED).generate_state(len(SEED_ORDER))))
+        jobs = [(le, int(seeds[le])) for le in LABELLING_EFFICIENCIES]
         print(f"{len(jobs)} sweeps, {N_REALISATIONS} realisations per condition, "
               f"{N_WORKERS} worker(s)")
         if N_WORKERS > 1:
