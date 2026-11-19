@@ -30,6 +30,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import tifffile
+from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 
 from vlab4mic import experiments
 from vlab4mic.analysis.particle_measures import (
@@ -43,6 +44,7 @@ RANDOM_SEED = 44
 LABELLING_EFFICIENCY = 0.4  # Supp. Note 4
 MIN_CORNERS = 5
 NPC_DIAMETER_NM = 107  # pore diameter at the Nup96 epitopes
+SCALEBAR_NM = 100
 TARGET = dict(probe_target_type="Sequence", probe_target_value="ELAVGSL")
 LABELS = {
     "SNAP-tag": [dict(probe_template="SNAP-tag", probe_name="SNAP-tag", **TARGET)],
@@ -142,8 +144,12 @@ def plot_images_with_npc_diameter(images_per_label, name):
         ax.add_patch(plt.Circle(centre, NPC_DIAMETER_NM / 2, fill=False, linestyle=":",
                                 color="yellow", linewidth=1.5))
         ax.set_title(label)
-        ax.set_xlabel("x (nm)")
-        ax.set_ylabel("y (nm)")
+        ax.set_xticks([])
+        ax.set_yticks([])
+    # axes are in nm, so the scale bar size is in nm
+    axes[-1].add_artist(AnchoredSizeBar(axes[-1].transData, SCALEBAR_NM, f"{SCALEBAR_NM} nm",
+                                        "lower right", color="white", frameon=False,
+                                        size_vertical=10))
     fig.savefig(prefix + name + "s_npc_diameter.png", dpi=300, bbox_inches="tight")
     plt.close()
 
