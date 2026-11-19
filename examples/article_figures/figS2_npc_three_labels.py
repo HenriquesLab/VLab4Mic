@@ -62,6 +62,7 @@ PUBLISHED_RADIUS_NM = {
 
 rows = []
 images = {}  # one SMLM image per label, preferring a pore used in the fits
+image_sums = {}  # sum of the SMLM images of all realisations per label
 for i, (label, probes) in enumerate(LABELS.items()):
     _, _, experiment = experiments.image_vsample(
         structure="7R5K",
@@ -78,6 +79,7 @@ for i, (label, probes) in enumerate(LABELS.items()):
     for result in experiment.run_replicates(N_REALISATIONS, modality="SMLM"):
         image = np.asarray(result["images"]["SMLM"]["ch0"])[0]
         images.setdefault(label, (image, False))
+        image_sums[label] = image_sums.get(label, 0) + image.astype(float)
         record = list(result["positions"]["SMLM"]["ch0"].values())[0]
         points = record["localisations"]
         if points is None or len(points) < 3:
@@ -123,23 +125,35 @@ ax.set_ylabel("predicted ring radius (nm)")
 fig.savefig(prefix + "radius.png", dpi=300, bbox_inches="tight")
 plt.close()
 
-# simulated image per label with the pore diameter at the epitopes
 # detector pixel size is in units of the imager scale (metres per unit)
 pixelsize_nm = (experiment.imager.modalities["SMLM"]["detector"]["pixelsize"]
                 * experiment.imager.get_roi_params("scale") / 1e-9)
-fig, axes = plt.subplots(1, len(LABELS), figsize=[5 * len(LABELS), 5])
-for ax, label in zip(axes, LABELS):
-    image = images[label][0]
-    tifffile.imwrite(prefix + "image_" + label.replace(" ", "_") + ".tif", image)
-    height, width = image.shape
-    ax.imshow(image, cmap="grey", extent=[0, width * pixelsize_nm, height * pixelsize_nm, 0])
-    # the pore is at the centre of the field of view
-    centre = (width * pixelsize_nm / 2, height * pixelsize_nm / 2)
-    ax.add_patch(plt.Circle(centre, NPC_DIAMETER_NM / 2, fill=False, linestyle=":",
-                            color="yellow", linewidth=1.5))
-    ax.set_title(label)
-    ax.set_xlabel("x (nm)")
-    ax.set_ylabel("y (nm)")
-fig.savefig(prefix + "images_npc_diameter.png", dpi=300, bbox_inches="tight")
-plt.close()
+
+
+def plot_images_with_npc_diameter(images_per_label, name):
+    """Save each image as tif and plot them with the pore diameter at the epitopes."""
+    fig, axes = plt.subplots(1, len(images_per_label), figsize=[5 * len(images_per_label), 5])
+    for ax, (label, image) in zip(axes, images_per_label.items()):
+        tifffile.imwrite(prefix + name + "_" + label.replace(" ", "_") + ".tif", image)
+        height, width = image.shape
+        ax.imshow(image, cmap="grey", extent=[0, width * pixelsize_nm, height * pixelsize_nm, 0])
+        # the pore is at the centre of the field of view
+        centre = (width * pixelsize_nm / 2, height * pixelsize_nm / 2)
+        ax.add_patch(plt.Circle(centre, NPC_DIAMETER_NM / 2, fill=False, linestyle=":",
+                                color="yellow", linewidth=1.5))
+        ax.set_title(label)
+        ax.set_xlabel("x (nm)")
+        ax.set_ylabel("y (nm)")
+    fig.savefig(prefix + name + "s_npc_diameter.png", dpi=300, bbox_inches="tight")
+    plt.close()
+
+
+# one simulated image per label
+plot_images_with_npc_diameter({label: images[label][0] for label in LABELS}, "image")
+# average image per label over all realisations (pore always at the image centre)
+n_per_label = results.groupby("label").size()
+plot_images_with_npc_diameter(
+    {label: (image_sums[label] / n_per_label[label]).astype(np.float32) for label in LABELS},
+    "average_image",
+)
 print(summary)
