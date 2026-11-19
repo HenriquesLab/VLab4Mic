@@ -151,3 +151,22 @@ def test_emitters_in_ROI_filters_several_emitters():
 def test_emitters_in_ROI_handles_no_emitters():
     imager = _imager_with_emitters([])
     assert imager.get_emitters_in_ROI("test_fluo").shape == (0, 3)
+
+
+# modalities whose images go through the detector noise model
+NOISY_MODALITIES = ["Widefield", "Confocal", "AiryScan", "STED", "Reference"]
+
+
+@pytest.mark.parametrize("exp_time", [0, 0.001])
+def test_generated_images_have_no_negative_values(exp_time):
+    # regression: readout noise around a zero baseline gave negative pixels,
+    # and the FFT convolution left round-off below 0 in the noiseless image
+    imager, _ = experiments.build_virtual_microscope(multimodal=NOISY_MODALITIES)
+    imager.emitters_by_fluorophore = {"AF647": [_roi_centre(imager).tolist()]}
+    for modality in NOISY_MODALITIES:
+        np.random.seed(0)
+        noisy, _, noiseless, _ = imager.generate_imaging(
+            modality=modality, exp_time=exp_time, noise=True
+        )
+        assert np.asarray(noisy["ch0"]).min() >= 0, modality
+        assert np.asarray(noiseless["ch0"]).min() >= 0, modality

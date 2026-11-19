@@ -41,3 +41,15 @@ def test_saturation_is_applied():
 
     out = Imager._adjust_to_pixel_depth(Stub(), "m", np.array([10, 300]))
     np.testing.assert_array_equal(out, [10, 255])
+
+
+@pytest.mark.parametrize("bits, expected", [(8, [0, 10, 255]), (None, [0, 10, 300])])
+def test_pixel_depth_clips_negative_readout(bits, expected):
+    # regression: readout noise around a zero baseline gave negative pixels
+    from vlab4mic.generate.imaging import Imager
+
+    class Stub:
+        modalities = {"m": {"detector": {"bits_pixel": bits}}}
+
+    out = Imager._adjust_to_pixel_depth(Stub(), "m", np.array([-3, 10, 300]))
+    np.testing.assert_array_equal(out, expected)
