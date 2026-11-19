@@ -66,3 +66,38 @@ def test_sites_resolved_follows_precision(precision, expected):
 
     resolved, n_components = sites_resolved(_triangle_localisations(precision), 3)
     assert resolved is expected
+
+
+def _filament_image(angle_deg=0, length=200, gap=0, size=300, blur=2):
+    # straight line of bright pixels through the centre, gap pixels missing in the middle
+    from scipy.ndimage import gaussian_filter
+
+    image = np.zeros((size, size))
+    angle = np.radians(angle_deg)
+    for t in np.arange(-length / 2, length / 2, 0.5):
+        if abs(t) < gap / 2:
+            continue
+        image[int(round(size / 2 + t * np.cos(angle))), int(round(size / 2 + t * np.sin(angle)))] = 1
+    return gaussian_filter(image, blur)
+
+
+@pytest.mark.parametrize("angle_deg", [0, 30, 90])
+def test_filament_strip_profiles(angle_deg):
+    from vlab4mic.analysis.particle_measures import filament_strip_profiles
+
+    intact = filament_strip_profiles(_filament_image(angle_deg), pixel_size=2, strip_length=10, half_width=30)
+    assert intact["n_breaks"] == 0
+    assert intact["fraction_flat"] == 0
+    assert intact["n_strips"] * 10 == pytest.approx(400, abs=20)
+    broken = filament_strip_profiles(_filament_image(angle_deg, gap=40), pixel_size=2, strip_length=10, half_width=30)
+    assert broken["n_breaks"] == 1
+    # 40 px gap = 80 units, minus the blur at its ends
+    assert 50 <= broken["longest_break"] <= 80
+    assert broken["min_amplitude"] < 0.1
+
+
+def test_filament_strip_profiles_empty():
+    from vlab4mic.analysis.particle_measures import filament_strip_profiles
+
+    result = filament_strip_profiles(np.zeros((50, 50)))
+    assert result["n_strips"] == 0 and result["n_breaks"] == 0

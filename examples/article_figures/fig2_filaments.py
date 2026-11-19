@@ -305,25 +305,37 @@ df3, filament_metrics_list3, masks3, blurred3, tables3 = measure_filaments(
     **filaments_params
     )
 
+# simple_width is in pixels: convert to nm with the pixel size of the SMLM image
 combined_df_sw = pd.DataFrame(data={
     "Primary": df1["s_width"],
     "Primary_Secondary_SiteSpec": df3["s_width"],
     "Primary_Secondary_NHS": df2["s_width"],
     }
-)
+) * filaments_params["pixel_size"]
 custom_palette = {
     "Primary": "#F58B19",
     "Primary_Secondary_SiteSpec": "green",
     "Primary_Secondary_NHS": "#a34bb0",
 }
 
+# legend labels with the mean and standard deviation of each strategy
+legend_labels = {
+    strategy: f"{strategy} ({combined_df_sw[strategy].mean():.1f} ± {combined_df_sw[strategy].std():.1f} nm)"
+    for strategy in combined_df_sw.columns
+}
 fig = plt.figure()
 ax = fig.add_subplot(111)
-filament_diameters = sns.histplot(data=combined_df_sw, palette=custom_palette, bins=30, ax=ax)
+filament_diameters = sns.histplot(
+    data=combined_df_sw.rename(columns=legend_labels),
+    palette={legend_labels[k]: v for k, v in custom_palette.items()},
+    bins=30, ax=ax)
+ax.set_xlabel("Apparent diameter (nm)")
 filename = my_experiment_probe3.date_as_string + 'vlab4mic_apparent_diameter_microtubule.png'
 filename2 = os.path.join(my_experiment.output_directory, filename)
-fig.savefig(filename2, dpi=300, bbox_inches='tight') 
+fig.savefig(filename2, dpi=300, bbox_inches='tight')
 plt.close()
+filename = my_experiment_probe3.date_as_string + 'vlab4mic_apparent_diameter_microtubule.csv'
+combined_df_sw.to_csv(os.path.join(my_experiment.output_directory, filename), index=False)
 
 ### Hollow cylinder fit of the 3D localisations
 reference_diameter = 25    # nm, microtubule
@@ -634,6 +646,8 @@ merged = pd.concat(
     [d.assign(source=name) for name, d in dfs.items()],
     ignore_index=True,
 )
+filename = my_experiment_le.date_as_string + 'vlab4mic_filament_measures_per_LE.csv'
+merged.to_csv(os.path.join(my_experiment_le.output_directory, filename), index=False)
 fig = plt.figure()
 ax = fig.add_subplot(111)
 sns.swarmplot(data=merged, x="source", y="mean_eccentricity", ax=ax, s=1)

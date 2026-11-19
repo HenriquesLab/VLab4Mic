@@ -71,15 +71,16 @@ for labeff in labelling_efficiencies:
 
 
 
-####### 
-counting_measures_per_le = dict()
-split_z = False
+#######
+# split_z: False counts corners on both rings of the pore together,
+# True keeps only the ring above the mean z (one side of the pore)
+SPLIT_Z_CONDITIONS = {"Both sides of NPC": False, "One side of NPC": True}
 min_locs_per_segment = 4
+n_corners = 8
 sectorcounting_params_le = dict(
     modality="SMLM",
     channel="ch0",
-    split_z = split_z,
-    n_corners=8,
+    n_corners=n_corners,
     radius=52,
     r_min=30,
     r_max=70,
@@ -87,95 +88,97 @@ sectorcounting_params_le = dict(
     min_locs_to_circlefit=nlocalisations,
     max_radius=80,
 )
+# scalar columns of the ring_corners_from_replicates table, saved as csv
+CSV_COLUMNS = ["replicate", "n_localisations", "radius_fit", "n_corners", "n_segments_occupied"]
 
-for i in labelling_efficiencies:
-    results, images_list, rows = ring_corners_from_replicates(
-    replicates=replicates_per_le[i], 
-    **sectorcounting_params_le
-    )
-    counting_measures_per_le[i] = dict()
-    counting_measures_per_le[i]["dataframe"] = results
-    counting_measures_per_le[i]["images"] = images_list
-    counting_measures_per_le[i]["rows"] = rows
-
-dfs = dict() 
-for lef in labelling_efficiencies:
-    dfs[lef] = counting_measures_per_le[lef]["dataframe"]
+counting_measures = dict()  # sides -> labelling efficiency -> dataframe, images, rows
+for sides, split_z in SPLIT_Z_CONDITIONS.items():
+    counting_measures[sides] = dict()
+    for lef in labelling_efficiencies:
+        results, images_list, rows = ring_corners_from_replicates(
+            replicates=replicates_per_le[lef],
+            split_z=split_z,
+            **sectorcounting_params_le
+        )
+        counting_measures[sides][lef] = dict(dataframe=results, images=images_list, rows=rows)
 
 merged = pd.concat(
-    [d.assign(source=name) for name, d in dfs.items()],
+    [counting_measures[sides][lef]["dataframe"][CSV_COLUMNS].assign(
+        sides=sides, split_z=split_z, labelling_efficiency=lef)
+     for sides, split_z in SPLIT_Z_CONDITIONS.items() for lef in labelling_efficiencies],
     ignore_index=True,
 )
-######## plot 1
-fig, ax = plt.subplots(figsize=(5, 3.5))
-sns.boxplot(data=merged, x="source", y="n_corners", ax=ax)
-plt.xlabel("Labelling efficiency")
-plt.ylabel("Number of Corners detected")
-if split_z:
-    sides = "One side of NPC"
-else:
-    sides = "Both sides of NPC"
-plt.title("Corners detected on NPC simuations" + "\n" + sides + "\n" + "Min locs per sector = " + str(min_locs_per_segment))
-filename = my_experiment_le.date_as_string + 'vlab4mic_corners_detected_on_NPC_simuations.png'
-filename2 = os.path.join(my_experiment_le.output_directory, filename)
-fig.savefig(filename2, dpi=300, bbox_inches='tight')
-plt.close()
-
-#### plot 2
-n_corners = 8
-lab_eff_reference = 0.3
-counts = counting_measures_per_le[lab_eff_reference]["dataframe"].n_corners
-hist =  np.bincount(counts, minlength=n_corners + 1)
-fig, ax = plt.subplots(figsize=(5, 3.5))
-ax.bar(np.arange(9), hist, label="detected")
-ax.set_xlabel("corners per NPC")
-ax.set_ylabel("NPCs")
-ax.legend()
-if split_z:
-    sides = "One side of NPC"
-else:
-    sides = "Both sides of NPC"
-ax.set_title("Corners detected on NPC simuations. LE = " + str(lab_eff_reference) + "\n" + sides + "\n" + "Min locs per sector = " + str(min_locs_per_segment))
-filename = my_experiment_le.date_as_string + 'vlab4mic_corners_detected_on_NPC_simuations_0.3LE.png'
-filename2 = os.path.join(my_experiment_le.output_directory, filename)
-fig.savefig(filename2, dpi=300, bbox_inches='tight')
-plt.close()
+merged["radius_fit"] = merged["radius_fit"].astype(float)
+summary = merged.groupby(["sides", "labelling_efficiency"], sort=False).agg(
+    n_corners_mean=("n_corners", "mean"), n_corners_sd=("n_corners", "std"),
+    radius_fit_mean=("radius_fit", "mean"), radius_fit_sd=("radius_fit", "std"),
+    n_radius_fit=("radius_fit", "count"), n_total=("n_corners", "size"),
+)
+prefix = os.path.join(my_experiment_le.output_directory,
+                      my_experiment_le.date_as_string + 'vlab4mic_npc_corners_')
+merged.to_csv(prefix + "particles.csv", index=False)
+summary.to_csv(prefix + "summary.csv")
+print(summary)
 
 
+for sides, split_z in SPLIT_Z_CONDITIONS.items():
+    # one output per split_z condition, one side marked in the file name
+    suffix = '_one_side' if split_z else ''
+    merged_sides = merged[merged.sides == sides]
 
-### plot 3
-from scipy.stats import binom
+    ######## plot 1
+    fig, ax = plt.subplots(figsize=(5, 3.5))
+    sns.boxplot(data=merged_sides, x="labelling_efficiency", y="n_corners", ax=ax)
+    plt.xlabel("Labelling efficiency")
+    plt.ylabel("Number of Corners detected")
+    plt.title("Corners detected on NPC simuations" + "\n" + sides + "\n" + "Min locs per sector = " + str(min_locs_per_segment))
+    filename = my_experiment_le.date_as_string + 'vlab4mic_corners_detected_on_NPC_simuations' + suffix + '.png'
+    filename2 = os.path.join(my_experiment_le.output_directory, filename)
+    fig.savefig(filename2, dpi=300, bbox_inches='tight')
+    plt.close()
 
-n_corners = 8
-lab_eff_reference = 0.4
-counts = counting_measures_per_le[lab_eff_reference]["dataframe"].n_corners
-hist =  np.bincount(counts, minlength=n_corners + 1)
+    #### plots 2 and 3, mean and std shown for LE 0.3
+    for lab_eff_reference in [0.3, 0.4]:
+        counts = counting_measures[sides][lab_eff_reference]["dataframe"].n_corners
+        hist = np.bincount(counts, minlength=n_corners + 1)
+        label = "detected"
+        if lab_eff_reference == 0.3:
+            label += f"\nmean ± std = {counts.mean():.2f} ± {counts.std():.2f}"
+        fig, ax = plt.subplots(figsize=(5, 3.5))
+        ax.bar(np.arange(n_corners + 1), hist, label=label)
+        ax.set_xlabel("corners per NPC")
+        ax.set_ylabel("NPCs")
+        if lab_eff_reference == 0.3:
+            ax.set_ylim(top=hist.max() * 1.35)  # room for the mean and std in the legend
+        ax.legend()
+        ax.set_title("Corners detected on NPC simuations. LE = " + str(lab_eff_reference) + "\n" + sides + "\n" + "Min locs per sector = " + str(min_locs_per_segment))
+        filename = my_experiment_le.date_as_string + 'vlab4mic_corners_detected_on_NPC_simuations_' + str(lab_eff_reference) + 'LE' + suffix + '.png'
+        filename2 = os.path.join(my_experiment_le.output_directory, filename)
+        fig.savefig(filename2, dpi=300, bbox_inches='tight')
+        plt.close()
 
-fig, ax = plt.subplots(figsize=(5, 3.5))
-ax.bar(np.arange(9), hist, label="detected")
-ax.set_xlabel("corners per NPC")
-ax.set_ylabel("NPCs")
-ax.legend()
-if split_z:
-    sides = "One side of NPC"
-else:
-    sides = "Both sides of NPC"
-ax.set_title("Corners detected on NPC simuations. LE = " + str(lab_eff_reference) + "\n" + sides + "\n" + "Min locs per sector = " + str(min_locs_per_segment))
-filename = my_experiment_le.date_as_string + 'vlab4mic_corners_detected_on_NPC_simuations_0.4LE.png'
-filename2 = os.path.join(my_experiment_le.output_directory, filename)
-fig.savefig(filename2, dpi=300, bbox_inches='tight')
-plt.close()
+    # plot 6
+    fig, ax = plt.subplots(figsize=(5, 3.5))
+    sns.boxplot(data=merged_sides, x="labelling_efficiency", y="radius_fit", ax=ax)
+    plt.xlabel("Labelling efficiency")
+    plt.ylabel("Radius fit")
+    plt.title(sides)
+    filename = my_experiment_le.date_as_string + 'vlab4mic_npc_radius_fit_LE' + suffix + '.png'
+    filename2 = os.path.join(my_experiment_le.output_directory, filename)
+    fig.savefig(filename2, dpi=300, bbox_inches='tight')
+    plt.close()
 
 
 
 ### plot 4
-
+# the images do not depend on split_z
+images_per_le = counting_measures["Both sides of NPC"]
 n_le = len(labelling_efficiencies)
 nrows = 5
 fig, ax = plt.subplots(nrows, n_le, figsize=(30,10))
 for row in range(nrows):
     for i, lef in enumerate(labelling_efficiencies):
-        ax[row,i].imshow(counting_measures_per_le[lef]["images"][row][0], cmap = "grey")
+        ax[row,i].imshow(images_per_le[lef]["images"][row][0], cmap = "grey")
         ax[row,i].set_title(f"LE = {lef}")
         ax[row,i].set_xticks([])
         ax[row,i].set_yticks([])
@@ -196,23 +199,15 @@ plt.close()
 #threshold_for_plot = 4
 threshold_for_plot = [4, 6, 8]
 lab_eff_reference = 0.3
-_df = counting_measures_per_le[lab_eff_reference]["dataframe"]
-for ncorners in threshold_for_plot:
-    corners = results[_df.n_corners == ncorners]
-    ids = list(_df.loc[_df["n_corners"] == ncorners].replicate)
-    for example in ids[:1]:
-        fig = plot_ring_corners(counting_measures_per_le[lab_eff_reference]["rows"][example])
-    filename = my_experiment_le.date_as_string + 'vlab4mic_npc_corners_example_' + str(ncorners) + '.png'
-    filename2 = os.path.join(my_experiment_le.output_directory, filename)
-    fig.savefig(filename2, dpi=300, bbox_inches='tight')
-    plt.close()
-
-# plot 6
-fig, ax = plt.subplots(figsize=(5, 3.5))
-sns.boxplot(data=merged, x="source", y="radius_fit", ax=ax)
-plt.xlabel("Labelling efficiency")
-plt.ylabel("Radius fit")
-filename = my_experiment_le.date_as_string + 'vlab4mic_npc_radius_fit_LE.png'
-filename2 = os.path.join(my_experiment_le.output_directory, filename)
-fig.savefig(filename2, dpi=300, bbox_inches='tight')
-plt.close()
+for sides, split_z in SPLIT_Z_CONDITIONS.items():
+    _df = counting_measures[sides][lab_eff_reference]["dataframe"]
+    for ncorners in threshold_for_plot:
+        ids = list(_df.loc[_df["n_corners"] == ncorners].replicate)
+        if not ids:
+            continue
+        fig = plot_ring_corners(counting_measures[sides][lab_eff_reference]["rows"][ids[0]])
+        suffix = '_one_side' if split_z else ''
+        filename = my_experiment_le.date_as_string + 'vlab4mic_npc_corners_example_' + str(ncorners) + suffix + '.png'
+        filename2 = os.path.join(my_experiment_le.output_directory, filename)
+        fig.savefig(filename2, dpi=300, bbox_inches='tight')
+        plt.close()
