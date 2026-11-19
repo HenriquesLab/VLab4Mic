@@ -21,7 +21,9 @@ unstable circle fits; the number of pores used is reported.
 STED (modality parameters of figS_NPC_quantification.py, with a lower read
 noise): the exposure time of each label is set so that a pore gives
 STED_SIGNAL_PHOTONS, so all labels have the same brightness despite their
-different numbers of fluorophores. STED is not localisation based, so the
+different numbers of fluorophores. STED is also simulated with the same
+exposure time (STED_EXP_TIME) for all labels (STED_fixed_exposure), shown
+with unfilled markers on the same radius plot. STED is not localisation based, so the
 radius is measured on the image. The pixels within
 STED_REGION_NM of the image centre (where the pore is) are thresholded
 (Otsu) and a circle is fitted to the positions of the bright pixels
@@ -59,7 +61,17 @@ LABELLING_EFFICIENCY = 0.4  # Supp. Note 4
 MIN_CORNERS = 5
 NPC_DIAMETER_NM = 107  # pore diameter at the Nup96 epitopes
 SCALEBAR_NM = 100
-MODALITIES = ["SMLM", "STED"]
+# condition name: modality and, for STED, whether the exposure is scaled per label
+CONDITIONS = {
+    "SMLM": dict(modality="SMLM", equal_brightness=False),
+    "STED": dict(modality="STED", equal_brightness=True),
+    "STED_fixed_exposure": dict(modality="STED", equal_brightness=False),
+}
+# radius plots: colour per label, filled markers except for fixed-exposure STED
+LABEL_COLOURS = {"SNAP-tag": "C0", "anti-GFP nanobody": "C1", "anti-GFP antibody": "C2"}
+CONDITION_FILLED = {"SMLM": True, "STED": True, "STED_fixed_exposure": False}
+CONDITION_NAMES = {"SMLM": "SMLM", "STED": "equal brightness",
+                   "STED_fixed_exposure": "fixed exposure"}
 # STED as in figS_NPC_quantification.py (Thevathasan et al. 2019)
 STED_PARAMS = dict(lateral_resolution_nm=15, axial_resolution_nm=20, psf_voxel_nm=5,
                    depth_of_field_nm=100, pixelsize_nm=15)
@@ -136,10 +148,11 @@ def measure_sted(image, pixelsize):
 
 
 rows = []
-images = {}  # one image per modality and label, preferring a pore used in the fits
-image_sums = {}  # sum of the images of all realisations per modality and label
+images = {}  # one image per condition and label, preferring a pore used in the fits
+image_sums = {}  # sum of the images of all realisations per condition and label
 pixelsizes = {}
-for m, modality in enumerate(MODALITIES):
+for c, (condition, settings) in enumerate(CONDITIONS.items()):
+    modality = settings["modality"]
     for i, (label, probes) in enumerate(LABELS.items()):
         _, _, experiment = experiments.image_vsample(
             structure="7R5K",
@@ -150,21 +163,23 @@ for m, modality in enumerate(MODALITIES):
             sample_inital_orientation=[0, 0, 1],
             run_simulation=False,
             clear_experiment=True,
-            random_seed=RANDOM_SEED + len(LABELS) * m + i,
+            random_seed=RANDOM_SEED + len(LABELS) * c + i,
         )
         experiment.set_virtualsample_params(random_orientations=False, random_rotations=True)
         exp_time = None
         if modality == "STED":
             experiment.update_modality(modality_name="STED", **STED_PARAMS)
-            set_sted_acquisition(experiment, STED_EXP_TIME)
-            # equal brightness for all labels: scale the exposure to the label's signal
-            calibration = experiment.run_replicates(STED_CALIBRATION_REALISATIONS, modality="STED")
-            signal = np.mean([np.asarray(r["images_noiseless"]["STED"]["ch0"])[0].sum()
-                              for r in calibration])
-            exp_time = STED_EXP_TIME * STED_SIGNAL_PHOTONS / signal
+            exp_time = STED_EXP_TIME
             set_sted_acquisition(experiment, exp_time)
-        pixelsizes[modality] = pixelsize_nm(experiment, modality)
-        key = (modality, label)
+            if settings["equal_brightness"]:
+                # equal brightness for all labels: scale the exposure to the label's signal
+                calibration = experiment.run_replicates(STED_CALIBRATION_REALISATIONS, modality="STED")
+                signal = np.mean([np.asarray(r["images_noiseless"]["STED"]["ch0"])[0].sum()
+                                  for r in calibration])
+                exp_time = STED_EXP_TIME * STED_SIGNAL_PHOTONS / signal
+                set_sted_acquisition(experiment, exp_time)
+        pixelsizes[condition] = pixelsize_nm(experiment, modality)
+        key = (condition, label)
         for result in experiment.run_replicates(N_REALISATIONS, modality=modality):
             image = np.asarray(result["images"][modality]["ch0"])[0]
             images.setdefault(key, (image, False))
@@ -172,20 +187,22 @@ for m, modality in enumerate(MODALITIES):
             if modality == "SMLM":
                 measures = measure_smlm(result)
             else:
-                measures = measure_sted(image, pixelsizes[modality])
+                measures = measure_sted(image, pixelsizes[condition])
             if measures["used"] and not images[key][1]:
                 images[key] = (image, True)
-            rows.append(dict(modality=modality, label=label, exp_time=exp_time, **measures))
+            rows.append(dict(condition=condition, modality=modality, label=label,
+                             exp_time=exp_time, **measures))
 
 results = pd.DataFrame(rows)
 used = results[results.used]
-summary = used.groupby(["modality", "label"]).agg(
+summary = used.groupby(["condition", "label"]).agg(
     radius_mean=("radius_nm", "mean"), radius_sd=("radius_nm", "std"),
     width_mean=("width_nm", "mean"), n_used=("radius_nm", "size"),
 )
-index = pd.MultiIndex.from_product([MODALITIES, list(LABELS)], names=["modality", "label"])
+index = pd.MultiIndex.from_product([list(CONDITIONS), list(LABELS)], names=["condition", "label"])
 summary = summary.reindex(index)
-summary["n_total"] = results.groupby(["modality", "label"]).size().reindex(index)
+summary["n_total"] = results.groupby(["condition", "label"]).size().reindex(index)
+summary["exp_time"] = results.groupby(["condition", "label"]).exp_time.mean().reindex(index)
 summary["published_radius"] = [PUBLISHED_RADIUS_NM[k][0] for k in index.get_level_values("label")]
 summary["published_sd"] = [PUBLISHED_RADIUS_NM[k][1] for k in index.get_level_values("label")]
 out = experiment.output_directory
@@ -217,27 +234,40 @@ def plot_images_with_npc_diameter(images_per_label, pixelsize, name):
     plt.close()
 
 
-for modality in MODALITIES:
-    modality_summary = summary.loc[modality]
+# predicted vs published radius, one plot per modality with all its conditions
+for modality in dict.fromkeys(s["modality"] for s in CONDITIONS.values()):
     fig, ax = plt.subplots(figsize=[5, 5])
-    ax.errorbar(modality_summary.published_radius, modality_summary.radius_mean,
-                xerr=modality_summary.published_sd, yerr=modality_summary.radius_sd, fmt="o")
-    for label, row in modality_summary.iterrows():
-        ax.annotate(label, (row.published_radius, row.radius_mean))
+    modality_conditions = [c for c, s in CONDITIONS.items() if s["modality"] == modality]
+    for condition in modality_conditions:
+        filled = CONDITION_FILLED[condition]
+        for label, row in summary.loc[condition].iterrows():
+            colour = LABEL_COLOURS[label]
+            ax.errorbar(row.published_radius, row.radius_mean, xerr=row.published_sd,
+                        yerr=row.radius_sd, fmt="o", color=colour,
+                        markerfacecolor=colour if filled else "white", markeredgecolor=colour)
     lims = [45, 75]
     ax.plot(lims, lims, "--", color="grey")
     ax.set_xlabel("published ring radius (nm)")
     ax.set_ylabel(f"predicted ring radius, {modality} (nm)")
+    # legend: colour = label, marker fill = condition (only when there are several)
+    handles = [plt.Line2D([], [], marker="o", linestyle="", color=colour, label=label)
+               for label, colour in LABEL_COLOURS.items()]
+    if len(modality_conditions) > 1:
+        handles += [plt.Line2D([], [], marker="o", linestyle="", color="grey",
+                               markerfacecolor="grey" if CONDITION_FILLED[c] else "white",
+                               label=CONDITION_NAMES[c]) for c in modality_conditions]
+    ax.legend(handles=handles, loc="upper left")
     fig.savefig(prefix + modality + "_radius.png", dpi=300, bbox_inches="tight")
     plt.close()
 
+for condition in CONDITIONS:
     # one simulated image per label
-    plot_images_with_npc_diameter({label: images[(modality, label)][0] for label in LABELS},
-                                  pixelsizes[modality], modality + "_image")
+    plot_images_with_npc_diameter({label: images[(condition, label)][0] for label in LABELS},
+                                  pixelsizes[condition], condition + "_image")
     # average image per label over all realisations (pore always at the image centre)
     plot_images_with_npc_diameter(
-        {label: (image_sums[(modality, label)] / modality_summary.n_total[label]).astype(np.float32)
+        {label: (image_sums[(condition, label)] / summary.loc[(condition, label), "n_total"]).astype(np.float32)
          for label in LABELS},
-        pixelsizes[modality], modality + "_average_image",
+        pixelsizes[condition], condition + "_average_image",
     )
 print(summary)
