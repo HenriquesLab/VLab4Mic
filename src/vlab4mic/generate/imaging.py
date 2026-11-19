@@ -1303,6 +1303,13 @@ class Imager:
                     timeseries_noiseless, beadstack_noiseless = (
                         self._add_fluorophore_signals(output_per_fluoname)
                     )
+                    # remove the round-off of the FFT convolution (~-1e-16)
+                    timeseries_noiseless = self._crop_negative(
+                        timeseries_noiseless
+                    )
+                    beadstack_noiseless = self._crop_negative(
+                        beadstack_noiseless
+                    )
                     # # # Up to here only the photon information on arrival
                     timeseries_noise = None
                     beadstack_noise = None
@@ -1614,14 +1621,15 @@ class Imager:
         return stack
 
     def _adjust_to_pixel_depth(self, modality, stack):
-        # clip to the range of the detector bit depth (no clipping if the
-        # bit depth is not set)
-        """Clip an image stack to the saturation level of the detector bit depth."""
+        # the detector output is unsigned: readout noise around a zero
+        # baseline is clipped to 0. The top is clipped to the saturation of
+        # the bit depth (no upper clip if the bit depth is not set)
+        """Clip an image stack to the range of the detector, 0 to the bit-depth saturation."""
         bits = self.modalities[modality]["detector"].get("bits_pixel")
         if bits is None:
-            return stack
+            return np.clip(stack, 0, None)
         saturation = (2**bits) - 1
-        return np.clip(stack, None, saturation)
+        return np.clip(stack, 0, saturation)
 
     def _save_timeseries_with_beads(
         self, timeseries_stack, beads_stack, notes
