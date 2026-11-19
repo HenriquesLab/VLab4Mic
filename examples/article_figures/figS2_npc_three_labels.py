@@ -18,8 +18,11 @@ Only pores whose localisations cover at least MIN_CORNERS of the eight
 corners (around the pore centre) are fitted, as sparse partial arcs give
 unstable circle fits; the number of pores used is reported.
 
-STED (modality parameters of figS_NPC_quantification.py): not localisation
-based, so the radius is measured on the image. The pixels within
+STED (modality parameters of figS_NPC_quantification.py, with a lower read
+noise): the exposure time of each label is set so that a pore gives
+STED_SIGNAL_PHOTONS, so all labels have the same brightness despite their
+different numbers of fluorophores. STED is not localisation based, so the
+radius is measured on the image. The pixels within
 STED_REGION_NM of the image centre (where the pore is) are thresholded
 (Otsu) and a circle is fitted to the positions of the bright pixels
 (fit_circle_geometric); the width is the standard deviation of their
@@ -60,8 +63,13 @@ MODALITIES = ["SMLM", "STED"]
 # STED as in figS_NPC_quantification.py (Thevathasan et al. 2019)
 STED_PARAMS = dict(lateral_resolution_nm=15, axial_resolution_nm=20, psf_voxel_nm=5,
                    depth_of_field_nm=100, pixelsize_nm=15)
-STED_EXP_TIME = 0.0002
+STED_EXP_TIME = 0.0002  # reference exposure, rescaled per label (below)
 STED_BINOMIAL_P = 0.7
+STED_READ_NOISE = 0.2  # standard deviation of the Gaussian (read) noise
+# exposure per label is set so that a pore gives this signal (photons, noiseless image),
+# estimated from STED_CALIBRATION_REALISATIONS realisations at STED_EXP_TIME
+STED_SIGNAL_PHOTONS = 2000
+STED_CALIBRATION_REALISATIONS = 10
 # STED pixels further than this from the image centre are background
 STED_REGION_NM = 100
 TARGET = dict(probe_target_type="Sequence", probe_target_value="ELAVGSL")
@@ -85,6 +93,13 @@ PUBLISHED_RADIUS_NM = {
 def pixelsize_nm(experiment, modality):
     detector = experiment.imaging_modalities[modality]["detector"]
     return detector["pixelsize"] * detector["scale"] / 1e-9
+
+
+def set_sted_acquisition(experiment, exp_time):
+    experiment.set_modality_acq(modality_name="STED", exp_time=exp_time)
+    noise_model = experiment.imager.modalities["STED"]["detector"]["noise_model"]
+    noise_model["binomial"]["p"] = STED_BINOMIAL_P
+    noise_model["gaussian"]["sigma"] = STED_READ_NOISE
 
 
 def measure_smlm(result):
@@ -137,12 +152,18 @@ for m, modality in enumerate(MODALITIES):
             clear_experiment=True,
             random_seed=RANDOM_SEED + len(LABELS) * m + i,
         )
+        experiment.set_virtualsample_params(random_orientations=False, random_rotations=True)
+        exp_time = None
         if modality == "STED":
             experiment.update_modality(modality_name="STED", **STED_PARAMS)
-            experiment.set_modality_acq(modality_name="STED", exp_time=STED_EXP_TIME)
-            experiment.imager.modalities["STED"]["detector"]["noise_model"]["binomial"]["p"] = STED_BINOMIAL_P
+            set_sted_acquisition(experiment, STED_EXP_TIME)
+            # equal brightness for all labels: scale the exposure to the label's signal
+            calibration = experiment.run_replicates(STED_CALIBRATION_REALISATIONS, modality="STED")
+            signal = np.mean([np.asarray(r["images_noiseless"]["STED"]["ch0"])[0].sum()
+                              for r in calibration])
+            exp_time = STED_EXP_TIME * STED_SIGNAL_PHOTONS / signal
+            set_sted_acquisition(experiment, exp_time)
         pixelsizes[modality] = pixelsize_nm(experiment, modality)
-        experiment.set_virtualsample_params(random_orientations=False, random_rotations=True)
         key = (modality, label)
         for result in experiment.run_replicates(N_REALISATIONS, modality=modality):
             image = np.asarray(result["images"][modality]["ch0"])[0]
@@ -154,7 +175,7 @@ for m, modality in enumerate(MODALITIES):
                 measures = measure_sted(image, pixelsizes[modality])
             if measures["used"] and not images[key][1]:
                 images[key] = (image, True)
-            rows.append(dict(modality=modality, label=label, **measures))
+            rows.append(dict(modality=modality, label=label, exp_time=exp_time, **measures))
 
 results = pd.DataFrame(rows)
 used = results[results.used]
