@@ -242,9 +242,13 @@ for modality in dict.fromkeys(s["modality"] for s in CONDITIONS.values()):
         filled = CONDITION_FILLED[condition]
         for label, row in summary.loc[condition].iterrows():
             colour = LABEL_COLOURS[label]
-            ax.errorbar(row.published_radius, row.radius_mean, xerr=row.published_sd,
-                        yerr=row.radius_sd, fmt="o", color=colour,
-                        markerfacecolor=colour if filled else "white", markeredgecolor=colour)
+            bars = ax.errorbar(row.published_radius, row.radius_mean, xerr=row.published_sd,
+                               yerr=row.radius_sd, fmt="o", color=colour,
+                               markerfacecolor=colour if filled else "white", markeredgecolor=colour)
+            # dotted error bars for unfilled markers so overlapping conditions stay distinguishable
+            if not filled:
+                for bar in bars.lines[2]:
+                    bar.set_linestyle(":")
     lims = [45, 75]
     ax.plot(lims, lims, "--", color="grey")
     ax.set_xlabel("published ring radius (nm)")
