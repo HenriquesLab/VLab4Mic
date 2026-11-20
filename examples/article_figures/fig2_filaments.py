@@ -150,7 +150,7 @@ secondary_1 = dict(
         value=dict(atoms=["CA"], residues=["LYS"]),
     ),
     probe_paratope= "TITCH", 
-    #probe_DoL=2,
+    probe_DoL=2,
     labelling_efficiency=labelling_efficiency_secondary,
 )
 secondary_2 = dict(
