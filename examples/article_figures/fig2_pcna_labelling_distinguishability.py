@@ -43,8 +43,12 @@ LE^3, so no image feature can score higher.
 Outputs, in the VLab4Mic output directory (<date>fig2_pcna_labelling_...):
 features.csv (one row per image), distinguishability.csv (one row per
 localisation precision, labelling efficiency and feature set),
-settings.json, feature_distributions.png, distinguishability_heatmap.png
-and auc_vs_labelling.png.
+settings.json, feature_distributions.png, distinguishability_heatmap.png,
+auc_vs_labelling.png, and examples_complete_LE<labelling efficiency>.png:
+up to N_EXAMPLES trimers whose complete structure is detected (n_corners
+and n_peaks both 3), at the localisation precision of DNA-PAINT and of
+dSTORM (EXAMPLE_MODALITIES), with the number of such trimers; their images
+are kept in examples.npz, so --features plots them again.
 
 Run:   python fig2_pcna_labelling_distinguishability.py
 Score an existing feature table again, without simulating:
@@ -82,7 +86,7 @@ N_REALISATIONS = int(os.environ.get("VLAB4MIC_N_REALISATIONS", 100))
 N_PERMUTATIONS = int(os.environ.get("VLAB4MIC_N_PERMUTATIONS", 200))
 N_WORKERS = int(os.environ.get("VLAB4MIC_N_WORKERS", 1))
 SAVE_IMAGES = os.environ.get("VLAB4MIC_SAVE_IMAGES", "0") not in ("0", "", "false", "False")
-RANDOM_SEED = 61
+RANDOM_SEED = 24
 
 STRUCTURE = "4ZTD"
 MODALITY = "SMLM"
@@ -92,7 +96,7 @@ FOV_NM = 30  # common field of view of the generic descriptors
 LABELLING_EFFICIENCIES = [0.3, 0.5, 0.8, 1.0]  # 1: negative control
 # localisation precision (nm); 3 ~ DNA-PAINT, 6.5 ~ dSTORM (figS4_pcna_sites.py)
 PRECISIONS_NM = [1, 2, 3, 4.5, 6.5]
-N_LOCALISATIONS = 10  # per labelled site
+N_LOCALISATIONS = 50  # per labelled site
 RENDERING_KERNEL_NM = 1.0  # same for every precision: the localisations set the resolution
 
 # measurement of the trimer
@@ -103,6 +107,11 @@ R_MIN_NM = 1.5  # ring points: between R_MIN_NM and R_MAX_NM of the centre
 R_MAX_NM = 5
 MIN_SEGMENT_AREA_NM2 = 2  # bright pixels a segment needs to count as detected
 MIN_SEPARATION_NM = 3  # between separate peaks
+
+# example images of trimers whose complete structure is detected (n_corners
+# and n_peaks both 3), for the precision of each SMLM method
+EXAMPLE_MODALITIES = {"DNA-PAINT": 3, "dSTORM": 6.5}
+N_EXAMPLES = 8  # per method and labelling efficiency
 
 GENERIC = ["shape", "brightness"]
 SPECIFIC = ["n_corners", "n_peaks", "max_gap_deg", "radius_nm"]
@@ -197,8 +206,18 @@ def pcna_metrics():
     return metrics
 
 
+def complete_detection(table):
+    """Rows where corners and peaks both find all three sites of the trimer."""
+    return (table.n_corners == N_SEGMENTS) & (table.n_peaks == N_SEGMENTS)
+
+
+def example_key(precision, le):
+    return f"precision_{precision:g}_labelling_efficiency_{le:g}"
+
+
 def simulate(job):
-    """One model, localisation precision and labelling efficiency: its feature table."""
+    """One model, localisation precision and labelling efficiency: its feature table, and
+    up to N_EXAMPLES images (field of view 2 * REGION_NM) with a complete detection."""
     model, precision, le, seed, images_dir = job
     sweep = run_parameter_sweep(labelling_efficiency=[le], custom_metrics=pcna_metrics(),
                                 random_seed=seed, **COMMON)
@@ -218,7 +237,17 @@ def simulate(job):
     table["model"] = model
     table["localisation_precision_nm"] = precision
     table["labelling_efficiency"] = le
-    return table
+    examples = {}
+    if model == "reduced" and precision in EXAMPLE_MODALITIES.values():
+        # one parameter combination per sweep; Replica indexes its images,
+        # and the metrics measured the first frame of each
+        images = next(iter(sweep.acquisition_outputs.values()))
+        replicas = table.loc[complete_detection(table), "Replica"].astype(int)[:N_EXAMPLES]
+        n_px = int(round(2 * REGION_NM / PIXEL_NM))
+        examples[example_key(precision, le)] = np.array(
+            [same_field_of_view(images[r][0], PIXEL_NM, 2 * REGION_NM) for r in replicas]
+        ).reshape(-1, n_px, n_px)
+    return table, examples
 
 
 def feature_table(tables):
@@ -281,11 +310,52 @@ def plot_auc_vs_labelling(scores, prefix, feature_sets=("shape", "brightness", "
     plt.close(fig)
 
 
+def plot_complete_examples(features, examples, prefix):
+    """Per labelling efficiency: trimers with a complete detection, one row per SMLM method."""
+    reduced = features[features.model == "reduced"]
+    extent = [-REGION_NM, REGION_NM, -REGION_NM, REGION_NM]
+    for le in LABELLING_EFFICIENCIES:
+        fig, axes = plt.subplots(len(EXAMPLE_MODALITIES), N_EXAMPLES,
+                                 figsize=[1.6 * N_EXAMPLES, 1.9 * len(EXAMPLE_MODALITIES)],
+                                 squeeze=False)
+        for row, (method, precision) in zip(axes, EXAMPLE_MODALITIES.items()):
+            images = examples.get(example_key(precision, le), [])
+            data = reduced[np.isclose(reduced.localisation_precision_nm, precision)
+                           & np.isclose(reduced.labelling_efficiency, le)]
+            n_complete = int(complete_detection(data).sum())
+            for k, ax in enumerate(row):
+                ax.set_xticks([])
+                ax.set_yticks([])
+                if k < len(images):
+                    ax.imshow(images[k], cmap="magma", extent=extent, origin="lower")
+                else:
+                    ax.axis("off")
+            row[0].axis("on")
+            row[0].set_ylabel(f"{method}\n{precision:g} nm", fontsize=10)
+            row[0].set_title(f"complete structure detected in {n_complete} / {len(data)} trimers",
+                             loc="left", fontsize=9)
+            if not len(images):
+                row[0].spines[:].set_visible(False)
+                row[0].text(0, 0.5, "no complete detection", transform=row[0].transAxes,
+                            va="center", fontsize=9, color="0.4")
+        # scale bar, 5 nm, on the first image shown
+        for row in axes:
+            if row[0].images:
+                row[0].plot([-REGION_NM + 2, -REGION_NM + 7], [-REGION_NM + 2] * 2, "w-", lw=2)
+        fig.suptitle(f"PCNA, labelling efficiency {le:g} (scale bar 5 nm)", x=0.02, ha="left")
+        fig.tight_layout()
+        fig.savefig(prefix + f"examples_complete_LE{le:g}.png", dpi=300, bbox_inches="tight")
+        plt.close(fig)
+
+
 def main():
     if "--features" in sys.argv:
         features_path = sys.argv[sys.argv.index("--features") + 1]
         features = pd.read_csv(features_path)
         prefix = features_path.replace("features.csv", "")
+        examples = {}
+        if os.path.exists(prefix + "examples.npz"):
+            examples = dict(np.load(prefix + "examples.npz"))
     else:
         prefix = os.path.join(str(output_path),
                               ExperimentParametrisation().date_as_string + "fig2_pcna_labelling_")
@@ -298,17 +368,21 @@ def main():
               f"{N_WORKERS} worker(s)")
         if N_WORKERS > 1:
             with ProcessPoolExecutor(N_WORKERS) as pool:
-                tables = list(tqdm(pool.map(simulate, jobs), total=len(jobs), desc="sweeps"))
+                outputs = list(tqdm(pool.map(simulate, jobs), total=len(jobs), desc="sweeps"))
         else:
-            tables = [simulate(job) for job in tqdm(jobs, desc="sweeps")]
+            outputs = [simulate(job) for job in tqdm(jobs, desc="sweeps")]
+        tables = [table for table, _ in outputs]
+        examples = {key: images for _, found in outputs for key, images in found.items()}
         features = feature_table(tables)
         features.to_csv(prefix + "features.csv", index=False)
+        np.savez_compressed(prefix + "examples.npz", **examples)
         settings = {k: v for k, v in globals().items()
                     if k.isupper() and isinstance(v, (int, float, str, list, dict))}
         with open(prefix + "settings.json", "w") as handle:
             json.dump(settings, handle, indent=1, default=str)
 
     plot_feature_distributions(features, prefix)
+    plot_complete_examples(features, examples, prefix)
     features = features.fillna(FILL_VALUES)
     generic = [c for _, names in generic_columns() for c in names]
     feature_sets = dict(FEATURE_SETS, all=generic + SPECIFIC)
