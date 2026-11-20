@@ -964,7 +964,8 @@ def plot_models_grid(examples, scores, prefix):
 def plot_figure(examples, recovery, scores, prefix):
     """The main figure: (a) one fully labelled trimer at every localisation precision,
     (b) the share of fully labelled trimers whose triangle is seen, (c) the AUC of full
-    labelling against FIGURE_LE at every precision."""
+    labelling against FIGURE_LE at every precision, from the triangle score. Precisions are
+    labelled in nm only, without the imaging methods."""
     precisions = sorted(PRECISIONS_NM)
     fig = plt.figure(figsize=[11, 6.8])
     grid = fig.add_gridspec(2, 1, height_ratios=[1, 1.5], hspace=0.35)
@@ -979,14 +980,14 @@ def plot_figure(examples, recovery, scores, prefix):
             extent=limits + limits,
             origin="lower",
         )
-        ax.set_title(precision_label(precision), fontsize=9)
+        ax.set_title(f"{precision:g} nm", fontsize=9)
         ax.set_xticks([])
         ax.set_yticks([])
         if k == 0:
             scale_bar(ax)
             ax.set_title("a", loc="left", fontweight="bold", x=-0.12)
     bottom = grid[1].subgridspec(1, 2, wspace=0.3)
-    ticks = [precision_label(p).replace(" (", "\n(") for p in precisions]
+    ticks = [f"{p:g}" for p in precisions]
 
     ax = fig.add_subplot(bottom[0])
     recovery = recovery.sort_values("localisation_precision_nm")
@@ -1024,29 +1025,26 @@ def plot_figure(examples, recovery, scores, prefix):
     )
 
     ax_c = fig.add_subplot(bottom[1])
-    for name, colour, marker in [("all", "C3", "o"), ("triangle", "C0", "s")]:
-        data = scores[
-            (scores.feature_set == name)
-            & np.isclose(scores.labelling_efficiency, FIGURE_LE)
-        ]
-        data = data.sort_values("localisation_precision_nm")
-        ax_c.errorbar(
-            data.localisation_precision_nm,
-            data.auc,
-            yerr=error_bars(data.auc, data.auc_low, data.auc_high),
-            fmt=marker + "-",
-            color=colour,
-            capsize=3,
-            label="all features" if name == "all" else "triangle score",
-        )
-        if name == "all":
-            ax_c.plot(
-                data.localisation_precision_nm,
-                data.null_auc,
-                "x",
-                color="k",
-                label="null (full vs full)",
-            )
+    data = scores[
+        (scores.feature_set == "triangle")
+        & np.isclose(scores.labelling_efficiency, FIGURE_LE)
+    ].sort_values("localisation_precision_nm")
+    ax_c.errorbar(
+        data.localisation_precision_nm,
+        data.auc,
+        yerr=error_bars(data.auc, data.auc_low, data.auc_high),
+        fmt="o-",
+        color="C0",
+        capsize=3,
+        label="triangle score",
+    )
+    ax_c.plot(
+        data.localisation_precision_nm,
+        data.null_auc,
+        "x",
+        color="k",
+        label="null (full vs full)",
+    )
     ax_c.axhline(
         1 - FIGURE_LE**N_SEGMENTS / 2,
         color="k",
@@ -1055,8 +1053,7 @@ def plot_figure(examples, recovery, scores, prefix):
         label="perfect site count",
     )
     ax_c.axhline(0.5, color="0.5", linestyle=":", linewidth=1)
-    null = scores.loc[scores.feature_set == "all", "null_auc"]
-    ax_c.set_ylim(min(0.3, np.nanmin(null) - 0.05), 1.05)
+    ax_c.set_ylim(min(0.3, np.nanmin(data.null_auc) - 0.05), 1.05)
     ax_c.set_ylabel("ROC AUC")
     ax_c.set_title("c", loc="left", fontweight="bold", x=-0.18)
     ax_c.set_title(f"Labelling efficiency 1 vs {FIGURE_LE:g}", fontsize=9)
