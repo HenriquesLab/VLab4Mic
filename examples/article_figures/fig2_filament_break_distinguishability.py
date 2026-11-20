@@ -2,6 +2,10 @@
 
 A 500 nm microtubule (5SYF placed along a line, as in fig2_filaments.py) is
 labelled with a primary and an NHS secondary antibody and imaged by SMLM.
+The copies of the segment are placed at its lattice repeat (SPACING_NM) and
+laid flat, with the microtubule axis along the line: their targets get the
+rotation the virtual sample gives their emitters (see
+figS_filament_construction.py for every step of the construction).
 A second model has an artificial break in the middle: every epitope within
 gap/2 of the centre of the filament is removed. Each model is simulated
 with run_replicates at every labelling efficiency (of the secondary) and
@@ -36,8 +40,8 @@ mask, strip profiles, all). Each metric is also scored alone
 independently simulated intact filament: a negative control (expected
 0.5).
 
-Outputs, in the VLab4Mic output directory (<date>fig2_filament_break_...):
-filament_figure.png, the main figure: (a) one broken filament (break of
+Outputs, in the folder <date>fig2_filament_break of the VLab4Mic output
+directory (created if it does not exist): filament_figure.png, the main figure: (a) one broken filament (break of
 FIGURE_GAPS_NM, one row each) imaged at every labelling efficiency, (b) the
 percentage of broken filaments whose break is detected (mask split into
 MIN_SEGMENTS_BROKEN or more segments), with a 95% Wilson interval, and the
@@ -61,13 +65,14 @@ kept in examples.npz, so --features plots them again.
 
 Run:   python fig2_filament_break_distinguishability.py
 Score an existing feature table again, without simulating:
-       python fig2_filament_break_distinguishability.py --features <...features.csv>
+       python fig2_filament_break_distinguishability.py --features <folder>/features.csv
+(the outputs are written next to the feature table)
 
 Environment variables: VLAB4MIC_N_REALISATIONS (100 per model and
 condition; e.g. 5 for a quick run), VLAB4MIC_N_PERMUTATIONS (200),
 VLAB4MIC_N_WORKERS (1; simulations and scoring in parallel processes),
 VLAB4MIC_SAVE_IMAGES (0; 1 saves the images of every model and condition as
-a TIFF stack, one realisation per frame, in <...>images).
+a TIFF stack, one realisation per frame, in <folder>/images).
 """
 
 import copy
@@ -85,6 +90,7 @@ from tqdm.auto import tqdm
 
 from vlab4mic import experiments
 from vlab4mic.analysis import particle_measures
+from vlab4mic.utils.transform.points_transforms import rotate_pts_by_vector
 from vlab4mic.analysis.distinguishability import (
     distinguishability_from_features,
     plot_distinguishability_heatmaps,
@@ -96,13 +102,14 @@ N_PERMUTATIONS = int(os.environ.get("VLAB4MIC_N_PERMUTATIONS", 200))
 N_WORKERS = int(os.environ.get("VLAB4MIC_N_WORKERS", 1))
 SAVE_IMAGES = os.environ.get("VLAB4MIC_SAVE_IMAGES", "0") not in ("0", "", "false", "False")
 RANDOM_SEED = 24
+OUTPUT_NAME = "fig2_filament_break"  # base name of the output folder (after the date)
 
 STRUCTURE = "5SYF"
 PROBE_MODEL = "1IGT"  # used for every primary and secondary antibody
 SAMPLE_DIMENSIONS = [1000, 1000, 10]  # nm
 FILAMENT_LENGTH_NM = 500
-SPACING_NM = 7  # distance between consecutive 5SYF along the filament
-N_EPITOPES = 1872  # epitopes of the intact filament
+SPACING_NM = 16.3  # lattice repeat of the 5SYF segment (2 layers x 8.15 nm), see figS_filament_construction.py
+N_EPITOPES = 806  # epitopes of the intact filament: 31 copies x 26
 
 LABELLING_EFFICIENCIES = [0.01, 0.05, 0.2, 0.3, 0.5, 1]
 GAPS_NM = [0, 25, 50, 100, 200]  # length of the break; 0: intact (negative control)
@@ -211,10 +218,21 @@ def filament_template():
     experiment.clear_virtual_sample()
     experiment.set_virtualsample_params(particle_positions=pts)
     experiment.build(modules=["coordinate_field", "imager"])
-    targets = [molecule.source["targets"]["ATubulin_epitopes"]
-               for molecule in experiment.coordinate_field.molecules]
-    coordinates = np.vstack([target["coordinates"] for target in targets])
-    normals = np.vstack([target["normals"] for target in targets])
+    coordinates, normals = [], []
+    for molecule in experiment.coordinate_field.molecules:
+        target = molecule.source["targets"]["ATubulin_epitopes"]
+        copy_coordinates = np.asarray(target["coordinates"], dtype=float)
+        copy_normals = np.asarray(target["normals"], dtype=float)
+        # the virtual sample lays the copy flat by turning its axis, but only its emitters: give
+        # its targets (still pointing up) the same rotation, about the copy's reference point
+        before, after = molecule.axis_reset["direction"], molecule.axis["direction"]
+        if not np.allclose(before, after):
+            copy_coordinates = rotate_pts_by_vector(copy_coordinates, before, after,
+                                                    molecule.get_ref_point())
+            copy_normals = rotate_pts_by_vector(copy_normals, before, after, np.zeros(3))
+        coordinates.append(copy_coordinates)
+        normals.append(copy_normals)
+    coordinates, normals = np.vstack(coordinates), np.vstack(normals)
     assert coordinates.shape == (N_EPITOPES, 3)
     return dict(
         targets={"ATubulin_epitopes": dict(coordinates=coordinates, normals=normals)},
@@ -795,8 +813,10 @@ def main():
         if os.path.exists(prefix + "examples.npz"):
             examples = dict(np.load(prefix + "examples.npz"))
     else:
-        prefix = os.path.join(str(output_path),
-                              ExperimentParametrisation().date_as_string + "fig2_filament_break_")
+        output_dir = os.path.join(str(output_path),
+                                  ExperimentParametrisation().date_as_string + OUTPUT_NAME)
+        os.makedirs(output_dir, exist_ok=True)
+        prefix = os.path.join(output_dir, "")  # the outputs are named <output_dir>/<name>
         images_dir = prefix + "images" if SAVE_IMAGES else None
         template = filament_template()
         plot_strip_examples(template, prefix)
