@@ -63,7 +63,7 @@ LE^3, so no image feature can score higher.
 
 Outputs, in the VLab4Mic output directory (<date>fig2_pcna_labelling_...):
 pcna_pcna_figure.png, the main figure: (a) one fully labelled trimer imaged at
-every localisation precision, rendered at that precision, (b) the percentage of fully labelled trimers whose
+every localisation precision, (b) the percentage of fully labelled trimers whose
 triangle is seen, with a 95% Wilson interval, at every precision, and (c)
 the distinguishability (AUC) of labelling efficiencies 1 and FIGURE_LE at
 every precision;
@@ -349,7 +349,14 @@ def wilson_interval(k, n, z=1.96):
     p = k / n
     centre = (p + z**2 / (2 * n)) / (1 + z**2 / n)
     half = z * np.sqrt(p * (1 - p) / n + z**2 / (4 * n**2)) / (1 + z**2 / n)
-    return centre - half, centre + half
+    return max(centre - half, 0.0), min(centre + half, 1.0)
+
+
+def error_bars(value, low, high):
+    """Lengths of the error bars below and above value, never negative (rounding can put
+    value a hair outside [low, high], which matplotlib refuses)."""
+    value, low, high = (np.asarray(x, dtype=float) for x in (value, low, high))
+    return [np.clip(value - low, 0, None), np.clip(high - value, 0, None)]
 
 
 def triangle_recovery(features, radius_nm):
@@ -709,7 +716,7 @@ def plot_auc_vs_labelling(
             ax.errorbar(
                 sub.labelling_efficiency,
                 sub.auc,
-                yerr=[sub.auc - sub.auc_low, sub.auc_high - sub.auc],
+                yerr=error_bars(sub.auc, sub.auc_low, sub.auc_high),
                 fmt="o-",
                 color=colour,
                 capsize=2,
@@ -956,7 +963,6 @@ def plot_models_grid(examples, scores, prefix):
 
 def plot_figure(examples, recovery, scores, prefix):
     """The main figure: (a) one fully labelled trimer at every localisation precision,
-    rendered at that precision as the triangle score sees it,
     (b) the share of fully labelled trimers whose triangle is seen, (c) the AUC of full
     labelling against FIGURE_LE at every precision."""
     precisions = sorted(PRECISIONS_NM)
@@ -968,9 +974,7 @@ def plot_figure(examples, recovery, scores, prefix):
     for k, precision in enumerate(precisions):
         ax = fig.add_subplot(top[k])
         ax.imshow(
-            as_rendered_at_precision(
-                images[PRECISIONS_NM.index(precision)], PIXEL_NM, precision
-            ),
+            images[PRECISIONS_NM.index(precision)],
             cmap="magma",
             extent=limits + limits,
             origin="lower",
@@ -990,10 +994,11 @@ def plot_figure(examples, recovery, scores, prefix):
     ax.errorbar(
         recovery.localisation_precision_nm,
         percent,
-        yerr=[
-            percent - 100 * recovery.fraction_low,
-            100 * recovery.fraction_high - percent,
-        ],
+        yerr=error_bars(
+            percent,
+            100 * recovery.fraction_low,
+            100 * recovery.fraction_high,
+        ),
         fmt="o-",
         color="C0",
         capsize=3,
@@ -1028,7 +1033,7 @@ def plot_figure(examples, recovery, scores, prefix):
         ax_c.errorbar(
             data.localisation_precision_nm,
             data.auc,
-            yerr=[data.auc - data.auc_low, data.auc_high - data.auc],
+            yerr=error_bars(data.auc, data.auc_low, data.auc_high),
             fmt=marker + "-",
             color=colour,
             capsize=3,
