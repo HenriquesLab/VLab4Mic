@@ -35,7 +35,12 @@ Every image is measured from its pixels only (the sweep gives images only):
   around its centre of intensity (the magnitude of the 3-fold angular
   Fourier component within TRIANGLE_R_NM, over the total intensity there):
   0 for a round blob, 1 for three sharp points; independent of the
-  orientation of the trimer and of brightness. The triangle is "seen" when
+  orientation of the trimer and of brightness. It is measured on the image
+  as SMLM images are usually rendered, each localisation a Gaussian as wide
+  as the localisation precision: the image is smoothed with
+  sqrt(precision^2 - RENDERING_KERNEL_NM^2) on top of its rendering kernel.
+  This suppresses the speckle of a finite number of localisations without
+  a free parameter. The triangle is "seen" when
   the score of a fully labelled trimer beats 1 - TRIANGLE_FALSE_ALARM of the
   scores of round blobs of the same size (N_NULL rings of the radius of the
   labelled sites, with as many localisations as the trimer at random angles,
@@ -57,8 +62,8 @@ trimer labelled at LE still has all three sites labelled with probability
 LE^3, so no image feature can score higher.
 
 Outputs, in the VLab4Mic output directory (<date>fig2_pcna_labelling_...):
-pcna_figure.png, the main figure: (a) one fully labelled trimer imaged at every
-localisation precision, (b) the percentage of fully labelled trimers whose
+pcna_pcna_figure.png, the main figure: (a) one fully labelled trimer imaged at
+every localisation precision, rendered at that precision, (b) the percentage of fully labelled trimers whose
 triangle is seen, with a 95% Wilson interval, at every precision, and (c)
 the distinguishability (AUC) of labelling efficiencies 1 and FIGURE_LE at
 every precision;
@@ -156,7 +161,8 @@ R_MIN_NM = 1.5  # ring points: between R_MIN_NM and R_MAX_NM of the centre
 R_MAX_NM = 5
 MIN_SEGMENT_AREA_NM2 = 2  # bright pixels a segment needs to count as detected
 MIN_SEPARATION_NM = 3  # between separate peaks
-# triangle score: annulus around the centre of intensity, and its test against round blobs
+# triangle score: annulus around the centre of intensity, and its test against round blobs;
+# scored on the image rendered with a Gaussian as wide as the localisation precision
 TRIANGLE_R_NM = (0.5, 8)
 N_NULL = 1000  # round blobs per precision
 TRIANGLE_FALSE_ALARM = 0.05
@@ -281,12 +287,25 @@ def measure_pcna(image, pixelsize_nm):
     )
 
 
-def triangle_score(image, pixelsize_nm):
-    """Strength of the 3-fold pattern of the image around its centre of intensity:
-    0 for a round blob, 1 for three sharp points."""
+def as_rendered_at_precision(image, pixelsize_nm, precision_nm):
+    """The image centre (2 * REGION_NM) as if each localisation were rendered with a
+    Gaussian as wide as the localisation precision: smoothed with what the rendering
+    kernel lacks."""
     image = np.clip(
         same_field_of_view(image, pixelsize_nm, 2 * REGION_NM), 0, None
     )
+    extra_nm = np.sqrt(max(precision_nm**2 - RENDERING_KERNEL_NM**2, 0))
+    if extra_nm > 0:
+        image = ndimage.gaussian_filter(
+            image, extra_nm / pixelsize_nm, mode="constant"
+        )
+    return image
+
+
+def triangle_score(image, pixelsize_nm, precision_nm):
+    """Strength of the 3-fold pattern of the image, rendered at the localisation precision,
+    around its centre of intensity: 0 for a round blob, 1 for three sharp points."""
+    image = as_rendered_at_precision(image, pixelsize_nm, precision_nm)
     if image.sum() <= 0:
         return np.nan
     centre = (np.array(image.shape) - 1) / 2
@@ -321,7 +340,7 @@ def round_blob_scores(precision, radius_nm, rng, n=N_NULL):
             points[:, 1], points[:, 0], bins=[edges, edges]
         )[0]
         image = ndimage.gaussian_filter(image, RENDERING_KERNEL_NM / PIXEL_NM)
-        scores[k] = triangle_score(image, PIXEL_NM)
+        scores[k] = triangle_score(image, PIXEL_NM, precision)
     return scores
 
 
@@ -392,7 +411,7 @@ def measure_similarity(image, pixelsize_nm, reference):
     return dict(pearson_reference=float(pearson))
 
 
-def measure_image(image, pixelsize_nm, reference):
+def measure_image(image, pixelsize_nm, reference, precision_nm):
     """Generic, PCNA and similarity descriptors of one image, as {column: value}."""
     values = {}
     prepared = same_field_of_view(image, pixelsize_nm, FOV_NM)
@@ -401,12 +420,14 @@ def measure_image(image, pixelsize_nm, reference):
             zip(columns, np.atleast_1d(GENERIC_FUNCTIONS[name](prepared)))
         )
     values.update(measure_pcna(image, pixelsize_nm))
-    values["triangle_score"] = triangle_score(image, pixelsize_nm)
+    values["triangle_score"] = triangle_score(
+        image, pixelsize_nm, precision_nm
+    )
     values.update(measure_similarity(image, pixelsize_nm, reference))
     return values
 
 
-def pcna_metrics(reference):
+def pcna_metrics(reference, precision_nm):
     """measure_image as custom metrics of a sweep, one per column; each image is measured once."""
     last = {"image": None, "values": None}
 
@@ -415,7 +436,7 @@ def pcna_metrics(reference):
         if last["image"] is not image:
             last["image"] = image
             last["values"] = measure_image(
-                image, float(pixelsize_nm), reference
+                image, float(pixelsize_nm), reference, precision_nm
             )
         return last["values"]
 
@@ -579,7 +600,7 @@ def simulate(job):
     model, precision, le, seed, images_dir, reference = job
     sweep = run_parameter_sweep(
         labelling_efficiency=[le],
-        custom_metrics=pcna_metrics(reference),
+        custom_metrics=pcna_metrics(reference, precision),
         random_seed=seed,
         **COMMON,
     )
@@ -935,6 +956,7 @@ def plot_models_grid(examples, scores, prefix):
 
 def plot_figure(examples, recovery, scores, prefix):
     """The main figure: (a) one fully labelled trimer at every localisation precision,
+    rendered at that precision as the triangle score sees it,
     (b) the share of fully labelled trimers whose triangle is seen, (c) the AUC of full
     labelling against FIGURE_LE at every precision."""
     precisions = sorted(PRECISIONS_NM)
@@ -946,7 +968,9 @@ def plot_figure(examples, recovery, scores, prefix):
     for k, precision in enumerate(precisions):
         ax = fig.add_subplot(top[k])
         ax.imshow(
-            images[PRECISIONS_NM.index(precision)],
+            as_rendered_at_precision(
+                images[PRECISIONS_NM.index(precision)], PIXEL_NM, precision
+            ),
             cmap="magma",
             extent=limits + limits,
             origin="lower",
@@ -1026,7 +1050,8 @@ def plot_figure(examples, recovery, scores, prefix):
         label="perfect site count",
     )
     ax_c.axhline(0.5, color="0.5", linestyle=":", linewidth=1)
-    ax_c.set_ylim(0.3, 1.05)
+    null = scores.loc[scores.feature_set == "all", "null_auc"]
+    ax_c.set_ylim(min(0.3, np.nanmin(null) - 0.05), 1.05)
     ax_c.set_ylabel("ROC AUC")
     ax_c.set_title("c", loc="left", fontweight="bold", x=-0.18)
     ax_c.set_title(f"Labelling efficiency 1 vs {FIGURE_LE:g}", fontsize=9)
