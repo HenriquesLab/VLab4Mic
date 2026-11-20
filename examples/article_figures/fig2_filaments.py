@@ -5,8 +5,16 @@ import copy
 import seaborn as sns
 import os
 from vlab4mic.analysis import particle_measures
+from vlab4mic.utils.transform.points_transforms import rotate_pts_by_vector
+from vlab4mic.experiments import ExperimentParametrisation, output_path
 import pandas as pd
 from scipy import optimize, stats
+
+OUTPUT_NAME = "fig2_filaments"  # base name of the output folder (after the date)
+output_dir = os.path.join(str(output_path),
+                          ExperimentParametrisation().date_as_string + OUTPUT_NAME)
+os.makedirs(output_dir, exist_ok=True)
+prefix = os.path.join(output_dir, "")  # the outputs are named <output_dir>/<name>
 
 structure = "5SYF"
 probe_model = "1IGT"          # used for every primary and secondary antibody
@@ -61,7 +69,9 @@ def line_of_points2(
     points[:, 1] = line_position[1] + distances * np.sin(angle) / y_dimension
     return points
 
-pts = line_of_points2(sample_dimensions[0], sample_dimensions[1], spacing=7, line_position=(0.5, 0.5), orientation=0, length=500)
+SPACING_NM = 16.3  # lattice repeat of the 5SYF segment (2 layers x 8.15 nm), see figS_filament_construction.py
+N_EPITOPES = 806  # epitopes of the intact filament: 31 copies x 26
+pts = line_of_points2(sample_dimensions[0], sample_dimensions[1], spacing=SPACING_NM, line_position=(0.5, 0.5), orientation=0, length=500)
 
 __, noiseless_, my_experiment = experiments.image_vsample(
     probe_list=[primary_1],
@@ -79,22 +89,27 @@ ax1 = fig.add_subplot(1,2,1, projection="3d")
 my_experiment.coordinate_field.show_field(view_init=[90,0,0], emitters_plotsize=1, axis_object=ax1)
 ax2 = fig.add_subplot(1,2,2, projection="3d")
 my_experiment.coordinate_field.show_field(view_init=[0,0,0], emitters_plotsize=1, axis_object=ax2)
-filename = my_experiment.date_as_string + 'vlab4mic_microtubule_filament.png'
-filename2 = os.path.join(my_experiment.output_directory, filename)
-fig.savefig(filename2, dpi=300, bbox_inches='tight') 
+fig.savefig(prefix + 'vlab4mic_microtubule_filament.png', dpi=300, bbox_inches='tight')
 
 
-n_molecules = len(my_experiment.coordinate_field.molecules)
-epitopes_new = np.empty(shape=(0,3))
-normals_new = np.empty(shape=(0,3))
-for particle_number in range(n_molecules):
-    epitopes_new = np.vstack((epitopes_new, my_experiment.coordinate_field.molecules[particle_number].source["targets"]["ATubulin_epitopes"]["coordinates"] ))
-    normals_new = np.vstack((normals_new, my_experiment.coordinate_field.molecules[particle_number].source["targets"]["ATubulin_epitopes"]["normals"] ))
+coordinates, normals = [], []
+for molecule in my_experiment.coordinate_field.molecules:
+    target = molecule.source["targets"]["ATubulin_epitopes"]
+    copy_coordinates = np.asarray(target["coordinates"], dtype=float)
+    copy_normals = np.asarray(target["normals"], dtype=float)
+    # the virtual sample lays the copy flat by turning its axis, but only its emitters: give
+    # its targets (still pointing up) the same rotation, about the copy's reference point
+    before, after = molecule.axis_reset["direction"], molecule.axis["direction"]
+    if not np.allclose(before, after):
+        copy_coordinates = rotate_pts_by_vector(copy_coordinates, before, after,
+                                                molecule.get_ref_point())
+        copy_normals = rotate_pts_by_vector(copy_normals, before, after, np.zeros(3))
+    coordinates.append(copy_coordinates)
+    normals.append(copy_normals)
+coordinates, normals = np.vstack(coordinates), np.vstack(normals)
+assert coordinates.shape == (N_EPITOPES, 3)
 
-assert epitopes_new.shape == (1872,3)
-
-absolute_positions = epitopes_new.copy()
-normals = normals_new.copy()
+absolute_positions = coordinates.copy()
 particle_generator_data = dict(
     targets={
         "ATubulin_epitopes":dict(
@@ -210,9 +225,7 @@ ax2.set_title("Primary Antibody + Secondary Antibody (NHS)")
 ax3 = fig.add_subplot(1,3,3)
 ax3.imshow(replicates_3[0]["images"]["SMLM"]["ch0"][0], cmap="grey")
 ax3.set_title("Primary Antibody + Secondary Antibody (site-specific)")
-filename = my_experiment_probe3.date_as_string + 'vlab4mic_microtubules_different_probes.png'
-filename2 = os.path.join(my_experiment.output_directory, filename)
-fig.savefig(filename2, dpi=300, bbox_inches='tight') 
+fig.savefig(prefix + 'vlab4mic_microtubules_different_probes.png', dpi=300, bbox_inches='tight')
 
 def measure_filaments(replicates, 
                       max_length_nm=500, 
@@ -330,12 +343,9 @@ filament_diameters = sns.histplot(
     palette={legend_labels[k]: v for k, v in custom_palette.items()},
     bins=30, ax=ax)
 ax.set_xlabel("Apparent diameter (nm)")
-filename = my_experiment_probe3.date_as_string + 'vlab4mic_apparent_diameter_microtubule.png'
-filename2 = os.path.join(my_experiment.output_directory, filename)
-fig.savefig(filename2, dpi=300, bbox_inches='tight')
+fig.savefig(prefix + 'vlab4mic_apparent_diameter_microtubule.png', dpi=300, bbox_inches='tight')
 plt.close()
-filename = my_experiment_probe3.date_as_string + 'vlab4mic_apparent_diameter_microtubule.csv'
-combined_df_sw.to_csv(os.path.join(my_experiment.output_directory, filename), index=False)
+combined_df_sw.to_csv(prefix + 'vlab4mic_apparent_diameter_microtubule.csv', index=False)
 
 ### Hollow cylinder fit of the 3D localisations
 reference_diameter = 25    # nm, microtubule
@@ -549,9 +559,7 @@ for i, strategy in enumerate(replicates_per_strategy):
         fig.add_subplot(n_strategies, 3, 3 * i + 3),
     ]
     plot_hollow_cylinder_fit(cylinder_fits[strategy][0], axs, color=custom_palette[strategy], title=strategy)
-filename = my_experiment_probe3.date_as_string + 'vlab4mic_hollow_cylinder_fit_microtubule.png'
-filename2 = os.path.join(my_experiment.output_directory, filename)
-fig.savefig(filename2, dpi=300, bbox_inches='tight')
+fig.savefig(prefix + 'vlab4mic_hollow_cylinder_fit_microtubule.png', dpi=300, bbox_inches='tight')
 plt.close()
 
 fig = plt.figure()
@@ -559,9 +567,7 @@ ax = fig.add_subplot(111)
 sns.histplot(data=cylinder_df, x="diameter", hue="strategy", palette=custom_palette, bins=30, ax=ax)
 ax.axvline(reference_diameter, ls="--", c="grey")
 ax.set_xlabel("Hollow cylinder diameter (nm)")
-filename = my_experiment_probe3.date_as_string + 'vlab4mic_hollow_cylinder_diameter_microtubule.png'
-filename2 = os.path.join(my_experiment.output_directory, filename)
-fig.savefig(filename2, dpi=300, bbox_inches='tight')
+fig.savefig(prefix + 'vlab4mic_hollow_cylinder_diameter_microtubule.png', dpi=300, bbox_inches='tight')
 plt.close()
 
 ### Apparent continuity
@@ -646,15 +652,12 @@ merged = pd.concat(
     [d.assign(source=name) for name, d in dfs.items()],
     ignore_index=True,
 )
-filename = my_experiment_le.date_as_string + 'vlab4mic_filament_measures_per_LE.csv'
-merged.to_csv(os.path.join(my_experiment_le.output_directory, filename), index=False)
+merged.to_csv(prefix + 'vlab4mic_filament_measures_per_LE.csv', index=False)
 fig = plt.figure()
 ax = fig.add_subplot(111)
 sns.swarmplot(data=merged, x="source", y="mean_eccentricity", ax=ax, s=1)
-filename = my_experiment_le.date_as_string + 'vlab4mic_mean_eccentricities_per_LE.png'
-filename2 = os.path.join(my_experiment_le.output_directory, filename)
 plt.xlabel("Labelling efficiency")
-fig.savefig(filename2, dpi=300, bbox_inches='tight')
+fig.savefig(prefix + 'vlab4mic_mean_eccentricities_per_LE.png', dpi=300, bbox_inches='tight')
 plt.close()
 
 n_le = len(labelling_efficiencies)
@@ -662,7 +665,5 @@ fig, ax = plt.subplots(1, n_le, figsize=(30,10))
 for i, lef in enumerate(labelling_efficiencies):
     ax[i].imshow(filament_measures_per_le[lef]["blurred"][0], cmap = "grey")
     ax[i].set_title(f"LE = {lef}")
-filename = my_experiment_le.date_as_string + 'vlab4mic_microtubules_across_LE.png'
-filename2 = os.path.join(my_experiment_le.output_directory, filename)
-fig.savefig(filename2, dpi=300, bbox_inches='tight')
+fig.savefig(prefix + 'vlab4mic_microtubules_across_LE.png', dpi=300, bbox_inches='tight')
 plt.close()
