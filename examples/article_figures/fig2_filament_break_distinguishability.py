@@ -14,10 +14,8 @@ number of segments, eccentricities...), giving a feature table with one row
 per image, as the "merged" table of fig2_filaments.py.
 
 Continuity is measured in two ways:
-- mask: the image is smoothed (Gaussian, 4 px = 8 nm) and thresholded
-  (triangle method), and the connected segments are measured. With these
-  settings an intact filament is a single segment at labelling efficiency
-  1, and a 100 nm break splits it in two.
+- mask: the image is smoothed (Gaussian, 1 px = 2 nm) and thresholded
+  (triangle method), and the connected segments are measured.
 - strip profiles (particle_measures.filament_strip_profiles): the image is
   divided into strips of 10 nm along the central axis of the filament and
   each strip is projected into a line profile across the axis. A flat
@@ -41,8 +39,9 @@ independently simulated intact filament: a negative control (expected
 0.5).
 
 Outputs, in the folder <date>fig2_filament_break of the VLab4Mic output
-directory (created if it does not exist): filament_figure.png, the main figure: (a) one broken filament (break of
-FIGURE_GAPS_NM, one row each) imaged at every labelling efficiency, (b) the
+directory (created if it does not exist): filament_figure.png, the main figure: (a) one filament per break of
+FIGURE_GAPS_NM (one row each; 0 nm: the intact filament) imaged at every
+labelling efficiency, (b) the
 percentage of broken filaments whose break is detected (mask split into
 MIN_SEGMENTS_BROKEN or more segments), with a 95% Wilson interval, and the
 false alarm rate of the intact filaments, at every labelling efficiency,
@@ -85,7 +84,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import tifffile
-from matplotlib.patches import Rectangle
 from tqdm.auto import tqdm
 
 from vlab4mic import experiments
@@ -111,10 +109,10 @@ FILAMENT_LENGTH_NM = 500
 SPACING_NM = 16.3  # lattice repeat of the 5SYF segment (2 layers x 8.15 nm), see figS_filament_construction.py
 N_EPITOPES = 806  # epitopes of the intact filament: 31 copies x 26
 
-LABELLING_EFFICIENCIES = [0.01, 0.05, 0.2, 0.3, 0.5, 1]
-GAPS_NM = [0, 25, 50, 100, 200]  # length of the break; 0: intact (negative control)
-REFERENCE_GAP_NM = 50
-FIGURE_GAPS_NM = [REFERENCE_GAP_NM, 100]  # breaks of the main figure, one line each
+LABELLING_EFFICIENCIES = [0.01, 0.05, 0.1, 0.2, 0.3, 0.5, 1]
+GAPS_NM = [0, 5, 10, 25, 50, 100, 200]  # length of the break; 0: intact (negative control)
+# breaks of the main figure, one line each; 0: the intact filament (example images only)
+FIGURE_GAPS_NM = [0, 5, 10, 50, 100]
 
 # a break is detected when the mask splits into this many segments or more
 MIN_SEGMENTS_BROKEN = 2
@@ -163,7 +161,7 @@ FILAMENTS_PARAMS = dict(
     row_binning=7,
     min_snr=2,
     mode="total",
-    smooth_sigma=4,  # px; with triangle: one segment for an intact filament at LE 1
+    smooth_sigma=1,  # px (2 nm), Gaussian before the triangle threshold
     threshold_method="triangle",
     strip_kwargs=dict(
         strip_length=10,  # nm, along the filament axis
@@ -739,24 +737,29 @@ def plot_models_grid(examples, scores, prefix):
 
 
 def plot_figure(examples, detection, scores, prefix):
-    """The main figure: (a) one broken filament per break of FIGURE_GAPS_NM (rows) at every
-    labelling efficiency, (b) the share of broken filaments whose break is detected, and the
-    false alarm rate of intact filaments, (c) the AUC of intact against broken filaments from
-    the number of mask segments alone, both against labelling efficiency."""
+    """The main figure: (a) one filament per break of FIGURE_GAPS_NM (rows; 0 nm: the intact
+    filament) at every labelling efficiency, (b) the share of broken filaments whose break is
+    detected, and the false alarm rate of intact filaments, (c) the AUC of intact against
+    broken filaments from the number of mask segments alone, both against labelling
+    efficiency."""
     les = sorted(LABELLING_EFFICIENCIES)
-    colours = {gap: f"C{k}" for k, gap in enumerate(FIGURE_GAPS_NM)}
+    breaks = [gap for gap in FIGURE_GAPS_NM if gap > 0]  # one line each in b and c
+    colours = {gap: f"C{k}" for k, gap in enumerate(breaks)}
+    colours[0] = "0.5"  # the intact filament, as in b
     fig = plt.figure(figsize=[11, 3.4 + 0.55 * len(FIGURE_GAPS_NM)])
     grid = fig.add_gridspec(2, 1, height_ratios=[0.25 * len(FIGURE_GAPS_NM) + 0.15, 1],
                             hspace=0.3)
     top = grid[0].subgridspec(len(FIGURE_GAPS_NM), len(les), wspace=0.05, hspace=0.08)
     for i, gap in enumerate(FIGURE_GAPS_NM):
+        model = "broken" if gap > 0 else "intact"
         for k, le in enumerate(les):
             ax = fig.add_subplot(top[i, k])
-            show(ax, examples[model_key("broken", gap, le)])
+            show(ax, examples[model_key(model, gap, le)])
             if i == 0:
                 ax.set_title(f"LE {le:g}", fontsize=9)
             if k == 0:
-                ax.set_ylabel(f"{gap:g} nm", fontsize=8, color=colours[gap])
+                ax.set_ylabel(f"{gap:g} nm" if gap > 0 else "no break", fontsize=8,
+                              color=colours[gap])
             if i == 0 and k == 0:
                 ax.set_title("a", loc="left", fontweight="bold", x=-0.12)
             if i == len(FIGURE_GAPS_NM) - 1 and k == 0:
@@ -764,7 +767,7 @@ def plot_figure(examples, detection, scores, prefix):
     bottom = grid[1].subgridspec(1, 2, wspace=0.3)
 
     ax = fig.add_subplot(bottom[0])
-    for gap in FIGURE_GAPS_NM:
+    for gap in breaks:
         data = detection[(detection.model == "broken") & np.isclose(detection.gap_nm, gap)] \
             .sort_values("labelling_efficiency")
         percent = 100 * data.fraction_split
@@ -775,7 +778,7 @@ def plot_figure(examples, detection, scores, prefix):
     percent = 100 * intact.fraction_split
     ax.errorbar(intact.labelling_efficiency, percent,
                 yerr=error_bars(percent, 100 * intact.fraction_low, 100 * intact.fraction_high),
-                fmt="s:", color="0.5", capsize=3, markersize=4, label="intact (false alarm)")
+                fmt="s:", color="0.5", capsize=3, markersize=4, label="intact (false positive)")
     ax.set_ylim(-3, 103)
     ax.set_ylabel("Break detected (% of filaments)")
     ax.set_title("b", loc="left", fontweight="bold", x=-0.22)
@@ -785,7 +788,7 @@ def plot_figure(examples, detection, scores, prefix):
 
     ax_c = fig.add_subplot(bottom[1])
     data = scores[scores.feature_set == "segments"]
-    for k, gap in enumerate(FIGURE_GAPS_NM):
+    for k, gap in enumerate(breaks):
         sub = data[np.isclose(data.gap_nm, gap)].sort_values("labelling_efficiency")
         ax_c.errorbar(sub.labelling_efficiency, sub.auc,
                       yerr=error_bars(sub.auc, sub.auc_low, sub.auc_high), fmt="o-",
@@ -872,10 +875,6 @@ def main():
     gaps = sorted(scores.gap_nm.unique())
     panels = fig.axes[:len(FEATURE_SETS)]
     for ax in panels:
-        if REFERENCE_GAP_NM in gaps:
-            # outline the row of the reference break
-            ax.add_patch(Rectangle((-0.5, gaps.index(REFERENCE_GAP_NM) - 0.5), n_le, 1,
-                                   fill=False, linewidth=2, edgecolor="red"))
         ax.set_xlabel("Labelling efficiency")
     panels[0].set_ylabel("Break length (nm)")
     fig.suptitle("Intact vs broken filament (ROC AUC)", x=0.02, ha="left")
