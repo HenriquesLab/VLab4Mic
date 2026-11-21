@@ -49,7 +49,10 @@ and (c) the distinguishability (AUC) of intact and broken filaments from
 the number of segments alone, at every labelling efficiency;
 features.csv (one row per image), distinguishability.csv (one row per
 break size, labelling efficiency and feature set), break_detection.csv
-(one row per model, break size and labelling efficiency), settings.json,
+(one row per model, break size and labelling efficiency),
+filament_figure_values.csv (the values of b and c, with the mean and s.d.
+of the number of mask segments, one row per model of the figure and
+labelling efficiency), settings.json,
 strip_profiles.png, distinguishability_heatmap.png,
 feature_distributions.png, auc_vs_labelling.png, examples_gap<break>.png
 (N_EXAMPLES broken filaments per labelling efficiency, those whose break is
@@ -591,7 +594,8 @@ def feature_table(tables):
 
 def break_detection(features):
     """Per model, break size and labelling efficiency: the share of filaments whose mask splits
-    into MIN_SEGMENTS_BROKEN or more segments (broken: detected breaks; intact: false alarms)."""
+    into MIN_SEGMENTS_BROKEN or more segments (broken: detected breaks; intact: false alarms),
+    and the median, mean and s.d. of their number of segments."""
     intact = features[features.model == "intact"]
     # the intact filaments appear once per break size: keep one copy
     intact = intact[intact.gap_nm == intact.gap_nm.min()].assign(gap_nm=0)
@@ -603,9 +607,34 @@ def break_detection(features):
         rows.append(dict(model=model, gap_nm=gap, labelling_efficiency=le,
                          n_filaments=len(data), n_split=split, fraction_split=split / len(data),
                          fraction_low=low, fraction_high=high,
-                         median_segments=data.mask_number_of_segments.median()))
+                         median_segments=data.mask_number_of_segments.median(),
+                         mean_segments=data.mask_number_of_segments.mean(),
+                         std_segments=data.mask_number_of_segments.std()))
     return pd.DataFrame(rows).sort_values(["model", "gap_nm", "labelling_efficiency"],
                                           ascending=[False, True, True], ignore_index=True)
+
+
+def figure_values(detection, scores):
+    """The values of b and c of the main figure, one row per model (the intact filament and every
+    break of FIGURE_EXAMPLE_GAPS_NM) and labelling efficiency: b, the percentage of filaments whose
+    mask splits into MIN_SEGMENTS_BROKEN or more segments (95% Wilson interval), with the mean and
+    s.d. of their number of segments; c, the AUC of intact against broken filaments from the
+    number of segments alone (95% bootstrap interval), its null control (intact against intact)
+    and permutation p-value."""
+    breaks = [gap for gap in FIGURE_EXAMPLE_GAPS_NM if gap > 0]
+    shown = detection[(detection.model == "intact")
+                      | ((detection.model == "broken") & detection.gap_nm.isin(breaks))]
+    values = pd.DataFrame(dict(
+        model=shown.model, gap_nm=shown.gap_nm, labelling_efficiency=shown.labelling_efficiency,
+        n_filaments=shown.n_filaments, b_percent_detected=100 * shown.fraction_split,
+        b_percent_low=100 * shown.fraction_low, b_percent_high=100 * shown.fraction_high,
+        b_mean_segments=shown.mean_segments, b_std_segments=shown.std_segments))
+    segments = scores.loc[scores.feature_set == "segments",
+                          CONDITIONS + ["auc", "auc_low", "auc_high", "null_auc", "p_value"]]
+    segments = segments.rename(columns=lambda column: column if column in CONDITIONS
+                               else "c_" + column)
+    # c compares the intact filament with each break: no AUC on the intact rows
+    return values.merge(segments.assign(model="broken"), how="left", on=["model"] + CONDITIONS)
 
 
 def plot_feature_distributions(features, prefix):
@@ -884,6 +913,7 @@ def main():
     plot_auc_vs_labelling(scores, prefix)
     detection = break_detection(features)
     detection.to_csv(prefix + "break_detection.csv", index=False)
+    figure_values(detection, scores).to_csv(prefix + "filament_figure_values.csv", index=False)
     print(detection.round(3).to_string(index=False))
     if epitope_key("intact", 0) in examples:  # not in examples from older runs
         plot_models(examples, prefix)
