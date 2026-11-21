@@ -40,7 +40,7 @@ independently simulated intact filament: a negative control (expected
 
 Outputs, in the folder <date>fig2_filament_break of the VLab4Mic output
 directory (created if it does not exist): filament_figure.png, the main figure: (a) one filament per break of
-FIGURE_GAPS_NM (one row each; 0 nm: the intact filament) imaged at every
+FIGURE_EXAMPLE_GAPS_NM (one row each; 0 nm: the intact filament) imaged at every
 labelling efficiency, (b) the
 percentage of broken filaments whose break is detected (mask split into
 MIN_SEGMENTS_BROKEN or more segments), with a 95% Wilson interval, and the
@@ -111,8 +111,8 @@ N_EPITOPES = 806  # epitopes of the intact filament: 31 copies x 26
 
 LABELLING_EFFICIENCIES = [0.01, 0.05, 0.1, 0.2, 0.3, 0.5, 1]
 GAPS_NM = [0, 5, 10, 25, 50, 100, 200]  # length of the break; 0: intact (negative control)
-# breaks of the main figure, one line each; 0: the intact filament (example images only)
-FIGURE_GAPS_NM = [0, 5, 10, 50, 100]
+# breaks of the main figure, one line each in b and c; 0: the intact filament
+FIGURE_EXAMPLE_GAPS_NM = [0, 50, 100]
 
 # a break is detected when the mask splits into this many segments or more
 MIN_SEGMENTS_BROKEN = 2
@@ -737,20 +737,20 @@ def plot_models_grid(examples, scores, prefix):
 
 
 def plot_figure(examples, detection, scores, prefix):
-    """The main figure: (a) one filament per break of FIGURE_GAPS_NM (rows; 0 nm: the intact
+    """The main figure: (a) one filament per break of FIGURE_EXAMPLE_GAPS_NM (rows; 0 nm: the intact
     filament) at every labelling efficiency, (b) the share of broken filaments whose break is
     detected, and the false alarm rate of intact filaments, (c) the AUC of intact against
     broken filaments from the number of mask segments alone, both against labelling
     efficiency."""
     les = sorted(LABELLING_EFFICIENCIES)
-    breaks = [gap for gap in FIGURE_GAPS_NM if gap > 0]  # one line each in b and c
+    breaks = [gap for gap in FIGURE_EXAMPLE_GAPS_NM if gap > 0]  # one line each in b and c
     colours = {gap: f"C{k}" for k, gap in enumerate(breaks)}
     colours[0] = "0.5"  # the intact filament, as in b
-    fig = plt.figure(figsize=[11, 3.4 + 0.55 * len(FIGURE_GAPS_NM)])
-    grid = fig.add_gridspec(2, 1, height_ratios=[0.25 * len(FIGURE_GAPS_NM) + 0.15, 1],
+    fig = plt.figure(figsize=[11, 3.4 + 0.55 * len(FIGURE_EXAMPLE_GAPS_NM)])
+    grid = fig.add_gridspec(2, 1, height_ratios=[0.25 * len(FIGURE_EXAMPLE_GAPS_NM) + 0.15, 1],
                             hspace=0.3)
-    top = grid[0].subgridspec(len(FIGURE_GAPS_NM), len(les), wspace=0.05, hspace=0.08)
-    for i, gap in enumerate(FIGURE_GAPS_NM):
+    top = grid[0].subgridspec(len(FIGURE_EXAMPLE_GAPS_NM), len(les), wspace=0.05, hspace=0.08)
+    for i, gap in enumerate(FIGURE_EXAMPLE_GAPS_NM):
         model = "broken" if gap > 0 else "intact"
         for k, le in enumerate(les):
             ax = fig.add_subplot(top[i, k])
@@ -762,7 +762,7 @@ def plot_figure(examples, detection, scores, prefix):
                               color=colours[gap])
             if i == 0 and k == 0:
                 ax.set_title("a", loc="left", fontweight="bold", x=-0.12)
-            if i == len(FIGURE_GAPS_NM) - 1 and k == 0:
+            if i == len(FIGURE_EXAMPLE_GAPS_NM) - 1 and k == 0:
                 scale_bar(ax)
     bottom = grid[1].subgridspec(1, 2, wspace=0.3)
 
