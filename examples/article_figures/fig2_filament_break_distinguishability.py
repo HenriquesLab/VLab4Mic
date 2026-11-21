@@ -1,6 +1,6 @@
 """Fig. 2: can a break in a microtubule be detected, and at which labelling efficiency?
 
-A 500 nm microtubule (5SYF placed along a line, as in fig2_filaments.py) is
+A 500 nm microtubule (copies of the 5SYF segment placed along a line) is
 labelled with a primary and an NHS secondary antibody and imaged by SMLM.
 The copies of the segment are placed at its lattice repeat (SPACING_NM) and
 laid flat, with the microtubule axis along the line: their targets get the
@@ -10,7 +10,7 @@ gap/2 of the centre of the filament is removed. Each model is simulated
 with run_replicates at every labelling efficiency (of the secondary) and
 every image is measured with measure_filaments (widths, mask continuity,
 number of segments, eccentricities...), giving a feature table with one row
-per image, as the "merged" table of fig2_filaments.py.
+per image.
 
 Continuity is measured in two ways:
 - mask: the image is smoothed (Gaussian, 1 px = 2 nm) and thresholded
@@ -174,7 +174,7 @@ FILAMENTS_PARAMS = dict(
 )
 
 
-def line_of_points2(
+def line_of_points(
     x_dimension,
     y_dimension,
     spacing,
@@ -183,6 +183,9 @@ def line_of_points2(
     orientation=0,
     length=None,
 ):
+    """Points along a line, as fractions of the sample dimensions: npoints, or as many as fit
+    in length (nm), spaced by spacing (nm), centred at line_position and at orientation
+    degrees from the x axis."""
     if (npoints is None) == (length is None):
         raise ValueError("Specify exactly one of npoints or length.")
     if length is not None:
@@ -207,7 +210,7 @@ def filament_template():
         probe_target_value="EEVGV",
         labelling_efficiency=1,
     )
-    pts = line_of_points2(SAMPLE_DIMENSIONS[0], SAMPLE_DIMENSIONS[1], spacing=SPACING_NM,
+    pts = line_of_points(SAMPLE_DIMENSIONS[0], SAMPLE_DIMENSIONS[1], spacing=SPACING_NM,
                           line_position=(0.5, 0.5), orientation=0, length=FILAMENT_LENGTH_NM)
     __, __, experiment = experiments.image_vsample(
         probe_list=[primary],
@@ -280,6 +283,10 @@ def measure_filaments(replicates,
                       threshold_method="otsu",
                       threshold_method_kwargs=None,
                       strip_kwargs=None,):
+    """Features of the first frame of every realisation, one row each: filament widths, mask
+    continuity, number of mask segments and their eccentricities, and the strip profile
+    measures. Also returns the width metrics, masks, smoothed images, segment tables and strip
+    profiles of every image."""
     tables = []
     masks = []
     eccentricities = []
@@ -914,7 +921,7 @@ def main():
     detection.to_csv(prefix + "break_detection.csv", index=False)
     figure_values(detection, scores).to_csv(prefix + "filament_figure_values.csv", index=False)
     print(detection.round(3).to_string(index=False))
-    if epitope_key("intact", 0) in examples:  # not in examples from older runs
+    if epitope_key("intact", 0) in examples:  # the epitopes of the models, from examples.npz
         plot_models(examples, prefix)
         plot_models_grid(examples, scores, prefix)
         plot_figure(examples, detection, scores, prefix)
