@@ -4,8 +4,7 @@ A 500 nm microtubule (5SYF placed along a line, as in fig2_filaments.py) is
 labelled with a primary and an NHS secondary antibody and imaged by SMLM.
 The copies of the segment are placed at its lattice repeat (SPACING_NM) and
 laid flat, with the microtubule axis along the line: their targets get the
-rotation the virtual sample gives their emitters (see
-figS_filament_construction.py for every step of the construction).
+rotation the virtual sample gives their emitters.
 A second model has an artificial break in the middle: every epitope within
 gap/2 of the centre of the filament is removed. Each model is simulated
 with run_replicates at every labelling efficiency (of the secondary) and
@@ -109,7 +108,7 @@ STRUCTURE = "5SYF"
 PROBE_MODEL = "1IGT"  # used for every primary and secondary antibody
 SAMPLE_DIMENSIONS = [1000, 1000, 10]  # nm
 FILAMENT_LENGTH_NM = 500
-SPACING_NM = 16.3  # lattice repeat of the 5SYF segment (2 layers x 8.15 nm), see figS_filament_construction.py
+SPACING_NM = 16.3  # lattice repeat of the 5SYF segment (2 layers x 8.15 nm)
 N_EPITOPES = 806  # epitopes of the intact filament: 31 copies x 26
 
 LABELLING_EFFICIENCIES = [0.01, 0.05, 0.1, 0.2, 0.3, 0.5, 1]
