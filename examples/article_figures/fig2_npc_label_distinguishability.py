@@ -661,18 +661,16 @@ def section_title(fig, spec, text):
     fig.text(box.x0 - 0.03, box.y1 + 0.022, text, fontsize=11, fontweight="bold", ha="left")
 
 
-def published_title(label):
-    published = PUBLISHED_RADIUS_NM.get(label)
-    return f"{published[0]} ± {published[1]} nm" if published else "0 nm linker"
-
-
-def plot_ring_examples(fig, spec, examples, modality, letter):
-    """One image per probe with its fitted circle, framed in the probe's colour."""
+def plot_ring_examples(fig, spec, examples, radius, modality, letter):
+    """One image per probe with its fitted circle, framed in the probe's colour, titled with
+    the fitted radius of the probe (mean ± s.d. over pores)."""
+    fitted = radius[radius.modality_name == modality].set_index("label")
     images = spec.subgridspec(1, len(LABELS), wspace=0.05)
     for k, label in enumerate(LABELS):
         ax = fig.add_subplot(images[k])
         show_example(ax, examples, label, modality, scale_bar=k == 0)
-        ax.set_title(f"{PROBE_NAMES[label]}\n{published_title(label)}", fontsize=8)
+        ax.set_title(f"{PROBE_NAMES[label]}\nfitted radius\n{fitted.loc[label, 'mean']:.1f} ± "
+                     f"{fitted.loc[label, 'sd']:.1f} nm", fontsize=8)
         ax.spines[:].set_color(PROBE_COLOURS[label])
         ax.spines[:].set_linewidth(2)
         if k == 0:
@@ -763,15 +761,13 @@ def plot_figure(examples, features, values, sweep, prefix):
         if emitters is not None:
             ax.scatter(*emitters.T, s=8, color=PROBE_COLOURS[label])
         model_axis(ax)
-        ax.set_title(f"{PROBE_NAMES[label]}: fluorophores\n"
-                     f"{smlm.fluorophore_radius_mean[label]:.1f} ± "
-                     f"{smlm.fluorophore_radius_sd[label]:.1f} nm", fontsize=8)
+        ax.set_title(f"{PROBE_NAMES[label]}: fluorophores", fontsize=8)
         if k == 0:
             panel_letter(ax, "b")
 
     # 2: SMLM
     middle = bands[1].subgridspec(1, 3, width_ratios=[2.3, 1.15, 1], wspace=0.3)
-    plot_ring_examples(fig, middle[0], examples, "SMLM", "c")
+    plot_ring_examples(fig, middle[0], examples, radius, "SMLM", "c")
     ax_d = fig.add_subplot(middle[1])
     plot_radius_histograms(ax_d, features, "SMLM")
     panel_letter(ax_d, "d", x=-0.2)
@@ -836,7 +832,7 @@ def plot_figure(examples, features, values, sweep, prefix):
 
     # 4: STED
     fourth = bands[3].subgridspec(1, 3, width_ratios=[2.3, 1.1, 1.8], wspace=0.3)
-    plot_ring_examples(fig, fourth[0], examples, "STED", "h")
+    plot_ring_examples(fig, fourth[0], examples, radius, "STED", "h")
     ax_i = fig.add_subplot(fourth[1])
     plot_radius_histograms(ax_i, features, "STED")
     panel_letter(ax_i, "i", x=-0.2)
