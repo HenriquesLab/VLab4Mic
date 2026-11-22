@@ -24,17 +24,17 @@ despite their different numbers of fluorophores.
 
 Every image is measured from its pixels (as in
 fig2_npc_integrity_distinguishability.py). The pore is first located: the
-brightest pixel of the image smoothed by a Gaussian of LOCATE_SIGMA_NM.
-Then:
-- radius_nm, width_nm: the pixels within REGION_NM of the pore above an
+brightest pixel of the image smoothed by a Gaussian of LOCATE_SIGMA_NM
+(pore_x_nm, pore_y_nm, from the image centre). Then:
+- radius_nm, width_nm (STED and SMLM only, RING_MODALITIES: the methods
+  that resolve the ring): the pixels within REGION_NM of the pore above an
   Otsu threshold are taken as points of the ring; radius of a geometric
   circle fit to them and s.d. of their distances to its centre. The fit is
   repeated within REGION_NM of the centre of the first circle, so the
-  region is centred on the ring (pore_x_nm, pore_y_nm: its centre, from the
-  image centre); a circle wider than the region is not a ring (NaN). In
-  Widefield, Confocal and AiryScan the ring is not resolved and this is
-  the apparent radius of the blob.
-- blob_fwhm_nm (Widefield, Confocal and AiryScan only): FWHM of the blob,
+  region is centred on the ring (pore_x_nm, pore_y_nm: then its centre);
+  a circle wider than the region is not a ring (NaN).
+- blob_fwhm_nm (Widefield, Confocal and AiryScan only, where the ring is
+  not resolved and no radius is fitted): FWHM of the blob,
   the mean of the FWHMs of the projections onto x and y of a window of
   BLOB_HALF_WINDOW_NM around the pore, with the background taken
   BACKGROUND_NM at each end of the projection.
@@ -54,10 +54,11 @@ published radius minus EPITOPE_RADIUS_NM. Every pair of probes is scored
 per imaging method with distinguishability_from_features: out-of-fold ROC
 AUC with a 95% bootstrap interval, a null control (two random halves of
 the first probe, expected 0.5) and a permutation p-value, for each feature
-set (radius alone, radius and width, blob FWHM alone).
+set (radius alone and radius and width in STED and SMLM, blob FWHM alone
+in Widefield, Confocal and AiryScan).
 
 Outputs, in the folder <date>fig2_npc_labels of the VLab4Mic output
-directory: npc_label_figure.png, the main figure, in four sections:
+directory: npc_label_figure.png, the main figure, in five sections:
 1, the model: (a) the structure seen from above with the Nup96 C-termini
 (epitopes), (b) the fluorophores of one pore per probe, with the
 fluorophore ring radius of the model (emitter_radius_nm: a description of
@@ -68,9 +69,12 @@ figS2_npc_three_labels.py: (c) one image per probe with its fitted circle,
 (f) the radius increase from the direct label (the estimated linkage
 error) across labelling efficiency, against the true and published ones,
 (g) a closer look at f at LABELLING_EFFICIENCY, against the published
-increase; 4, the other imaging methods, as an extension: (h) one image per
-method and probe, (i) the AUC of each probe against the direct label, (j)
-the increase of the blob FWHM in Widefield, Confocal and AiryScan. Also
+increase; 4, STED, the other method that resolves the ring: (h) one image
+per probe with its fitted circle, (i) histograms of the fitted radii, (j)
+the radius increase from the direct label against the published one, as
+g; 5, Widefield, Confocal and AiryScan, where the ring is a blob: (k) one
+image per method and probe, (l) the AUC of each probe against the direct
+label from the blob FWHM, (m) the increase of the blob FWHM. Also
 features.csv (one row per image), increase_from_direct.csv,
 distinguishability.csv (one row per pair of probes, feature set and
 imaging method), npc_label_figure_values.csv (the values of the other
@@ -161,7 +165,8 @@ PUBLISHED_RADIUS_NM = {
 EPITOPE_RADIUS_NM = 53.5  # Nup96 C-terminus of 7R5K (pore diameter 107 nm at the epitopes)
 
 MODALITIES = ["Widefield", "Confocal", "AiryScan", "STED", "SMLM"]  # increasing resolution
-DIFFRACTION_LIMITED = ["Widefield", "Confocal", "AiryScan"]  # the ring is not resolved
+DIFFRACTION_LIMITED = ["Widefield", "Confocal", "AiryScan"]  # the ring is not resolved: blob
+RING_MODALITIES = ["STED", "SMLM"]  # the ring is resolved: radius fitted
 CAMERA_MODALITIES = ["Widefield", "Confocal", "AiryScan", "STED"]  # exposure set per probe
 # resolution: fig2_npc_panel.py (Widefield: default) and figS2_npc_three_labels.py (STED)
 MODALITY_PARAMS = {
@@ -190,7 +195,7 @@ CALIBRATION_REALISATIONS = 10
 LOCATE_SIGMA_NM = 80
 # measurement of the pore: pixels further than REGION_NM from the pore are background
 # (the ring blurred by the PSF: about the ring radius + 2 PSF s.d.)
-REGION_NM = {"Widefield": 300, "Confocal": 250, "AiryScan": 200, "STED": 100, "SMLM": 100}
+REGION_NM = {"STED": 100, "SMLM": 100}
 # blob FWHM: projections of a window of BLOB_HALF_WINDOW_NM around the pore (inside the field
 # for any offset up to POSITION_JITTER_NM), background BACKGROUND_NM at each end
 BLOB_HALF_WINDOW_NM = 400
@@ -209,7 +214,6 @@ SCALEBAR_NM = 100
 MODEL_VIEW_NM = 170  # model panels: width of the view around the pore centre
 MODEL_SCALEBAR_NM = 50
 N_STRUCTURE_ATOMS = 20000  # atoms of the structure shown (random subset)
-OTHER_MODALITIES = [modality for modality in MODALITIES if modality != "SMLM"]
 MODALITY_COLOURS = dict(zip(MODALITIES, [to_hex(colour) for colour in
                                          plt.cm.viridis(np.linspace(0, 0.9, len(MODALITIES)))]))
 # probes in order of linkage error (checked for colour vision deficiency: every pair apart)
@@ -406,22 +410,29 @@ def simulate(job):
         for modality in MODALITIES:
             image = np.asarray(result["images"][modality]["ch0"])[0]
             pixelsize = pixelsizes[modality]
-            pore, measures = measure_pore(image, pixelsize, REGION_NM[modality])
-            blob = blob_fwhm(image, pixelsize, pore) if modality in DIFFRACTION_LIMITED \
-                else np.nan
+            if modality in RING_MODALITIES:
+                pore, measures = measure_pore(image, pixelsize, REGION_NM[modality])
+                measured = np.isfinite(measures["radius_nm"])
+            else:  # the ring is not resolved: only the blob
+                pore = locate_pore(image, pixelsize)
+                located = pore - np.array(image.shape[::-1]) * pixelsize / 2
+                measures = dict(blob_fwhm_nm=blob_fwhm(image, pixelsize, pore),
+                                pore_x_nm=located[0], pore_y_nm=located[1])
+                measured = np.isfinite(measures["blob_fwhm_nm"])
             rows.append(dict(label=label, modality_name=modality, replicate=result["replicate"],
                              seed=seed, exp_time=exp_times.get(modality, np.nan),
-                             pixelsize_nm=pixelsize, blob_fwhm_nm=blob,
+                             pixelsize_nm=pixelsize,
                              **(model if modality == "SMLM" else {}), **measures))
-            if example_key(label, modality, "image") not in examples \
-                    and np.isfinite(measures["radius_nm"]):
+            if example_key(label, modality, "image") not in examples and measured:
                 crop, extent = crop_around(image, pixelsize, pore)
                 examples[example_key(label, modality, "image")] = crop
                 examples[example_key(label, modality, "extent")] = extent
-                # the fitted circle, from the pore (the centre of the crop)
-                examples[example_key(label, modality, "circle")] = np.array(
-                    [measures["centre_x_nm"] - measures["pore_x_nm"],
-                     measures["centre_y_nm"] - measures["pore_y_nm"], measures["radius_nm"]])
+                if modality in RING_MODALITIES:
+                    # the fitted circle, from the pore (the centre of the crop)
+                    examples[example_key(label, modality, "circle")] = np.array(
+                        [measures["centre_x_nm"] - measures["pore_x_nm"],
+                         measures["centre_y_nm"] - measures["pore_y_nm"],
+                         measures["radius_nm"]])
             if images_dir is not None:
                 stacks[modality].append(image)
     if images_dir is not None:
@@ -489,14 +500,16 @@ def increase_from_direct(features, column, by="modality_name"):
 
 
 def score(features):
-    """Distinguishability of every pair of probes per imaging method and feature set."""
-    features = features.fillna(FILL_VALUES)
+    """Distinguishability of every pair of probes per imaging method and feature set: the ring
+    features in STED and SMLM, the blob size in Widefield, Confocal and AiryScan."""
     tables = []
     for (a, b), (name, columns) in itertools.product(PAIRS, FEATURE_SETS.items()):
         print(f"{a} vs {b}, features: {name}")
         data = features[features.label.isin([a, b])]
         if name == "blob size":
             data = data[data.modality_name.isin(DIFFRACTION_LIMITED)].dropna(subset=columns)
+        else:
+            data = data[data.modality_name.isin(RING_MODALITIES)].fillna(FILL_VALUES)
         table = distinguishability_from_features(
             data, "label", (a, b), columns, by=["modality_name"],
             controls=CONTROLS if name == "all" else None,
@@ -594,7 +607,8 @@ def plot_published(ax, values):
 
 
 def show_example(ax, examples, label, modality, scale_bar=False):
-    """The example image of a probe and imaging method with its fitted circle, without ticks."""
+    """The example image of a probe and imaging method, with its fitted circle if any, without
+    ticks."""
     ax.set_xticks([])
     ax.set_yticks([])
     image = examples.get(example_key(label, modality, "image"))
@@ -602,9 +616,11 @@ def show_example(ax, examples, label, modality, scale_bar=False):
     if image is not None:
         extent = examples[example_key(label, modality, "extent")]
         ax.imshow(image, cmap="magma", extent=extent)
-        centre_x, centre_y, r = examples[example_key(label, modality, "circle")]
-        ax.add_patch(plt.Circle((centre_x, centre_y), r, fill=False, linestyle=":", color="w",
-                                linewidth=1))
+        circle = examples.get(example_key(label, modality, "circle"))
+        if circle is not None and modality in RING_MODALITIES:
+            centre_x, centre_y, r = circle
+            ax.add_patch(plt.Circle((centre_x, centre_y), r, fill=False, linestyle=":",
+                                    color="w", linewidth=1))
     ax.set_xlim(extent[0], extent[1])
     ax.set_ylim(extent[2], extent[3])
     if scale_bar:
@@ -635,24 +651,82 @@ def published_title(label):
     return f"{published[0]} ± {published[1]} nm" if published else "0 nm linker"
 
 
+def plot_ring_examples(fig, spec, examples, modality, letter):
+    """One image per probe with its fitted circle, framed in the probe's colour."""
+    images = spec.subgridspec(1, len(LABELS), wspace=0.05)
+    for k, label in enumerate(LABELS):
+        ax = fig.add_subplot(images[k])
+        show_example(ax, examples, label, modality, scale_bar=k == 0)
+        ax.set_title(f"{PROBE_NAMES[label]}\n{published_title(label)}", fontsize=8)
+        ax.spines[:].set_color(PROBE_COLOURS[label])
+        ax.spines[:].set_linewidth(2)
+        if k == 0:
+            panel_letter(ax, letter, x=-0.2)
+
+
+def plot_radius_histograms(ax, features, modality):
+    """Histograms of the fitted radii per probe, with the published radii (dashed) and the
+    epitopes (dotted)."""
+    measured = features[features.modality_name == modality].dropna(subset=["radius_nm"])
+    bins = np.arange(np.floor(measured.radius_nm.min()) - 1, np.ceil(measured.radius_nm.max()) + 2)
+    for label in LABELS:
+        data = measured[measured.label == label].radius_nm
+        ax.hist(data, bins=bins, histtype="step", linewidth=1.5, color=PROBE_COLOURS[label],
+                label=PROBE_NAMES[label])
+        if label in PUBLISHED_RADIUS_NM:
+            ax.axvline(PUBLISHED_RADIUS_NM[label][0], color=PROBE_COLOURS[label],
+                       linestyle="--", linewidth=1)
+    ax.axvline(EPITOPE_RADIUS_NM, color="0.5", linestyle=":", linewidth=1)
+    ax.set_xlabel(f"Fitted radius, {modality} (nm)")
+    ax.set_ylabel("Pores")
+    ax.set_title("Fitted radii (dashed: published)", fontsize=9)
+    ax.legend(frameon=False, fontsize=7)
+    ax.spines[["top", "right"]].set_visible(False)
+
+
+def plot_increase(ax, radius, modality, title):
+    """The radius increase from the direct label per probe (the estimated linkage error, 95%
+    interval) with the AUC of each probe against the direct label, against the published
+    increase."""
+    data = radius[radius.modality_name == modality].set_index("label").reindex(LABELS)
+    ax.plot(range(len(LABELS)), data.increase, "-", color="0.6", linewidth=1, zorder=1)
+    for k, label in enumerate(LABELS):
+        row = data.loc[label]
+        ax.errorbar(k, row.increase, yerr=error_bars([row.increase], [row.increase_low],
+                                                     [row.increase_high]),
+                    fmt="o", color=PROBE_COLOURS[label], capsize=3, markersize=6, zorder=3)
+        if label != REFERENCE:
+            top_y = row.increase_high if np.isfinite(row.increase_high) else row.increase
+            ax.annotate(f"AUC {row.auc:.2f}", (k, top_y), xytext=(0, 5),
+                        textcoords="offset points", ha="center", fontsize=7, color="0.2")
+    plot_published(ax, radius)
+    ax.axhline(0, color="0.5", linestyle=":", linewidth=1)
+    ax.set_ylabel("Radius increase from direct (nm)")
+    ax.set_title(title, fontsize=9)
+    ax.legend(frameon=False, fontsize=7, loc="upper left")
+    probe_axis(ax)
+    ax.set_xlabel("Probe (increasing linkage error)")
+
+
 def plot_figure(examples, features, values, sweep, prefix):
-    """The main figure, in four sections. 1, the model: (a) the structure from above with the
+    """The main figure, in five sections. 1, the model: (a) the structure from above with the
     Nup96 C-termini (epitopes), (b) the fluorophores of one pore per probe. 2, SMLM: (c) one
     image per probe with its fitted circle, (d) histograms of the fitted radii, (e) simulated
     against published radius. 3, SMLM, detecting the linkage error: (f) the radius increase
     from the direct label (estimated linkage error) across labelling efficiency (sweep
     summary; empty without one), against the true and published ones, (g) a closer look at f
-    at LABELLING_EFFICIENCY, against the published one. 4, the other imaging methods: (h) one
-    image per method and
-    probe, (i) the AUC of each probe against the direct label, (j) the increase of the blob
-    FWHM in Widefield, Confocal and AiryScan."""
+    at LABELLING_EFFICIENCY, against the published one. 4, STED: (h) one image per probe with
+    its fitted circle, (i) histograms of the fitted radii, (j) the radius increase from the
+    direct label, as g. 5, Widefield, Confocal and AiryScan (the ring is a blob): (k) one
+    image per method and probe, (l) the AUC of each probe against the direct label from the
+    blob FWHM, (m) the increase of the blob FWHM."""
     labels = list(LABELS)
     x = np.arange(len(labels))
     radius = values[values.metric == "radius_nm"]
     blob = values[values.metric == "blob_fwhm_nm"]
     smlm = radius[radius.modality_name == "SMLM"].set_index("label").reindex(labels)
-    fig = plt.figure(figsize=[12, 17])
-    bands = fig.add_gridspec(4, 1, height_ratios=[0.8, 1, 1, 1.9], hspace=0.42)
+    fig = plt.figure(figsize=[12, 21])
+    bands = fig.add_gridspec(5, 1, height_ratios=[0.8, 1, 1, 1, 1.5], hspace=0.5)
 
     # 1: the model
     top = bands[0].subgridspec(1, 1 + len(labels), wspace=0.1)
@@ -681,31 +755,9 @@ def plot_figure(examples, features, values, sweep, prefix):
 
     # 2: SMLM
     middle = bands[1].subgridspec(1, 3, width_ratios=[2.3, 1.15, 1], wspace=0.3)
-    images = middle[0].subgridspec(1, len(labels), wspace=0.05)
-    for k, label in enumerate(labels):
-        ax = fig.add_subplot(images[k])
-        show_example(ax, examples, label, "SMLM", scale_bar=k == 0)
-        ax.set_title(f"{PROBE_NAMES[label]}\n{published_title(label)}", fontsize=8)
-        ax.spines[:].set_color(PROBE_COLOURS[label])
-        ax.spines[:].set_linewidth(2)
-        if k == 0:
-            panel_letter(ax, "c", x=-0.2)
+    plot_ring_examples(fig, middle[0], examples, "SMLM", "c")
     ax_d = fig.add_subplot(middle[1])
-    measured = features[(features.modality_name == "SMLM")].dropna(subset=["radius_nm"])
-    bins = np.arange(np.floor(measured.radius_nm.min()) - 1, np.ceil(measured.radius_nm.max()) + 2)
-    for label in labels:
-        data = measured[measured.label == label].radius_nm
-        ax_d.hist(data, bins=bins, histtype="step", linewidth=1.5, color=PROBE_COLOURS[label],
-                  label=PROBE_NAMES[label])
-        if label in PUBLISHED_RADIUS_NM:
-            ax_d.axvline(PUBLISHED_RADIUS_NM[label][0], color=PROBE_COLOURS[label],
-                         linestyle="--", linewidth=1)
-    ax_d.axvline(EPITOPE_RADIUS_NM, color="0.5", linestyle=":", linewidth=1)
-    ax_d.set_xlabel("Fitted radius, SMLM (nm)")
-    ax_d.set_ylabel("Pores")
-    ax_d.set_title("Fitted radii (dashed: published)", fontsize=9)
-    ax_d.legend(frameon=False, fontsize=7)
-    ax_d.spines[["top", "right"]].set_visible(False)
+    plot_radius_histograms(ax_d, features, "SMLM")
     panel_letter(ax_d, "d", x=-0.2)
     ax_e = fig.add_subplot(middle[2])
     for label in labels:
@@ -763,34 +815,29 @@ def plot_figure(examples, features, values, sweep, prefix):
     ax_f.spines[["top", "right"]].set_visible(False)
     panel_letter(ax_f, "f")
     ax_g = fig.add_subplot(third[1])
-    ax_g.plot(x, smlm.increase, "-", color="0.6", linewidth=1, zorder=1)
-    for k, label in enumerate(labels):
-        row = smlm.loc[label]
-        ax_g.errorbar(k, row.increase, yerr=error_bars([row.increase], [row.increase_low],
-                                                       [row.increase_high]),
-                      fmt="o", color=PROBE_COLOURS[label], capsize=3, markersize=6, zorder=3)
-        if label != REFERENCE:
-            top_y = row.increase_high if np.isfinite(row.increase_high) else row.increase
-            ax_g.annotate(f"AUC {row.auc:.2f}", (k, top_y), xytext=(0, 5),
-                          textcoords="offset points", ha="center", fontsize=7, color="0.2")
-    plot_published(ax_g, radius)
-    ax_g.axhline(0, color="0.5", linestyle=":", linewidth=1)
-    ax_g.set_ylabel("Radius increase from direct (nm)")
-    ax_g.set_title(f"Estimated linkage error, SMLM (labelling efficiency "
-                   f"{LABELLING_EFFICIENCY:g})", fontsize=9)
-    ax_g.legend(frameon=False, fontsize=7, loc="upper left")
-    probe_axis(ax_g)
-    ax_g.set_xlabel("Probe (increasing linkage error)")
+    plot_increase(ax_g, radius, "SMLM", f"Estimated linkage error, SMLM (labelling efficiency "
+                                        f"{LABELLING_EFFICIENCY:g})")
     panel_letter(ax_g, "g")
 
-    # 4: the other imaging methods
-    bottom = bands[3].subgridspec(1, 2, width_ratios=[1, 1.15], wspace=0.25)
-    grid = bottom[0].subgridspec(len(OTHER_MODALITIES), len(labels), wspace=0.05, hspace=0.08)
-    for i, modality in enumerate(OTHER_MODALITIES):
+    # 4: STED
+    fourth = bands[3].subgridspec(1, 3, width_ratios=[2.3, 1.1, 1.8], wspace=0.3)
+    plot_ring_examples(fig, fourth[0], examples, "STED", "h")
+    ax_i = fig.add_subplot(fourth[1])
+    plot_radius_histograms(ax_i, features, "STED")
+    panel_letter(ax_i, "i", x=-0.2)
+    ax_j = fig.add_subplot(fourth[2])
+    plot_increase(ax_j, radius, "STED", "Estimated linkage error, STED")
+    panel_letter(ax_j, "j", x=-0.2)
+
+    # 5: the diffraction-limited methods: the blob
+    bottom = bands[4].subgridspec(1, 2, width_ratios=[1, 1.15], wspace=0.25)
+    grid = bottom[0].subgridspec(len(DIFFRACTION_LIMITED), len(labels), wspace=0.05,
+                                 hspace=0.08)
+    for i, modality in enumerate(DIFFRACTION_LIMITED):
         for k, label in enumerate(labels):
             ax = fig.add_subplot(grid[i, k])
             show_example(ax, examples, label, modality,
-                         scale_bar=i == len(OTHER_MODALITIES) - 1 and k == 0)
+                         scale_bar=i == len(DIFFRACTION_LIMITED) - 1 and k == 0)
             if i == 0:
                 ax.set_title(PROBE_NAMES[label], fontsize=8)
             if k == 0:
@@ -798,52 +845,50 @@ def plot_figure(examples, features, values, sweep, prefix):
                 ax.spines["left"].set_color(MODALITY_COLOURS[modality])
                 ax.spines["left"].set_linewidth(4)
             if i == 0 and k == 0:
-                panel_letter(ax, "h", x=-0.3)
+                panel_letter(ax, "k", x=-0.3)
     plots = bottom[1].subgridspec(2, 1, hspace=0.45)
-    dodge = dict(zip(MODALITIES, np.linspace(-0.12, 0.12, len(MODALITIES))))
-    ax_i = fig.add_subplot(plots[0])
-    for j, modality in enumerate(MODALITIES):
-        data = radius[radius.modality_name == modality].set_index("label").reindex(labels)
+    dodge = dict(zip(DIFFRACTION_LIMITED, np.linspace(-0.1, 0.1, len(DIFFRACTION_LIMITED))))
+    ax_l = fig.add_subplot(plots[0])
+    for j, modality in enumerate(DIFFRACTION_LIMITED):
+        data = blob[blob.modality_name == modality].set_index("label").reindex(labels)
         colour = MODALITY_COLOURS[modality]
-        reference = modality == "SMLM"
-        ax_i.errorbar(x[1:] + dodge[modality], data.auc[1:],
+        ax_l.errorbar(x[1:] + dodge[modality], data.auc[1:],
                       yerr=error_bars(data.auc[1:], data.auc_low[1:], data.auc_high[1:]),
-                      fmt="o--" if reference else "o-", color=colour, capsize=2,
-                      markersize=3 if reference else 4, linewidth=1 if reference else 1.5,
-                      label=f"{modality} (as g)" if reference else modality)
-        ax_i.plot(x[0] + dodge[modality], data.null_auc.iloc[0], "x", color=colour,
+                      fmt="o-", color=colour, capsize=2, markersize=4, label=modality)
+        ax_l.plot(x[0] + dodge[modality], data.null_auc.iloc[0], "x", color=colour,
                   label="null (direct vs direct)" if j == 0 else None)
-    ax_i.axhline(0.5, color="0.5", linestyle=":", linewidth=1)
-    ax_i.set_ylim(min(0.3, np.nanmin(radius.null_auc) - 0.05), 1.05)
-    ax_i.set_ylabel("ROC AUC vs direct")
-    ax_i.set_title("Probe vs direct label, fitted radius", fontsize=9)
-    ax_i.legend(frameon=False, fontsize=7, loc="upper left", bbox_to_anchor=(1.01, 1))
-    panel_letter(ax_i, "i")
-    ax_j = fig.add_subplot(plots[1])
+    ax_l.axhline(0.5, color="0.5", linestyle=":", linewidth=1)
+    ax_l.set_ylim(max(0, min(0.3, np.nanmin(blob[["null_auc", "auc_low"]].values) - 0.05)), 1.05)
+    ax_l.set_ylabel("ROC AUC vs direct")
+    ax_l.set_title("Probe vs direct label, blob FWHM", fontsize=9)
+    ax_l.legend(frameon=False, fontsize=7, loc="upper left", bbox_to_anchor=(1.01, 1))
+    panel_letter(ax_l, "l")
+    ax_m = fig.add_subplot(plots[1])
     for modality in DIFFRACTION_LIMITED:
         data = blob[blob.modality_name == modality].set_index("label").reindex(labels)
         if data.increase.isna().all():
             continue
-        ax_j.errorbar(x + dodge[modality], data.increase,
+        ax_m.errorbar(x + dodge[modality], data.increase,
                       yerr=error_bars(data.increase, data.increase_low, data.increase_high),
                       fmt="o-", color=MODALITY_COLOURS[modality], capsize=2, markersize=4,
-                      label=f"{modality}: FWHM {data.reference_mean.iloc[0]:.0f} nm,\n"
-                            f"  antibody AUC {data.auc.iloc[-1]:.2f}")
-    plot_published(ax_j, radius)
-    ax_j.axhline(0, color="0.5", linestyle=":", linewidth=1)
-    ax_j.set_ylabel("FWHM increase (nm)")
-    ax_j.set_title("Apparent blob size, from the direct label", fontsize=9)
-    ax_j.legend(frameon=False, fontsize=7, loc="upper left", bbox_to_anchor=(1.01, 1))
-    ax_j.set_xlabel("Probe (increasing linkage error)")
-    panel_letter(ax_j, "j")
-    for axis in (ax_i, ax_j):
+                      label=f"{modality}: FWHM {data.reference_mean.iloc[0]:.0f} nm")
+    plot_published(ax_m, radius)
+    ax_m.axhline(0, color="0.5", linestyle=":", linewidth=1)
+    ax_m.set_ylabel("FWHM increase (nm)")
+    ax_m.set_title("Apparent blob size, from the direct label", fontsize=9)
+    ax_m.legend(frameon=False, fontsize=7, loc="upper left", bbox_to_anchor=(1.01, 1))
+    ax_m.set_xlabel("Probe (increasing linkage error)")
+    panel_letter(ax_m, "m")
+    for axis in (ax_l, ax_m):
         probe_axis(axis)
 
     section_title(fig, bands[0], "1  Model: the nuclear pore, its epitopes and the four probes")
     section_title(fig, bands[1], "2  SMLM: images, fitted radii and the reference dataset")
     section_title(fig, bands[2], "3  SMLM: detecting the linkage error across labelling "
                                  "efficiency")
-    section_title(fig, bands[3], "4  The other imaging methods of the dataset")
+    section_title(fig, bands[3], "4  STED: images and fitted radii")
+    section_title(fig, bands[4], "5  Widefield, Confocal and AiryScan: the ring is not "
+                                 "resolved, the blob is measured")
     fig.savefig(prefix + "npc_label_figure.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
 
@@ -896,7 +941,8 @@ def main():
             json.dump(settings, handle, indent=1, default=str)
 
     increase = pd.concat([
-        increase_from_direct(features, "radius_nm"),
+        increase_from_direct(features[features.modality_name.isin(RING_MODALITIES)],
+                             "radius_nm"),
         increase_from_direct(features[features.modality_name.isin(DIFFRACTION_LIMITED)],
                              "blob_fwhm_nm"),
     ], ignore_index=True)
