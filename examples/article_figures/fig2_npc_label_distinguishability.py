@@ -9,8 +9,9 @@ figS2_npc_three_labels.py. The reference dataset (Thevathasan et al. 2019)
 gives ring radii of 53.7 +/- 2.1, 55.0 +/- 1.9 and 64.3 +/- 2.6 nm for the
 last three; the Nup96 C-terminus of the model is at EPITOPE_RADIUS_NM.
 
-For each probe, N independent realisations (one pore each, at the centre
-of a 1000 x 1000 nm field, seen from above and rotated in plane) are
+For each probe, N independent realisations (one pore each, seen from
+above, rotated in plane and placed at random within POSITION_JITTER_NM of
+the centre of a 1000 x 1000 nm field) are
 imaged by the five imaging methods of the dataset: Widefield, Confocal,
 AiryScan, STED and SMLM. Every realisation is imaged by all of them, so
 within a probe the methods see the same pores. The modality parameters
@@ -22,15 +23,29 @@ SIGNAL_PHOTONS in each camera modality, so all probes are equally bright
 despite their different numbers of fluorophores.
 
 Every image is measured from its pixels (as in
-fig2_npc_integrity_distinguishability.py):
-- radius_nm, width_nm: the pixels within REGION_NM of the image centre
-  above an Otsu threshold are taken as points of the ring; radius of a
-  geometric circle fit to them and s.d. of their distances to its centre.
-  In Widefield, Confocal and AiryScan the ring is not resolved and this is
+fig2_npc_integrity_distinguishability.py). The pore is first located: the
+brightest pixel of the image smoothed by a Gaussian of LOCATE_SIGMA_NM.
+Then:
+- radius_nm, width_nm: the pixels within REGION_NM of the pore above an
+  Otsu threshold are taken as points of the ring; radius of a geometric
+  circle fit to them and s.d. of their distances to its centre. The fit is
+  repeated within REGION_NM of the centre of the first circle, so the
+  region is centred on the ring (pore_x_nm, pore_y_nm: its centre, from the
+  image centre); a circle wider than the region is not a ring (NaN). In
+  Widefield, Confocal and AiryScan the ring is not resolved and this is
   the apparent radius of the blob.
 - blob_fwhm_nm (Widefield, Confocal and AiryScan only): FWHM of the blob,
-  the mean of the FWHMs of the projections of the image onto x and y, with
-  the background taken BACKGROUND_NM at each end of the projection.
+  the mean of the FWHMs of the projections onto x and y of a window of
+  BLOB_HALF_WINDOW_NM around the pore, with the background taken
+  BACKGROUND_NM at each end of the projection.
+
+Labelling-efficiency sweep (SMLM only): for each probe and each of
+SWEEP_LABELLING_EFFICIENCIES, N_SWEEP_REALISATIONS pores are simulated and
+measured in the same way. At each labelling efficiency, the increase of
+the mean radius from the direct label is the estimated linkage error,
+compared with the true one of the model (the increase of the fluorophore
+ring radius from the direct label) and the published one, with the AUC of
+the probe against the direct label from the radius alone.
 
 Within each imaging method, the increase of the mean radius (and blob
 FWHM) from the direct label is the enlargement due to the linkage error
@@ -49,27 +64,32 @@ fluorophore ring radius of the model (emitter_radius_nm: a description of
 the model, never used as a measurement); 2, SMLM, as in
 figS2_npc_three_labels.py: (c) one image per probe with its fitted circle,
 (d) histograms of the fitted radii, (e) simulated against published radius;
-3, SMLM distinguishability, with the probe as a proxy for the linkage
-error: (f) the AUC of every pair of probes from the radius alone, (g) the
-radius increase from the direct label (the estimated linkage error) against
-the published one; 4, the other imaging methods, as an extension: (h) one
-image per method and probe, (i) the AUC of each probe against the direct
-label, (j) the increase of the blob FWHM in Widefield, Confocal and
-AiryScan. Also features.csv (one row per image), increase_from_direct.csv,
+3, SMLM: detecting the linkage error, with the probe as a proxy for it:
+(f) the radius increase from the direct label (the estimated linkage
+error) across labelling efficiency, against the true and published ones,
+(g) a closer look at f at LABELLING_EFFICIENCY, against the published
+increase; 4, the other imaging methods, as an extension: (h) one image per
+method and probe, (i) the AUC of each probe against the direct label, (j)
+the increase of the blob FWHM in Widefield, Confocal and AiryScan. Also
+features.csv (one row per image), increase_from_direct.csv,
 distinguishability.csv (one row per pair of probes, feature set and
-imaging method), smlm_auc_matrix.csv (the values of f),
-npc_label_figure_values.csv (the values of the other panels, one row per
-measure, imaging method and probe), settings.json and examples.npz (the
-structure, fluorophores and example images with their fitted circles, so
---features plots them again).
+imaging method), npc_label_figure_values.csv (the values of the other
+panels, one row per measure, imaging method and probe),
+sweep_features.csv (one row per image of the sweep), sweep_summary.csv
+(the values of f, one row per labelling efficiency and probe),
+settings.json and examples.npz (the structure, fluorophores and example
+images with their fitted circles, so --features plots them again).
 
 Run:   python fig2_npc_label_distinguishability.py
 Score an existing feature table again, without simulating:
        python fig2_npc_label_distinguishability.py --features <folder>/features.csv
-(the outputs are written next to the feature table)
+(the outputs are written next to the feature table; the sweep is scored
+again from sweep_features.csv in the same folder, if there is one)
 
 Environment variables: VLAB4MIC_N_REALISATIONS (100 per probe; e.g. 5 for
-a quick run), VLAB4MIC_N_PERMUTATIONS (200), VLAB4MIC_N_WORKERS (1;
+a quick run), VLAB4MIC_N_SWEEP_REALISATIONS (as VLAB4MIC_N_REALISATIONS,
+per probe and labelling efficiency of the sweep),
+VLAB4MIC_N_PERMUTATIONS (200), VLAB4MIC_N_WORKERS (1;
 probes and scoring in parallel processes), VLAB4MIC_SAVE_IMAGES (0; 1
 saves the images of every probe and imaging method as a TIFF stack, one
 realisation per frame, in <folder>/images).
@@ -86,6 +106,8 @@ import numpy as np
 import pandas as pd
 import tifffile
 from matplotlib.colors import to_hex
+from matplotlib.lines import Line2D
+from scipy import ndimage
 from tqdm.auto import tqdm
 
 from vlab4mic import experiments
@@ -94,6 +116,7 @@ from vlab4mic.analysis.distinguishability import distinguishability_from_feature
 from vlab4mic.experiments import ExperimentParametrisation, output_path
 
 N_REALISATIONS = int(os.environ.get("VLAB4MIC_N_REALISATIONS", 100))
+N_SWEEP_REALISATIONS = int(os.environ.get("VLAB4MIC_N_SWEEP_REALISATIONS", N_REALISATIONS))
 N_PERMUTATIONS = int(os.environ.get("VLAB4MIC_N_PERMUTATIONS", 200))
 N_WORKERS = int(os.environ.get("VLAB4MIC_N_WORKERS", 1))
 SAVE_IMAGES = os.environ.get("VLAB4MIC_SAVE_IMAGES", "0") not in ("0", "", "false", "False")
@@ -105,6 +128,12 @@ LABELLING_EFFICIENCY = 0.4  # Supp. Note 4
 # 1000 nm (the detector field of view of every modality): the Widefield blob
 # (FWHM ~320 nm) leaves background at the edges to measure its size
 SAMPLE_DIMENSIONS = [1000, 1000, 100]
+# every realisation moves the pore by a random offset (uniform, up to this in x and y) from the
+# field centre, so it is located in the image before it is measured
+POSITION_JITTER_NM = 100
+# sweep: SMLM (no exposure to calibrate) at these labelling efficiencies
+SWEEP_LABELLING_EFFICIENCIES = [0.1, 0.2, 0.4, 0.6, 0.8, 1.0]
+SWEEP_MODALITY = "SMLM"
 
 TARGET = dict(probe_target_type="Sequence", probe_target_value="ELAVGSL")  # Nup96 C-terminus
 # probes in order of linkage error; the first one is the reference
@@ -156,10 +185,16 @@ EXP_TIME = {"Widefield": 0.01, "Confocal": 0.001, "AiryScan": 0.01, "STED": 0.00
 SIGNAL_PHOTONS = {"Widefield": 17000, "Confocal": 1900, "AiryScan": 20000, "STED": 2000}
 CALIBRATION_REALISATIONS = 10
 
-# measurement of the pore: pixels further than REGION_NM from the image centre are background
+# location of the pore: the image smoothed by a Gaussian wider than the ring radius / sqrt(2),
+# so the ring becomes one peak at its centre
+LOCATE_SIGMA_NM = 80
+# measurement of the pore: pixels further than REGION_NM from the pore are background
 # (the ring blurred by the PSF: about the ring radius + 2 PSF s.d.)
 REGION_NM = {"Widefield": 300, "Confocal": 250, "AiryScan": 200, "STED": 100, "SMLM": 100}
-BACKGROUND_NM = 200  # at each end of a projection, for the blob FWHM
+# blob FWHM: projections of a window of BLOB_HALF_WINDOW_NM around the pore (inside the field
+# for any offset up to POSITION_JITTER_NM), background BACKGROUND_NM at each end
+BLOB_HALF_WINDOW_NM = 400
+BACKGROUND_NM = 100
 
 FEATURES = ["radius_nm", "width_nm"]
 FEATURE_SETS = {"radius": ["radius_nm"], "all": FEATURES, "blob size": ["blob_fwhm_nm"]}
@@ -196,17 +231,28 @@ def set_acquisition(experiment, exp_times):
             noise_model[name][NOISE_KEYS[name]] = value
 
 
-def measure_npc(image, pixelsize, region_nm):
-    """Ring radius and width from a circle fit to the bright pixels around the image centre,
-    and the centre of the circle (nm, from the image centre)."""
-    missing = dict(radius_nm=np.nan, width_nm=np.nan, n_pixels=0, centre_x_nm=np.nan,
-                   centre_y_nm=np.nan)
+def locate_pore(image, pixelsize):
+    """Centre of the pore (nm from the image origin, x and y): the brightest pixel of the image
+    smoothed by a Gaussian of LOCATE_SIGMA_NM."""
+    smoothed = ndimage.gaussian_filter(np.asarray(image, dtype=float),
+                                       max(1.0, LOCATE_SIGMA_NM / pixelsize))
+    row, col = np.unravel_index(np.argmax(smoothed), smoothed.shape)
+    return (np.array([col, row]) + 0.5) * pixelsize
+
+
+def measure_npc(image, pixelsize, region_nm, pore):
+    """Ring radius and width from a circle fit to the bright pixels around the pore (nm from
+    the image origin), and the centres of the pore and of the circle (nm, from the image
+    centre)."""
     image = np.asarray(image, dtype=float)
+    image_centre = np.array(image.shape[::-1]) * pixelsize / 2
+    located = np.asarray(pore) - image_centre
+    missing = dict(radius_nm=np.nan, width_nm=np.nan, n_pixels=0, centre_x_nm=np.nan,
+                   centre_y_nm=np.nan, pore_x_nm=located[0], pore_y_nm=located[1])
     rows_px, cols_px = np.indices(image.shape)
     xy = np.c_[cols_px.ravel() + 0.5, rows_px.ravel() + 0.5] * pixelsize  # pixel centres, nm
     values = image.ravel()
-    image_centre = np.array(image.shape[::-1]) * pixelsize / 2
-    region = np.linalg.norm(xy - image_centre, axis=1) <= region_nm
+    region = np.linalg.norm(xy - pore, axis=1) <= region_nm
     xy, values = xy[region], values[region]
     if np.ptp(values) == 0:
         return missing
@@ -214,16 +260,43 @@ def measure_npc(image, pixelsize, region_nm):
     if len(points) < 3:
         return dict(missing, n_pixels=len(points))
     centre, radius = particle_measures.fit_circle_geometric(points)
+    if radius > region_nm:  # wider than the region its points come from: a degenerate fit
+        return dict(missing, n_pixels=len(points))
     width = np.linalg.norm(points - centre, axis=1).std()
     offset = np.asarray(centre) - image_centre
-    return dict(radius_nm=radius, width_nm=width, n_pixels=len(points),
+    return dict(missing, radius_nm=radius, width_nm=width, n_pixels=len(points),
                 centre_x_nm=offset[0], centre_y_nm=offset[1])
 
 
-def blob_fwhm(image, pixelsize):
-    """FWHM of the blob (nm): mean of the FWHMs of the projections of the image onto x and y,
-    each with its background taken BACKGROUND_NM at both ends. NaN if one is not measurable."""
+def measure_pore(image, pixelsize, region_nm):
+    """The pore located, its ring fitted within region_nm of it, and fitted again within
+    region_nm of the centre of that circle, so the region is centred on the ring whatever the
+    error of the location. Returns the centre of the last region (nm from the image origin)
+    and the measures."""
+    pore = locate_pore(image, pixelsize)
+    measures = measure_npc(image, pixelsize, region_nm, pore)
+    if np.isfinite(measures["radius_nm"]):
+        image_centre = np.array(np.shape(image)[::-1]) * pixelsize / 2
+        pore = image_centre + np.array([measures["centre_x_nm"], measures["centre_y_nm"]])
+        measures = measure_npc(image, pixelsize, region_nm, pore)
+    return pore, measures
+
+
+def window(image, pixelsize, pore, half_nm):
+    """The pixels within half_nm of the pore (nm from the image origin) along x and y, cut at
+    the image edges, and the position of its first pixel (row, column)."""
     image = np.asarray(image, dtype=float)
+    half = int(round(half_nm / pixelsize))
+    col, row = (np.asarray(pore) / pixelsize).astype(int)
+    row0, col0 = max(row - half, 0), max(col - half, 0)
+    return image[row0:row + half, col0:col + half], (row0, col0)
+
+
+def blob_fwhm(image, pixelsize, pore):
+    """FWHM of the blob (nm): mean of the FWHMs of the projections onto x and y of the window
+    of BLOB_HALF_WINDOW_NM around the pore, each with its background taken BACKGROUND_NM at
+    both ends. NaN if one is not measurable."""
+    image, __ = window(image, pixelsize, pore, BLOB_HALF_WINDOW_NM)
     background_px = max(1, int(round(BACKGROUND_NM / pixelsize)))
     widths = []
     for profile in (image.sum(axis=0), image.sum(axis=1)):
@@ -235,16 +308,13 @@ def blob_fwhm(image, pixelsize):
     return float(np.mean(widths))
 
 
-def crop_centre(image, pixelsize):
-    """CROP_NM around the image centre, and its extent (left, right, bottom, top) in nm from
-    the image centre, for imshow with the origin at the top."""
-    image = np.asarray(image, dtype=float)
-    half = int(round(CROP_NM / 2 / pixelsize))
-    rows, cols = np.array(image.shape) // 2
-    crop = image[rows - half:rows + half, cols - half:cols + half]
-    centre_x, centre_y = np.array(image.shape[::-1]) * pixelsize / 2
-    extent = np.array([(cols - half) * pixelsize - centre_x, (cols + half) * pixelsize - centre_x,
-                       (rows + half) * pixelsize - centre_y, (rows - half) * pixelsize - centre_y])
+def crop_around(image, pixelsize, pore):
+    """CROP_NM around the pore (nm from the image origin), and its extent (left, right,
+    bottom, top) in nm from the pore, for imshow with the origin at the top."""
+    crop, (row0, col0) = window(image, pixelsize, pore, CROP_NM / 2)
+    rows, cols = crop.shape
+    extent = np.array([col0 * pixelsize - pore[0], (col0 + cols) * pixelsize - pore[0],
+                       (row0 + rows) * pixelsize - pore[1], row0 * pixelsize - pore[1]])
     return crop.astype(np.float32), extent
 
 
@@ -265,25 +335,55 @@ def structure_view(structure, target, seed):
                 structure_epitopes=((epitopes - centre) * to_nm)[:, :2])
 
 
-def simulate(job):
-    """One probe: N_REALISATIONS pores, each imaged by every imaging method and measured (one
-    row per image), and the first image of every method with a fitted ring (cropped)."""
-    label, seed, images_dir = job
+def build_experiment(label, seed, modalities):
+    """The experiment of a probe: one pore seen from above, rotated in plane and placed at a
+    random offset from the field centre, imaged by the given imaging methods."""
     __, __, experiment = experiments.image_vsample(
         structure=STRUCTURE,
         probe_list=[dict({"labelling_efficiency": LABELLING_EFFICIENCY}, **probe)
                     for probe in LABELS[label]],
-        multimodal=MODALITIES,
+        multimodal=modalities,
         number_of_particles=1,
         sample_dimensions=SAMPLE_DIMENSIONS,
         sample_inital_orientation=[0, 0, 1],
+        position_jitter_nm=POSITION_JITTER_NM,
         run_simulation=False,
         clear_experiment=True,
         random_seed=seed,
     )
     experiment.set_virtualsample_params(random_orientations=False, random_rotations=True)
     for modality, params in MODALITY_PARAMS.items():
-        experiment.update_modality(modality_name=modality, **params)
+        if modality in modalities:
+            experiment.update_modality(modality_name=modality, **params)
+    return experiment
+
+
+def fluorophore_ring(result):
+    """The fluorophores of the pore, as the model places them (not a measurement): their
+    coordinates (nm, from the centre of their ring), number, ring radius and the offset of the
+    ring centre from the field centre, along the x and y of the images (the images are
+    transposed: their x is the y of the field). NaN with too few fluorophores for a ring, e.g.
+    at a low labelling efficiency (fewer than 3, or a fit wider than the SMLM region)."""
+    emitters = np.asarray(list(result["positions"]["SMLM"]["ch0"].values())[0]["emitters"],
+                          dtype=float).reshape(-1, 3)
+    model = dict(n_emitters=len(emitters), emitter_radius_nm=np.nan, emitter_centre_x_nm=np.nan,
+                 emitter_centre_y_nm=np.nan)
+    if len(emitters) < 3:
+        return emitters[:, :2], model
+    ring = particle_measures.ring_measures(emitters)
+    if ring["radius"] > REGION_NM["SMLM"]:
+        return emitters[:, :2] - ring["centre"], model
+    offset = np.asarray(ring["centre"]) - np.array(SAMPLE_DIMENSIONS[:2]) / 2
+    return emitters[:, :2] - ring["centre"], dict(
+        model, emitter_radius_nm=ring["radius"], emitter_centre_x_nm=offset[1],
+        emitter_centre_y_nm=offset[0])
+
+
+def simulate(job):
+    """One probe: N_REALISATIONS pores, each imaged by every imaging method and measured (one
+    row per image), and the first image of every method with a fitted ring (cropped)."""
+    label, seed, images_dir = job
+    experiment = build_experiment(label, seed, MODALITIES)
     # equal brightness for all probes: scale the exposure to the probe's signal
     set_acquisition(experiment, EXP_TIME)
     calibration = experiment.run_replicates(CALIBRATION_REALISATIONS, modality="All")
@@ -300,29 +400,28 @@ def simulate(job):
         examples.update(structure_view(experiment.structure, LABELS[label][0]["probe_name"], seed))
     stacks = {modality: [] for modality in MODALITIES}
     for result in experiment.run_replicates(N_REALISATIONS, modality="All"):
-        # the fluorophores of the pore, as the model places them (not a measurement)
-        emitters = list(result["positions"]["SMLM"]["ch0"].values())[0]["emitters"]
-        fluorophore_ring = particle_measures.ring_measures(emitters)
+        emitters, model = fluorophore_ring(result)
         if example_key(label, "SMLM", "emitters") not in examples:
-            examples[example_key(label, "SMLM", "emitters")] = \
-                np.asarray(emitters, dtype=float)[:, :2] - fluorophore_ring["centre"]
+            examples[example_key(label, "SMLM", "emitters")] = emitters
         for modality in MODALITIES:
             image = np.asarray(result["images"][modality]["ch0"])[0]
             pixelsize = pixelsizes[modality]
-            measures = measure_npc(image, pixelsize, REGION_NM[modality])
-            blob = blob_fwhm(image, pixelsize) if modality in DIFFRACTION_LIMITED else np.nan
+            pore, measures = measure_pore(image, pixelsize, REGION_NM[modality])
+            blob = blob_fwhm(image, pixelsize, pore) if modality in DIFFRACTION_LIMITED \
+                else np.nan
             rows.append(dict(label=label, modality_name=modality, replicate=result["replicate"],
                              seed=seed, exp_time=exp_times.get(modality, np.nan),
                              pixelsize_nm=pixelsize, blob_fwhm_nm=blob,
-                             emitter_radius_nm=fluorophore_ring["radius"]
-                             if modality == "SMLM" else np.nan, **measures))
+                             **(model if modality == "SMLM" else {}), **measures))
             if example_key(label, modality, "image") not in examples \
                     and np.isfinite(measures["radius_nm"]):
-                crop, extent = crop_centre(image, pixelsize)
+                crop, extent = crop_around(image, pixelsize, pore)
                 examples[example_key(label, modality, "image")] = crop
                 examples[example_key(label, modality, "extent")] = extent
+                # the fitted circle, from the pore (the centre of the crop)
                 examples[example_key(label, modality, "circle")] = np.array(
-                    [measures["centre_x_nm"], measures["centre_y_nm"], measures["radius_nm"]])
+                    [measures["centre_x_nm"] - measures["pore_x_nm"],
+                     measures["centre_y_nm"] - measures["pore_y_nm"], measures["radius_nm"]])
             if images_dir is not None:
                 stacks[modality].append(image)
     if images_dir is not None:
@@ -333,14 +432,39 @@ def simulate(job):
     return pd.DataFrame(rows), examples
 
 
-def increase_from_direct(features, column):
-    """Per imaging method and probe: mean, s.d. and number of the measured images, and the
-    increase of the mean from the direct label with a 95% interval; with the published radius
-    and its increase from EPITOPE_RADIUS_NM (0 for the direct label, at the epitope)."""
+def simulate_sweep(job):
+    """One probe at every labelling efficiency of the sweep: N_SWEEP_REALISATIONS pores each,
+    imaged by SWEEP_MODALITY and measured (one row per image)."""
+    label, seed = job
+    experiment = build_experiment(label, seed, [SWEEP_MODALITY])
+    pixelsize = pixelsize_nm(experiment, SWEEP_MODALITY)
+    # the probes whose labelling efficiency is swept (not the GFP fused to Nup96, always 1)
+    swept = [probe["probe_name"] for probe in LABELS[label] if "labelling_efficiency" not in probe]
+    rows = []
+    for labelling_efficiency in SWEEP_LABELLING_EFFICIENCIES:
+        for name in swept:
+            experiment.probe_parameters[name]["labelling_efficiency"] = labelling_efficiency
+        experiment.build(modules=["particle"])
+        for result in experiment.run_replicates(N_SWEEP_REALISATIONS, modality=SWEEP_MODALITY):
+            image = np.asarray(result["images"][SWEEP_MODALITY]["ch0"])[0]
+            __, measures = measure_pore(image, pixelsize, REGION_NM[SWEEP_MODALITY])
+            rows.append(dict(label=label, labelling_efficiency=labelling_efficiency,
+                             modality_name=SWEEP_MODALITY, replicate=result["replicate"],
+                             seed=seed, pixelsize_nm=pixelsize, **fluorophore_ring(result)[1],
+                             **measures))
+    return pd.DataFrame(rows)
+
+
+def increase_from_direct(features, column, by="modality_name"):
+    """Per imaging method (or other condition, by) and probe: mean, s.d. and number of the
+    measured images, and the increase of the mean from the direct label with a 95% interval;
+    with the published radius and its increase from EPITOPE_RADIUS_NM (0 for the direct label,
+    at the epitope)."""
     data = features.dropna(subset=[column])
     rows = []
-    for modality in MODALITIES:
-        summary = data[data.modality_name == modality].groupby("label")[column] \
+    conditions = MODALITIES if by == "modality_name" else sorted(data[by].unique())
+    for condition in conditions:
+        summary = data[data[by] == condition].groupby("label")[column] \
             .agg(["mean", "std", "size"])
         if REFERENCE not in summary.index:
             continue
@@ -356,7 +480,7 @@ def increase_from_direct(features, column):
                                       + reference["std"] ** 2 / reference["size"])
             published, published_sd = PUBLISHED_RADIUS_NM.get(label, (np.nan, np.nan))
             rows.append(dict(
-                metric=column, modality_name=modality, label=label, n=int(row["size"]),
+                {"metric": column, by: condition}, label=label, n=int(row["size"]),
                 mean=row["mean"], sd=row["std"], reference_mean=reference["mean"],
                 increase=increase, increase_low=increase - half, increase_high=increase + half,
                 published_radius=published, published_sd=published_sd,
@@ -416,11 +540,32 @@ def figure_values(increase, scores, features):
     return pd.DataFrame(rows)
 
 
-def smlm_auc_matrix(scores):
-    """AUC of every pair of probes in SMLM from the radius alone (panel f)."""
-    smlm = scores[(scores.modality_name == "SMLM") & (scores.feature_set == "radius")]
-    return smlm[["probe_a", "probe_b", "n_a", "n_b", "auc", "auc_low", "auc_high", "null_auc",
-                 "p_value"]].reset_index(drop=True)
+def sweep_summary(sweep):
+    """Per labelling efficiency and probe (panel f): the radius increase from the direct label
+    at the same labelling efficiency (the estimated linkage error, 95% interval), the true one
+    of the model (model_increase: the increase of the fluorophore ring radius) and the error of
+    the estimate, the published increase, and the AUC of the probe against the direct label
+    from the radius alone (95% bootstrap interval, null control, permutation p-value)."""
+    summary = increase_from_direct(sweep, "radius_nm", by="labelling_efficiency")
+    summary.insert(1, "modality_name", SWEEP_MODALITY)
+    model = sweep.groupby(["labelling_efficiency", "label"]).emitter_radius_nm.mean()
+    summary["model_increase"] = [model[le, label] - model[le, REFERENCE] for le, label
+                                 in zip(summary.labelling_efficiency, summary.label)]
+    summary["error"] = summary.increase - summary.model_increase
+    data = sweep.fillna(FILL_VALUES)
+    scores = []
+    for label in LABELS:
+        if label == REFERENCE:
+            continue
+        print(f"sweep: {REFERENCE} vs {label}, features: radius")
+        scores.append(distinguishability_from_features(
+            data[data.label.isin([REFERENCE, label])], "label", (REFERENCE, label),
+            ["radius_nm"], by=["labelling_efficiency"], replicate_column="replicate",
+            n_permutations=N_PERMUTATIONS, random_state=RANDOM_SEED, n_workers=N_WORKERS,
+        ).assign(label=label))
+    scores = pd.concat(scores, ignore_index=True)[
+        ["labelling_efficiency", "label", "auc", "auc_low", "auc_high", "null_auc", "p_value"]]
+    return summary.merge(scores, on=["labelling_efficiency", "label"], how="left")
 
 
 def error_bars(value, low, high):
@@ -490,13 +635,15 @@ def published_title(label):
     return f"{published[0]} ± {published[1]} nm" if published else "0 nm linker"
 
 
-def plot_figure(examples, features, values, matrix, prefix):
+def plot_figure(examples, features, values, sweep, prefix):
     """The main figure, in four sections. 1, the model: (a) the structure from above with the
     Nup96 C-termini (epitopes), (b) the fluorophores of one pore per probe. 2, SMLM: (c) one
     image per probe with its fitted circle, (d) histograms of the fitted radii, (e) simulated
-    against published radius. 3, SMLM distinguishability: (f) AUC of every pair of probes from
-    the radius, (g) the radius increase from the direct label (estimated linkage error)
-    against the published one. 4, the other imaging methods: (h) one image per method and
+    against published radius. 3, SMLM, detecting the linkage error: (f) the radius increase
+    from the direct label (estimated linkage error) across labelling efficiency (sweep
+    summary; empty without one), against the true and published ones, (g) a closer look at f
+    at LABELLING_EFFICIENCY, against the published one. 4, the other imaging methods: (h) one
+    image per method and
     probe, (i) the AUC of each probe against the direct label, (j) the increase of the blob
     FWHM in Widefield, Confocal and AiryScan."""
     labels = list(LABELS)
@@ -581,28 +728,40 @@ def plot_figure(examples, features, values, matrix, prefix):
     ax_e.spines[["top", "right"]].set_visible(False)
     panel_letter(ax_e, "e", x=-0.45)
 
-    # 3: SMLM distinguishability
-    third = bands[2].subgridspec(1, 2, width_ratios=[1, 1.4], wspace=0.45)
+    # 3: SMLM, detecting the linkage error
+    third = bands[2].subgridspec(1, 2, width_ratios=[1.3, 1], wspace=0.3)
     ax_f = fig.add_subplot(third[0])
-    # lower triangle only: rows are the second probe of a pair, columns the first
-    rows_f, columns_f = labels[1:], labels[:-1]
-    auc = np.full((len(rows_f), len(columns_f)), np.nan)
-    for __, row in matrix.iterrows():
-        i, j = rows_f.index(row.probe_b), columns_f.index(row.probe_a)
-        auc[i, j] = row.auc
-        colour = "w" if row.auc > 0.8 else "0.1"
-        ax_f.text(j, i, f"{row.auc:.2f}\n[{row.auc_low:.2f}, {row.auc_high:.2f}]",
-                  ha="center", va="center", fontsize=7, color=colour)
-    shown = ax_f.imshow(np.ma.masked_invalid(auc), cmap="Blues", vmin=0.5, vmax=1)
-    ax_f.set_xticks(range(len(columns_f)), [PROBE_NAMES[label] for label in columns_f],
-                    fontsize=8)
-    ax_f.set_yticks(range(len(rows_f)), [PROBE_NAMES[label] for label in rows_f], fontsize=8)
-    ax_f.spines[:].set_visible(False)
-    null = matrix[matrix.probe_a == REFERENCE].null_auc.mean()
-    ax_f.set_title(f"ROC AUC from the fitted radius\n(null, direct vs direct: {null:.2f})",
-                   fontsize=9)
-    fig.colorbar(shown, ax=ax_f, fraction=0.046, pad=0.04, label="ROC AUC")
-    panel_letter(ax_f, "f", x=-0.3)
+    # the labelling efficiency of the other panels, shown in detail in g
+    ax_f.axvspan(LABELLING_EFFICIENCY - 0.03, LABELLING_EFFICIENCY + 0.03, color="0.92",
+                 zorder=0)
+    ax_f.text(LABELLING_EFFICIENCY, 0.98, "g", transform=ax_f.get_xaxis_transform(),
+              ha="center", va="top", fontsize=8, fontweight="bold", color="0.4")
+    if sweep is not None:
+        for label in labels[1:]:
+            data = sweep[sweep.label == label].sort_values("labelling_efficiency")
+            colour = PROBE_COLOURS[label]
+            ax_f.errorbar(data.labelling_efficiency, data.increase,
+                          yerr=error_bars(data.increase, data.increase_low, data.increase_high),
+                          fmt="o-", color=colour, capsize=2, markersize=4,
+                          label=PROBE_NAMES[label])
+            ax_f.plot(data.labelling_efficiency, data.model_increase, ":", color=colour,
+                      linewidth=1.2)
+            ax_f.axhline(data.published_increase.iloc[0], color=colour, linestyle="--",
+                         linewidth=1)
+    else:
+        ax_f.text(0.5, 0.5, "no sweep", transform=ax_f.transAxes, ha="center", color="0.5")
+    ax_f.axhline(0, color="0.5", linestyle=":", linewidth=1)
+    handles, __ = ax_f.get_legend_handles_labels()
+    handles += [Line2D([], [], color="k", linestyle="--", linewidth=1, label="published"),
+                Line2D([], [], color="k", linestyle=":", linewidth=1.2,
+                       label="model (fluorophores)")]
+    ax_f.legend(handles=handles, frameon=False, fontsize=7, loc="lower right", ncol=2)
+    ax_f.set_xlim(0, 1.05)
+    ax_f.set_xlabel("Labelling efficiency")
+    ax_f.set_ylabel("Radius increase from direct (nm)")
+    ax_f.set_title("Estimated linkage error across labelling efficiency, SMLM", fontsize=9)
+    ax_f.spines[["top", "right"]].set_visible(False)
+    panel_letter(ax_f, "f")
     ax_g = fig.add_subplot(third[1])
     ax_g.plot(x, smlm.increase, "-", color="0.6", linewidth=1, zorder=1)
     for k, label in enumerate(labels):
@@ -617,7 +776,8 @@ def plot_figure(examples, features, values, matrix, prefix):
     plot_published(ax_g, radius)
     ax_g.axhline(0, color="0.5", linestyle=":", linewidth=1)
     ax_g.set_ylabel("Radius increase from direct (nm)")
-    ax_g.set_title("Estimated linkage error, SMLM", fontsize=9)
+    ax_g.set_title(f"Estimated linkage error, SMLM (labelling efficiency "
+                   f"{LABELLING_EFFICIENCY:g})", fontsize=9)
     ax_g.legend(frameon=False, fontsize=7, loc="upper left")
     probe_axis(ax_g)
     ax_g.set_xlabel("Probe (increasing linkage error)")
@@ -650,7 +810,7 @@ def plot_figure(examples, features, values, matrix, prefix):
                       yerr=error_bars(data.auc[1:], data.auc_low[1:], data.auc_high[1:]),
                       fmt="o--" if reference else "o-", color=colour, capsize=2,
                       markersize=3 if reference else 4, linewidth=1 if reference else 1.5,
-                      label=f"{modality} (as f)" if reference else modality)
+                      label=f"{modality} (as g)" if reference else modality)
         ax_i.plot(x[0] + dodge[modality], data.null_auc.iloc[0], "x", color=colour,
                   label="null (direct vs direct)" if j == 0 else None)
     ax_i.axhline(0.5, color="0.5", linestyle=":", linewidth=1)
@@ -681,14 +841,23 @@ def plot_figure(examples, features, values, matrix, prefix):
 
     section_title(fig, bands[0], "1  Model: the nuclear pore, its epitopes and the four probes")
     section_title(fig, bands[1], "2  SMLM: images, fitted radii and the reference dataset")
-    section_title(fig, bands[2], "3  SMLM: telling the probes apart (probe as a proxy for "
-                                 "linkage error)")
+    section_title(fig, bands[2], "3  SMLM: detecting the linkage error across labelling "
+                                 "efficiency")
     section_title(fig, bands[3], "4  The other imaging methods of the dataset")
     fig.savefig(prefix + "npc_label_figure.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
 
 
+def run_jobs(function, jobs, desc):
+    """function applied to every job, in N_WORKERS processes."""
+    if N_WORKERS > 1:
+        with ProcessPoolExecutor(min(N_WORKERS, len(jobs))) as pool:
+            return list(tqdm(pool.map(function, jobs), total=len(jobs), desc=desc))
+    return [function(job) for job in tqdm(jobs, desc=desc)]
+
+
 def main():
+    sweep_features = None
     if "--features" in sys.argv:
         features_path = sys.argv[sys.argv.index("--features") + 1]
         features = pd.read_csv(features_path)
@@ -696,6 +865,8 @@ def main():
         examples = {}
         if os.path.exists(prefix + "examples.npz"):
             examples = dict(np.load(prefix + "examples.npz"))
+        if os.path.exists(prefix + "sweep_features.csv"):
+            sweep_features = pd.read_csv(prefix + "sweep_features.csv")
     else:
         output_dir = os.path.join(str(output_path),
                                   ExperimentParametrisation().date_as_string + OUTPUT_NAME)
@@ -706,13 +877,17 @@ def main():
         jobs = [(label, int(seed), images_dir) for label, seed in zip(LABELS, seeds)]
         print(f"{len(jobs)} probes, {N_REALISATIONS} realisations each, imaged by "
               f"{len(MODALITIES)} methods, {N_WORKERS} worker(s)")
-        if N_WORKERS > 1:
-            with ProcessPoolExecutor(min(N_WORKERS, len(jobs))) as pool:
-                outputs = list(tqdm(pool.map(simulate, jobs), total=len(jobs), desc="probes"))
-        else:
-            outputs = [simulate(job) for job in tqdm(jobs, desc="probes")]
+        outputs = run_jobs(simulate, jobs, "probes")
         features = pd.concat([table for table, __ in outputs], ignore_index=True)
         features.to_csv(prefix + "features.csv", index=False)
+        # the sweep: its own seeds, independent of the pores above
+        seeds = np.random.SeedSequence([RANDOM_SEED, 1]).generate_state(len(LABELS))
+        print(f"sweep: {len(LABELS)} probes x {len(SWEEP_LABELLING_EFFICIENCIES)} labelling "
+              f"efficiencies, {N_SWEEP_REALISATIONS} realisations each, {SWEEP_MODALITY}")
+        sweep_features = pd.concat(
+            run_jobs(simulate_sweep, [(label, int(seed)) for label, seed in zip(LABELS, seeds)],
+                     "sweep"), ignore_index=True)
+        sweep_features.to_csv(prefix + "sweep_features.csv", index=False)
         examples = {key: value for __, found in outputs for key, value in found.items()}
         np.savez_compressed(prefix + "examples.npz", **examples)
         settings = {k: v for k, v in globals().items()
@@ -730,12 +905,17 @@ def main():
     scores.to_csv(prefix + "distinguishability.csv", index=False)
     values = figure_values(increase, scores, features)
     values.to_csv(prefix + "npc_label_figure_values.csv", index=False)
-    matrix = smlm_auc_matrix(scores)
-    matrix.to_csv(prefix + "smlm_auc_matrix.csv", index=False)
+    sweep = None
+    if sweep_features is not None:
+        sweep = sweep_summary(sweep_features)
+        sweep.to_csv(prefix + "sweep_summary.csv", index=False)
     if examples:
-        plot_figure(examples, features, values, matrix, prefix)
+        plot_figure(examples, features, values, sweep, prefix)
     print(values[["metric", "modality_name", "label", "n", "mean", "sd", "increase",
                   "published_increase", "auc", "null_auc"]].round(2).to_string(index=False))
+    if sweep is not None:
+        print(sweep[["labelling_efficiency", "label", "n", "increase", "model_increase",
+                     "published_increase", "auc"]].round(2).to_string(index=False))
 
 
 if __name__ == "__main__":
