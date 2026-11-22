@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 from vlab4mic import experiments
 from vlab4mic.experiments import generate_virtual_sample
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
+from matplotlib.textpath import TextPath
+from matplotlib.font_manager import FontProperties
+from matplotlib.transforms import offset_copy
 import tifffile as tif
 import io
 import pandas as pd
@@ -344,10 +347,29 @@ nmods = len(modalities)
 
 fig, axs = plt.subplots(2, nmods)
 nframe = 0
+def boxed_label(ax, text, side, fontsize=40, inset=0.02, thickness=0.22, gap=0.03):
+    # Black-edged box spanning the image (inset at both ends), with centred text
+    if side == "top":
+        xy, width, height = (inset, 1 + gap), 1 - 2*inset, thickness
+        centre, rotation = (0.5, 1 + gap + thickness/2), 0
+    else:
+        xy, width, height = (-gap - thickness, inset), thickness, 1 - 2*inset
+        centre, rotation = (-gap - thickness/2, 0.5), 90
+    ax.add_patch(plt.Rectangle(xy, width, height, transform=ax.transAxes, clip_on=False,
+                               facecolor="white", edgecolor="black", linewidth=3))
+    # Centre the word's glyph outline along the box, and the capital height across it,
+    # so all labels share a common baseline regardless of descenders
+    ink = TextPath((0, 0), text, size=fontsize, prop=FontProperties()).get_extents()
+    cap = TextPath((0, 0), "H", size=fontsize, prop=FontProperties()).get_extents()
+    cx, cy = (ink.x0 + ink.x1) / 2, (cap.y0 + cap.y1) / 2
+    dx, dy = (-cx, -cy) if rotation == 0 else (cy, -cx)
+    ax.text(*centre, text, transform=offset_copy(ax.transAxes, fig=ax.figure, x=dx, y=dy, units="points"),
+            ha="left", va="baseline", rotation=rotation, rotation_mode="anchor",
+            fontsize=fontsize, color="black")
 for i, mod in enumerate(modalities):
     axs[0,i].imshow(sim_vs_exp[mod][1], cmap="grey")
     axs[0,i].tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
-    axs[0,i].set_title(f"{mod}", fontsize=20)
+    boxed_label(axs[0,i], f"{mod}", "top")
     axs[1,i].imshow(sim_vs_exp[mod][0], cmap="grey")
     axs[1,i].tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
     scalebar = AnchoredSizeBar(axs[1,i].transData,
@@ -360,8 +382,8 @@ for i, mod in enumerate(modalities):
                            frameon=False,
                            size_vertical=mods_scalebar[mod]["hight"])
     axs[1,i].add_artist(scalebar)
-axs[0,0].set_ylabel("Thevathasan, et al. 2019", fontsize=24)
-axs[1,0].set_ylabel("VLab4Mic simulation", fontsize=24)
+boxed_label(axs[0,0], "Real", "left")
+boxed_label(axs[1,0], "Simulated", "left")
 plt.tight_layout(h_pad=0, w_pad=3)
 name = my_experiment.date_as_string + 'vlab4mic_fig2_NPC.png'
 filename = os.path.join(my_experiment.output_directory, name)
