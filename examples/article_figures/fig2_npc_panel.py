@@ -113,6 +113,9 @@ smlm_experimental_locs = localisations_all[localisations_all.numberInGroup == 1]
 # parameters
 structure = "7R5K"
 probe_template = "GFP_w_nanobody"
+# Published labelling efficiencies (Thevathasan et al. 2019)
+gfp_nanobody_labelling_efficiency = 0.613  # Nup96-GFP + anti-GFP nanobody
+snap_labelling_efficiency = 0.58  # Nup96-SNAP-tag (SMLM)
 modalities = ["Widefield", "Confocal", "AiryScan","STED", "SMLM"]
 # Run simulation
 # Prepare experiment object
@@ -120,7 +123,7 @@ _1, _2, my_experiment = experiments.image_vsample(
     structure=structure,
     probe_template=probe_template,
     probe_DoL=2,
-    labelling_efficiency=0.4,
+    labelling_efficiency=gfp_nanobody_labelling_efficiency,
     probe_target_type="Sequence",
     probe_target_value="ELAVGSL", # Nup96 C-terminal
     multimodal=modalities,
@@ -197,9 +200,10 @@ my_experiment.imager.modalities["Widefield"]["detector"]["noise_model"]["binomia
 my_experiment.imager.modalities["Widefield"]["detector"]["noise_model"]["baselevel"]["bl"] = 4000
 my_experiment.imager.modalities["Widefield"]["detector"]["noise_model"]["gaussian"]["sigma"] = 4000**(1/2)
 # Run simulation
+widefield_lateral_resolution_nm = np.mean(smlm_experimental_locs.PSFxnm)
 my_experiment.update_modality(
     modality_name="Widefield",
-    lateral_resolution_nm = np.mean(smlm_experimental_locs.PSFxnm))
+    lateral_resolution_nm = widefield_lateral_resolution_nm)
 my_experiment.set_modality_acq(modality_name="Widefield", exp_time=0.01)
 wf_images, noiselsess = my_experiment.run_simulation(modality="Widefield")
 sim_vs_exp["Widefield"] = (wf_images["Widefield"]["ch0"][0], wf_experimental_img_patch)
@@ -255,11 +259,31 @@ my_experiment.add_probe(
     probe_template="SNAP-tag",
     probe_target_type="Sequence",
     probe_target_value="ELAVGSL",
-    labelling_efficiency=0.4,
+    labelling_efficiency=snap_labelling_efficiency,
 )
 my_experiment.build(modules=["particle"])
 loc_prec = np.max(smlm_experimental_locs.locprecnm)
 mean_loc_prec = np.mean(smlm_experimental_locs.locprecnm)
+# Save the localisation values used for the Widefield resolution and the SMLM precision
+smlm_experimental_locs[["xnm", "ynm", "PSFxnm", "locprecnm"]].to_csv(
+    os.path.join(my_experiment.output_directory,
+                 my_experiment.date_as_string + 'vlab4mic_fig2_NPC_localisations_PSF_locprec.csv'),
+    index=False)
+n_locs = len(smlm_experimental_locs)
+pd.DataFrame([
+    dict(parameter="widefield_lateral_resolution_nm", value=widefield_lateral_resolution_nm, unit="nm",
+         source_column="PSFxnm", statistic="mean", used_in="Widefield lateral_resolution_nm",
+         n_localisations=n_locs, source=smlm_experimental_path),
+    dict(parameter="loc_prec", value=loc_prec, unit="nm",
+         source_column="locprecnm", statistic="max", used_in="SMLM rendering_kernel_nm and experimental render precision",
+         n_localisations=n_locs, source=smlm_experimental_path),
+    dict(parameter="mean_loc_prec", value=mean_loc_prec, unit="nm",
+         source_column="locprecnm", statistic="mean", used_in="SMLM lateral_precision and axial_precision",
+         n_localisations=n_locs, source=smlm_experimental_path),
+]).to_csv(
+    os.path.join(my_experiment.output_directory,
+                 my_experiment.date_as_string + 'vlab4mic_fig2_NPC_SMLM_derived_parameters.csv'),
+    index=False)
 xrange = smlm_experimental_locs.xnm.max() - smlm_experimental_locs.xnm.min()
 yrange = smlm_experimental_locs.ynm.max() - smlm_experimental_locs.ynm.min()
 list_of_positions, rendered_smlm, smlm_experiment = render_from_localisations(
