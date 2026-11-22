@@ -458,7 +458,7 @@ def ring_corners_from_replicates(
     return pd.DataFrame(rows), images, rows
 
 
-def plot_ring_corners(result, axes=None):
+def plot_ring_corners(result, axes=None, lim=None):
     """
     Steps of count_ring_corners for one particle.
 
@@ -475,6 +475,9 @@ def plot_ring_corners(result, axes=None):
         Output of count_ring_corners (or a row of ring_corners_from_replicates).
     axes : sequence of 3 matplotlib.axes.Axes, optional
         Axes to draw on. Default: a new figure.
+    lim : float, optional
+        Half-width of every panel, in nm; panel (a) is centred on the fitted
+        centre. Default: 1.3 * r_max for (b) and (c), (a) autoscaled.
 
     Returns
     -------
@@ -540,7 +543,15 @@ def plot_ring_corners(result, axes=None):
             ax.scatter(*spots_aligned[is_corner].T, marker="x", s=80, c="k", lw=2)
             ax.scatter(*spots_aligned[~is_corner].T, marker="x", s=80, c="0.6", lw=2)
 
-    lim = 1.3 * r_edge
+    if lim is not None:
+        # panel (a) gets the same window width, centred on the fit
+        centre = result["centre"] if result["centre"] is not None else (
+            xy.mean(axis=0) if len(xy) else None)
+        if centre is not None:
+            axes[0].set_xlim(centre[0] - lim, centre[0] + lim)
+            axes[0].set_ylim(centre[1] - lim, centre[1] + lim)
+    else:
+        lim = 1.3 * r_edge
     for ax in axes[1:]:
         ax.set_xlim(-lim, lim)
         ax.set_ylim(-lim, lim)

@@ -26,15 +26,16 @@ Every image is measured from its pixels (as in
 fig2_npc_integrity_distinguishability.py). The pore is first located: the
 brightest pixel of the image smoothed by a Gaussian of LOCATE_SIGMA_NM
 (pore_x_nm, pore_y_nm, from the image centre). Then:
-- radius_nm, width_nm (STED and SMLM only, RING_MODALITIES: the methods
-  that resolve the ring): the pixels within REGION_NM of the pore above an
-  Otsu threshold are taken as points of the ring; radius of a geometric
-  circle fit to them and s.d. of their distances to its centre. The fit is
-  repeated within REGION_NM of the centre of the first circle, so the
-  region is centred on the ring (pore_x_nm, pore_y_nm: then its centre);
-  a circle wider than the region is not a ring (NaN).
+- radius_nm, width_nm (every imaging method): the pixels within REGION_NM
+  of the pore above an Otsu threshold are taken as points of the ring;
+  radius of a geometric circle fit to them and s.d. of their distances to
+  its centre. The fit is repeated within REGION_NM of the centre of the
+  first circle, so the region is centred on the ring (pore_x_nm,
+  pore_y_nm: then its centre); a circle wider than the region is not a
+  ring (NaN). In Widefield, Confocal and AiryScan the ring is not resolved
+  and this is the apparent radius of the blob.
 - blob_fwhm_nm (Widefield, Confocal and AiryScan only, where the ring is
-  not resolved and no radius is fitted): FWHM of the blob,
+  not resolved): FWHM of the blob,
   the mean of the FWHMs of the projections onto x and y of a window of
   BLOB_HALF_WINDOW_NM around the pore, with the background taken
   BACKGROUND_NM at each end of the projection.
@@ -54,8 +55,8 @@ published radius minus EPITOPE_RADIUS_NM. Every pair of probes is scored
 per imaging method with distinguishability_from_features: out-of-fold ROC
 AUC with a 95% bootstrap interval, a null control (two random halves of
 the first probe, expected 0.5) and a permutation p-value, for each feature
-set (radius alone and radius and width in STED and SMLM, blob FWHM alone
-in Widefield, Confocal and AiryScan).
+set (radius alone and radius and width in every imaging method, blob FWHM
+alone in Widefield, Confocal and AiryScan).
 
 Outputs, in the folder <date>fig2_npc_labels of the VLab4Mic output
 directory: npc_label_figure.png, the main figure, in five sections:
@@ -74,8 +75,11 @@ increase; 4, STED, the other method that resolves the ring: (h) one image
 per probe with its fitted circle, (i) histograms of the fitted radii, (j)
 the radius increase from the direct label against the published one, as
 g; 5, Widefield, Confocal and AiryScan, where the ring is a blob: (k) the
-whole image per method and probe, (l) the AUC of each probe against the direct
-label from the blob FWHM, (m) the increase of the blob FWHM. Also
+whole image per method and probe with its fitted circle, (l) the AUC of each
+probe against the direct label from the blob FWHM, (m) the increase of the
+blob FWHM; 6, every imaging method: (n) the fitted radius of each probe
+(not the direct label) across the imaging methods, against the published
+radii. Also
 features.csv (one row per image), increase_from_direct.csv,
 distinguishability.csv (one row per pair of probes, feature set and
 imaging method), npc_label_figure_values.csv (the values of the other
@@ -171,7 +175,7 @@ EPITOPE_RADIUS_NM = 53.5  # Nup96 C-terminus of 7R5K (pore diameter 107 nm at th
 
 MODALITIES = ["Widefield", "Confocal", "AiryScan", "STED", "SMLM"]  # increasing resolution
 DIFFRACTION_LIMITED = ["Widefield", "Confocal", "AiryScan"]  # the ring is not resolved: blob
-RING_MODALITIES = ["STED", "SMLM"]  # the ring is resolved: radius fitted
+RING_MODALITIES = ["STED", "SMLM"]  # the ring is resolved: close-ups and radius panels
 CAMERA_MODALITIES = ["Widefield", "Confocal", "AiryScan", "STED"]  # exposure set per probe
 # resolution: fig2_npc_panel.py (Widefield: default) and figS2_npc_three_labels.py (STED)
 MODALITY_PARAMS = {
@@ -200,7 +204,7 @@ CALIBRATION_REALISATIONS = 10
 LOCATE_SIGMA_NM = 80
 # measurement of the pore: pixels further than REGION_NM from the pore are background
 # (the ring blurred by the PSF: about the ring radius + 2 PSF s.d.)
-REGION_NM = {"STED": 100, "SMLM": 100}
+REGION_NM = {"Widefield": 300, "Confocal": 250, "AiryScan": 200, "STED": 100, "SMLM": 100}
 # blob FWHM: projections of a window of BLOB_HALF_WINDOW_NM around the pore (inside the field
 # for any offset up to POSITION_JITTER_NM), background BACKGROUND_NM at each end
 BLOB_HALF_WINDOW_NM = 400
@@ -423,14 +427,10 @@ def simulate(job):
         for modality in MODALITIES:
             image = np.asarray(result["images"][modality]["ch0"])[0]
             pixelsize = pixelsizes[modality]
-            if modality in RING_MODALITIES:
-                pore, measures = measure_pore(image, pixelsize, REGION_NM[modality])
-                measured = np.isfinite(measures["radius_nm"])
-            else:  # the ring is not resolved: only the blob
-                pore = locate_pore(image, pixelsize)
-                located = pore - np.array(image.shape[::-1]) * pixelsize / 2
-                measures = dict(blob_fwhm_nm=blob_fwhm(image, pixelsize, pore),
-                                pore_x_nm=located[0], pore_y_nm=located[1])
+            pore, measures = measure_pore(image, pixelsize, REGION_NM[modality])
+            measured = np.isfinite(measures["radius_nm"])
+            if modality in DIFFRACTION_LIMITED:  # the ring is not resolved: also the blob
+                measures["blob_fwhm_nm"] = blob_fwhm(image, pixelsize, pore)
                 measured = np.isfinite(measures["blob_fwhm_nm"])
             rows.append(dict(label=label, modality_name=modality, replicate=result["replicate"],
                              seed=seed, exp_time=exp_times.get(modality, np.nan),
@@ -448,6 +448,10 @@ def simulate(job):
                         [measures["centre_x_nm"] - measures["pore_x_nm"],
                          measures["centre_y_nm"] - measures["pore_y_nm"],
                          measures["radius_nm"]])
+                elif np.isfinite(measures["radius_nm"]):
+                    # the fitted circle, from the image centre (the centre of the whole image)
+                    examples[example_key(label, modality, "circle")] = np.array(
+                        [measures["centre_x_nm"], measures["centre_y_nm"], measures["radius_nm"]])
             if images_dir is not None:
                 stacks[modality].append(image)
     if images_dir is not None:
@@ -516,7 +520,7 @@ def increase_from_direct(features, column, by="modality_name"):
 
 def score(features):
     """Distinguishability of every pair of probes per imaging method and feature set: the ring
-    features in STED and SMLM, the blob size in Widefield, Confocal and AiryScan."""
+    features in every imaging method, the blob size in Widefield, Confocal and AiryScan."""
     tables = []
     for (a, b), (name, columns) in itertools.product(PAIRS, FEATURE_SETS.items()):
         print(f"{a} vs {b}, features: {name}")
@@ -524,7 +528,7 @@ def score(features):
         if name == "blob size":
             data = data[data.modality_name.isin(DIFFRACTION_LIMITED)].dropna(subset=columns)
         else:
-            data = data[data.modality_name.isin(RING_MODALITIES)].fillna(FILL_VALUES)
+            data = data.fillna(FILL_VALUES)
         table = distinguishability_from_features(
             data, "label", (a, b), columns, by=["modality_name"],
             controls=CONTROLS if name == "all" else None,
@@ -632,7 +636,7 @@ def show_example(ax, examples, label, modality, scale_bar=False):
         extent = examples[example_key(label, modality, "extent")]
         ax.imshow(image, cmap="magma", extent=extent)
         circle = examples.get(example_key(label, modality, "circle"))
-        if circle is not None and modality in RING_MODALITIES:
+        if circle is not None:
             centre_x, centre_y, r = circle
             ax.add_patch(plt.Circle((centre_x, centre_y), r, fill=False, linestyle=":",
                                     color="w", linewidth=1))
@@ -721,8 +725,34 @@ def plot_increase(ax, radius, modality, title):
     ax.set_xlabel("Probe (increasing linkage error)")
 
 
+def plot_radius_by_modality(ax, radius):
+    """The fitted radius of each probe but the direct label (mean ± s.d. over pores) across the
+    imaging methods, in order of increasing resolution, with the published radii (dashed)."""
+    x = np.arange(len(MODALITIES))
+    probes = [label for label in LABELS if label != REFERENCE]
+    dodge = dict(zip(probes, np.linspace(-0.12, 0.12, len(probes))))
+    for label in probes:
+        data = radius[radius.label == label].set_index("modality_name").reindex(MODALITIES)
+        colour = PROBE_COLOURS[label]
+        ax.errorbar(x + dodge[label], data["mean"], yerr=data.sd, fmt="o-", color=colour,
+                    capsize=2, markersize=4, label=PROBE_NAMES[label])
+        if label in PUBLISHED_RADIUS_NM:
+            ax.axhline(PUBLISHED_RADIUS_NM[label][0], color=colour, linestyle="--",
+                       linewidth=1)
+    handles, __ = ax.get_legend_handles_labels()
+    handles += [Line2D([], [], color="k", linestyle="--", linewidth=1, label="published")]
+    ax.legend(handles=handles, frameon=False, fontsize=7, loc="upper left",
+              bbox_to_anchor=(1.01, 1))
+    ax.set_xticks(x, MODALITIES, fontsize=8)
+    ax.set_xlim(-0.4, len(MODALITIES) - 0.6)
+    ax.set_xlabel("Imaging method (increasing resolution)")
+    ax.set_ylabel("Fitted ring radius (nm)")
+    ax.set_title("Fitted ring radius per imaging method", fontsize=9)
+    ax.spines[["top", "right"]].set_visible(False)
+
+
 def plot_figure(examples, features, values, sweep, prefix):
-    """The main figure, in five sections. 1, the model: (a) the structure from above with the
+    """The main figure, in six sections. 1, the model: (a) the structure from above with the
     Nup96 C-termini (epitopes), (b) the fluorophores of one pore per probe. 2, SMLM: (c) one
     image per probe with its fitted circle, (d) histograms of the fitted radii, (e) simulated
     against published radius. 3, SMLM, detecting the linkage error: (f) the radius increase
@@ -732,15 +762,17 @@ def plot_figure(examples, features, values, sweep, prefix):
     against the published one. 4, STED: (h) one image per probe with
     its fitted circle, (i) histograms of the fitted radii, (j) the radius increase from the
     direct label, as g. 5, Widefield, Confocal and AiryScan (the ring is a blob): (k) the
-    whole image per method and probe, (l) the AUC of each probe against the direct label from the
-    blob FWHM, (m) the increase of the blob FWHM."""
+    whole image per method and probe with its fitted circle, (l) the AUC of each probe against
+    the direct label from the blob FWHM, (m) the increase of the blob FWHM. 6, every imaging
+    method: (n) the fitted radius of each probe (not the direct label) across the imaging
+    methods."""
     labels = list(LABELS)
     x = np.arange(len(labels))
     radius = values[values.metric == "radius_nm"]
     blob = values[values.metric == "blob_fwhm_nm"]
     smlm = radius[radius.modality_name == "SMLM"].set_index("label").reindex(labels)
-    fig = plt.figure(figsize=[12, 21])
-    bands = fig.add_gridspec(5, 1, height_ratios=[0.8, 1, 1, 1, 1.5], hspace=0.5)
+    fig = plt.figure(figsize=[12, 25])
+    bands = fig.add_gridspec(6, 1, height_ratios=[0.8, 1, 1, 1, 1.5, 0.9], hspace=0.5)
 
     # 1: the model
     top = bands[0].subgridspec(1, 1 + len(labels), wspace=0.1)
@@ -893,6 +925,11 @@ def plot_figure(examples, features, values, sweep, prefix):
     for axis in (ax_l, ax_m):
         probe_axis(axis)
 
+    # 6: every imaging method: the fitted radius
+    ax_n = fig.add_subplot(bands[5].subgridspec(1, 2, width_ratios=[1, 0.25])[0])
+    plot_radius_by_modality(ax_n, radius)
+    panel_letter(ax_n, "n", x=-0.06)
+
     section_title(fig, bands[0], "1  Model: the nuclear pore, its epitopes and the four probes")
     section_title(fig, bands[1], "2  SMLM: images, fitted radii and the reference dataset")
     section_title(fig, bands[2], "3  SMLM: detecting the linkage error across labelling "
@@ -900,6 +937,7 @@ def plot_figure(examples, features, values, sweep, prefix):
     section_title(fig, bands[3], "4  STED: images and fitted radii")
     section_title(fig, bands[4], "5  Widefield, Confocal and AiryScan: the ring is not "
                                  "resolved, the blob is measured")
+    section_title(fig, bands[5], "6  All imaging methods: fitted ring radius")
     fig.savefig(prefix + "npc_label_figure.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
 
@@ -952,8 +990,7 @@ def main():
             json.dump(settings, handle, indent=1, default=str)
 
     increase = pd.concat([
-        increase_from_direct(features[features.modality_name.isin(RING_MODALITIES)],
-                             "radius_nm"),
+        increase_from_direct(features, "radius_nm"),
         increase_from_direct(features[features.modality_name.isin(DIFFRACTION_LIMITED)],
                              "blob_fwhm_nm"),
     ], ignore_index=True)
