@@ -68,12 +68,13 @@ figS2_npc_three_labels.py: (c) one image per probe with its fitted circle,
 3, SMLM: detecting the linkage error, with the probe as a proxy for it:
 (f) the radius increase from the direct label (the estimated linkage
 error) across labelling efficiency, against the true and published ones,
-(g) a closer look at f at LABELLING_EFFICIENCY, against the published
+(g) a closer look at f at the published labelling efficiencies
+(LABELLING_EFFICIENCIES; SWEEP_HIGHLIGHT in f), against the published
 increase; 4, STED, the other method that resolves the ring: (h) one image
 per probe with its fitted circle, (i) histograms of the fitted radii, (j)
 the radius increase from the direct label against the published one, as
-g; 5, Widefield, Confocal and AiryScan, where the ring is a blob: (k) one
-image per method and probe, (l) the AUC of each probe against the direct
+g; 5, Widefield, Confocal and AiryScan, where the ring is a blob: (k) the
+whole image per method and probe, (l) the AUC of each probe against the direct
 label from the blob FWHM, (m) the increase of the blob FWHM. Also
 features.csv (one row per image), increase_from_direct.csv,
 distinguishability.csv (one row per pair of probes, feature set and
@@ -128,7 +129,11 @@ RANDOM_SEED = 44
 OUTPUT_NAME = "fig2_npc_labels"  # base name of the output folder (after the date)
 
 STRUCTURE = "7R5K"
-LABELLING_EFFICIENCY = 0.4  # Supp. Note 4
+# labelling efficiency of each probe (published; the direct label as the SNAP-tag)
+LABELLING_EFFICIENCIES = {"direct": 0.58, "SNAP-tag": 0.58, "anti-GFP nanobody": 0.613,
+                          "anti-GFP antibody": 0.653}
+# the value of the sweep closest to them: highlighted in f, shown in detail in g
+SWEEP_HIGHLIGHT = 0.6
 # 1000 nm (the detector field of view of every modality): the Widefield blob
 # (FWHM ~320 nm) leaves background at the edges to measure its size
 SAMPLE_DIMENSIONS = [1000, 1000, 100]
@@ -209,7 +214,7 @@ FILL_VALUES = dict(radius_nm=0, width_nm=0)
 PAIRS = list(itertools.combinations(LABELS, 2))
 
 # figure
-CROP_NM = 400  # example images: around the image centre
+CROP_NM = 400  # close-up of the SMLM and STED example images, around the pore
 SCALEBAR_NM = 100
 MODEL_VIEW_NM = 170  # model panels: width of the view around the pore centre
 MODEL_SCALEBAR_NM = 50
@@ -322,6 +327,14 @@ def crop_around(image, pixelsize, pore):
     return crop.astype(np.float32), extent
 
 
+def whole_image(image, pixelsize):
+    """The whole image, and its extent (left, right, bottom, top) in nm from the image centre,
+    for imshow with the origin at the top."""
+    image = np.asarray(image, dtype=np.float32)
+    half_x, half_y = np.array(image.shape[::-1]) * pixelsize / 2
+    return image, np.array([-half_x, half_x, half_y, -half_y])
+
+
 def example_key(label, modality, what):
     return f"{label}_{modality}_{what}".replace(" ", "_")
 
@@ -344,7 +357,7 @@ def build_experiment(label, seed, modalities):
     random offset from the field centre, imaged by the given imaging methods."""
     __, __, experiment = experiments.image_vsample(
         structure=STRUCTURE,
-        probe_list=[dict({"labelling_efficiency": LABELLING_EFFICIENCY}, **probe)
+        probe_list=[dict({"labelling_efficiency": LABELLING_EFFICIENCIES[label]}, **probe)
                     for probe in LABELS[label]],
         multimodal=modalities,
         number_of_particles=1,
@@ -424,7 +437,9 @@ def simulate(job):
                              pixelsize_nm=pixelsize,
                              **(model if modality == "SMLM" else {}), **measures))
             if example_key(label, modality, "image") not in examples and measured:
-                crop, extent = crop_around(image, pixelsize, pore)
+                # SMLM and STED: a close-up of the pore; the others: the whole image
+                crop, extent = crop_around(image, pixelsize, pore) \
+                    if modality in RING_MODALITIES else whole_image(image, pixelsize)
                 examples[example_key(label, modality, "image")] = crop
                 examples[example_key(label, modality, "extent")] = extent
                 if modality in RING_MODALITIES:
@@ -715,10 +730,11 @@ def plot_figure(examples, features, values, sweep, prefix):
     against published radius. 3, SMLM, detecting the linkage error: (f) the radius increase
     from the direct label (estimated linkage error) across labelling efficiency (sweep
     summary; empty without one), against the true and published ones, (g) a closer look at f
-    at LABELLING_EFFICIENCY, against the published one. 4, STED: (h) one image per probe with
+    at the published labelling efficiencies (LABELLING_EFFICIENCIES; SWEEP_HIGHLIGHT in f),
+    against the published one. 4, STED: (h) one image per probe with
     its fitted circle, (i) histograms of the fitted radii, (j) the radius increase from the
-    direct label, as g. 5, Widefield, Confocal and AiryScan (the ring is a blob): (k) one
-    image per method and probe, (l) the AUC of each probe against the direct label from the
+    direct label, as g. 5, Widefield, Confocal and AiryScan (the ring is a blob): (k) the
+    whole image per method and probe, (l) the AUC of each probe against the direct label from the
     blob FWHM, (m) the increase of the blob FWHM."""
     labels = list(LABELS)
     x = np.arange(len(labels))
@@ -783,10 +799,10 @@ def plot_figure(examples, features, values, sweep, prefix):
     # 3: SMLM, detecting the linkage error
     third = bands[2].subgridspec(1, 2, width_ratios=[1.3, 1], wspace=0.3)
     ax_f = fig.add_subplot(third[0])
-    # the labelling efficiency of the other panels, shown in detail in g
-    ax_f.axvspan(LABELLING_EFFICIENCY - 0.03, LABELLING_EFFICIENCY + 0.03, color="0.92",
-                 zorder=0)
-    ax_f.text(LABELLING_EFFICIENCY, 0.98, "g", transform=ax_f.get_xaxis_transform(),
+    # the value of the sweep closest to the labelling efficiencies of the other panels,
+    # shown in detail in g
+    ax_f.axvspan(SWEEP_HIGHLIGHT - 0.03, SWEEP_HIGHLIGHT + 0.03, color="0.92", zorder=0)
+    ax_f.text(SWEEP_HIGHLIGHT, 0.98, "g", transform=ax_f.get_xaxis_transform(),
               ha="center", va="top", fontsize=8, fontweight="bold", color="0.4")
     if sweep is not None:
         for label in labels[1:]:
@@ -815,8 +831,7 @@ def plot_figure(examples, features, values, sweep, prefix):
     ax_f.spines[["top", "right"]].set_visible(False)
     panel_letter(ax_f, "f")
     ax_g = fig.add_subplot(third[1])
-    plot_increase(ax_g, radius, "SMLM", f"Estimated linkage error, SMLM (labelling efficiency "
-                                        f"{LABELLING_EFFICIENCY:g})")
+    plot_increase(ax_g, radius, "SMLM", "Estimated linkage error, SMLM")
     panel_letter(ax_g, "g")
 
     # 4: STED
