@@ -109,6 +109,7 @@ airy_experimental_img =  read_image_from_url(airy_experimental_img_path)
 sted_experimental_img_path = "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/S-BIAD0-99/S-BIAD8/Files/Library/Gallery%20Fig%201/STED/GFP_Gallery-STED_181026_1.tif"
 sted_experimental_img =  read_image_from_url(sted_experimental_img_path)
 # SMLM
+# GLOX + 35 mM MEA experimental conditions
 smlm_experimental_path = "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/S-BIAD0-99/S-BIAD8/Files/Library/Gallery%20Fig%201/dSTORM2D/SNAP_Gallery-STORM-2D_181214_1_sml.csv"
 localisations_all = pd.read_csv(smlm_experimental_path)
 smlm_experimental_locs = localisations_all[localisations_all.numberInGroup == 1]
