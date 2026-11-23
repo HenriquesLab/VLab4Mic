@@ -3,9 +3,13 @@
 The filament is a 500 nm segment of an isolated microtubule cropped from
 experimental 3D SMLM localisations (ShareLoc.xyz, Zenodo 5541063) and aligned
 to the x axis. Every localisation of the segment is a target, labelled
-directly (Linker probe, no normals) and imaged by SMLM. The localisations are
-also fitted with a hollow cylinder (fit_hollow_cylinder, as in
-fig2_filaments.py).
+directly (Linker probe, no normals) and imaged by SMLM. The localisations of
+this segment and of the intact experimental segments (below) are fitted with
+a hollow cylinder each (fit_anisotropic_hollow_cylinder): the axial spread of
+the localisations is about 2.5 times the lateral one, so the shell is blurred
+differently across the filament (sigma_u) and out of the plane (sigma_v).
+The isotropic fit of fig2_filaments.py (fit_hollow_cylinder), which reads the
+axial blur as a larger shell, is kept for comparison.
 
 The analysis is that of fig2_filament_break_distinguishability.py with this
 filament: a second model has an artificial break in the middle (every
@@ -35,14 +39,18 @@ are scored with distinguishability_from_features.
 Outputs, in the folder <date>figS_filaments_MT3D of the VLab4Mic output
 directory (created if it does not exist): segment_overview.png (the dataset
 and the reference segment), filament.png (the targets of the reference
-segment), hollow_cylinder_fit.png and hollow_cylinder_fit.csv (the hollow
-cylinder fit of its localisations), filament_figure.png, the main figure:
+segment), hollow_cylinder_fit.png (the hollow cylinder fit of its
+localisations), hollow_cylinder_fits.png (the fit of every segment, one row
+each), hollow_cylinder_fit.csv (one row per segment), filament_figure.png,
+the main figure:
 (a) one filament per break of FIGURE_EXAMPLE_GAPS_NM imaged at every
 labelling efficiency, (b) the percentage of broken filaments whose break is
 detected and the false alarm rate of the intact filaments, (c) the
 distinguishability (AUC) of intact and broken filaments from the number of
-segments alone, and (d) the hollow cylinder fit of the experimental
-localisations; features.csv, distinguishability.csv, break_detection.csv,
+segments alone, and (d) the hollow cylinder fits of the reference and intact
+experimental segments (pooled cross-section and lateral profile, and the
+diameter of every segment with the mean +- s.d. of the fits that converged);
+features.csv, distinguishability.csv, break_detection.csv,
 filament_figure_values.csv, settings.json, strip_profiles.png,
 distinguishability_heatmap.png, feature_distributions.png,
 auc_vs_labelling.png, examples_gap<break>.png, models.png, models_grid.png
@@ -107,6 +115,9 @@ SEGMENT_CENTER = (26500, 15200)  # nm
 SEGMENT_LENGTH_NM = 500
 SEGMENT_WIDTH_NM = 150
 REFERENCE_DIAMETER = 25  # nm, microtubule
+# localisations fitted with a hollow cylinder: within these half-widths (nm) of its axis,
+# across the filament in the plane (the crop) and out of it (axial, worse precision)
+CYLINDER_WINDOW_NM = (SEGMENT_WIDTH_NM / 2, 200)
 
 STRUCTURE = "5SYF"
 PROBE_MODEL = "1IGT"
@@ -359,72 +370,171 @@ def fit_hollow_cylinder(points, reference_diameter=25, background_radius_factor=
     )
 
 
-def plot_hollow_cylinder_fit(fit, axs, color="#F58B19", title="", section_length=100, max_scatter=2000, random_seed=0):
+def fit_anisotropic_hollow_cylinder(points, reference_diameter=25, window=(75, 200), n_angles=48):
     """
-    Draw a hollow cylinder fit on three axes: a section of the fitted
-    cylinder (section_length nm long, centred) with its points in 3D, in the
-    frame of the cylinder (axs[0] must be 3D); the cross-section of all points
-    with the fitted and reference circles; and the distances to the axis with
-    the fitted model.
+    Fit a hollow cylinder to 3D coordinates (nm), with a different blur across the filament
+    in the plane (u) and out of it (v, close to z).
+
+    Model: points lie on a cylindrical shell of radius R, blurred with a Gaussian of width
+    sigma_u along u and sigma_v along v (labelling offset, localisation precision; the axial
+    precision of 3D SMLM is worse than the lateral one, and an isotropic blur would inflate
+    R). A uniform background in the cross-section accounts for localisations off the
+    filament. Only the points within window = (u, v) half-widths of the initial axis (the
+    principal axis of the points, through their centroid) are fitted, and the same points
+    for every axis: axis (tilt and shift), R, sigma_u, sigma_v and the background fraction
+    are fitted by maximum likelihood, from a few starting radii.
+
+    Returns a dict with the axis (pivot, direction), radius, sigma_u, sigma_v, background
+    fraction, diameter, the coordinates of every point in the cylinder frame (along, u, v)
+    and whether the fit converged (not at a bound of radius, widths or background).
     """
-    rng = np.random.default_rng(random_seed)
-    radius, sigma, background = fit["radius"], fit["sigma"], fit["background"]
-    reference_radius = fit["reference_diameter"] / 2
-    limit = min(radius + 4 * sigma, fit["max_radial"])
-    angles = np.linspace(0, 2 * np.pi, 100)
-    # 3D section, in the frame of the cylinder
-    along_centre = np.median(fit["along"])
-    in_section = np.flatnonzero((np.abs(fit["along"] - along_centre) <= section_length / 2) & (fit["radial"] <= limit))
-    shown = rng.choice(in_section, min(max_scatter, in_section.size), replace=False)
-    along_grid, angle_grid = np.meshgrid(np.linspace(-section_length / 2, section_length / 2, 20), angles)
-    axs[0].plot_surface(along_grid, radius * np.cos(angle_grid), radius * np.sin(angle_grid),
-                        color="grey", alpha=0.25, linewidth=0)
-    axs[0].scatter(fit["along"][shown] - along_centre, fit["across_u"][shown], fit["across_v"][shown], s=1, c=color, alpha=0.6, depthshade=False)
-    axs[0].set_xlim(-section_length / 2, section_length / 2)
-    axs[0].set_ylim(-limit, limit)
-    axs[0].set_zlim(-limit, limit)
-    axs[0].set_box_aspect((section_length, 2 * limit, 2 * limit))
-    axs[0].view_init(elev=20, azim=-35)
-    axs[0].set_xlabel("along axis (nm)")
-    axs[0].set_ylabel("u (nm)")
-    axs[0].set_zlabel("v (nm)")
-    axs[0].set_title(title)
-    # cross-section
-    bins = np.linspace(-limit, limit, 60)
-    cross_section, __, __ = np.histogram2d(fit["across_u"], fit["across_v"], bins=[bins, bins])
-    axs[1].imshow(cross_section.T, cmap="grey", origin="lower", extent=[-limit, limit, -limit, limit])
-    axs[1].plot(radius * np.cos(angles), radius * np.sin(angles), c=color,
-                label=f"fit: {2 * radius:.1f} nm")
-    axs[1].plot(reference_radius * np.cos(angles), reference_radius * np.sin(angles), "--", c="white",
-                label=f"reference: {fit['reference_diameter']:.0f} nm")
-    axs[1].set_xlabel("u (nm)")
-    axs[1].set_ylabel("v (nm)")
-    axs[1].legend(loc="upper right", fontsize="small")
-    axs[1].set_title("Cross-section")
-    # distances to the axis, with the fitted model
-    max_radial = fit["max_radial"]
-    radial_range = np.linspace(0, max_radial, 300)
-    shell = stats.rice.pdf(radial_range, radius / sigma, scale=sigma) / stats.rice.cdf(max_radial, radius / sigma, scale=sigma)
-    model = (1 - background) * shell + background * 2 * radial_range / max_radial ** 2
-    axs[2].hist(fit["radial"][fit["radial"] < max_radial], bins=np.linspace(0, max_radial, 60), density=True, color=color, alpha=0.6)
-    axs[2].plot(radial_range, model, c="black",
-                label=f"fit: R = {radius:.1f} nm, $\\sigma$ = {sigma:.1f} nm, bg = {100 * background:.0f}%")
-    axs[2].axvline(radius, c=color)
-    axs[2].axvline(reference_radius, ls="--", c="grey", label=f"reference R = {reference_radius:.1f} nm")
-    axs[2].set_xlabel("distance to axis (nm)")
-    axs[2].set_ylabel("density")
-    axs[2].legend(fontsize="small")
-    axs[2].set_title("Distance to the cylinder axis")
+    points = np.asarray(points, dtype=float)
+    half_u, half_v = window
+    centroid = points.mean(axis=0)
+    __, eigenvectors = np.linalg.eigh(np.cov((points - centroid).T))
+    direction0 = eigenvectors[:, -1]
+    u0, v0 = orthonormal_basis(direction0)
+    __, across_u0, across_v0 = cylinder_coordinates(points, centroid, direction0)
+    inside = (np.abs(across_u0) <= half_u) & (np.abs(across_v0) <= half_v)
+    fitted = points[inside]
+    angles = np.linspace(0, 2 * np.pi, n_angles, endpoint=False)
 
+    def axis_from_params(params):
+        tilt_u, tilt_v, shift_u, shift_v = params[:4]
+        direction = direction0 + tilt_u * u0 + tilt_v * v0
+        direction /= np.linalg.norm(direction)
+        pivot = centroid + shift_u * u0 + shift_v * v0
+        return pivot, direction
 
-def segment_cylinder_fit(fluorophore_positions):
-    """Hollow cylinder fit of the segment: it extends SEGMENT_WIDTH_NM / 2 across the
-    filament."""
-    return fit_hollow_cylinder(
-        fluorophore_positions,
-        reference_diameter=REFERENCE_DIAMETER,
-        background_radius_factor=SEGMENT_WIDTH_NM / 2 / REFERENCE_DIAMETER,
+    def negative_log_likelihood(params):
+        radius, sigma_u, sigma_v, background = params[4:]
+        __, across_u, across_v = cylinder_coordinates(fitted, *axis_from_params(params))
+        shell = shell_density(across_u, across_v, radius, sigma_u, sigma_v, window, angles)
+        return -np.sum(np.log((1 - background) * shell + background / (4 * half_u * half_v) + 1e-300))
+
+    bounds = [(-0.3, 0.3), (-0.3, 0.3), (-reference_diameter, reference_diameter),
+              (-4 * reference_diameter, 4 * reference_diameter),
+              (0, half_u), (0.5, half_u), (0.5, half_v), (0, 0.99)]
+    best = None
+    for radius0 in [reference_diameter / 2, reference_diameter]:
+        x0 = [0, 0, 0, 0, radius0, max(across_u0[inside].std() / 2, 1),
+              max(across_v0[inside].std(), 1), 0.05]
+        result = optimize.minimize(negative_log_likelihood, x0, method="L-BFGS-B", bounds=bounds)
+        if best is None or result.fun < best.fun:
+            best = result
+    pivot, direction = axis_from_params(best.x)
+    along, across_u, across_v = cylinder_coordinates(points, pivot, direction)
+    radius, sigma_u, sigma_v, background = best.x[4:]
+    converged = (bool(best.success) and background < 0.9 and radius < 0.95 * half_u
+                 and sigma_u < 0.95 * half_u and sigma_v < 0.95 * half_v)
+    return dict(
+        pivot=pivot,
+        direction=direction,
+        radius=radius,
+        sigma_u=sigma_u,
+        sigma_v=sigma_v,
+        background=background,
+        window=window,
+        diameter=2 * radius,
+        reference_diameter=reference_diameter,
+        along=along,
+        across_u=across_u,
+        across_v=across_v,
+        n_points=int(inside.sum()),
+        success=bool(best.success),
+        converged=converged,
     )
+
+
+def shell_density(across_u, across_v, radius, sigma_u, sigma_v, window, angles):
+    """Density of a shell of radius radius blurred by sigma_u and sigma_v at (across_u,
+    across_v), normalised within the window (u, v half-widths)."""
+    half_u, half_v = window
+    cos, sin = radius * np.cos(angles), radius * np.sin(angles)
+    density = (stats.norm.pdf(np.asarray(across_u)[:, None], cos, sigma_u)
+               * stats.norm.pdf(np.asarray(across_v)[:, None], sin, sigma_v)).mean(axis=1)
+    norm = ((stats.norm.cdf((half_u - cos) / sigma_u) - stats.norm.cdf((-half_u - cos) / sigma_u))
+            * (stats.norm.cdf((half_v - sin) / sigma_v) - stats.norm.cdf((-half_v - sin) / sigma_v))).mean()
+    return density / norm
+
+
+def cylinder_profile(fit, positions, axis="u", n_angles=48):
+    """Fitted density of the points along u (across the filament, in the plane) or v (out of
+    it), at positions (nm): the shell and the background, within the window."""
+    half_u, half_v = fit["window"]
+    radius, sigma_u, sigma_v, background = (fit[key] for key in
+                                            ["radius", "sigma_u", "sigma_v", "background"])
+    angles = np.linspace(0, 2 * np.pi, n_angles, endpoint=False)
+    cos, sin = radius * np.cos(angles), radius * np.sin(angles)
+    in_u = stats.norm.cdf((half_u - cos) / sigma_u) - stats.norm.cdf((-half_u - cos) / sigma_u)
+    in_v = stats.norm.cdf((half_v - sin) / sigma_v) - stats.norm.cdf((-half_v - sin) / sigma_v)
+    if axis == "u":
+        shell = (stats.norm.pdf(positions[:, None], cos, sigma_u) * in_v).mean(axis=1)
+        half = half_u
+    else:
+        shell = (stats.norm.pdf(positions[:, None], sin, sigma_v) * in_u).mean(axis=1)
+        half = half_v
+    return (1 - background) * shell / (in_u * in_v).mean() + background / (2 * half)
+
+
+def in_window(fit):
+    """Points within the window of the fit."""
+    half_u, half_v = fit["window"]
+    return (np.abs(fit["across_u"]) <= half_u) & (np.abs(fit["across_v"]) <= half_v)
+
+
+def cross_section_limits(fit):
+    """Half-widths (u, v) of the cross-section shown: the shell and its blur, within the
+    window."""
+    half_u, half_v = fit["window"]
+    return (min(fit["radius"] + 4 * fit["sigma_u"], half_u),
+            min(fit["radius"] + 2 * fit["sigma_v"], half_v))
+
+
+def plot_cross_section(ax, across_u, across_v, limits, radius, color, label):
+    """2D histogram of the cross-section with the fitted shell and the reference diameter."""
+    angles = np.linspace(0, 2 * np.pi, 100)
+    limit_u, limit_v = limits
+    bins = [np.arange(-limit_u, limit_u + 2.5, 2.5), np.arange(-limit_v, limit_v + 2.5, 2.5)]
+    cross_section, __, __ = np.histogram2d(across_u, across_v, bins=bins)
+    ax.imshow(cross_section.T, cmap="grey", origin="lower", extent=[-limit_u, limit_u, -limit_v, limit_v])
+    ax.plot(radius * np.cos(angles), radius * np.sin(angles), c=color, label=label)
+    reference_radius = REFERENCE_DIAMETER / 2
+    ax.plot(reference_radius * np.cos(angles), reference_radius * np.sin(angles), "--", c="white",
+            label=f"reference: {REFERENCE_DIAMETER:.0f} nm")
+    ax.set_xlabel("u, across (nm)")
+    ax.set_ylabel("v, axial (nm)")
+    ax.legend(loc="upper right", fontsize="x-small")
+
+
+def plot_hollow_cylinder_fit(fit, axs, color="#F58B19", title=""):
+    """
+    Draw an anisotropic hollow cylinder fit on three axes: the cross-section of its points
+    with the fitted and reference circles, and the profiles of the points across the
+    filament in the plane (u) and out of it (v, axial), with the fitted model.
+    """
+    inside = in_window(fit)
+    plot_cross_section(axs[0], fit["across_u"][inside], fit["across_v"][inside],
+                       cross_section_limits(fit), fit["radius"], color,
+                       f"fit: {fit['diameter']:.1f} nm")
+    axs[0].set_title(f"Cross-section{' (' + title + ')' if title else ''}")
+    for ax, axis, sigma in [(axs[1], "u", "sigma_u"), (axs[2], "v", "sigma_v")]:
+        half = fit["window"][0 if axis == "u" else 1]
+        positions = np.linspace(-half, half, 300)
+        ax.hist(fit["across_" + axis][inside], bins=np.linspace(-half, half, 60), density=True,
+                color=color, alpha=0.6)
+        ax.plot(positions, cylinder_profile(fit, positions, axis), c="black",
+                label=f"fit: R = {fit['radius']:.1f} nm, $\\sigma_{axis}$ = {fit[sigma]:.1f} nm, "
+                      f"bg = {100 * fit['background']:.0f}%")
+        for sign in (-1, 1):
+            ax.axvline(sign * fit["radius"], c=color)
+            ax.axvline(sign * REFERENCE_DIAMETER / 2, ls="--", c="grey",
+                       label=f"reference R = {REFERENCE_DIAMETER / 2:.1f} nm" if sign > 0 else None)
+        ax.set_xlabel(f"{axis}, {'across the filament' if axis == 'u' else 'axial'} (nm)")
+        ax.set_ylabel("density")
+        ax.legend(fontsize="x-small")
+    axs[1].set_title("Profile across the filament (lateral)")
+    axs[2].set_title("Profile out of the plane (axial)")
 
 
 ### Break distinguishability (as fig2_filament_break_distinguishability.py)
@@ -952,19 +1062,20 @@ def plot_models_grid(examples, scores, prefix):
     plt.close(fig)
 
 
-def plot_figure(examples, detection, scores, cylinder_fit, prefix):
+def plot_figure(examples, detection, scores, fits, prefix):
     """The main figure: (a) one filament per break of FIGURE_EXAMPLE_GAPS_NM (rows; 0 nm: the intact
     filament) at every labelling efficiency, (b) the share of broken filaments whose break is
     detected, and the false alarm rate of intact filaments, (c) the AUC of intact against
     broken filaments from the number of mask segments alone, both against labelling
-    efficiency, and (d) the hollow cylinder fit of the experimental localisations."""
+    efficiency, and (d) the hollow cylinder fits of the reference and intact experimental
+    segments."""
     les = sorted(LABELLING_EFFICIENCIES)
     breaks = [gap for gap in FIGURE_EXAMPLE_GAPS_NM if gap > 0]  # one line each in b and c
     colours = {gap: f"C{k}" for k, gap in enumerate(breaks)}
     colours[0] = "0.5"  # the intact filament, as in b
     fig = plt.figure(figsize=[11, 6.8 + 0.55 * len(FIGURE_EXAMPLE_GAPS_NM)])
     grid = fig.add_gridspec(3, 1, height_ratios=[0.25 * len(FIGURE_EXAMPLE_GAPS_NM) + 0.15, 1, 1],
-                            hspace=0.45)
+                            hspace=0.55)
     top = grid[0].subgridspec(len(FIGURE_EXAMPLE_GAPS_NM), len(les), wspace=0.05, hspace=0.08)
     for i, gap in enumerate(FIGURE_EXAMPLE_GAPS_NM):
         model = "broken" if gap > 0 else "intact"
@@ -1021,13 +1132,11 @@ def plot_figure(examples, detection, scores, cylinder_fit, prefix):
         labelling_axis(axis)
 
     cylinder = grid[2].subgridspec(1, 3, wspace=0.35)
-    axs = [fig.add_subplot(cylinder[0], projection="3d"),
-           fig.add_subplot(cylinder[1]), fig.add_subplot(cylinder[2])]
-    plot_hollow_cylinder_fit(cylinder_fit, axs, color="#F58B19",
-                             title="Experimental localisations")
+    axs = [fig.add_subplot(cylinder[k]) for k in range(3)]
+    plot_cylinder_summary(fits, axs, color="#F58B19")
     for axis in axs:
         axis.title.set_fontsize(9)
-    axs[0].text2D(-0.15, 1.1, "d", fontweight="bold", fontsize=12, transform=axs[0].transAxes)
+    axs[0].set_title("d", loc="left", fontweight="bold", x=-0.3)
     fig.savefig(prefix + "filament_figure.png", dpi=300, bbox_inches="tight")
     plt.close(fig)
 
@@ -1054,9 +1163,10 @@ def segment_outline(center, direction, length=SEGMENT_LENGTH_NM, width=SEGMENT_W
 
 def measure_experimental_segments(localisations_all):
     """The intact and broken experimental segments: their features (measure_filaments, one row
-    per segment), and their images (cropped), centres, directions and number of
-    localisations."""
+    per segment), and their images (cropped), centres, directions, number of localisations
+    and aligned localisations (points, with the index of their segment in point_segment)."""
     rows, images, centres, directions, n_localisations, models = [], [], [], [], [], []
+    points, point_segment = [], []
     for model, segment_centres in [("intact", EXPERIMENTAL_INTACT_CENTERS),
                                    ("broken", EXPERIMENTAL_BROKEN_CENTERS)]:
         replicates = []
@@ -1066,6 +1176,8 @@ def measure_experimental_segments(localisations_all):
             image = render_segment(segment)
             replicates.append(dict(replicate=k, images={"SMLM": {"ch0": [image]}}))
             images.append(crop_filament(image))
+            point_segment.append(np.full(len(segment), len(centres)))
+            points.append(segment)
             centres.append(segment_centre)
             directions.append(direction)
             n_localisations.append(len(segment))
@@ -1077,7 +1189,8 @@ def measure_experimental_segments(localisations_all):
     features = pd.concat(rows, ignore_index=True)
     segments = dict(images=np.array(images), centres=np.array(centres),
                     directions=np.array(directions), n_localisations=np.array(n_localisations),
-                    models=np.array(models))
+                    models=np.array(models), points=np.vstack(points),
+                    point_segment=np.concatenate(point_segment))
     return features, segments
 
 
@@ -1278,23 +1391,110 @@ def plot_targets(particle_data, prefix):
     plt.close(fig)
 
 
-def save_cylinder_fit(cylinder_fit, prefix):
-    """The hollow cylinder fit of the reference segment: its figure and values."""
-    print(f"Hollow cylinder fit: diameter {cylinder_fit['diameter']:.1f} nm, "
-          f"sigma {cylinder_fit['sigma']:.1f} nm, background {100 * cylinder_fit['background']:.0f}% "
-          f"(reference {REFERENCE_DIAMETER} nm)")
-    pd.DataFrame([{key: cylinder_fit[key] for key in
-                   ["diameter", "sigma", "background", "geometric_diameter", "reference_diameter",
-                    "n_points", "success"]}]).to_csv(prefix + "hollow_cylinder_fit.csv", index=False)
-    fig = plt.figure(figsize=(21, 6))
-    axs = [
-        fig.add_subplot(1, 3, 1, projection="3d"),
-        fig.add_subplot(1, 3, 2),
-        fig.add_subplot(1, 3, 3),
-    ]
-    plot_hollow_cylinder_fit(cylinder_fit, axs, color="#F58B19", title="Experimental localisations")
-    fig.savefig(prefix + "hollow_cylinder_fit.png", dpi=300, bbox_inches="tight")
-    plt.close(fig)
+def segment_cylinder_fit(points):
+    """Anisotropic hollow cylinder fit of a segment, with the diameter of the isotropic fit
+    (fit_hollow_cylinder, as in fig2_filaments.py) for comparison."""
+    fit = fit_anisotropic_hollow_cylinder(points, reference_diameter=REFERENCE_DIAMETER,
+                                          window=CYLINDER_WINDOW_NM)
+    fit["isotropic_diameter"] = fit_hollow_cylinder(
+        points, reference_diameter=REFERENCE_DIAMETER,
+        background_radius_factor=SEGMENT_WIDTH_NM / 2 / REFERENCE_DIAMETER)["diameter"]
+    return fit
+
+
+def cylinder_fits(reference_points, segments=None):
+    """Hollow cylinder fits of the reference segment ("ref") and of every intact experimental
+    segment ("intact k", numbered as in the experimental figure), as (name, fit) pairs."""
+    fits = [("ref", segment_cylinder_fit(reference_points))]
+    if segments is not None and "points" in segments:
+        intact = np.flatnonzero(segments["models"] == "intact")
+        for k, i in enumerate(intact):
+            fits.append((f"intact {k}",
+                         segment_cylinder_fit(segments["points"][segments["point_segment"] == i])))
+    return fits
+
+
+def save_cylinder_fits(fits, prefix):
+    """The hollow cylinder fits: their values (one row per segment), the fit of the reference
+    segment and the fit of every segment (one row each)."""
+    table = pd.DataFrame([dict(segment=name, **{key: fit[key] for key in
+                               ["diameter", "sigma_u", "sigma_v", "background",
+                                "isotropic_diameter", "reference_diameter", "n_points",
+                                "success", "converged"]})
+                          for name, fit in fits])
+    table.to_csv(prefix + "hollow_cylinder_fit.csv", index=False)
+    print(table.round(2).to_string(index=False))
+    converged = table[table.converged]
+    print(f"Hollow cylinder fits (n = {len(converged)} of {len(table)} converged): diameter "
+          f"{converged.diameter.mean():.1f} ± {converged.diameter.std():.1f} nm, sigma_u "
+          f"{converged.sigma_u.mean():.1f} ± {converged.sigma_u.std():.1f} nm, sigma_v "
+          f"{converged.sigma_v.mean():.1f} ± {converged.sigma_v.std():.1f} nm (mean ± s.d.; "
+          f"isotropic fit {converged.isotropic_diameter.mean():.1f} ± "
+          f"{converged.isotropic_diameter.std():.1f} nm; reference {REFERENCE_DIAMETER} nm)")
+    for name, shown in [("hollow_cylinder_fit.png", fits[:1]), ("hollow_cylinder_fits.png", fits)]:
+        fig, axes = plt.subplots(len(shown), 3, squeeze=False, figsize=(18, 4.5 * len(shown)))
+        for row, (segment, fit) in zip(axes, shown):
+            plot_hollow_cylinder_fit(fit, row, color="#F58B19", title=segment)
+        fig.tight_layout()
+        fig.savefig(prefix + name, dpi=300 if len(shown) == 1 else 100, bbox_inches="tight")
+        plt.close(fig)
+
+
+def plot_cylinder_summary(fits, axs, color="#F58B19"):
+    """The hollow cylinder fits of several segments on three axes: the cross-section and the
+    profile across the filament of all their localisations, each segment in the frame of its
+    own fitted axis, with the fit of each, and the fitted diameter of every segment with the
+    mean +- s.d. of those that converged."""
+    converged = np.array([fit["converged"] for __, fit in fits])
+    diameters = np.array([fit["diameter"] for __, fit in fits])
+    mean_diameter, std_diameter = diameters[converged].mean(), diameters[converged].std(ddof=1)
+    shown = [fit for __, fit in fits if fit["converged"]]
+    inside = [in_window(fit) for fit in shown]
+    # cross-section, pooled
+    limits = np.max([cross_section_limits(fit) for fit in shown], axis=0)
+    plot_cross_section(axs[0], np.concatenate([fit["across_u"][k] for fit, k in zip(shown, inside)]),
+                       np.concatenate([fit["across_v"][k] for fit, k in zip(shown, inside)]),
+                       limits, mean_diameter / 2, color, f"mean fit: {mean_diameter:.1f} nm")
+    axs[0].set_title(f"Cross-section, {len(shown)} segments")
+    # profile across the filament, pooled, with the fit of every segment
+    half_u = CYLINDER_WINDOW_NM[0]
+    positions = np.linspace(-half_u, half_u, 300)
+    axs[1].hist(np.concatenate([fit["across_u"][k] for fit, k in zip(shown, inside)]),
+                bins=np.linspace(-half_u, half_u, 60), density=True, color=color, alpha=0.6)
+    for k, fit in enumerate(shown):
+        axs[1].plot(positions, cylinder_profile(fit, positions, "u"), c="0.3", lw=0.5, alpha=0.7,
+                    label="fit of each segment" if k == 0 else None)
+    for sign in (-1, 1):
+        axs[1].axvline(sign * mean_diameter / 2, c=color)
+        axs[1].axvline(sign * REFERENCE_DIAMETER / 2, ls="--", c="grey",
+                       label=f"reference R = {REFERENCE_DIAMETER / 2:.1f} nm" if sign > 0 else None)
+    axs[1].set_xlabel("u, across the filament (nm)")
+    axs[1].set_ylabel("density")
+    axs[1].legend(fontsize="x-small")
+    axs[1].set_title("Profile across the filament (lateral)")
+    # diameter of every segment
+    jitter = np.random.default_rng(0).uniform(-0.15, 0.15, len(diameters))
+    is_reference = np.array([name == "ref" for name, __ in fits])
+    for selection, marker, size, colour, label in [
+            (~is_reference, "o", 15, "0.4", "intact segments"),
+            (is_reference, "D", 30, color, "reference segment")]:
+        axs[2].scatter(jitter[selection & converged], diameters[selection & converged], s=size,
+                       c=colour, marker=marker, label=label)
+        if np.any(selection & ~converged):
+            axs[2].scatter(jitter[selection & ~converged], diameters[selection & ~converged],
+                           s=size, facecolors="none", edgecolors=colour, marker=marker,
+                           label="not converged (excluded)" if not is_reference[selection][0] else None)
+    axs[2].errorbar(0.4, mean_diameter, yerr=std_diameter, fmt="o", c="k", capsize=4,
+                    label=f"{mean_diameter:.1f} ± {std_diameter:.1f} nm (mean ± s.d., "
+                          f"n = {converged.sum()})")
+    axs[2].axhline(REFERENCE_DIAMETER, ls="--", c="grey", label=f"reference: {REFERENCE_DIAMETER:.0f} nm")
+    axs[2].set_xlim(-0.6, 0.8)
+    axs[2].set_xticks([])
+    axs[2].set_ylim(0, max(diameters.max(), REFERENCE_DIAMETER) * 1.6)
+    axs[2].set_ylabel("Hollow cylinder diameter (nm)")
+    axs[2].legend(fontsize="x-small", loc="upper left", frameon=False)
+    axs[2].spines[["top", "right"]].set_visible(False)
+    axs[2].set_title("Diameter per segment")
 
 
 def main():
@@ -1305,13 +1505,16 @@ def main():
         examples = {}
         if os.path.exists(prefix + "examples.npz"):
             examples = dict(np.load(prefix + "examples.npz"))
-        cylinder_fit = None
-        if "fluorophore_positions" in examples:
-            cylinder_fit = segment_cylinder_fit(examples["fluorophore_positions"])
+        segments = None
         if os.path.exists(prefix + "experimental_features.csv") \
                 and os.path.exists(prefix + "experimental_segments.npz"):
+            segments = dict(np.load(prefix + "experimental_segments.npz"))
             experimental_analysis(pd.read_csv(prefix + "experimental_features.csv"),
-                                  dict(np.load(prefix + "experimental_segments.npz")), prefix)
+                                  segments, prefix)
+        fits = None
+        if "fluorophore_positions" in examples:
+            fits = cylinder_fits(examples["fluorophore_positions"], segments)
+            save_cylinder_fits(fits, prefix)
     else:
         output_dir = os.path.join(str(output_path),
                                   ExperimentParametrisation().date_as_string + OUTPUT_NAME)
@@ -1327,8 +1530,6 @@ def main():
         plot_overview(localisations_all, in_segment, fluorophore_positions, prefix)
         template = experimental_template(fluorophore_positions)
         plot_targets(template, prefix)
-        cylinder_fit = segment_cylinder_fit(fluorophore_positions)
-        save_cylinder_fit(cylinder_fit, prefix)
 
         # experimental segments, without simulation
         experimental_features, segments = measure_experimental_segments(localisations_all)
@@ -1340,6 +1541,8 @@ def main():
         experimental_features.to_csv(prefix + "experimental_features.csv", index=False)
         np.savez_compressed(prefix + "experimental_segments.npz", **segments)
         experimental_analysis(experimental_features, segments, prefix)
+        fits = cylinder_fits(fluorophore_positions, segments)
+        save_cylinder_fits(fits, prefix)
 
         plot_strip_examples(template, prefix)
         models = [("intact", 0, template)]
@@ -1410,8 +1613,8 @@ def main():
     if epitope_key("intact", 0) in examples:  # the targets of the models, from examples.npz
         plot_models(examples, prefix)
         plot_models_grid(examples, scores, prefix)
-        if cylinder_fit is not None:
-            plot_figure(examples, detection, scores, cylinder_fit, prefix)
+        if fits is not None:
+            plot_figure(examples, detection, scores, fits, prefix)
     print(scores.pivot_table(index=["feature_set", "gap_nm"], columns="labelling_efficiency",
                              values="auc", sort=False).round(2).to_string())
 
