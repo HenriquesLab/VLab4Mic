@@ -70,12 +70,22 @@ experiment.use_image_for_positioning(
 # Run simulation
 ## Modality parameter of pixelsize_nm is set to match Thevathasan et al. 2019.
 ## All other parameters are estimations to emulate Thevathasan et al. 2019 STED modality
+psf_voxel_nm = 5
+lateral_resolution_nm = 15
+axial_resolution_nm = 20
+depth_of_field_nm = 100
+# The default PSF stack (150x150x150 voxels) sets the size of the 3D FFT
+# convolution (~15 GB here). Fit it to +-4 sigma laterally, and axially to the
+# projected depth plus 4 sigma, which keeps the image and cuts memory ~3x
+lateral_px = 2 * int(np.ceil(4 * lateral_resolution_nm / psf_voxel_nm)) + 1
+axial_px = 2 * int(np.ceil((depth_of_field_nm / 2 + 4 * axial_resolution_nm) / psf_voxel_nm)) + 1
+experiment.imaging_modalities["STED"]["psf_params"]["shape"] = [lateral_px, lateral_px, axial_px]
 experiment.update_modality(
     modality_name="STED",
-    lateral_resolution_nm=15,
-    axial_resolution_nm=20,
-    psf_voxel_nm=5,
-    depth_of_field_nm=100,
+    lateral_resolution_nm=lateral_resolution_nm,
+    axial_resolution_nm=axial_resolution_nm,
+    psf_voxel_nm=psf_voxel_nm,
+    depth_of_field_nm=depth_of_field_nm,
     pixelsize_nm=15)
 experiment.set_modality_acq(
     modality_name="STED",
