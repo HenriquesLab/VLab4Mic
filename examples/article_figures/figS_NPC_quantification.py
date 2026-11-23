@@ -40,6 +40,9 @@ _1, _2, experiment = experiments.image_vsample(
     run_simulation=False,
     random_seed=random_seed
 )
+results_directory = os.path.join(experiment.output_directory, experiment.date_as_string + 'NPC_quantification_STED')
+os.makedirs(results_directory, exist_ok=True)
+output_prefix = os.path.join(results_directory, experiment.date_as_string + 'NPC_quantification_STED')
 
 # Get a crop of the experimental image to reduce the field of view
 experimental_img = np.array(img_tif, dtype=int)
@@ -156,7 +159,18 @@ axs[1].set_yticks([])
 plt.tight_layout()
 
 # save figure
-name = experiment.date_as_string + 'NPC_quantification_STED.png'
-filename = os.path.join(experiment.output_directory, name)
+filename = output_prefix + '.png'
 fig.savefig(filename, dpi=300, bbox_inches='tight')
 plt.close()
+
+# Intensity histograms of the two images of the figure: experimental crop and simulated image
+fig, axs = plt.subplots(1, 2, figsize=(10, 4))
+for ax, img, title in [(axs[0], experimental_img_processed, "Experimental (crop)"),
+                       (axs[1], images["STED"]["ch0"][0], "VLab4Mic simulated")]:
+    ax.hist(np.ravel(img), bins=100)
+    ax.set_title(title)
+    ax.set_xlabel("Intensity (counts)")
+    ax.set_ylabel("Number of pixels")
+fig.tight_layout()
+fig.savefig(output_prefix + '_intensity_histograms.png', dpi=300, bbox_inches='tight')
+plt.close(fig)
