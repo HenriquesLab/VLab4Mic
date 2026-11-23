@@ -36,6 +36,19 @@ measure_filaments. The share of segments where a break is detected (mask
 split, or a break in the strip profiles) is given per class, and the classes
 are scored with distinguishability_from_features.
 
+Experimental labelling efficiency, without simulation: the filament figure
+again, with the labelling efficiency taken from the data. A scan of the
+dataset (select_density_sets) gives straight, isolated segments: a reference
+set of N_SEGMENTS_PER_SET segments with no detected break, and sets of up to
+N_SEGMENTS_PER_SET sparser segments (within DENSITY_TOLERANCE of
+DENSITY_TARGETS times its number of localisations); the labelling efficiency
+of a set is its mean number of localisations over that of the reference set. Every segment is measured
+intact and with a gap of DENSITY_GAPS_NM cut in its middle (its
+localisations within gap/2 of the centre removed), and the break detection
+and distinguishability are those of the simulated filaments. Its outputs are
+in the subfolder experimental_labelling_efficiency, with a README.txt that
+describes every file.
+
 Outputs, in the folder <date>figS_filaments_MT3D of the VLab4Mic output
 directory (created if it does not exist): segment_overview.png (the dataset
 and the reference segment), filament.png (the targets of the reference
@@ -59,7 +72,9 @@ the experimental segments experimental_segments_figure.png ((a) the segments
 on the dataset, (b) their images, (c) the percentage of segments with a
 detected break per class and (d) the distinguishability of the classes),
 experimental_features.csv, experimental_break_detection.csv,
-experimental_distinguishability.csv and experimental_segments.npz.
+experimental_distinguishability.csv and experimental_segments.npz; and the
+subfolder experimental_labelling_efficiency (filament_figure.png, sets.png,
+distinguishability_heatmap.png, the tables and README.txt).
 
 Run:   python figS_filaments_MT3D_smlm.py
 Score an existing feature table again, without simulating:
@@ -71,7 +86,9 @@ condition; e.g. 5 for a quick run), VLAB4MIC_N_PERMUTATIONS (200),
 VLAB4MIC_N_WORKERS (1; simulations and scoring in parallel processes),
 VLAB4MIC_SAVE_IMAGES (0; 1 saves the images of every model and condition as
 a TIFF stack in <folder>/images), VLAB4MIC_SMLM_PATH (the .smlm file of the
-localisations, local or URL; default: Zenodo).
+localisations, local or URL; default: Zenodo), VLAB4MIC_N_SEGMENTS_PER_SET (20;
+experimental segments per set of the experimental labelling efficiency, as many
+as the data allows).
 """
 
 import copy
@@ -89,6 +106,7 @@ import requests
 import tifffile
 from matplotlib.patches import Polygon
 from scipy import ndimage, optimize, stats
+from scipy.spatial import cKDTree
 from tqdm.auto import tqdm
 
 from vlab4mic import experiments
@@ -151,6 +169,26 @@ EXPERIMENTAL_BROKEN_CENTERS = [
     (3287, 39554), (4676, 37023),
 ]
 RENDERING_SIGMA_NM = 5  # as the simulated images: the lateral precision
+
+# experimental labelling efficiency: sets of straight, isolated experimental segments, from a
+# scan of the whole dataset (select_density_sets). Set 0, the reference: the
+# N_SEGMENTS_PER_SET densest segments where neither the mask nor the strip profiles detect a
+# break. The other sets: up to N_SEGMENTS_PER_SET segments closest to DENSITY_TARGETS times
+# the mean number of localisations of the reference, within DENSITY_TOLERANCE of it (chosen by
+# density only); a set with fewer than DENSITY_MIN_SEGMENTS is left out. Each set's labelling
+# efficiency is its mean number of localisations over that of the reference.
+N_SEGMENTS_PER_SET = int(os.environ.get("VLAB4MIC_N_SEGMENTS_PER_SET", 20))
+DENSITY_TARGETS = [1, 0.8, 0.6, 0.45, 0.33, 0.25]
+DENSITY_TOLERANCE = 0.15  # relative to the target number of localisations
+DENSITY_MIN_SEGMENTS = 5  # per set, for 5-fold scoring
+DENSITY_MIN_DISTANCE_NM = 600  # between segment centres: crops never overlap
+DENSITY_SCAN_STEP_NM = 250  # grid of the scan
+DENSITY_MIN_ELONGATION = 20  # ratio of the principal axes of the localisations around a segment
+DENSITY_MAX_OFF_AXIS = 0.15  # fraction of localisations > 40 nm from the axis (crossing filaments)
+# breaks cut into every segment; no 0 nm: without a second realisation it would be the intact
+# segment itself (the null control of distinguishability_from_features is the negative control)
+DENSITY_GAPS_NM = [5, 10, 25, 50, 100, 200]
+DENSITY_FOLDER = "experimental_labelling_efficiency"  # subfolder of the outputs
 
 # measure_filaments columns used as features (the others are settings)
 MASK_FEATURES = ["mask_continuity", "mask_major_lenght", "mask_number_of_segments",
@@ -735,12 +773,12 @@ def error_bars(value, low, high):
     return [np.clip(value - low, 0, None), np.clip(high - value, 0, None)]
 
 
-def labelling_axis(ax):
-    """Labelling efficiency on a log scale, ticks at the simulated values."""
-    les = sorted(LABELLING_EFFICIENCIES)
+def labelling_axis(ax, les=LABELLING_EFFICIENCIES):
+    """Labelling efficiency on a log scale, ticks at the values of les."""
+    les = sorted(les)
     ax.set_xscale("log")
     ax.minorticks_off()
-    ax.set_xticks(les, [f"{le:g}" for le in les], fontsize=8)
+    ax.set_xticks(les, [f"{le:.2g}" for le in les], fontsize=8)
     ax.set_xlabel("Labelling efficiency")
     ax.spines[["top", "right"]].set_visible(False)
 
@@ -874,13 +912,13 @@ def plot_strip_row(row, image, mask, strip, table, title, flat_fraction):
     row[3].legend(frameon=False, fontsize=8)
 
 
-def feature_table(tables):
-    """Intact and broken rows for every break size."""
+def feature_table(tables, gaps=GAPS_NM):
+    """Intact and broken rows for every break size of gaps."""
     features = pd.concat(tables, ignore_index=True)
     intact = features[features.model == "intact"]
     broken = features[features.model == "broken"]
     # the intact images are shared by every break size
-    return pd.concat([broken] + [intact.assign(gap_nm=gap) for gap in GAPS_NM],
+    return pd.concat([broken] + [intact.assign(gap_nm=gap) for gap in gaps],
                      ignore_index=True)
 
 
@@ -1062,14 +1100,13 @@ def plot_models_grid(examples, scores, prefix):
     plt.close(fig)
 
 
-def plot_figure(examples, detection, scores, fits, prefix):
+def plot_figure(examples, detection, scores, path, panel_d, les=LABELLING_EFFICIENCIES):
     """The main figure: (a) one filament per break of FIGURE_EXAMPLE_GAPS_NM (rows; 0 nm: the intact
-    filament) at every labelling efficiency, (b) the share of broken filaments whose break is
-    detected, and the false alarm rate of intact filaments, (c) the AUC of intact against
-    broken filaments from the number of mask segments alone, both against labelling
-    efficiency, and (d) the hollow cylinder fits of the reference and intact experimental
-    segments."""
-    les = sorted(LABELLING_EFFICIENCIES)
+    filament) at every labelling efficiency of les, (b) the share of broken filaments whose
+    break is detected, and the false alarm rate of intact filaments, (c) the AUC of intact
+    against broken filaments from the number of mask segments alone, both against labelling
+    efficiency, and (d) drawn by panel_d(fig, grid cell)."""
+    les = sorted(les)
     breaks = [gap for gap in FIGURE_EXAMPLE_GAPS_NM if gap > 0]  # one line each in b and c
     colours = {gap: f"C{k}" for k, gap in enumerate(breaks)}
     colours[0] = "0.5"  # the intact filament, as in b
@@ -1083,7 +1120,7 @@ def plot_figure(examples, detection, scores, fits, prefix):
             ax = fig.add_subplot(top[i, k])
             show(ax, examples[model_key(model, gap, le)])
             if i == 0:
-                ax.set_title(f"LE {le:g}", fontsize=9)
+                ax.set_title(f"LE {le:.2g}", fontsize=9)
             if k == 0:
                 ax.set_ylabel(f"{gap:g} nm" if gap > 0 else "no break", fontsize=8,
                               color=colours[gap])
@@ -1109,8 +1146,9 @@ def plot_figure(examples, detection, scores, fits, prefix):
     ax.set_ylim(-3, 103)
     ax.set_ylabel("Break detected (% of filaments)")
     ax.set_title("b", loc="left", fontweight="bold", x=-0.22)
-    ax.set_title(f"Mask split into {MIN_SEGMENTS_BROKEN}+ segments "
-                 f"(n = {detection.n_filaments.max()} per point)", fontsize=9)
+    n_min, n_max = detection.n_filaments.min(), detection.n_filaments.max()
+    ax.set_title(f"Mask split into {MIN_SEGMENTS_BROKEN}+ segments (n = "
+                 f"{n_max if n_min == n_max else f'{n_min}-{n_max}'} per point)", fontsize=9)
     ax.legend(frameon=False, fontsize=7)
 
     ax_c = fig.add_subplot(bottom[1])
@@ -1129,16 +1167,25 @@ def plot_figure(examples, detection, scores, fits, prefix):
     ax_c.set_title("Intact vs broken, number of mask segments", fontsize=9)
     ax_c.legend(frameon=False, fontsize=7, loc="lower right")
     for axis in (ax, ax_c):
-        labelling_axis(axis)
+        labelling_axis(axis, les)
 
-    cylinder = grid[2].subgridspec(1, 3, wspace=0.35)
-    axs = [fig.add_subplot(cylinder[k]) for k in range(3)]
-    plot_cylinder_summary(fits, axs, color="#F58B19")
-    for axis in axs:
-        axis.title.set_fontsize(9)
-    axs[0].set_title("d", loc="left", fontweight="bold", x=-0.3)
-    fig.savefig(prefix + "filament_figure.png", dpi=300, bbox_inches="tight")
+    panel_d(fig, grid[2])
+    fig.savefig(path, dpi=300, bbox_inches="tight")
     plt.close(fig)
+
+
+def cylinder_panel(fits):
+    """Panel d of the simulated figure: the hollow cylinder fits of the reference and intact
+    experimental segments."""
+    def panel(fig, cell):
+        cylinder = cell.subgridspec(1, 3, wspace=0.35)
+        axs = [fig.add_subplot(cylinder[k]) for k in range(3)]
+        plot_cylinder_summary(fits, axs, color="#F58B19")
+        for axis in axs:
+            axis.title.set_fontsize(9)
+        box = cell.get_position(fig)
+        fig.text(box.x0 - 0.06, box.y1 + 0.01, "d", fontweight="bold", fontsize=12)
+    return panel
 
 
 ### Experimental segments: intact (top right) vs broken (bottom left), without simulation
@@ -1341,6 +1388,458 @@ def experimental_analysis(features, segments, prefix):
                   "p_value"]].round(3).to_string(index=False))
 
 
+### Experimental labelling efficiency: sets of segments of decreasing density, with cut gaps
+
+def cut_gap(segment, gap_nm):
+    """Localisations of an aligned segment (filament along x, centred) without those within
+    gap_nm / 2 of its centre."""
+    return segment[np.abs(segment[:, 0]) >= gap_nm / 2]
+
+
+def select_density_sets(localisations_all):
+    """
+    Sets of experimental segments of decreasing density, from a scan of the whole dataset.
+
+    Points of a grid of DENSITY_SCAN_STEP_NM (away from the edges) are moved to the
+    localisations within 120 nm and cropped as crop_filament_segment. The crops of straight
+    (DENSITY_MIN_ELONGATION), isolated (DENSITY_MAX_OFF_AXIS) filaments are taken, the
+    straightest first, at least DENSITY_MIN_DISTANCE_NM apart, and measured as the images of
+    the sets. Set 0 is the N_SEGMENTS_PER_SET densest of them without a detected break (mask
+    and strip profiles); set k the up to N_SEGMENTS_PER_SET others closest to DENSITY_TARGETS[k]
+    times its mean number of localisations, within DENSITY_TOLERANCE.
+
+    Returns the selection (one row per segment: set, target, the centre to crop) and the
+    candidates (one row per segment measured, with its set, -1 if none).
+    """
+    xyz = localisations_all[["x", "y"]].to_numpy(dtype=float)
+    tree = cKDTree(xyz)
+    margin = 700
+    (x0, y0), (x1, y1) = xyz.min(axis=0) + margin, xyz.max(axis=0) - margin
+
+    def crop(center, search_radius=400):
+        # as crop_filament_segment, on the localisations around center
+        near = xyz[tree.query_ball_point(center, search_radius)]
+        if len(near) < 3:
+            return None
+        segment_center = near.mean(axis=0)
+        eigenvalues, eigenvectors = np.linalg.eigh(np.cov((near - segment_center).T))
+        direction = eigenvectors[:, -1]
+        rotation = np.array([[direction[0], direction[1]], [-direction[1], direction[0]]])
+        around = xyz[tree.query_ball_point(segment_center, search_radius + SEGMENT_LENGTH_NM)]
+        along_across = (around - segment_center) @ rotation.T
+        keep = ((np.abs(along_across[:, 0]) <= SEGMENT_LENGTH_NM / 2)
+                & (np.abs(along_across[:, 1]) <= SEGMENT_WIDTH_NM / 2))
+        return segment_center, along_across[keep], eigenvalues[-1] / max(eigenvalues[0], 1e-9)
+
+    rows, seen = [], set()
+    for x in np.arange(x0, x1, DENSITY_SCAN_STEP_NM):
+        for y in np.arange(y0, y1, DENSITY_SCAN_STEP_NM):
+            index = tree.query_ball_point((x, y), 120)
+            if len(index) < 15:
+                continue
+            center = xyz[index].mean(axis=0)
+            cropped = crop(center)
+            if cropped is None:
+                continue
+            segment_center, segment, elongation = cropped
+            key = tuple(np.round(segment_center / 50).astype(int))
+            if key in seen or len(segment) < 60 or not (x0 <= segment_center[0] <= x1
+                                                        and y0 <= segment_center[1] <= y1):
+                continue
+            seen.add(key)
+            off_axis = np.mean(np.abs(segment[:, 1] - np.median(segment[:, 1])) > 40)
+            rows.append(dict(center_x=center[0], center_y=center[1],
+                             segment_x=segment_center[0], segment_y=segment_center[1],
+                             n_localisations=len(segment), elongation=elongation,
+                             off_axis=off_axis))
+    scanned = pd.DataFrame(rows)
+    good = scanned[(scanned.elongation >= DENSITY_MIN_ELONGATION)
+                   & (scanned.off_axis <= DENSITY_MAX_OFF_AXIS)] \
+        .sort_values("elongation", ascending=False)
+    chosen = []
+    for row in good.itertuples():
+        position = np.array([row.segment_x, row.segment_y])
+        if all(np.hypot(*(position - other)) >= DENSITY_MIN_DISTANCE_NM
+               for other in (np.array([c.segment_x, c.segment_y]) for c in chosen)):
+            chosen.append(row)
+    candidates = pd.DataFrame(chosen).drop(columns="Index").reset_index(drop=True)
+    # the segments as the images of the sets
+    segments, breaks = [], []
+    for k, row in enumerate(tqdm(candidates.itertuples(), total=len(candidates),
+                                 desc="candidate segments")):
+        __, segment, __ = crop((row.center_x, row.center_y))
+        image = render_segment(np.column_stack([segment, np.zeros(len(segment))]))
+        measured = measure_filaments([dict(replicate=k, images={"SMLM": {"ch0": [image]}})],
+                                     **FILAMENTS_PARAMS)[0].fillna(FILL_VALUES).iloc[0]
+        segments.append(measured.mask_number_of_segments)
+        breaks.append(measured.strip_n_breaks)
+    candidates = candidates.assign(mask_segments=segments, strip_breaks=breaks, set=-1)
+    no_break = candidates[(candidates.mask_segments < MIN_SEGMENTS_BROKEN)
+                          & (candidates.strip_breaks == 0)]
+    reference = no_break.sort_values("n_localisations", ascending=False).head(N_SEGMENTS_PER_SET)
+    candidates.loc[reference.index, "set"] = 0
+    reference_mean = reference.n_localisations.mean()
+    selection = [reference.assign(set=0, target=1.0)]
+    for target in DENSITY_TARGETS[1:]:
+        pool = candidates[candidates.set == -1]
+        distance = np.abs(pool.n_localisations - target * reference_mean)
+        within = distance[distance <= DENSITY_TOLERANCE * target * reference_mean]
+        picked = pool.loc[within.sort_values().index[:N_SEGMENTS_PER_SET]]
+        if len(picked) < N_SEGMENTS_PER_SET:
+            print(f"Warning: {len(picked)} of {N_SEGMENTS_PER_SET} segments within "
+                  f"{100 * DENSITY_TOLERANCE:.0f}% of the target {target:g}")
+        if len(picked) < DENSITY_MIN_SEGMENTS:
+            print(f"Warning: target {target:g} left out (fewer than {DENSITY_MIN_SEGMENTS} segments)")
+            continue
+        s = len(selection)
+        candidates.loc[picked.index, "set"] = s
+        selection.append(picked.assign(set=s, target=target))
+    selection = pd.concat(selection, ignore_index=True)
+    for (s, target), data in selection.groupby(["set", "target"]):
+        print(f"set {s} (target {target:g}): {len(data)} segments, "
+              f"{data.n_localisations.mean():.0f} ± {data.n_localisations.std():.0f} localisations")
+    return selection, candidates
+
+
+def measure_density_sets(localisations_all, selection):
+    """The segments of the selection (select_density_sets), intact and with every gap of
+    DENSITY_GAPS_NM cut: their features (measure_filaments, one row per image), with the
+    labelling efficiency of their set (its mean number of localisations over that of the
+    reference set), and the arrays of the sets (images of the intact segments, examples of the
+    figure, centres, directions, numbers of localisations, targets)."""
+    segments = []
+    for s, data in selection.groupby("set"):
+        for k, row in enumerate(data.itertuples()):
+            segment, __, segment_centre, direction = crop_filament_segment(
+                localisations_all, center=(row.center_x, row.center_y),
+                length=SEGMENT_LENGTH_NM, width=SEGMENT_WIDTH_NM)
+            segments.append((s, k, segment, segment_centre, direction))
+    set_index = np.array([s for s, *__ in segments])
+    n_localisations = np.array([len(segment) for __, __, segment, __, __ in segments])
+    n_sets = selection.set.nunique()
+    means = np.array([n_localisations[set_index == s].mean() for s in range(n_sets)])
+    les = np.round(means / means[0], 3)
+    rows, images, examples = [], [], {}
+    for s, k, segment, centre, __ in tqdm(segments, desc="experimental segments"):
+        for model, gap in [("intact", 0)] + [("broken", gap) for gap in DENSITY_GAPS_NM]:
+            image = render_segment(cut_gap(segment, gap))
+            table = measure_filaments([dict(replicate=k, images={"SMLM": {"ch0": [image]}})],
+                                      **FILAMENTS_PARAMS)[0]
+            rows.append(table.assign(model=model, gap_nm=gap, labelling_efficiency=les[s], set=s,
+                                     n_localisations=len(segment), segment_x=centre[0],
+                                     segment_y=centre[1]))
+            if model == "intact":
+                images.append(crop_filament(image))
+            if k == 0:
+                examples["example_" + model_key(model, gap, les[s])] = crop_filament(image)
+    sets = dict(examples, images=np.array(images), set=set_index, segment=np.array([k for __, k, *__ in segments]),
+                n_localisations=n_localisations, labelling_efficiency=les,
+                centres=np.array([centre for *__, centre, __ in segments]),
+                directions=np.array([direction for *__, direction in segments]),
+                targets=selection.groupby("set").target.first().to_numpy())
+    return pd.concat(rows, ignore_index=True), sets
+
+
+def density_set_table(features, sets):
+    """One row per segment of the sets: its set, labelling efficiency, centre, direction,
+    number of localisations, and the mask segments and strip breaks of the intact segment."""
+    intact = features[features.model == "intact"].set_index(["set", "replicate"])
+    rows = []
+    for s, k, n, centre, direction in zip(sets["set"], sets["segment"], sets["n_localisations"],
+                                          sets["centres"], sets["directions"]):
+        measured = intact.loc[(s, k)]
+        rows.append(dict(set=int(s), segment=int(k), target=sets["targets"][s],
+                         labelling_efficiency=sets["labelling_efficiency"][s],
+                         centre_x_nm=centre[0], centre_y_nm=centre[1],
+                         direction_x=direction[0], direction_y=direction[1], n_localisations=int(n),
+                         intact_mask_segments=int(measured.mask_number_of_segments),
+                         intact_strip_breaks=int(measured.strip_n_breaks)))
+    return pd.DataFrame(rows)
+
+
+def density_panel(table):
+    """Panel d of the experimental figure: the localisations of every segment of each set,
+    with their mean +- s.d. and the labelling efficiency of the set."""
+    def panel(fig, cell):
+        ax = fig.add_subplot(cell)
+        rng = np.random.default_rng(0)
+        colours = density_colours(table.set.nunique())
+        for s, data in table.groupby("set"):
+            ax.scatter(s + rng.uniform(-0.15, 0.15, len(data)), data.n_localisations, s=12,
+                       color=colours[s])
+            mean, std = data.n_localisations.mean(), data.n_localisations.std()
+            ax.errorbar(s + 0.3, mean, yerr=std, fmt="o", c="k", capsize=3, markersize=4)
+            ax.text(s, data.n_localisations.max() + 25,
+                    f"LE {data.labelling_efficiency.iloc[0]:.2g}\n{mean:.0f} ± {std:.0f}\n"
+                    f"n = {len(data)}",
+                    ha="center", fontsize=7)
+        ax.set_xticks(range(table.set.nunique()),
+                      ["reference" if s == 0 else f"set {s}" for s in range(table.set.nunique())])
+        ax.set_ylim(0, table.n_localisations.max() * 1.35)
+        ax.set_ylabel("Localisations per segment")
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.set_title("d", loc="left", fontweight="bold", x=-0.1)
+        ax.set_title("Experimental labelling efficiency: localisations of the segments of each "
+                     "set (mean ± s.d.) over those of the reference set", fontsize=9)
+    return panel
+
+
+def density_colours(n_sets):
+    """A colour per set, visible on the dark overview."""
+    return plt.cm.plasma(np.linspace(0.15, 0.95, n_sets))
+
+
+def plot_density_sets(table, sets, path):
+    """The segments of every set on the dataset, and the image of every intact segment (a row
+    per set)."""
+    n_sets = table.set.nunique()
+    # at most 10 images per row, as many rows per set as needed
+    n_columns = min(table.groupby("set").size().max(), 10)
+    rows_per_set = table.groupby("set").size().apply(lambda n: int(np.ceil(n / n_columns)))
+    first_row = np.concatenate([[0], np.cumsum(rows_per_set)[:-1]])
+    colours = density_colours(n_sets)
+    fig = plt.figure(figsize=[7 + 1.6 * n_columns, max(7, 0.75 * rows_per_set.sum())])
+    grid = fig.add_gridspec(1, 2, width_ratios=[7, 1.6 * n_columns], wspace=0.08)
+    ax = fig.add_subplot(grid[0])
+    overview = sets["overview"]
+    ax.imshow(overview.T, cmap="grey", vmax=np.percentile(overview, 99.5), origin="upper",
+              extent=sets["overview_extent"])
+    for row in table.itertuples():
+        centre = np.array([row.centre_x_nm, row.centre_y_nm])
+        ax.add_patch(Polygon(segment_outline(centre, np.array([row.direction_x, row.direction_y])),
+                             closed=True, fill=False, edgecolor=colours[row.set], linewidth=1.2))
+        ax.text(centre[0] + 300, centre[1] - 300, f"{row.set}.{row.segment}", color=colours[row.set],
+                fontsize=5)
+    for s in range(n_sets):
+        ax.plot([], [], "s", mfc="none", color=colours[s],
+                label=f"{'reference' if s == 0 else f'set {s}'} (LE {sets['labelling_efficiency'][s]:.2g})")
+    ax.legend(frameon=False, fontsize=7, labelcolor="w", loc="lower right")
+    ax.set_xlabel("x (nm)")
+    ax.set_ylabel("y (nm)")
+    ax.tick_params(labelsize=7)
+    gallery = grid[1].subgridspec(rows_per_set.sum(), n_columns, wspace=0.05, hspace=0.35)
+    for i, row in enumerate(table.itertuples()):
+        ax_k = fig.add_subplot(gallery[first_row[row.set] + row.segment // n_columns,
+                                       row.segment % n_columns])
+        show(ax_k, sets["images"][i])
+        ax_k.set_title(f"{row.set}.{row.segment}: {row.n_localisations} loc., "
+                       f"{row.intact_mask_segments} seg., {row.intact_strip_breaks} br.",
+                       fontsize=5, color=colours[row.set] if row.set else "k")
+        if row.segment == 0:
+            ax_k.set_ylabel("reference" if row.set == 0 else f"set {row.set}", fontsize=7)
+    fig.suptitle("Experimental labelling efficiency: segments of each set (set.segment; "
+                 "localisations, mask segments and strip breaks of the intact segment)",
+                 x=0.02, ha="left", fontsize=10)
+    fig.savefig(path, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+
+
+def save_heatmap(scores, path, title):
+    """Distinguishability heatmaps (ROC AUC) per feature set, break length against labelling
+    efficiency."""
+    fig = plot_distinguishability_heatmaps(scores, x="labelling_efficiency", y="gap_nm",
+                                           facet="feature_set", facet_order=list(FEATURE_SETS))
+    n_le = scores.labelling_efficiency.nunique()
+    gaps = sorted(scores.gap_nm.unique())
+    panels = fig.axes[:len(FEATURE_SETS)]
+    for ax in panels:
+        ax.set_xlabel("Labelling efficiency")
+    panels[0].set_ylabel("Break length (nm)")
+    fig.suptitle(title, x=0.02, ha="left")
+    fig.set_size_inches(1.0 + len(panels) * (0.8 + 0.45 * n_le), 1.5 + 0.5 * len(gaps))
+    fig.savefig(path, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+
+
+def density_analysis(features, sets, folder):
+    """Break detection and distinguishability of intact and cut experimental segments at every
+    experimental labelling efficiency, with their figures, tables and README.txt, in folder."""
+    features = features.fillna(FILL_VALUES)
+    table = density_set_table(features, sets)
+    table.to_csv(folder + "sets.csv", index=False)
+    plot_density_sets(table, sets, folder + "sets.png")
+    paired = feature_table([features], DENSITY_GAPS_NM)
+    detection = break_detection(paired)
+    detection.to_csv(folder + "break_detection.csv", index=False)
+    scores = []
+    for name, columns in FEATURE_SETS.items():
+        print(f"experimental labelling efficiency, features: {name}")
+        scored = distinguishability_from_features(
+            paired, "model", ("intact", "broken"), columns, by=CONDITIONS,
+            controls=CONTROLS if name == "all" else None,
+            replicate_column="replicate", n_permutations=N_PERMUTATIONS,
+            random_state=RANDOM_SEED, n_workers=N_WORKERS,
+        )
+        scored.insert(0, "feature_set", name)
+        scores.append(scored)
+    scores = pd.concat(scores, ignore_index=True)
+    scores.to_csv(folder + "distinguishability.csv", index=False)
+    figure_values(detection, scores).to_csv(folder + "figure_values.csv", index=False)
+    save_heatmap(scores, folder + "distinguishability_heatmap.png",
+                 "Experimental segments: intact vs cut (ROC AUC), experimental labelling efficiency")
+    examples = {key[len("example_"):]: value for key, value in sets.items()
+                if key.startswith("example_")}
+    plot_figure(examples, detection, scores, folder + "filament_figure.png", density_panel(table),
+                les=list(sets["labelling_efficiency"]))
+    write_density_readme(folder, table, detection, scores,
+                         int(sets.get("n_segments_per_set", N_SEGMENTS_PER_SET)))
+    print(detection.round(3).to_string(index=False))
+
+
+def write_density_readme(folder, table, detection, scores, requested):
+    """README.txt of the experimental labelling efficiency folder: what every file holds, with
+    the sets of this run (requested: segments asked for per set)."""
+    summary = table.groupby("set").agg(
+        n=("segment", "size"), target=("target", "first"),
+        labelling_efficiency=("labelling_efficiency", "first"),
+        mean=("n_localisations", "mean"), std=("n_localisations", "std"),
+        minimum=("n_localisations", "min"), maximum=("n_localisations", "max"),
+        mask_split=("intact_mask_segments", lambda x: int((x >= MIN_SEGMENTS_BROKEN).sum())),
+        strip_break=("intact_strip_breaks", lambda x: int((x > 0).sum())))
+    set_lines = "\n".join(
+        f"  {'reference' if s == 0 else f'set {s}':9s}  LE {row['labelling_efficiency']:.3f}  "
+        f"(target {row['target']:.2f})  {row['n']:.0f} segments"
+        f"{'' if row['n'] >= requested else f' (of {requested} asked for)'}  "
+        f"{row['mean']:6.1f} ± {row['std']:5.1f} localisations "
+        f"(range {row['minimum']:.0f}-{row['maximum']:.0f}); intact segments with a mask split: "
+        f"{row['mask_split']:.0f}/{row['n']:.0f}, with a strip break: {row['strip_break']:.0f}/{row['n']:.0f}"
+        for s, row in summary.iterrows())
+    missing = [f"{t:g}" for t in DENSITY_TARGETS if not np.isclose(summary.target, t).any()]
+    segments_auc = scores[scores.feature_set == "segments"].pivot_table(
+        index="gap_nm", columns="labelling_efficiency", values="auc").round(2).to_string()
+    detected = detection.pivot_table(index=["model", "gap_nm"], columns="labelling_efficiency",
+                                     values="fraction_split").mul(100).round(0).to_string()
+    text = f"""EXPERIMENTAL LABELLING EFFICIENCY
+=================================
+
+Written by figS_filaments_MT3D_smlm.py. Nothing in this folder is simulated: every
+image is rendered from experimental 3D SMLM localisations of microtubules (ShareLoc.xyz,
+Zenodo 5541063) and measured as the simulated images of the parent folder.
+
+What was done
+-------------
+1. Segments. The whole dataset is scanned (select_density_sets): points of a grid of
+   {DENSITY_SCAN_STEP_NM} nm, at least 700 nm from its edges, are moved onto the nearby localisations and
+   cropped as the reference segment of the parent folder ({SEGMENT_LENGTH_NM} x {SEGMENT_WIDTH_NM} nm, along x across,
+   aligned to the x axis; crop_filament_segment). A crop is kept when its filament is
+   straight (principal axes of the localisations within 400 nm in a ratio of at least
+   {DENSITY_MIN_ELONGATION}) and isolated (at most {100 * DENSITY_MAX_OFF_AXIS:.0f}% of its localisations more than 40 nm from the
+   axis, i.e. no crossing filament), with at least 60 localisations; the straightest are
+   taken first, their centres at least {DENSITY_MIN_DISTANCE_NM} nm apart so that no two crops overlap.
+   These candidates are listed in candidates.csv.
+2. Sets. {requested} segments were asked for per set (N_SEGMENTS_PER_SET; set the environment
+   variable VLAB4MIC_N_SEGMENTS_PER_SET to change it). The reference set is the densest
+   candidates where neither the mask (fewer than {MIN_SEGMENTS_BROKEN} segments) nor the strip profiles
+   (no flat strip between filament) detect a break. The other sets are the candidates
+   closest to {', '.join(f'{t:g}' for t in DENSITY_TARGETS[1:])} times the mean number of localisations of the
+   reference set, within {100 * DENSITY_TOLERANCE:.0f}% of that number, chosen by density only (they may show
+   apparent breaks); a set has fewer segments than asked for when there are not enough
+   candidates within the tolerance, and is left out below {DENSITY_MIN_SEGMENTS}.{f' Left out: targets {", ".join(missing)}.' if missing else ''}
+   The labelling efficiency (LE) of a set is its mean number of localisations over that of
+   the reference set: a density proxy, not a labelling efficiency simulated in VLab4Mic.
+
+{set_lines}
+
+3. Breaks. Every segment is measured intact and with a gap cut in its middle: the
+   localisations within gap/2 of its centre are removed (cut_gap), for gaps of
+   {', '.join(f'{g:g}' for g in DENSITY_GAPS_NM)} nm. There is no 0 nm gap: without a second realisation it would be
+   the intact segment itself.
+4. Images. The localisations are rendered as the simulated images: {FILAMENTS_PARAMS['pixel_size']} nm pixels,
+   each localisation a Gaussian of {RENDERING_SIGMA_NM} nm, the filament centred along the rows of a
+   {SAMPLE_DIMENSIONS[0]} x {SAMPLE_DIMENSIONS[1]} nm field (render_segment).
+5. Measures. measure_filaments, as in the parent folder: filament widths, mask (Gaussian
+   smoothing of {FILAMENTS_PARAMS['smooth_sigma']} px, {FILAMENTS_PARAMS['threshold_method']} threshold) continuity, number of segments and eccentricities,
+   and strip profiles ({FILAMENTS_PARAMS['strip_kwargs']['strip_length']} nm strips along the axis; a strip is flat below
+   {FILAMENTS_PARAMS['strip_kwargs']['flat_fraction']:g} of the reference amplitude, and flat strips between filament are a break).
+6. Break detection. A break is detected when the mask splits into {MIN_SEGMENTS_BROKEN} or more
+   segments; the share of segments where it is, with a 95% Wilson interval, is given for
+   the cut segments (detected breaks) and for the intact ones (false alarms).
+7. Distinguishability. For every gap and LE, the intact segments of the set are
+   compared with the same segments cut (distinguishability_from_features): out-of-fold
+   ROC AUC of a classifier with a 95% bootstrap interval, a null control (two random halves
+   of the intact segments, expected 0.5) and a permutation p-value ({N_PERMUTATIONS} permutations),
+   for each feature set: segments (mask_number_of_segments alone), mask, strip profiles,
+   all.
+
+Break detected (% of segments, mask split), rows model and gap (nm), columns LE:
+{detected}
+
+AUC, intact vs cut, number of mask segments alone; rows gap (nm), columns LE:
+{segments_auc}
+
+Caveats
+-------
+- The two classes are the same segments, intact and cut (paired); the out-of-fold
+  scoring does not use the pairing.
+- LE is the density of localisations relative to the reference set. Sparser segments
+  may also differ in labelling, blinking, axial position or crowding, not only in the
+  number of labels.
+
+Files
+-----
+filament_figure.png
+    The filament figure of the parent folder with the experimental LE:
+    (a) one segment per LE (columns: the first segment of each set), intact (top row,
+        "no break") and with a gap of {', '.join(f'{g:g}' for g in FIGURE_EXAMPLE_GAPS_NM if g > 0)} nm cut (rows); 620 x 160 nm, scale bar
+        100 nm.
+    (b) Break detected (% of segments whose mask splits into {MIN_SEGMENTS_BROKEN} or more segments,
+        95% Wilson interval, n = the segments of the set) against LE, one line per gap, and for the
+        intact segments (grey, false positives).
+    (c) ROC AUC of intact vs cut segments from the number of mask segments alone (95%
+        bootstrap interval) against LE, one line per gap; crosses: null control.
+    (d) Localisations per segment of each set (dots), their mean +- s.d. (black), and the
+        LE of the set.
+sets.png
+    Left: the dataset with the segments of every set (boxes, labelled set.segment, colour
+    per set). Right: the image of every intact segment, one row per set, with its number
+    of localisations, mask segments and strip breaks.
+distinguishability_heatmap.png
+    ROC AUC of intact vs cut, break length against LE, one panel per feature set.
+sets.csv
+    One row per segment: set (0: reference), segment (index in the set), target (fraction
+    of the localisations of the reference set aimed at), labelling_efficiency, centre_x_nm and centre_y_nm (centre of the crop in the dataset),
+    direction_x and direction_y (filament direction), n_localisations (in the 500 x 150 nm
+    crop), intact_mask_segments and intact_strip_breaks (of the intact segment).
+features.csv
+    One row per image (each segment intact, gap_nm 0, and with every gap cut): the
+    measure_filaments columns (mean/std/median_filament_width and s_width, nm; mask_continuity,
+    mask_major_lenght, mask_number_of_segments, min/max/mean_eccentricity; strip_fraction_flat,
+    strip_n_breaks, strip_longest_break (nm), strip_min_amplitude; and settings:
+    mask_prefilter_smooth_sigma, pixelsize, row_binning), with replicate (segment index in
+    its set), model (intact or broken), gap_nm, labelling_efficiency, set, n_localisations
+    (of the intact segment), segment_x and segment_y (nm).
+break_detection.csv
+    One row per model, gap and LE: n_filaments (segments), n_split and fraction_split
+    (mask split into {MIN_SEGMENTS_BROKEN}+ segments), fraction_low and fraction_high (95% Wilson
+    interval), median/mean/std_segments (number of mask segments). The intact segments are
+    listed once, with gap_nm 0.
+distinguishability.csv
+    One row per feature set, gap and LE: features, n_a and n_b (intact and cut segments),
+    accuracy and auc with their 95% intervals (_low, _high), null_auc, p_value, and for the
+    feature set "all" the AUC of every feature alone (<feature>_auc, _low, _high).
+figure_values.csv
+    The values of b and c: one row per model (intact, and cut with every gap of the figure)
+    and LE; b_percent_detected (with b_percent_low, b_percent_high), b_mean_segments,
+    b_std_segments; c_auc (with c_auc_low, c_auc_high), c_null_auc, c_p_value.
+candidates.csv
+    One row per candidate segment of the scan (straight, isolated, non-overlapping):
+    center_x and center_y (the point cropped, nm), segment_x and segment_y (centre of the
+    crop, nm), n_localisations, elongation (ratio of the principal axes), off_axis (fraction
+    of localisations more than 40 nm from the axis), mask_segments and strip_breaks (of its
+    image), set (-1: not in a set).
+sets.npz
+    Arrays to plot the figures again without the localisations (--features): images (the
+    intact segments, in the order of sets.csv), set, segment, n_localisations, centres,
+    directions, labelling_efficiency and targets (per set), n_segments_per_set (asked for),
+    example_<model>_gap_<gap>_labelling_efficiency_<LE>
+    (the images of panel a), overview and overview_extent (the dataset, 40 nm pixels).
+README.txt
+    This file.
+"""
+    with open(folder + "README.txt", "w") as handle:
+        handle.write(text)
+
+
 ### Reference segment: overview, targets and hollow cylinder fit
 
 def plot_overview(localisations_all, in_segment, fluorophore_positions, prefix):
@@ -1515,6 +2014,10 @@ def main():
         if "fluorophore_positions" in examples:
             fits = cylinder_fits(examples["fluorophore_positions"], segments)
             save_cylinder_fits(fits, prefix)
+        density_dir = os.path.join(prefix + DENSITY_FOLDER, "")
+        if os.path.exists(density_dir + "features.csv") and os.path.exists(density_dir + "sets.npz"):
+            density_analysis(pd.read_csv(density_dir + "features.csv"),
+                             dict(np.load(density_dir + "sets.npz")), density_dir)
     else:
         output_dir = os.path.join(str(output_path),
                                   ExperimentParametrisation().date_as_string + OUTPUT_NAME)
@@ -1543,6 +2046,18 @@ def main():
         experimental_analysis(experimental_features, segments, prefix)
         fits = cylinder_fits(fluorophore_positions, segments)
         save_cylinder_fits(fits, prefix)
+
+        # experimental labelling efficiency: sets of segments of decreasing density, in a subfolder
+        density_dir = os.path.join(prefix + DENSITY_FOLDER, "")
+        os.makedirs(density_dir, exist_ok=True)
+        selection, candidates = select_density_sets(localisations_all)
+        candidates.to_csv(density_dir + "candidates.csv", index=False)
+        density_features, sets = measure_density_sets(localisations_all, selection)
+        sets.update(overview=segments["overview"], overview_extent=segments["overview_extent"],
+                    n_segments_per_set=N_SEGMENTS_PER_SET)
+        density_features.to_csv(density_dir + "features.csv", index=False)
+        np.savez_compressed(density_dir + "sets.npz", **sets)
+        density_analysis(density_features, sets, density_dir)
 
         plot_strip_examples(template, prefix)
         models = [("intact", 0, template)]
@@ -1593,18 +2108,8 @@ def main():
     scores = pd.concat(scores, ignore_index=True)
     scores.to_csv(prefix + "distinguishability.csv", index=False)
 
-    fig = plot_distinguishability_heatmaps(scores, x="labelling_efficiency", y="gap_nm",
-                                           facet="feature_set", facet_order=list(FEATURE_SETS))
-    n_le = scores.labelling_efficiency.nunique()
-    gaps = sorted(scores.gap_nm.unique())
-    panels = fig.axes[:len(FEATURE_SETS)]
-    for ax in panels:
-        ax.set_xlabel("Labelling efficiency")
-    panels[0].set_ylabel("Break length (nm)")
-    fig.suptitle("Experimental microtubule: intact vs broken filament (ROC AUC)", x=0.02, ha="left")
-    fig.set_size_inches(1.0 + len(panels) * (0.8 + 0.45 * n_le), 1.5 + 0.5 * len(gaps))
-    fig.savefig(prefix + "distinguishability_heatmap.png", dpi=300, bbox_inches="tight")
-    plt.close(fig)
+    save_heatmap(scores, prefix + "distinguishability_heatmap.png",
+                 "Experimental microtubule: intact vs broken filament (ROC AUC)")
     plot_auc_vs_labelling(scores, prefix)
     detection = break_detection(features)
     detection.to_csv(prefix + "break_detection.csv", index=False)
@@ -1614,7 +2119,8 @@ def main():
         plot_models(examples, prefix)
         plot_models_grid(examples, scores, prefix)
         if fits is not None:
-            plot_figure(examples, detection, scores, fits, prefix)
+            plot_figure(examples, detection, scores, prefix + "filament_figure.png",
+                        cylinder_panel(fits))
     print(scores.pivot_table(index=["feature_set", "gap_nm"], columns="labelling_efficiency",
                              values="auc", sort=False).round(2).to_string())
 
