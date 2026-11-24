@@ -114,6 +114,9 @@ _1, _2, experiment = experiments.image_vsample(
     run_simulation=False,
     random_seed=random_seed
 )
+results_directory = os.path.join(experiment.output_directory, experiment.date_as_string + 'NPC_quantification_SMLM')
+os.makedirs(results_directory, exist_ok=True)
+output_prefix = os.path.join(results_directory, experiment.date_as_string + 'NPC_quantification_SMLM')
 
 experimental_img = np.array(rendered_smlm["SMLM"]["ch0"][0], dtype=int)
 background = 0
@@ -216,7 +219,42 @@ axs[1].set_yticks([])
 plt.tight_layout()
 
 # save figure
-name = experiment.date_as_string + 'NPC_quantification_SMLM.png'
-filename = os.path.join(experiment.output_directory, name)
+filename = output_prefix + '.png'
 fig.savefig(filename, dpi=300, bbox_inches='tight')
 plt.close()
+
+# Intensity histograms of the two images of the figure. Each image minus its background
+# (its minimum pixel value, so the histograms start at 0), drawn up to its 99.9th
+# percentile: a few brighter pixels (e.g. repeated blinking in SMLM) would stretch the axis.
+# Last panel: both images divided by their 99.9th percentile, to compare the shapes
+# the simulated image must not have negative pixels
+simulated = np.asarray(images["SMLM"]["ch0"][0])
+if simulated.min() < 0:
+    raise ValueError(f"Simulated image has {np.sum(simulated < 0)} negative pixels (min {simulated.min():.1f})")
+fig, axs = plt.subplots(1, 3, figsize=(15, 4))
+normalised = {}
+for ax, img, title in [(axs[0], experimental_img, "Experimental (crop)"),
+                       (axs[1], images["SMLM"]["ch0"][0], "VLab4Mic simulated")]:
+    img = np.asarray(img, dtype=float)
+    img_background = img.min()
+    values = np.ravel(img) - img_background
+    upper = np.percentile(values, 99.9)
+    ax.hist(values, bins=100, range=(0, upper))
+    ax.set_yscale("log")
+    ax.set_title(f"{title}\n{np.sum(values > upper)} pixels above {upper:.0f} not shown (max {values.max():.0f})")
+    ax.set_xlabel("Intensity above background (counts)")
+    ax.set_ylabel("Number of pixels")
+    print(f"{title}: background {img_background:.0f}, 99.9th percentile {upper:.0f}, "
+          f"max {values.max():.0f} counts above background")
+    normalised[title] = values / upper
+bin_edges = np.linspace(0, 1, 101)
+for title, values in normalised.items():
+    axs[2].hist(values, bins=bin_edges, density=True, histtype="step", linewidth=1.5, label=title)
+axs[2].set_yscale("log")
+axs[2].set_title("Normalised to the 99.9th percentile")
+axs[2].set_xlabel("Intensity above background / 99.9th percentile")
+axs[2].set_ylabel("Density")
+axs[2].legend()
+fig.tight_layout()
+fig.savefig(output_prefix + '_intensity_histograms.png', dpi=300, bbox_inches='tight')
+plt.close(fig)

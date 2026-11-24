@@ -40,6 +40,9 @@ _1, _2, experiment = experiments.image_vsample(
     run_simulation=False,
     random_seed=random_seed
 )
+results_directory = os.path.join(experiment.output_directory, experiment.date_as_string + 'NPC_quantification_STED')
+os.makedirs(results_directory, exist_ok=True)
+output_prefix = os.path.join(results_directory, experiment.date_as_string + 'NPC_quantification_STED')
 
 # Get a crop of the experimental image to reduce the field of view
 experimental_img = np.array(img_tif, dtype=int)
@@ -67,12 +70,22 @@ experiment.use_image_for_positioning(
 # Run simulation
 ## Modality parameter of pixelsize_nm is set to match Thevathasan et al. 2019.
 ## All other parameters are estimations to emulate Thevathasan et al. 2019 STED modality
+psf_voxel_nm = 5
+lateral_resolution_nm = 15
+axial_resolution_nm = 20
+depth_of_field_nm = 100
+# The default PSF stack (150x150x150 voxels) sets the size of the 3D FFT
+# convolution (~15 GB here). Fit it to +-4 sigma laterally, and axially to the
+# projected depth plus 4 sigma, which keeps the image and cuts memory ~3x
+lateral_px = 2 * int(np.ceil(4 * lateral_resolution_nm / psf_voxel_nm)) + 1
+axial_px = 2 * int(np.ceil((depth_of_field_nm / 2 + 4 * axial_resolution_nm) / psf_voxel_nm)) + 1
+experiment.imaging_modalities["STED"]["psf_params"]["shape"] = [lateral_px, lateral_px, axial_px]
 experiment.update_modality(
     modality_name="STED",
-    lateral_resolution_nm=15,
-    axial_resolution_nm=20,
-    psf_voxel_nm=5,
-    depth_of_field_nm=100,
+    lateral_resolution_nm=lateral_resolution_nm,
+    axial_resolution_nm=axial_resolution_nm,
+    psf_voxel_nm=psf_voxel_nm,
+    depth_of_field_nm=depth_of_field_nm,
     pixelsize_nm=15)
 experiment.set_modality_acq(
     modality_name="STED",
@@ -156,7 +169,42 @@ axs[1].set_yticks([])
 plt.tight_layout()
 
 # save figure
-name = experiment.date_as_string + 'NPC_quantification_STED.png'
-filename = os.path.join(experiment.output_directory, name)
+filename = output_prefix + '.png'
 fig.savefig(filename, dpi=300, bbox_inches='tight')
 plt.close()
+
+# Intensity histograms of the two images of the figure. Each image minus its background
+# (its minimum pixel value, so the histograms start at 0), drawn up to its 99.9th
+# percentile: a few brighter pixels (e.g. repeated blinking in SMLM) would stretch the axis.
+# Last panel: both images divided by their 99.9th percentile, to compare the shapes
+# the simulated image must not have negative pixels
+simulated = np.asarray(images["STED"]["ch0"][0])
+if simulated.min() < 0:
+    raise ValueError(f"Simulated image has {np.sum(simulated < 0)} negative pixels (min {simulated.min():.1f})")
+fig, axs = plt.subplots(1, 3, figsize=(15, 4))
+normalised = {}
+for ax, img, title in [(axs[0], experimental_img_processed, "Experimental (crop)"),
+                       (axs[1], images["STED"]["ch0"][0], "VLab4Mic simulated")]:
+    img = np.asarray(img, dtype=float)
+    img_background = img.min()
+    values = np.ravel(img) - img_background
+    upper = np.percentile(values, 99.9)
+    ax.hist(values, bins=100, range=(0, upper))
+    ax.set_yscale("log")
+    ax.set_title(f"{title}\n{np.sum(values > upper)} pixels above {upper:.0f} not shown (max {values.max():.0f})")
+    ax.set_xlabel("Intensity above background (counts)")
+    ax.set_ylabel("Number of pixels")
+    print(f"{title}: background {img_background:.0f}, 99.9th percentile {upper:.0f}, "
+          f"max {values.max():.0f} counts above background")
+    normalised[title] = values / upper
+bin_edges = np.linspace(0, 1, 101)
+for title, values in normalised.items():
+    axs[2].hist(values, bins=bin_edges, density=True, histtype="step", linewidth=1.5, label=title)
+axs[2].set_yscale("log")
+axs[2].set_title("Normalised to the 99.9th percentile")
+axs[2].set_xlabel("Intensity above background / 99.9th percentile")
+axs[2].set_ylabel("Density")
+axs[2].legend()
+fig.tight_layout()
+fig.savefig(output_prefix + '_intensity_histograms.png', dpi=300, bbox_inches='tight')
+plt.close(fig)

@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 from vlab4mic import experiments
 from vlab4mic.experiments import generate_virtual_sample
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
+from matplotlib.textpath import TextPath
+from matplotlib.font_manager import FontProperties
+from matplotlib.transforms import offset_copy
 import tifffile as tif
 import io
 import pandas as pd
@@ -106,6 +109,7 @@ airy_experimental_img =  read_image_from_url(airy_experimental_img_path)
 sted_experimental_img_path = "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/S-BIAD0-99/S-BIAD8/Files/Library/Gallery%20Fig%201/STED/GFP_Gallery-STED_181026_1.tif"
 sted_experimental_img =  read_image_from_url(sted_experimental_img_path)
 # SMLM
+# GLOX + 35 mM MEA experimental conditions
 smlm_experimental_path = "https://ftp.ebi.ac.uk/biostudies/fire/S-BIAD/S-BIAD0-99/S-BIAD8/Files/Library/Gallery%20Fig%201/dSTORM2D/SNAP_Gallery-STORM-2D_181214_1_sml.csv"
 localisations_all = pd.read_csv(smlm_experimental_path)
 smlm_experimental_locs = localisations_all[localisations_all.numberInGroup == 1]
@@ -113,6 +117,9 @@ smlm_experimental_locs = localisations_all[localisations_all.numberInGroup == 1]
 # parameters
 structure = "7R5K"
 probe_template = "GFP_w_nanobody"
+# Published labelling efficiencies (Thevathasan et al. 2019)
+gfp_nanobody_labelling_efficiency = 0.613  # Nup96-GFP + anti-GFP nanobody
+snap_labelling_efficiency = 0.58  # Nup96-SNAP-tag (SMLM)
 modalities = ["Widefield", "Confocal", "AiryScan","STED", "SMLM"]
 # Run simulation
 # Prepare experiment object
@@ -120,7 +127,7 @@ _1, _2, my_experiment = experiments.image_vsample(
     structure=structure,
     probe_template=probe_template,
     probe_DoL=2,
-    labelling_efficiency=0.4,
+    labelling_efficiency=gfp_nanobody_labelling_efficiency,
     probe_target_type="Sequence",
     probe_target_value="ELAVGSL", # Nup96 C-terminal
     multimodal=modalities,
@@ -197,9 +204,10 @@ my_experiment.imager.modalities["Widefield"]["detector"]["noise_model"]["binomia
 my_experiment.imager.modalities["Widefield"]["detector"]["noise_model"]["baselevel"]["bl"] = 4000
 my_experiment.imager.modalities["Widefield"]["detector"]["noise_model"]["gaussian"]["sigma"] = 4000**(1/2)
 # Run simulation
+widefield_lateral_resolution_nm = np.mean(smlm_experimental_locs.PSFxnm)
 my_experiment.update_modality(
     modality_name="Widefield",
-    lateral_resolution_nm = np.mean(smlm_experimental_locs.PSFxnm))
+    lateral_resolution_nm = widefield_lateral_resolution_nm)
 my_experiment.set_modality_acq(modality_name="Widefield", exp_time=0.01)
 wf_images, noiselsess = my_experiment.run_simulation(modality="Widefield")
 sim_vs_exp["Widefield"] = (wf_images["Widefield"]["ch0"][0], wf_experimental_img_patch)
@@ -255,11 +263,31 @@ my_experiment.add_probe(
     probe_template="SNAP-tag",
     probe_target_type="Sequence",
     probe_target_value="ELAVGSL",
-    labelling_efficiency=0.4,
+    labelling_efficiency=snap_labelling_efficiency,
 )
 my_experiment.build(modules=["particle"])
 loc_prec = np.max(smlm_experimental_locs.locprecnm)
 mean_loc_prec = np.mean(smlm_experimental_locs.locprecnm)
+# Save the localisation values used for the Widefield resolution and the SMLM precision
+smlm_experimental_locs[["xnm", "ynm", "PSFxnm", "locprecnm"]].to_csv(
+    os.path.join(my_experiment.output_directory,
+                 my_experiment.date_as_string + 'vlab4mic_fig2_NPC_localisations_PSF_locprec.csv'),
+    index=False)
+n_locs = len(smlm_experimental_locs)
+pd.DataFrame([
+    dict(parameter="widefield_lateral_resolution_nm", value=widefield_lateral_resolution_nm, unit="nm",
+         source_column="PSFxnm", statistic="mean", used_in="Widefield lateral_resolution_nm",
+         n_localisations=n_locs, source=smlm_experimental_path),
+    dict(parameter="loc_prec", value=loc_prec, unit="nm",
+         source_column="locprecnm", statistic="max", used_in="SMLM rendering_kernel_nm and experimental render precision",
+         n_localisations=n_locs, source=smlm_experimental_path),
+    dict(parameter="mean_loc_prec", value=mean_loc_prec, unit="nm",
+         source_column="locprecnm", statistic="mean", used_in="SMLM lateral_precision and axial_precision",
+         n_localisations=n_locs, source=smlm_experimental_path),
+]).to_csv(
+    os.path.join(my_experiment.output_directory,
+                 my_experiment.date_as_string + 'vlab4mic_fig2_NPC_SMLM_derived_parameters.csv'),
+    index=False)
 xrange = smlm_experimental_locs.xnm.max() - smlm_experimental_locs.xnm.min()
 yrange = smlm_experimental_locs.ynm.max() - smlm_experimental_locs.ynm.min()
 list_of_positions, rendered_smlm, smlm_experiment = render_from_localisations(
@@ -320,10 +348,29 @@ nmods = len(modalities)
 
 fig, axs = plt.subplots(2, nmods)
 nframe = 0
+def boxed_label(ax, text, side, fontsize=40, inset=0.02, thickness=0.22, gap=0.03):
+    # Black-edged box spanning the image (inset at both ends), with centred text
+    if side == "top":
+        xy, width, height = (inset, 1 + gap), 1 - 2*inset, thickness
+        centre, rotation = (0.5, 1 + gap + thickness/2), 0
+    else:
+        xy, width, height = (-gap - thickness, inset), thickness, 1 - 2*inset
+        centre, rotation = (-gap - thickness/2, 0.5), 90
+    ax.add_patch(plt.Rectangle(xy, width, height, transform=ax.transAxes, clip_on=False,
+                               facecolor="white", edgecolor="black", linewidth=3))
+    # Centre the word's glyph outline along the box, and the capital height across it,
+    # so all labels share a common baseline regardless of descenders
+    ink = TextPath((0, 0), text, size=fontsize, prop=FontProperties()).get_extents()
+    cap = TextPath((0, 0), "H", size=fontsize, prop=FontProperties()).get_extents()
+    cx, cy = (ink.x0 + ink.x1) / 2, (cap.y0 + cap.y1) / 2
+    dx, dy = (-cx, -cy) if rotation == 0 else (cy, -cx)
+    ax.text(*centre, text, transform=offset_copy(ax.transAxes, fig=ax.figure, x=dx, y=dy, units="points"),
+            ha="left", va="baseline", rotation=rotation, rotation_mode="anchor",
+            fontsize=fontsize, color="black")
 for i, mod in enumerate(modalities):
     axs[0,i].imshow(sim_vs_exp[mod][1], cmap="grey")
     axs[0,i].tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
-    axs[0,i].set_title(f"{mod}", fontsize=20)
+    boxed_label(axs[0,i], f"{mod}", "top")
     axs[1,i].imshow(sim_vs_exp[mod][0], cmap="grey")
     axs[1,i].tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
     scalebar = AnchoredSizeBar(axs[1,i].transData,
@@ -336,8 +383,8 @@ for i, mod in enumerate(modalities):
                            frameon=False,
                            size_vertical=mods_scalebar[mod]["hight"])
     axs[1,i].add_artist(scalebar)
-axs[0,0].set_ylabel("Thevathasan, et al. 2019", fontsize=24)
-axs[1,0].set_ylabel("VLab4Mic simulation", fontsize=24)
+boxed_label(axs[0,0], "Real", "left")
+boxed_label(axs[1,0], "Simulated", "left")
 plt.tight_layout(h_pad=0, w_pad=3)
 name = my_experiment.date_as_string + 'vlab4mic_fig2_NPC.png'
 filename = os.path.join(my_experiment.output_directory, name)

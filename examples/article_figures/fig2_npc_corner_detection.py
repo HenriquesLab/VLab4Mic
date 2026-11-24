@@ -69,6 +69,10 @@ for labeff in labelling_efficiencies:
     replicates_per_le[labeff] = copy.copy(replicates_le)
     parameters_le[labeff] = my_experiment_le.get_parameters()
 
+# all outputs of this script go in one folder named after it
+output_dir = os.path.join(my_experiment_le.output_directory,
+                          os.path.splitext(os.path.basename(__file__))[0])
+os.makedirs(output_dir, exist_ok=True)
 
 
 #######
@@ -114,28 +118,39 @@ summary = merged.groupby(["sides", "labelling_efficiency"], sort=False).agg(
     radius_fit_mean=("radius_fit", "mean"), radius_fit_sd=("radius_fit", "std"),
     n_radius_fit=("radius_fit", "count"), n_total=("n_corners", "size"),
 )
-prefix = os.path.join(my_experiment_le.output_directory,
+prefix = os.path.join(output_dir,
                       my_experiment_le.date_as_string + 'vlab4mic_npc_corners_')
 merged.to_csv(prefix + "particles.csv", index=False)
 summary.to_csv(prefix + "summary.csv")
 print(summary)
 
 
+######## plot 1, both split_z conditions in one boxplot
+fig, ax = plt.subplots(figsize=(7, 3.5))
+sns.boxplot(data=merged, x="labelling_efficiency", y="n_corners", hue="sides", ax=ax)
+plt.xlabel("Labelling efficiency")
+plt.ylabel("Number of Corners detected")
+plt.title("Corners detected on NPC simuations" + "\n" + "Min locs per sector = " + str(min_locs_per_segment))
+ax.legend(title=None)
+filename = my_experiment_le.date_as_string + 'vlab4mic_corners_detected_on_NPC_simuations.png'
+filename2 = os.path.join(output_dir, filename)
+fig.savefig(filename2, dpi=300, bbox_inches='tight')
+plt.close()
+
+# plot 6, both split_z conditions in one boxplot
+fig, ax = plt.subplots(figsize=(7, 3.5))
+sns.boxplot(data=merged, x="labelling_efficiency", y="radius_fit", hue="sides", ax=ax)
+plt.xlabel("Labelling efficiency")
+plt.ylabel("Radius fit")
+ax.legend(title=None)
+filename = my_experiment_le.date_as_string + 'vlab4mic_npc_radius_fit_LE.png'
+filename2 = os.path.join(output_dir, filename)
+fig.savefig(filename2, dpi=300, bbox_inches='tight')
+plt.close()
+
 for sides, split_z in SPLIT_Z_CONDITIONS.items():
     # one output per split_z condition, one side marked in the file name
     suffix = '_one_side' if split_z else ''
-    merged_sides = merged[merged.sides == sides]
-
-    ######## plot 1
-    fig, ax = plt.subplots(figsize=(5, 3.5))
-    sns.boxplot(data=merged_sides, x="labelling_efficiency", y="n_corners", ax=ax)
-    plt.xlabel("Labelling efficiency")
-    plt.ylabel("Number of Corners detected")
-    plt.title("Corners detected on NPC simuations" + "\n" + sides + "\n" + "Min locs per sector = " + str(min_locs_per_segment))
-    filename = my_experiment_le.date_as_string + 'vlab4mic_corners_detected_on_NPC_simuations' + suffix + '.png'
-    filename2 = os.path.join(my_experiment_le.output_directory, filename)
-    fig.savefig(filename2, dpi=300, bbox_inches='tight')
-    plt.close()
 
     #### plots 2 and 3, mean and std shown for LE 0.3
     for lab_eff_reference in [0.3, 0.4]:
@@ -153,20 +168,9 @@ for sides, split_z in SPLIT_Z_CONDITIONS.items():
         ax.legend()
         ax.set_title("Corners detected on NPC simuations. LE = " + str(lab_eff_reference) + "\n" + sides + "\n" + "Min locs per sector = " + str(min_locs_per_segment))
         filename = my_experiment_le.date_as_string + 'vlab4mic_corners_detected_on_NPC_simuations_' + str(lab_eff_reference) + 'LE' + suffix + '.png'
-        filename2 = os.path.join(my_experiment_le.output_directory, filename)
+        filename2 = os.path.join(output_dir, filename)
         fig.savefig(filename2, dpi=300, bbox_inches='tight')
         plt.close()
-
-    # plot 6
-    fig, ax = plt.subplots(figsize=(5, 3.5))
-    sns.boxplot(data=merged_sides, x="labelling_efficiency", y="radius_fit", ax=ax)
-    plt.xlabel("Labelling efficiency")
-    plt.ylabel("Radius fit")
-    plt.title(sides)
-    filename = my_experiment_le.date_as_string + 'vlab4mic_npc_radius_fit_LE' + suffix + '.png'
-    filename2 = os.path.join(my_experiment_le.output_directory, filename)
-    fig.savefig(filename2, dpi=300, bbox_inches='tight')
-    plt.close()
 
 
 
@@ -183,7 +187,7 @@ for row in range(nrows):
         ax[row,i].set_xticks([])
         ax[row,i].set_yticks([])
 filename = my_experiment_le.date_as_string + 'vlab4mic_NPCs_across_LE.png'
-filename2 = os.path.join(my_experiment_le.output_directory, filename)
+filename2 = os.path.join(output_dir, filename)
 if probe_DoL is None:
     maintitle = "probe_DoL: max" + ". DoF: " + str(depth_of_field_nm)
 else:
@@ -199,15 +203,24 @@ plt.close()
 #threshold_for_plot = 4
 threshold_for_plot = [4, 6, 8]
 lab_eff_reference = 0.3
+examples = []  # (file name suffix, row)
 for sides, split_z in SPLIT_Z_CONDITIONS.items():
     _df = counting_measures[sides][lab_eff_reference]["dataframe"]
     for ncorners in threshold_for_plot:
         ids = list(_df.loc[_df["n_corners"] == ncorners].replicate)
         if not ids:
             continue
-        fig = plot_ring_corners(counting_measures[sides][lab_eff_reference]["rows"][ids[0]])
         suffix = '_one_side' if split_z else ''
-        filename = my_experiment_le.date_as_string + 'vlab4mic_npc_corners_example_' + str(ncorners) + suffix + '.png'
-        filename2 = os.path.join(my_experiment_le.output_directory, filename)
-        fig.savefig(filename2, dpi=300, bbox_inches='tight')
-        plt.close()
+        examples.append((str(ncorners) + suffix, counting_measures[sides][lab_eff_reference]["rows"][ids[0]]))
+# same axis limits on every example, wide enough to show all their localisations
+example_lim = 1.3 * sectorcounting_params_le["r_max"]
+for _, row in examples:
+    if row["centre"] is not None and len(row["points"]):
+        dist = np.abs(row["points"][:, :2] - row["centre"]).max()
+        example_lim = max(example_lim, 1.05 * dist)
+for name, row in examples:
+    fig = plot_ring_corners(row, lim=example_lim)
+    filename = my_experiment_le.date_as_string + 'vlab4mic_npc_corners_example_' + name + '.png'
+    filename2 = os.path.join(output_dir, filename)
+    fig.savefig(filename2, dpi=300, bbox_inches='tight')
+    plt.close()
