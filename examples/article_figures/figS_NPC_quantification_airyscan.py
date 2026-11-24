@@ -264,6 +264,11 @@ measurements.to_csv(output_prefix + '_measurements.csv', index=False)
 print(f"Local maxima: experimental {len(peaks_exp)}, simulated {len(peaks_sim)}")
 print(measurements.groupby(["measure", "method", "image"]).value_nm.describe()[["count", "25%", "50%", "75%"]])
 
+# Experimental crop and simulated image shown in the figure
+for name, img in [("experimental", experimental_img_processed), ("simulated", simulated_img)]:
+    tif.imwrite(f"{output_prefix}_{name}.tif", np.asarray(img, dtype=np.float32),
+                imagej=True, resolution=(1000 / pixelsize, 1000 / pixelsize), metadata={"unit": "um"})
+
 # Plot experimental vs simulated image
 
 plt.rcParams['figure.figsize'] = [20, 5]

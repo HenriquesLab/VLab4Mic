@@ -176,6 +176,18 @@ radii_experimental = []
 for (x, y, r) in circles_exp[0]:
     radii_experimental.append((r*smlm_pixelsize))
 
+# Measurements table and summary
+method = f"native {smlm_pixelsize} nm/px"
+measurements = [dict(image="Experimental", measure="circle radius", method=method, value_nm=r) for r in radii_experimental]
+measurements += [dict(image="Simulated", measure="circle radius", method=method, value_nm=r) for r in radii_simulated]
+measurements = pd.DataFrame(measurements, columns=["image", "measure", "method", "value_nm"])
+measurements.to_csv(output_prefix + '_measurements.csv', index=False)
+print(measurements.groupby(["measure", "method", "image"]).value_nm.describe()[["count", "25%", "50%", "75%"]])
+
+# Experimental crop and simulated image shown in the figure
+for name, img in [("experimental", experimental_img), ("simulated", images["SMLM"]["ch0"][0])]:
+    tif.imwrite(f"{output_prefix}_{name}.tif", np.asarray(img, dtype=np.float32),
+                imagej=True, resolution=(1000 / smlm_pixelsize, 1000 / smlm_pixelsize), metadata={"unit": "um"})
 
 # Plot experimental vs simulated image
 
