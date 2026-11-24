@@ -7,7 +7,6 @@ import tifffile as tif
 import io
 import os
 import numpy as np
-from scipy import ndimage
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 import matplotlib.font_manager as fm
@@ -175,18 +174,22 @@ fig.savefig(filename, dpi=300, bbox_inches='tight')
 plt.close()
 
 # Intensity histograms of the two images of the figure. Each image minus its background
-# (5th percentile of the image smoothed with a 1 px Gaussian), drawn up to its 99.9th
+# (its minimum pixel value, so the histograms start at 0), drawn up to its 99.9th
 # percentile: a few brighter pixels (e.g. repeated blinking in SMLM) would stretch the axis.
 # Last panel: both images divided by their 99.9th percentile, to compare the shapes
+# the simulated image must not have negative pixels
+simulated = np.asarray(images["STED"]["ch0"][0])
+if simulated.min() < 0:
+    raise ValueError(f"Simulated image has {np.sum(simulated < 0)} negative pixels (min {simulated.min():.1f})")
 fig, axs = plt.subplots(1, 3, figsize=(15, 4))
 normalised = {}
 for ax, img, title in [(axs[0], experimental_img_processed, "Experimental (crop)"),
                        (axs[1], images["STED"]["ch0"][0], "VLab4Mic simulated")]:
     img = np.asarray(img, dtype=float)
-    img_background = np.percentile(ndimage.gaussian_filter(img, 1), 5)
+    img_background = img.min()
     values = np.ravel(img) - img_background
     upper = np.percentile(values, 99.9)
-    ax.hist(values, bins=100, range=(values.min(), upper))
+    ax.hist(values, bins=100, range=(0, upper))
     ax.set_yscale("log")
     ax.set_title(f"{title}\n{np.sum(values > upper)} pixels above {upper:.0f} not shown (max {values.max():.0f})")
     ax.set_xlabel("Intensity above background (counts)")
@@ -194,7 +197,7 @@ for ax, img, title in [(axs[0], experimental_img_processed, "Experimental (crop)
     print(f"{title}: background {img_background:.0f}, 99.9th percentile {upper:.0f}, "
           f"max {values.max():.0f} counts above background")
     normalised[title] = values / upper
-bin_edges = np.linspace(min(v.min() for v in normalised.values()), 1, 101)
+bin_edges = np.linspace(0, 1, 101)
 for title, values in normalised.items():
     axs[2].hist(values, bins=bin_edges, density=True, histtype="step", linewidth=1.5, label=title)
 axs[2].set_yscale("log")
