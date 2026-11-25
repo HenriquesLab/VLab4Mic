@@ -164,8 +164,8 @@ images, noiseless, my_experiment = experiments.image_vsample(
 )
 my_experiment.set_virtualsample_params(
     random_orientations=False,
-    orientation_tilt_max=MAX_TILT_DEG,
-    random_rotations=True,
+    #orientation_tilt_max=MAX_TILT_DEG,
+    random_rotations=False,
 )
 my_experiment.build(modules=["coordinate_field", "imager"])
 my_experiment.update_modality(modality_name="STED", depth_of_field_nm=1000)
@@ -245,10 +245,12 @@ my_experiment.select_structure(
 )
 my_experiment.set_structure_normal_params(mode="local_plane")
 my_experiment.set_virtualsample_params(
-    random_orientations=False,
-    orientation_tilt_max=MAX_TILT_DEG,
     random_rotations=True,
+    rotation_angles=[85],
+    #orientation_tilt_max=MAX_TILT_DEG,
 )
+
+
 my_experiment.build(modules=["particle", "coordinate_field", "imager"])
 images, noiseless = my_experiment.run_simulation()
 
