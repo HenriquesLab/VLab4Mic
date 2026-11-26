@@ -230,6 +230,20 @@ def plot_feature_distributions(features, prefix):
     plt.close(fig)
 
 
+def plot_heatmaps(scores, prefix):
+    """ROC AUC against labelling efficiency and structural integrity, one figure per imaging method."""
+    for modality in MODALITIES:
+        data = scores[scores.modality_name == modality]
+        if data.empty:
+            continue
+        fig = plot_distinguishability_heatmaps(data, x="labelling_efficiency",
+                                               y="structural_integrity", facet="feature_set",
+                                               facet_order=list(FEATURE_SETS))
+        fig.savefig(prefix + f"{modality}_distinguishability_heatmap.png", dpi=300,
+                    bbox_inches="tight")
+        plt.close(fig)
+
+
 def main():
     if "--features" in sys.argv:
         features_path = sys.argv[sys.argv.index("--features") + 1]
@@ -273,24 +287,7 @@ def main():
     scores = pd.concat(scores, ignore_index=True)
     scores.to_csv(prefix + "distinguishability.csv", index=False)
 
-    for modality in MODALITIES:
-        data = scores[scores.modality_name == modality]
-        if data.empty:
-            continue
-        fig = plot_distinguishability_heatmaps(data, x="labelling_efficiency",
-                                               y="structural_integrity", facet="feature_set",
-                                               facet_order=list(FEATURE_SETS))
-        n_le = data.labelling_efficiency.nunique()
-        n_si = data.structural_integrity.nunique()
-        panels = fig.axes[:len(FEATURE_SETS)]
-        for ax in panels:
-            ax.set_xlabel("Labelling efficiency")
-        panels[0].set_ylabel("Structural integrity")
-        fig.suptitle(f"{modality}: intact vs incomplete nuclear pore (ROC AUC)", x=0.02, ha="left")
-        fig.set_size_inches(1.0 + len(panels) * (0.8 + 0.45 * n_le), 1.5 + 0.5 * n_si)
-        fig.savefig(prefix + f"{modality}_distinguishability_heatmap.png", dpi=300,
-                    bbox_inches="tight")
-        plt.close(fig)
+    plot_heatmaps(scores, prefix)
     print(scores.pivot_table(index=["feature_set", "modality_name", "structural_integrity"],
                              columns="labelling_efficiency", values="auc",
                              sort=False).round(2).to_string())
