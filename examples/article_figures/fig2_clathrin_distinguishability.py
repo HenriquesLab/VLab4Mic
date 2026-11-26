@@ -86,8 +86,14 @@ STRUCTURAL_INTEGRITIES = [0.5, 0.7, 1.0]
 # subunits: epitopes within 100 A; remaining lattice connected at 300 A
 SI_CLUSTERS = dict(structural_integrity_small_cluster=[100],
                    structural_integrity_large_cluster=[300])
-LINKAGE_ERROR_NM = 10  # distance to epitope of the Antibody probe template
-LINKAGE_ERRORS_NM = [2, 5, 20]
+# linkage error: the Antibody template anchors its paratope PROBE_OFFSET_A
+# from the epitope (in angstrom, the units of the probe model), and its
+# lysine fluorophores lie 2-12 nm further out. The sweep moves the probe
+# away from the epitope; each offset is reported as the mean
+# epitope-to-fluorophore distance it gives (mean_linkage_error_nm):
+# 6.4 nm for the template offset, then 9.8, 14.6, 19.5 and 24.4 nm
+PROBE_OFFSET_A = 10  # template default
+PROBE_OFFSETS_A = [50, 100, 150, 200]
 BLUR_MODALITY = "STED"
 LATERAL_BLUR_NM = [10, 20, 40, 80, 130]  # PSF s.d., axial at its default
 AXIAL_BLUR_NM = [50, 100, 200, 300, 600]  # PSF s.d., lateral at its default
@@ -114,7 +120,7 @@ SWEEPS = [("grid", VENTRAL, dict(labelling_efficiency=[le], structural_integrity
                                   **SI_CLUSTERS), MODALITIES)
           for le in LABELLING_EFFICIENCIES]
 SWEEPS += [
-    ("linkage_error", VENTRAL, dict(probe_distance_to_epitope=LINKAGE_ERRORS_NM), MODALITIES),
+    ("linkage_error", VENTRAL, dict(probe_distance_to_epitope=PROBE_OFFSETS_A), MODALITIES),
     ("uniform_orientation", UNIFORM, dict(labelling_efficiency=[LABELLING_EFFICIENCY]), MODALITIES),
     ("lateral_blur", VENTRAL, dict(lateral_resolution_nm=LATERAL_BLUR_NM), [BLUR_MODALITY]),
     ("axial_blur", VENTRAL, dict(axial_resolution_nm=AXIAL_BLUR_NM), [BLUR_MODALITY]),
@@ -130,6 +136,25 @@ def download(url):
         response.raise_for_status()
         path.write_bytes(response.content)
     return str(path)
+
+
+def mean_linkage_error_nm(offset_a):
+    """Mean distance (nm) from the epitope to the candidate fluorophore sites
+    of the Antibody template, with its paratope offset_a angstrom from the
+    epitope."""
+    import contextlib
+    import io
+
+    import vlab4mic
+    from vlab4mic.utils.io.yaml_functions import load_yaml
+    from vlab4mic.workflows import probe_model
+
+    configs = os.path.join(os.path.dirname(vlab4mic.__file__), "configs")
+    probe = load_yaml(os.path.join(configs, "probes", "Antibody.yaml"))
+    binding = dict(probe["binding"], distance=dict(probe["binding"]["distance"], to_target=offset_a))
+    with contextlib.redirect_stdout(io.StringIO()):
+        _, sites, anchor, _, _ = probe_model(probe["model"], binding, probe["conjugation_sites"], configs)
+    return float(np.mean(np.linalg.norm(np.atleast_2d(sites) - anchor, axis=1))) / 10
 
 
 def resolution(experiment, modality):
@@ -161,11 +186,11 @@ def simulate(job):
     table = sweep.analysis["dataframes"].copy()
     table["model"] = model
     table["sweep"] = name
-    table = table.rename(columns={"probe_distance_to_epitope": "linkage_error_nm"})
+    table = table.rename(columns={"probe_distance_to_epitope": "probe_offset_a"})
     # parameters not swept in this block are at their reference value
     for column, value in (("labelling_efficiency", LABELLING_EFFICIENCY),
                           ("structural_integrity", STRUCTURAL_INTEGRITY),
-                          ("linkage_error_nm", LINKAGE_ERROR_NM)):
+                          ("probe_offset_a", PROBE_OFFSET_A)):
         if column not in table:
             table[column] = value
     for k, column in enumerate(("lateral_resolution_nm", "axial_resolution_nm")):
@@ -227,7 +252,7 @@ def make_figures(scores, prefix):
     for m in MODALITIES:
         sub = data[data.modality_name == m].sort_values("linkage_error_nm")
         errorbars(axes[4], sub.linkage_error_nm, sub, fmt="o-", color=colours[m], label=m)
-    style(axes[4], "linkage error (nm)", "e  linkage error")
+    style(axes[4], "mean linkage error (nm)", "e  linkage error")
     for sweep, column, label in [("lateral_blur", "lateral_resolution_nm", "lateral"),
                                  ("axial_blur", "axial_resolution_nm", "axial")]:
         sub = scores[scores.sweep == sweep].sort_values(column)
@@ -267,7 +292,9 @@ def main():
         else:
             tables = [simulate(job) for job in tqdm(jobs, desc="sweeps")]
         features = pd.concat(tables, ignore_index=True)
-        reference = ((features.sweep == "grid")
+        linkage = {a: mean_linkage_error_nm(a) for a in features.probe_offset_a.unique()}
+        features["linkage_error_nm"] = features.probe_offset_a.map(linkage).round(1)
+        reference =((features.sweep == "grid")
                      & np.isclose(features.labelling_efficiency, LABELLING_EFFICIENCY)
                      & np.isclose(features.structural_integrity, STRUCTURAL_INTEGRITY))
         features.loc[reference, "sweep"] = "reference"

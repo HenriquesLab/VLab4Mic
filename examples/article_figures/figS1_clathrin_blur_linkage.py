@@ -8,7 +8,8 @@ N = 100 realisations per lattice, aspect ratio + brightness features.
 a  STED, axial PSF width 50-600 nm at lateral 20 nm.
 b  STED, lateral PSF width 10-130 nm at axial 300 nm; widefield (lateral
    130 nm, axial 400 nm, 100 nm pixels) shown for comparison.
-c  Linkage error 2-20 nm for every imaging method (10 nm: reference).
+c  Mean linkage error (epitope to fluorophore) 6.4-24.4 nm for every
+   imaging method (6.4 nm: Antibody template, the reference).
 
 Run:   python figS1_clathrin_blur_linkage.py <...fig2_clathrin_distinguishability.csv>
 Outputs, next to the input: <prefix>figS1_blur_linkage.{pdf,svg,png} and
@@ -96,8 +97,9 @@ def main(path):
         dodge = (k - (len(MODALITIES) - 1) / 2) * 0.3  # nm; overlapping methods stay visible
         errorbars(axes[2], sub.linkage_error_nm + dodge, sub, COLOURS[modality],
                   MARKERS[modality], LABELS.get(modality, modality))
-    axes[2].set_xticks([2, 5, 10, 20])
-    style(axes[2], "linkage error (nm)", "c  Linkage error")
+    axes[2].set_xticks(sorted(linkage.linkage_error_nm.unique()))
+    axes[2].minorticks_off()
+    style(axes[2], "mean linkage error (nm)", "c  Linkage error")
     axes[2].legend(frameon=False, loc="lower right", ncol=2, handlelength=1.2,
                    columnspacing=0.8, borderaxespad=0.2)
     handles, labels = axes[0].get_legend_handles_labels()
