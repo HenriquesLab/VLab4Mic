@@ -1,14 +1,13 @@
 """
 Probe tilt and wobble on epitopes on the z = 0 plane, normals along +z.
 
-Panel a: the tilt step alone. At each site the probe axis is tilted from
-the normal by the tilt angle with tilt_direction (random azimuth), so the
-axes lie on the rim of the tilt cone.
-
-Panel b: the combined result. Along x the tilt increases; along y the
+Tilt and wobble figure (square): along x the tilt increases; along y the
 wobble (binding.wobble_range.theta) increases. Probes are placed with
 indirect_labelling, which tilts each axis (tilt_direction) and then wobbles
 it within a cone about the tilted axis (add_wobble).
+
+Normals figure: normals estimated by local plane fitting and by scaling on
+a flat lattice, a sphere, a cylinder and the NPC.
 """
 
 import os
@@ -19,19 +18,27 @@ import numpy as np
 from vlab4mic.utils.transform.cif_builder import indirect_labelling
 from vlab4mic.utils.transform.normals import tilt_direction
 
+plt.rcParams.update({
+    "font.size": 18,
+    "axes.titlesize": 22,
+    "axes.labelsize": 20,
+    "legend.fontsize": 18,
+    "xtick.labelsize": 16,
+    "ytick.labelsize": 16,
+})
+
 random_seed = 24
 tilts = [0, 15, 30, 45, 60]  # degrees, x axis
-wobbles = [0, 10, 20, 30]  # degrees, y axis of panel b
+wobbles = [0, 10, 20, 30]  # degrees, y axis
 normal = np.array([0, 0, 1.0])
 spacing = 40
 probe_length = 12
-n_tilted_axes = 8  # tilted axes drawn per site in panel a
-n_probes = 200  # probes drawn per site in panel b
+n_probes = 200  # probes drawn per site
 n_rim_points = 100  # tilted directions sampled to trace the tilt cone
 
 normal_colour = "#222222"
 probe_colour = "#377eb8"
-cone_colour = "#9ecae1"
+cone_colour = "red"
 
 
 def place_probes(epitope, tilt, wobble):
@@ -61,21 +68,18 @@ def cone_rim(epitope, tilt, rng):
     return epitope + probe_length * dirs
 
 
-def draw_site(ax, epitope, tips, tilt, rng, add_tips=True):
-    if add_tips:
-        for tip in tips:
-            ax.plot(*np.stack([epitope, tip]).T, color=probe_colour, lw=0.8, alpha=0.6, clip_on=False)
+def draw_site(ax, epitope, tips, tilt, rng):
     ax.scatter(*tips.T, color=probe_colour, s=10, depthshade=False, clip_on=False)
     if tilt:
-        ax.plot(*cone_rim(epitope, tilt, rng).T, color="Red", lw=1, clip_on=False)
+        ax.plot(*cone_rim(epitope, tilt, rng).T, color=cone_colour, lw=1, clip_on=False)
     normal_tip = epitope + 1.3 * probe_length * normal
     #ax.plot(*np.stack([epitope, normal_tip]).T, color=normal_colour, lw=1.5)
     ax.scatter(*epitope, color=normal_colour, s=25, depthshade=False, clip_on=False)
 
 
 def add_legend(ax):
-    ax.plot([], [], color=normal_colour, lw=1.5, label="Epitope normal")
-    ax.plot([], [], color=probe_colour, marker="o", ms=3, label="Probe axis and emitter")
+    ax.plot([], [], color=normal_colour, marker="o", ls="none", ms=6, label="Epitope")
+    ax.plot([], [], color=probe_colour, marker="o", ls="none", ms=4, label="Probe emitter")
     ax.plot([], [], color=cone_colour, label="Tilt cone")
     ax.legend(loc="upper left")
 
@@ -90,49 +94,40 @@ def fill_box(ax, zoom=1.3):
 def style_tilt_axis(ax):
     ax.set_xticks([j * spacing for j in range(len(tilts))])
     ax.set_xticklabels([f"{t}°" for t in tilts])
-    ax.set_xlabel("Probe tilt from normal")
+    ax.set_xlabel("Probe tilt from normal", labelpad=55)
     ax.set_zticks([])
-    fill_box(ax, zoom=1.3)
+    fill_box(ax, zoom=0.8)
     ax.view_init(elev=30, azim=-60)
 
 
 np.random.seed(random_seed)
 rng = np.random.default_rng(random_seed)
-fig = plt.figure(figsize=[20, 14])
-top, bottom = fig.subfigures(2, 1, height_ratios=[0.55, 1])
-top.subplots_adjust(left=0, right=1, bottom=0, top=1, wspace=0.05)
-bottom.subplots_adjust(left=0.07, right=1, top=0.97, bottom=0, wspace=0.02, hspace=0.05)
-ax_a = top.add_subplot(1, 2, 1, projection="3d")
-ax_b = top.add_subplot(1, 2, 2, projection="3d")
-axs_n = bottom.subplots(
-    2, 5, subplot_kw={"projection": "3d"},
-    gridspec_kw={"width_ratios": [1, 1, 0.65, 0.65, 1]},
-)
-for row, method in enumerate(["By local plane", "By scaling"]):
-    axs_n[row, 0].text2D(-0.13, 0.5, method, transform=axs_n[row, 0].transAxes,
-                         rotation=90, va="center", ha="center", fontsize=14)
 
-# panel a: tilt only
-for j, tilt in enumerate(tilts):
-    epitope = np.array([j * spacing, 0.0, 0.0])
-    axes = np.array([tilt_direction(normal, tilt, rng=rng) for _ in range(n_tilted_axes)])
-    draw_site(ax_a, epitope, epitope + probe_length * axes, tilt, rng)
-style_tilt_axis(ax_a)
-ax_a.set_yticks([])
-ax_a.set_title("Tilting the probe axis from the normal")
-add_legend(ax_a)
-
-# panel b: tilt combined with wobble about the tilted axis
+# tilt combined with wobble about the tilted axis, square figure
+fig_tw = plt.figure(figsize=[10, 10])
+fig_tw.subplots_adjust(left=0, right=1, bottom=0, top=0.93)
+ax_tw = fig_tw.add_subplot(projection="3d")
 for i, wobble in enumerate(wobbles):
     for j, tilt in enumerate(tilts):
         epitope = np.array([j * spacing, i * spacing, 0.0])
-        draw_site(ax_b, epitope, place_probes(epitope, tilt, wobble), tilt, rng, add_tips=False)
-style_tilt_axis(ax_b)
-ax_b.set_yticks([i * spacing for i in range(len(wobbles))])
-ax_b.set_yticklabels([f"{w}°" for w in wobbles])
-ax_b.set_ylabel("Wobble about tilted axis")
-ax_b.set_title("Tilt combined with wobble")
-add_legend(ax_b)
+        draw_site(ax_tw, epitope, place_probes(epitope, tilt, wobble), tilt, rng)
+style_tilt_axis(ax_tw)
+ax_tw.set_yticks([i * spacing for i in range(len(wobbles))])
+ax_tw.set_yticklabels([f"{w}°" for w in wobbles])
+ax_tw.set_ylabel("Wobble about tilted axis", labelpad=25)
+ax_tw.set_title("Tilt combined with wobble")
+add_legend(ax_tw)
+
+# normals figure
+fig_n = plt.figure(figsize=[20, 10])
+fig_n.subplots_adjust(left=0.09, right=1, top=0.95, bottom=0, wspace=0.02, hspace=0.05)
+axs_n = fig_n.subplots(
+    2, 4, subplot_kw={"projection": "3d"},
+    gridspec_kw={"width_ratios": [1, 1, 0.65, 1]},
+)
+for row, method in enumerate(["By local plane", "By scaling"]):
+    axs_n[row, 0].text2D(-0.2, 0.5, method, transform=axs_n[row, 0].transAxes,
+                         rotation=90, va="center", ha="center", fontsize=24)
 
 
 import numpy as np
@@ -206,13 +201,11 @@ points_cyl = cylinder(n_along=30)
 
 normals_cyl_local = normals_by_local_plane(points_cyl, n_neighbours=8)
 body_cyl = np.abs(normals_cyl_local[:, 2]) < 80
-show(points_cyl[body_cyl], normals_cyl_local[body_cyl], "Cylinder", axs_n[0, 2], length=10, arrow_length_ratio=0, zoom=0.95)
-show(points_cyl[body_cyl], normals_cyl_local[body_cyl], "Cylinder (side view)", axs_n[0, 3], length=10, arrow_length_ratio=0, view_init=[0,-60,0], zoom=0.9)
+show(points_cyl[body_cyl], normals_cyl_local[body_cyl], "Cylinder", axs_n[0, 2], length=10, arrow_length_ratio=0, view_init=[0,-60,0], zoom=0.9)
 
 normals_cyl_scaling = normals_by_scaling(points_cyl)
 body_cyl = np.abs(normals_cyl_scaling[:, 2]) < 80
-show(points_cyl[body_cyl], normals_cyl_scaling[body_cyl], "Cylinder", axs_n[1, 2], length=10, arrow_length_ratio=0, zoom=0.95)
-show(points_cyl[body_cyl], normals_cyl_scaling[body_cyl], "Cylinder (side view)", axs_n[1, 3], length=3, arrow_length_ratio=0, view_init=[0,-60,0], zoom=0.9)
+show(points_cyl[body_cyl], normals_cyl_scaling[body_cyl], "Cylinder", axs_n[1, 2], length=3, arrow_length_ratio=0, view_init=[0,-60,0], zoom=0.9)
 
 from vlab4mic import experiments
 random_seed = 24
@@ -236,32 +229,35 @@ _1, _2, my_experiment = experiments.image_vsample(
     random_rotations=False,
     random_seed=random_seed
 )
-my_experiment.structure.show_target_labels(with_normals=True, with_assembly_atoms=True, assembly_fraction=0.001, view_init=[20,0,0], axesoff=True, show_axis=False, reference_point=False, axis_object=axs_n[1, 4])
-axs_n[1, 4].set_title("NPC (7R5K)")
-fill_box(axs_n[1, 4], zoom=1.5)
+my_experiment.structure.show_target_labels(with_normals=True, with_assembly_atoms=True, assembly_fraction=0.001, view_init=[20,0,0], axesoff=True, show_axis=False, reference_point=False, axis_object=axs_n[1, 3])
+axs_n[1, 3].set_title("NPC (7R5K)")
+fill_box(axs_n[1, 3], zoom=1.5)
 # by plane
 n_neighbours_npc = 2
 my_experiment.set_structure_normal_params(mode="local_plane", n_neighbours=n_neighbours_npc)
 my_experiment.structure.assign_normals2targets()
-my_experiment.structure.show_target_labels(with_normals=True, with_assembly_atoms=True, assembly_fraction=0.001, view_init=[20,0,0], axesoff=True, show_axis=False, reference_point=False, axis_object=axs_n[0, 4])
-axs_n[0, 4].set_title("NPC (7R5K)")
-fill_box(axs_n[0, 4], zoom=1.5)
+my_experiment.structure.show_target_labels(with_normals=True, with_assembly_atoms=True, assembly_fraction=0.001, view_init=[20,0,0], axesoff=True, show_axis=False, reference_point=False, axis_object=axs_n[0, 3])
+axs_n[0, 3].set_title("NPC (7R5K)")
+fill_box(axs_n[0, 3], zoom=1.5)
 
 filename = my_experiment.date_as_string + "figS_probe_tilt_wobble_normals"
-filename2 = os.path.join(my_experiment.output_directory, filename)
-fig.savefig(filename2 + ".png", dpi=300, bbox_inches="tight")
-plt.close()
+output_dir = os.path.join(my_experiment.output_directory, filename)
+os.makedirs(output_dir, exist_ok=True)
+filename2 = os.path.join(output_dir, filename)
+fig_tw.savefig(filename2 + "_tilt_wobble.png", dpi=300)
+plt.close(fig_tw)
+fig_n.savefig(filename2 + "_normals.png", dpi=300, bbox_inches="tight")
+plt.close(fig_n)
 
 legend = (
-    "Top. Probe orientation on epitopes on the z = 0 plane, with normals along +z. "
-    f"(a) Tilt only: at each site, {n_tilted_axes} probe axes are tilted from the normal by "
-    f"{', '.join(str(t) for t in tilts)}° with a random azimuth, so they lie on the tilt cone (red circle). "
-    "(b) Tilt combined with wobble: the tilt increases along x and the wobble about the tilted axis "
-    f"({', '.join(str(w) for w in wobbles)}°) increases along y. Each site shows the emitters (blue) "
-    f"of {n_probes} probes with length {probe_length}; black dots mark the epitopes.\n\n"
-    "Bottom. Normals estimated for target sites by fitting a local plane to neighbouring sites (top row) "
+    "Tilt and wobble. Probe orientation on epitopes on the z = 0 plane, with normals along +z. "
+    f"The probe axis is tilted from the normal by {', '.join(str(t) for t in tilts)}° (along x) with a "
+    "random azimuth, so before wobble it lies on the tilt cone (red circle), and is then wobbled about "
+    f"the tilted axis by {', '.join(str(w) for w in wobbles)}° (along y). Each site shows the emitters "
+    f"(blue) of {n_probes} probes with length {probe_length}; black dots mark the epitopes.\n\n"
+    "Normals. Normals estimated for target sites by fitting a local plane to neighbouring sites (top row) "
     "and by scaling about the centroid of the sites (bottom row), on a flat lattice, a sphere, "
-    "a cylinder (oblique and side views) and the nuclear pore complex (PDB 7R5K, Nup96 C-terminal "
+    "a cylinder (side view) and the nuclear pore complex (PDB 7R5K, Nup96 C-terminal "
     f"sequence ELAVGSL; local plane fitted to {n_neighbours_npc} neighbouring sites). "
     "Scaling gives the surface normal only for convex shapes centred on the centroid: on the flat "
     "lattice its normals lie in the plane, and on the cylinder they bend towards the ends. "
