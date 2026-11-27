@@ -329,13 +329,19 @@ if simulated.min() < 0:
     raise ValueError(f"Simulated image has {np.sum(simulated < 0)} negative pixels (min {simulated.min():.1f})")
 fig, axs = plt.subplots(1, 3, figsize=(15, 4))
 normalised = {}
+histograms = []  # data of the histograms, saved as csv
+summary = []
 for ax, img, title in [(axs[0], experimental_img_processed, "Experimental (crop)"),
                        (axs[1], simulated_img, "VLab4Mic simulated")]:
     img = np.asarray(img, dtype=float)
     img_background = img.min()
     values = np.ravel(img) - img_background
     upper = np.percentile(values, 99.9)
-    ax.hist(values, bins=100, range=(0, upper))
+    counts, edges, _ = ax.hist(values, bins=100, range=(0, upper))
+    histograms.append(pd.DataFrame(dict(image=title, histogram="intensity above background (counts)",
+                                        bin_start=edges[:-1], bin_end=edges[1:], value=counts)))
+    summary.append(dict(image=title, n_pixels=values.size, background=img_background, percentile_99_9=upper,
+                        max_above_background=values.max(), pixels_above_percentile=np.sum(values > upper)))
     ax.set_yscale("log")
     ax.set_title(f"{title}\n{np.sum(values > upper)} pixels above {upper:.0f} not shown (max {values.max():.0f})")
     ax.set_xlabel("Intensity above background (counts)")
@@ -345,7 +351,9 @@ for ax, img, title in [(axs[0], experimental_img_processed, "Experimental (crop)
     normalised[title] = values / upper
 bin_edges = np.linspace(0, 1, 101)
 for title, values in normalised.items():
-    axs[2].hist(values, bins=bin_edges, density=True, histtype="step", linewidth=1.5, label=title)
+    density, edges, _ = axs[2].hist(values, bins=bin_edges, density=True, histtype="step", linewidth=1.5, label=title)
+    histograms.append(pd.DataFrame(dict(image=title, histogram="density, normalised to the 99.9th percentile",
+                                        bin_start=edges[:-1], bin_end=edges[1:], value=density)))
 axs[2].set_yscale("log")
 axs[2].set_title("Normalised to the 99.9th percentile")
 axs[2].set_xlabel("Intensity above background / 99.9th percentile")
@@ -354,3 +362,5 @@ axs[2].legend()
 fig.tight_layout()
 fig.savefig(output_prefix + '_intensity_histograms.png', dpi=300, bbox_inches='tight')
 plt.close(fig)
+pd.concat(histograms).to_csv(output_prefix + '_intensity_histograms.csv', index=False)
+pd.DataFrame(summary).to_csv(output_prefix + '_intensity_histograms_summary.csv', index=False)
